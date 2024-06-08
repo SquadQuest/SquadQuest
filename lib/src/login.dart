@@ -59,8 +59,8 @@ class _LoginViewState extends State<LoginView> {
               ElevatedButton(
                 onPressed: submitted ? null : _submitPhone,
                 child: const Text(
-                  'Send login code via SM',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  'Send login code via SMS',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
               )
             ],
