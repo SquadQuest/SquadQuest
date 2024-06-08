@@ -1,0 +1,13 @@
+{
+  "dart.flutterSdkPath": ".fvm/versions/stable",
+  "dart.analysisExcludedFolders": [
+    ".fvm",
+    ".pub",
+    ".vscode",
+    "supabase",
+    "build",
+    "ios",
+    "android",
+    "web"
+  ]
+}
