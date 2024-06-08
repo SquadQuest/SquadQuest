@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../settings/settings_view.dart';
 import 'sample_item.dart';
@@ -17,9 +18,11 @@ class SampleItemListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String hello = dotenv.env['HELLO'] ?? 'Philadelphia';
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sample Items'),
+        title: Text('Sample Items: $hello'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
