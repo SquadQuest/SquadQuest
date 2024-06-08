@@ -1,9 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Create a single supabase client for interacting with your database
-const supabase = createClient('http://localhost:8000', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE')
+// Load .env from parent directory
+import { config as dotenvConfig } from 'dotenv'
+dotenvConfig('../.env')
 
-const phone = ''
+// Create a single supabase client for interacting with your database
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
+
+const phone = process.env.SUPABASE_USER_PHONE
 
 // Sign in with phone number
 // const { data, error } = await supabase.auth.signInWithOtp({
@@ -20,8 +24,8 @@ const phone = ''
 //     type: 'sms',
 // })
 
-const accessToken = ''
-const refreshToken = ''
+const accessToken = process.env.SUPABASE_USER_ACCESS_TOKEN
+const refreshToken = process.env.SUPABASE_USER_REFRESH_TOKEN
 
 
 const { data, error } = await supabase
