@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/supabase.dart';
+import 'package:squad_quest/services/auth.dart';
 
 class VerifyView extends ConsumerStatefulWidget {
   const VerifyView({super.key, required this.phone});
@@ -32,16 +32,13 @@ class _VerifyViewState extends ConsumerState<VerifyView> {
     final token = _tokenController.text.trim();
     log('Verifying token');
 
-    final supabase = ref.read(supabaseProvider);
+    final authService = ref.read(authServiceProvider);
 
     try {
-      final AuthResponse res = await supabase.auth.verifyOTP(
-        type: OtpType.sms,
+      await authService.verifyOTP(
         token: token,
         phone: widget.phone,
       );
-      final Session? session = res.session;
-      final User? user = res.user;
       log('Verified token');
     } catch (error) {
       log('Error verifying token: $error');

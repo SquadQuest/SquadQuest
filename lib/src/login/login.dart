@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/supabase.dart';
+import 'package:squad_quest/services/auth.dart';
 import 'verify.dart';
 
 class LoginView extends ConsumerStatefulWidget {
@@ -32,10 +32,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final phone = _phoneController.text.trim();
     log('Sending login code via SMS to $phone');
 
-    final supabase = ref.read(supabaseProvider);
+    final authService = ref.read(authServiceProvider);
 
     try {
-      await supabase.auth.signInWithOtp(
+      await authService.signInWithOtp(
         phone: phone,
       );
       log('Sent SMS');
