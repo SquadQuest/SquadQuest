@@ -1,8 +1,13 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'verify.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
+
+  static const routeName = '/login';
 
   @override
   State<LoginView> createState() => _LoginViewState();
@@ -11,9 +16,11 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
+  final _supabase = Supabase.instance.client;
+
   bool submitted = false;
 
-  void _submitPhone() async {
+  void _submitPhone(BuildContext context) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -23,7 +30,37 @@ class _LoginViewState extends State<LoginView> {
     });
 
     final phone = _phoneController.text.trim();
-    log('Send login code via SMS to $phone');
+    log('Sending login code via SMS to $phone');
+
+    try {
+      await _supabase.auth.signInWithOtp(
+        phone: phone,
+      );
+      log('Sent SMS');
+    } catch (error) {
+      log('Error sending SMS: $error');
+
+      setState(() {
+        submitted = false;
+      });
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Failed to login, check phone number and try again'),
+      ));
+
+      return;
+    }
+
+    if (!context.mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VerifyView(phone: phone),
+      ),
+    );
   }
 
   @override
@@ -36,7 +73,6 @@ class _LoginViewState extends State<LoginView> {
         child: Form(
           key: _formKey,
           child: Column(
-            // crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
                 readOnly: submitted,
@@ -57,12 +93,19 @@ class _LoginViewState extends State<LoginView> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: submitted ? null : _submitPhone,
+                onPressed: submitted ? null : () => _submitPhone(context),
                 child: const Text(
                   'Send login code via SMS',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
-              )
+              ),
+              const SizedBox(height: 16),
+              Visibility(
+                visible: submitted,
+                child: const CircularProgressIndicator(
+                  value: null,
+                ),
+              ),
             ],
           ),
         ),
