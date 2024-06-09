@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
+import 'package:squad_quest/screens/home.dart';
 
 class VerifyView extends ConsumerStatefulWidget {
   const VerifyView({super.key, required this.phone});
@@ -53,6 +54,14 @@ class _VerifyViewState extends ConsumerState<VerifyView> {
 
       return;
     }
+
+    if (!context.mounted) return;
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const HomeView(),
+        ),
+        (_) => false);
   }
 
   @override
