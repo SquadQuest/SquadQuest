@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/auth.dart';
+import 'package:squad_quest/controllers/auth.dart';
 import 'verify.dart';
 
 class LoginView extends ConsumerStatefulWidget {
@@ -32,10 +32,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final phone = _phoneController.text.trim();
     log('Sending login code via SMS to $phone');
 
-    final authService = ref.read(authServiceProvider);
+    final authController = ref.read(authControllerProvider);
 
     try {
-      await authService.signInWithOtp(
+      await authController.signInWithOtp(
         phone: phone,
       );
       log('Sent SMS');

@@ -4,13 +4,13 @@ import 'package:squad_quest/services/supabase.dart';
 
 export 'package:squad_quest/services/supabase.dart' show Session, User;
 
-final authServiceProvider = Provider<AuthService>((ref) {
+final authControllerProvider = Provider<AuthController>((ref) {
   final supabase = ref.watch(supabaseProvider);
-  return AuthService(supabase);
+  return AuthController(supabase);
 });
 
-class AuthService {
-  AuthService(this.supabase);
+class AuthController {
+  AuthController(this.supabase);
   final SupabaseClient supabase;
   Session? session;
   User? user;

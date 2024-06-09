@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/auth.dart';
+import 'package:squad_quest/controllers/auth.dart';
 
 class VerifyView extends ConsumerStatefulWidget {
   const VerifyView({super.key, required this.phone});
@@ -32,10 +32,10 @@ class _VerifyViewState extends ConsumerState<VerifyView> {
     final token = _tokenController.text.trim();
     log('Verifying token');
 
-    final authService = ref.read(authServiceProvider);
+    final authController = ref.read(authControllerProvider);
 
     try {
-      await authService.verifyOTP(
+      await authController.verifyOTP(
         token: token,
         phone: widget.phone,
       );
