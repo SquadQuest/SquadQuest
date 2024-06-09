@@ -24,7 +24,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         body: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               DropdownButton<ThemeMode>(
                 value: themeMode,
                 onChanged: (ThemeMode? themeMode) {
@@ -45,7 +46,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   )
                 ],
               ),
-              ElevatedButton(
+              const Spacer(flex: 1),
+              Center(
+                  child: ElevatedButton(
                 onPressed: () async {
                   await ref.read(authControllerProvider.notifier).signOut();
 
@@ -59,10 +62,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       (_) => false);
                 },
                 child: const Text(
-                  'Log out',
+                  'Sign out',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
-              )
+              ))
             ])),
       ),
     );
