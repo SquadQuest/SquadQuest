@@ -17,7 +17,9 @@ class AuthController extends AsyncNotifier<Session?> {
 
   @override
   Session? build() {
-    return null;
+    final supabase = ref.read(supabaseProvider);
+
+    return supabase.auth.currentSession;
   }
 
   Future<void> signInWithOtp({required String phone}) async {
