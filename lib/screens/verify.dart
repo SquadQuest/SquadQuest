@@ -85,20 +85,16 @@ class _VerifyViewState extends ConsumerState<VerifyView> {
                 controller: _tokenController,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: submitted ? null : () => _submitToken(context),
-                child: const Text(
-                  'Verify',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Visibility(
-                visible: submitted,
-                child: const CircularProgressIndicator(
-                  value: null,
-                ),
-              ),
+              submitted
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: submitted ? null : () => _submitToken(context),
+                      child: const Text(
+                        'Verify',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    )
             ],
           ),
         ),

@@ -98,20 +98,16 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 controller: _phoneController,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: submitted ? null : () => _submitPhone(context),
-                child: const Text(
-                  'Send login code via SMS',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Visibility(
-                visible: submitted,
-                child: const CircularProgressIndicator(
-                  value: null,
-                ),
-              ),
+              submitted
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: submitted ? null : () => _submitPhone(context),
+                      child: const Text(
+                        'Send login code via SMS',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    )
             ],
           ),
         ),
