@@ -43,4 +43,10 @@ class AuthController extends AsyncNotifier<Session?> {
 
     state = AsyncValue.data(response.session);
   }
+
+  Future<void> signOut() async {
+    state = const AsyncValue.loading();
+    await ref.read(supabaseProvider).auth.signOut();
+    state = const AsyncValue.data(null);
+  }
 }

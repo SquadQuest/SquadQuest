@@ -40,7 +40,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
           child: Column(
             children: [
               Text(
-                  'Logged in as ${user!.userMetadata!['first_name']} ${user.userMetadata!['last_name']}')
+                  'Logged in as ${user?.userMetadata!['first_name']} ${user?.userMetadata!['last_name']}')
             ],
           ),
         ),

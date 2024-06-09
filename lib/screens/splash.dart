@@ -26,8 +26,9 @@ class _SplashViewState extends ConsumerState<SplashView> {
       Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                authProvider.hasValue ? const HomeView() : const LoginView(),
+            builder: (context) => authProvider.value == null
+                ? const LoginView()
+                : const HomeView(),
           ),
           (_) => false);
     });
