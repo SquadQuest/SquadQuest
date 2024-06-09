@@ -54,7 +54,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!context.mounted) return;
 
-    context.go('/verify');
+    context.push('/verify').then((_) {
+      setState(() {
+        submitted = false;
+      });
+    });
   }
 
   @override
