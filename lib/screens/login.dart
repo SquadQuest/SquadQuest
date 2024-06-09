@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
-import 'verify.dart';
+import 'package:squad_quest/screens/verify.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
