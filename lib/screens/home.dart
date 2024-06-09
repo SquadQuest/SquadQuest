@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
+import 'package:squad_quest/src/settings/settings_view.dart';
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -22,6 +23,17 @@ class _HomeViewState extends ConsumerState<HomeView> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Welcome to SquadQuest'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                // Navigate to the settings page. If the user leaves and returns
+                // to the app after it has been killed while running in the
+                // background, the navigation stack is restored.
+                Navigator.restorablePushNamed(context, SettingsView.routeName);
+              },
+            ),
+          ],
         ),
         body: Padding(
           padding: const EdgeInsets.all(20),
