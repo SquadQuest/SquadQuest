@@ -32,13 +32,11 @@ class _VerifyViewState extends ConsumerState<VerifyView> {
     final token = _tokenController.text.trim();
     log('Verifying token');
 
-    final authController = ref.read(authControllerProvider);
-
     try {
-      await authController.verifyOTP(
-        token: token,
-        phone: widget.phone,
-      );
+      await ref.read(authControllerProvider.notifier).verifyOTP(
+            token: token,
+            phone: widget.phone,
+          );
       log('Verified token');
     } catch (error) {
       log('Error verifying token: $error');

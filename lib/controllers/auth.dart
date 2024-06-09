@@ -4,29 +4,41 @@ import 'package:squad_quest/services/supabase.dart';
 
 export 'package:squad_quest/services/supabase.dart' show Session, User;
 
-final authControllerProvider = Provider<AuthController>((ref) {
-  final supabase = ref.watch(supabaseProvider);
-  return AuthController(supabase);
+final authControllerProvider =
+    AsyncNotifierProvider<AuthController, Session?>(AuthController.new);
+
+final userProvider = StateProvider<User?>((ref) {
+  final authController = ref.watch(authControllerProvider);
+  return authController.value?.user;
 });
 
-class AuthController {
-  AuthController(this.supabase);
-  final SupabaseClient supabase;
-  Session? session;
-  User? user;
+class AuthController extends AsyncNotifier<Session?> {
+  AuthController();
+
+  @override
+  Session? build() {
+    return null;
+  }
 
   Future<void> signInWithOtp({required String phone}) async {
+    state = const AsyncValue.loading();
+
+    final supabase = ref.read(supabaseProvider);
+
     await supabase.auth.signInWithOtp(phone: phone);
   }
 
   Future<void> verifyOTP({required String phone, required String token}) async {
+    state = const AsyncValue.loading();
+
+    final supabase = ref.read(supabaseProvider);
+
     final AuthResponse response = await supabase.auth.verifyOTP(
       type: OtpType.sms,
       phone: phone,
       token: token,
     );
 
-    session = response.session;
-    user = response.user;
+    state = AsyncValue.data(response.session);
   }
 }

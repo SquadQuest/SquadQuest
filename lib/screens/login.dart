@@ -32,12 +32,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final phone = _phoneController.text.trim();
     log('Sending login code via SMS to $phone');
 
-    final authController = ref.read(authControllerProvider);
-
     try {
-      await authController.signInWithOtp(
-        phone: phone,
-      );
+      await ref.read(authControllerProvider.notifier).signInWithOtp(
+            phone: phone,
+          );
       log('Sent SMS');
     } catch (error) {
       log('Error sending SMS: $error');
