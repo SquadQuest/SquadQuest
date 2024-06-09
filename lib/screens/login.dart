@@ -70,44 +70,47 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log in to SquadQuest'),
-      ),
-      body: AutofillGroup(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                readOnly: submitted,
-                autofillHints: const [AutofillHints.telephoneNumber],
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.phone),
-                  labelText: 'Enter your phone number',
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log in to SquadQuest'),
+        ),
+        body: AutofillGroup(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  readOnly: submitted,
+                  autofillHints: const [AutofillHints.telephoneNumber],
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.phone),
+                    labelText: 'Enter your phone number',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a valid phone number';
+                    }
+                    return null;
+                  },
+                  controller: _phoneController,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a valid phone number';
-                  }
-                  return null;
-                },
-                controller: _phoneController,
-              ),
-              const SizedBox(height: 16),
-              submitted
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: submitted ? null : () => _submitPhone(context),
-                      child: const Text(
-                        'Send login code via SMS',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                    )
-            ],
+                const SizedBox(height: 16),
+                submitted
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed:
+                            submitted ? null : () => _submitPhone(context),
+                        child: const Text(
+                          'Send login code via SMS',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                      )
+              ],
+            ),
           ),
         ),
       ),

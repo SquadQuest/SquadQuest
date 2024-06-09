@@ -18,17 +18,19 @@ class _HomeViewState extends ConsumerState<HomeView> {
   Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Welcome to SquadQuest'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text(
-                'Logged in as ${user!.userMetadata!['first_name']} ${user.userMetadata!['last_name']}')
-          ],
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Welcome to SquadQuest'),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Text(
+                  'Logged in as ${user!.userMetadata!['first_name']} ${user.userMetadata!['last_name']}')
+            ],
+          ),
         ),
       ),
     );

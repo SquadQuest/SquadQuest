@@ -66,43 +66,46 @@ class _VerifyViewState extends ConsumerState<VerifyView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verify phone number'),
-      ),
-      body: AutofillGroup(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                readOnly: submitted,
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.key),
-                  labelText: 'Enter the code sent to your phone',
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Verify phone number'),
+        ),
+        body: AutofillGroup(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  readOnly: submitted,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.key),
+                    labelText: 'Enter the code sent to your phone',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a valid one-time password';
+                    }
+                    return null;
+                  },
+                  controller: _tokenController,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a valid one-time password';
-                  }
-                  return null;
-                },
-                controller: _tokenController,
-              ),
-              const SizedBox(height: 16),
-              submitted
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: submitted ? null : () => _submitToken(context),
-                      child: const Text(
-                        'Verify',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                    )
-            ],
+                const SizedBox(height: 16),
+                submitted
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed:
+                            submitted ? null : () => _submitToken(context),
+                        child: const Text(
+                          'Verify',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                      )
+              ],
+            ),
           ),
         ),
       ),
