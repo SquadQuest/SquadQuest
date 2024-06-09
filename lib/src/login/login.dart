@@ -1,22 +1,22 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squad_quest/services/supabase.dart';
 import 'verify.dart';
 
-class LoginView extends StatefulWidget {
+class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
 
   static const routeName = '/login';
 
   @override
-  State<LoginView> createState() => _LoginViewState();
+  ConsumerState<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends State<LoginView> {
+class _LoginViewState extends ConsumerState<LoginView> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
-  final _supabase = Supabase.instance.client;
 
   bool submitted = false;
 
@@ -32,8 +32,10 @@ class _LoginViewState extends State<LoginView> {
     final phone = _phoneController.text.trim();
     log('Sending login code via SMS to $phone');
 
+    final supabase = ref.read(supabaseProvider);
+
     try {
-      await _supabase.auth.signInWithOtp(
+      await supabase.auth.signInWithOtp(
         phone: phone,
       );
       log('Sent SMS');

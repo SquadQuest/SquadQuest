@@ -1,21 +1,22 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class VerifyView extends StatefulWidget {
+import 'package:squad_quest/services/supabase.dart';
+
+class VerifyView extends ConsumerStatefulWidget {
   const VerifyView({super.key, required this.phone});
 
   static const routeName = '/login';
   final String phone;
 
   @override
-  State<VerifyView> createState() => _VerifyViewState();
+  ConsumerState<VerifyView> createState() => _VerifyViewState();
 }
 
-class _VerifyViewState extends State<VerifyView> {
+class _VerifyViewState extends ConsumerState<VerifyView> {
   final _formKey = GlobalKey<FormState>();
   final _tokenController = TextEditingController();
-  final _supabase = Supabase.instance.client;
 
   bool submitted = false;
 
@@ -31,8 +32,10 @@ class _VerifyViewState extends State<VerifyView> {
     final token = _tokenController.text.trim();
     log('Verifying token');
 
+    final supabase = ref.read(supabaseProvider);
+
     try {
-      final AuthResponse res = await _supabase.auth.verifyOTP(
+      final AuthResponse res = await supabase.auth.verifyOTP(
         type: OtpType.sms,
         token: token,
         phone: widget.phone,

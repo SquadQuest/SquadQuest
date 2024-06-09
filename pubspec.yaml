@@ -15,6 +15,7 @@ dependencies:
   flutter_dotenv: ^5.1.0
   flutter_localizations:
     sdk: flutter
+  flutter_riverpod: ^2.5.1
   supabase_flutter: ^2.5.4
 
 dev_dependencies:
@@ -22,6 +23,7 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^3.0.0
+  riverpod_lint: ^2.3.10
 
 flutter:
   uses-material-design: true
