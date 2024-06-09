@@ -1,20 +1,18 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/screens/verify.dart';
 
-class LoginView extends ConsumerStatefulWidget {
-  const LoginView({super.key});
-
-  static const routeName = '/login';
+class LoginScreen extends ConsumerStatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  ConsumerState<LoginView> createState() => _LoginViewState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginViewState extends ConsumerState<LoginView> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
 
@@ -56,16 +54,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
     if (!context.mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VerifyView(phone: phone),
-      ),
-    ).whenComplete(() {
-      setState(() {
-        submitted = false;
-      });
-    });
+    context.go('/verify');
   }
 
   @override

@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/screens/settings.dart';
 
-class HomeView extends ConsumerStatefulWidget {
-  const HomeView({super.key});
-
-  static const routeName = '/home';
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeView> createState() => _HomeViewState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeViewState extends ConsumerState<HomeView> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
@@ -26,8 +24,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
             IconButton(
               icon: const Icon(Icons.settings),
               onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                context.push('/settings');
               },
             ),
           ],

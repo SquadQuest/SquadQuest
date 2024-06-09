@@ -1,21 +1,18 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/screens/home.dart';
 
-class VerifyView extends ConsumerStatefulWidget {
-  const VerifyView({super.key, required this.phone});
-
-  static const routeName = '/login';
-  final String phone;
+class VerifyScreen extends ConsumerStatefulWidget {
+  const VerifyScreen({super.key});
 
   @override
-  ConsumerState<VerifyView> createState() => _VerifyViewState();
+  ConsumerState<VerifyScreen> createState() => _VerifyScreenState();
 }
 
-class _VerifyViewState extends ConsumerState<VerifyView> {
+class _VerifyScreenState extends ConsumerState<VerifyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _tokenController = TextEditingController();
 
@@ -36,7 +33,6 @@ class _VerifyViewState extends ConsumerState<VerifyView> {
     try {
       await ref.read(authControllerProvider.notifier).verifyOTP(
             token: token,
-            phone: widget.phone,
           );
       log('Verified token');
     } catch (error) {
@@ -56,12 +52,8 @@ class _VerifyViewState extends ConsumerState<VerifyView> {
     }
 
     if (!context.mounted) return;
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const HomeView(),
-        ),
-        (_) => false);
+
+    context.go('/');
   }
 
   @override
