@@ -60,7 +60,11 @@ class _LoginViewState extends State<LoginView> {
       MaterialPageRoute(
         builder: (context) => VerifyView(phone: phone),
       ),
-    );
+    ).whenComplete(() {
+      setState(() {
+        submitted = false;
+      });
+    });
   }
 
   @override
