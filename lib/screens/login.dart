@@ -48,8 +48,9 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Failed to login, check phone number and try again'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Failed to login, check phone number and try again:\n\n$error'),
       ));
 
       return;

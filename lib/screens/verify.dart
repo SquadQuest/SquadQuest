@@ -49,8 +49,8 @@ class _VerifyViewState extends ConsumerState<VerifyView> {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Failed to verify, check code and try again'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Failed to verify, check code and try again:\n\n$error'),
       ));
 
       return;
