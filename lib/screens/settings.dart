@@ -1,23 +1,23 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
 import 'package:squad_quest/screens/login.dart';
-import 'settings_controller.dart';
+import 'package:squad_quest/controllers/settings.dart';
 
-/// Displays the various settings that can be customized by the user.
-///
-/// When a user changes a setting, the SettingsController is updated and
-/// Widgets that listen to the SettingsController are rebuilt.
-class SettingsView extends ConsumerWidget {
-  const SettingsView({super.key, required this.controller});
-
-  static const routeName = '/settings';
-
-  final SettingsController controller;
+class SettingsScreen extends ConsumerStatefulWidget {
+  const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -25,16 +25,12 @@ class SettingsView extends ConsumerWidget {
         ),
         body: Padding(
             padding: const EdgeInsets.all(16),
-            // Glue the SettingsController to the theme selection DropdownButton.
-            //
-            // When a user selects a theme from the dropdown list, the
-            // SettingsController is updated, which rebuilds the MaterialApp.
             child: Column(children: [
               DropdownButton<ThemeMode>(
-                // Read the selected themeMode from the controller
-                value: controller.themeMode,
-                // Call the updateThemeMode method any time the user selects a theme.
-                onChanged: controller.updateThemeMode,
+                value: themeMode,
+                onChanged: (ThemeMode? themeMode) {
+                  ref.read(themeModeProvider.notifier).state = themeMode!;
+                },
                 items: const [
                   DropdownMenuItem(
                     value: ThemeMode.system,

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/src/settings/settings_view.dart';
+import 'package:squad_quest/screens/settings.dart';
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -27,10 +27,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
             IconButton(
               icon: const Icon(Icons.settings),
               onPressed: () {
-                // Navigate to the settings page. If the user leaves and returns
-                // to the app after it has been killed while running in the
-                // background, the navigation stack is restored.
-                Navigator.restorablePushNamed(context, SettingsView.routeName);
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()));
               },
             ),
           ],

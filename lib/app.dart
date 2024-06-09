@@ -1,50 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/screens/splash.dart';
-import 'src/settings/settings_controller.dart';
-import 'src/settings/settings_view.dart';
+import 'package:squad_quest/controllers/settings.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({
-    super.key,
-    required this.settingsController,
-  });
-
-  final SettingsController settingsController;
+class MyApp extends ConsumerWidget {
+  const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Glue the SettingsController to the MaterialApp.
-    //
-    // The ListenableBuilder Widget listens to the SettingsController for changes.
-    // Whenever the user updates their settings, the MaterialApp is rebuilt.
-    return ListenableBuilder(
-      listenable: settingsController,
-      builder: (BuildContext context, Widget? child) {
-        return MaterialApp(
-          title: 'Squad Quest',
-          theme: ThemeData(),
-          darkTheme: ThemeData.dark(),
-          themeMode: settingsController.themeMode,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themMode = ref.watch(themeModeProvider);
 
-          // Define a function to handle named routes in order to support
-          // Flutter web url navigation and deep linking.
-          onGenerateRoute: (RouteSettings routeSettings) {
-            return MaterialPageRoute<void>(
-              settings: routeSettings,
-              builder: (BuildContext context) {
-                switch (routeSettings.name) {
-                  case SettingsView.routeName:
-                    return SettingsView(controller: settingsController);
-                  case SplashView.routeName:
-                  default:
-                    return const SplashView();
-                }
-              },
-            );
-          },
-        );
-      },
-    );
+    return MaterialApp(
+        title: 'Squad Quest',
+        theme: ThemeData(),
+        darkTheme: ThemeData.dark(),
+        themeMode: themMode,
+        home: const SplashView());
   }
 }
