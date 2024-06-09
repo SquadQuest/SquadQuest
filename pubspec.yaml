@@ -1,5 +1,5 @@
 name: squad_quest
-description: "A new Flutter project."
+description: "The quest to find your squad."
 
 # Prevent accidental publishing to pub.dev.
 publish_to: 'none'
@@ -13,8 +13,6 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_dotenv: ^5.1.0
-  flutter_localizations:
-    sdk: flutter
   flutter_riverpod: ^2.5.1
   supabase_flutter: ^2.5.4
 
@@ -27,9 +25,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-  # Enable generation of localized Strings from arb files.
-  generate: true
 
   assets:
     - .env
