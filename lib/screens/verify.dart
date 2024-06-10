@@ -30,10 +30,12 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
     final token = _tokenController.text.trim();
     log('Verifying token');
 
+    final authProider = ref.read(authControllerProvider.notifier);
+
     try {
-      await ref.read(authControllerProvider.notifier).verifyOTP(
-            token: token,
-          );
+      await authProider.verifyOTP(
+        token: token,
+      );
       log('Verified token');
     } catch (error) {
       log('Error verifying token: $error');
@@ -53,7 +55,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
 
     if (!context.mounted) return;
 
-    context.go('/');
+    context.go(authProider.isProfileInitialized ? '/' : '/initialize-profile');
   }
 
   @override

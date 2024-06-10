@@ -16,6 +16,12 @@ class AuthController extends AsyncNotifier<Session?> {
   AuthController();
 
   String? _phone;
+  bool get isProfileInitialized =>
+      ref
+          .read(userProvider.notifier)
+          .state
+          ?.userMetadata?['profile_initialized'] ??
+      false;
 
   @override
   Session? build() {
@@ -46,6 +52,18 @@ class AuthController extends AsyncNotifier<Session?> {
     );
 
     state = AsyncValue.data(response.session);
+  }
+
+  Future<void> updateProfile(Map<String, Object> data) async {
+    final supabase = ref.read(supabaseProvider);
+
+    final UserResponse response = await supabase.auth.updateUser(
+      UserAttributes(
+        data: data,
+      ),
+    );
+
+    ref.read(userProvider.notifier).state = response.user;
   }
 
   Future<void> signOut() async {
