@@ -1,6 +1,8 @@
 -- Everyone can read public instances
-alter policy "Everyone can read public instances"
+create policy "Everyone can read public instances"
 on "public"."instances"
+as PERMISSIVE
+for SELECT
 to public
 using (
     visibility = 'public'
@@ -8,8 +10,10 @@ using (
 
 
 -- Friends & members can read friends instances
-alter policy "Friends & members can read friends instances"
+create policy "Friends & members can read friends instances"
 on "public"."instances"
+as PERMISSIVE
+for SELECT
 to public
 using (
     visibility = 'friends'
@@ -33,8 +37,10 @@ using (
 
 
 -- Members can read private instances
-alter policy "Members can read private instances"
+create policy "Members can read private instances"
 on "public"."instances"
+as PERMISSIVE
+for SELECT
 to public
 using (
     visibility = 'private'
