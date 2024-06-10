@@ -3,25 +3,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/services/supabase.dart';
+import 'package:squad_quest/models/instance.dart';
 
 final instancesListProvider =
-    AsyncNotifierProvider<InstancesList, List<Map>>(InstancesList.new);
+    AsyncNotifierProvider<InstancesList, List<Instance>>(InstancesList.new);
 
-class InstancesList extends AsyncNotifier<List<Map>> {
+class InstancesList extends AsyncNotifier<List<Instance>> {
   @override
-  Future<List<Map>> build() async {
+  Future<List<Instance>> build() async {
     return fetch();
   }
 
-  Future<List<Map>> fetch() async {
+  Future<List<Instance>> fetch() async {
     final supabase = ref.read(supabaseProvider);
 
-    final instances = await supabase
+    return supabase
         .from('instances')
         .select('*, topic(*), created_by(*)')
-        .order('start_time_min', ascending: true);
-
-    return instances;
+        .order('start_time_min', ascending: true)
+        .withConverter((data) => data.map(Instance.fromMap).toList());
   }
 
   Future<void> refresh() async {

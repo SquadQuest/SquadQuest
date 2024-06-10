@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/controllers/home.dart';
 import 'package:squad_quest/controllers/auth.dart';
+import 'package:squad_quest/models/instance.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -43,11 +44,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       return ListView.builder(
                         itemCount: instances.length,
                         itemBuilder: (context, index) {
-                          final Map item = instances[index];
+                          final Instance item = instances[index];
                           return ListTile(
-                            title: Text(
-                                '${item['title']}\nTopic: ${item['topic']['name']}\nPosted by: ${item['created_by']['first_name']} ${item['created_by']['last_name']}\nStarting between: ${item['start_time_min']}\nand: ${item['start_time_max']}'),
-                          );
+                              title: Text(
+                                  '${item.title}\nTopic: ${item.topic?.name}\nPosted by: ${item.createdBy?.firstName} ${item.createdBy?.lastName}\nStarting between: ${item.startTimeMin}\nand: ${item.startTimeMax}'));
                         },
                       );
                     },
