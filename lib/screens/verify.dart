@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
 
+final RegExp otpCodeRegExp = RegExp(r'^\d{6}$');
+
 class VerifyScreen extends ConsumerStatefulWidget {
   const VerifyScreen({super.key});
 
@@ -79,7 +81,9 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
                     labelText: 'Enter the code sent to your phone',
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null ||
+                        value.isEmpty ||
+                        !otpCodeRegExp.hasMatch(value)) {
                       return 'Please enter a valid one-time password';
                     }
                     return null;
