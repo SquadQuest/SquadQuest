@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squad_quest/controllers/auth.dart';
 import 'package:squad_quest/controllers/settings.dart';
+import 'package:squad_quest/controllers/auth.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
