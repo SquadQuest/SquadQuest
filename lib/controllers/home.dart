@@ -18,7 +18,7 @@ class InstancesList extends AsyncNotifier<List<Map>> {
 
     final instances = await supabase
         .from('instances')
-        .select()
+        .select('*, topic(*), created_by(*)')
         .order('start_time_min', ascending: true);
 
     return instances;

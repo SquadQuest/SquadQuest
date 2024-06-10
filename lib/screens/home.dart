@@ -46,7 +46,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           final Map item = instances[index];
                           return ListTile(
                             title: Text(
-                                '${item['title']}\nStarting between: ${item['start_time_min']}\nand: ${item['start_time_max']}'),
+                                '${item['title']}\nTopic: ${item['topic']['name']}\nPosted by: ${item['created_by']['first_name']} ${item['created_by']['last_name']}\nStarting between: ${item['start_time_min']}\nand: ${item['start_time_max']}'),
                           );
                         },
                       );
