@@ -10,7 +10,7 @@ class InstanceTile extends ListTile {
 
   InstanceTile({super.key, required this.instance})
       : super(
-            leading: Icon(Icons.event),
+            leading: const Icon(Icons.pin_drop),
             title: Text(instance.title),
             subtitle: Text(
                 'Topic: ${instance.topic?.name}\nPosted by: ${instance.createdBy?.firstName} ${instance.createdBy?.lastName}\nDate: ${_dateFormat.format(instance.startTimeMin)}\nStarting between: ${_timeFormat.format(instance.startTimeMin)}–${_timeFormat.format(instance.startTimeMax)}'));

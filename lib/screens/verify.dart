@@ -77,7 +77,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
                   keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.key),
+                    prefixIcon: Icon(Icons.pin_outlined),
                     labelText: 'Enter the code sent to your phone',
                   ),
                   validator: (value) {
