@@ -1,13 +1,10 @@
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/controllers/home.dart';
 import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/models/instance.dart';
-
-final _startTimeFormat = DateFormat('E, MMM d, h:mm a');
+import 'package:squad_quest/components/instance_tile.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -47,10 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       return ListView.builder(
                         itemCount: instances.length,
                         itemBuilder: (context, index) {
-                          final Instance item = instances[index];
-                          return ListTile(
-                              title: Text(
-                                  '${item.title}\nTopic: ${item.topic?.name}\nPosted by: ${item.createdBy?.firstName} ${item.createdBy?.lastName}\nStarting between: ${_startTimeFormat.format(item.startTimeMin)}\nand: ${_startTimeFormat.format(item.startTimeMax)}'));
+                          return InstanceTile(instance: instances[index]);
                         },
                       );
                     },
