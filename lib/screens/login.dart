@@ -18,6 +18,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool submitted = false;
 
+  String _normalizePhone(String phone) {
+    // Remove non-digits
+    phone = phone.replaceAll(RegExp(r'[^\d]'), '');
+
+    // Ensure leading 1
+    if (phone[0] != '1') {
+      phone = '1$phone';
+    }
+
+    return phone;
+  }
+
   void _submitPhone(BuildContext context) async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -27,7 +39,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       submitted = true;
     });
 
-    final phone = _phoneController.text.trim();
+    final phone = _normalizePhone(_phoneController.text);
     log('Sending login code via SMS to $phone');
 
     try {
@@ -83,7 +95,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     labelText: 'Enter your phone number',
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null ||
+                        value.isEmpty ||
+                        _normalizePhone(value).length != 11) {
                       return 'Please enter a valid phone number';
                     }
                     return null;
