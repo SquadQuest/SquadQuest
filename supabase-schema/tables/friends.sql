@@ -7,6 +7,6 @@ create table
     requestee uuid null,
     status public.friend_status null default 'requested'::friend_status,
     constraint friends_pkey primary key (id),
-    constraint friends_requester_fkey foreign key (requester) references users (id),
-    constraint friends_requestee_fkey foreign key (requestee) references users (id)
+    constraint friends_requester_fkey foreign key (requester) references profiles (id),
+    constraint friends_requestee_fkey foreign key (requestee) references profiles (id)
   );

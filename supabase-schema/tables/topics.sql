@@ -5,5 +5,5 @@ create table
     created_by uuid null default uid (),
     name character varying null,
     constraint topics_pkey primary key (id),
-    constraint topics_created_by_fkey foreign key (created_by) references users (id)
+    constraint topics_created_by_fkey foreign key (created_by) references profiles (id)
   );

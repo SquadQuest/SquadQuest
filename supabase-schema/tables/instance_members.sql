@@ -6,6 +6,6 @@ create table
     status public.instance_member_status null,
     instance uuid not null,
     constraint instance_members_pkey primary key (id),
-    constraint instance_members_member_fkey foreign key (member) references users (id),
+    constraint instance_members_member_fkey foreign key (member) references profiles (id),
     constraint instance_members_instance_fkey foreign key (instance) references instances (id)
   );
