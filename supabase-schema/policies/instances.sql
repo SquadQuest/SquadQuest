@@ -25,7 +25,7 @@ using (
             WHERE friends.status = 'accepted'
             AND (
                 auth.uid() in (requester, requestee)
-                or instances.created_by in (requester, requestee)
+                AND instances.created_by in (requester, requestee)
             )
         )
     )
