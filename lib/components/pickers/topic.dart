@@ -69,11 +69,10 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
         final topicsList = await ref.read(topicsListProvider.future);
         log("Searching for: $search");
         _lastSearch = search = search.toLowerCase();
-        return topicsList
-            .where((topic) {
-              return topic.name.toLowerCase().contains(search);
-            })
-            .take(5)
+        return topicsList.where((topic) {
+          return topic.name.toLowerCase().contains(search);
+        })
+            // .take(5)
             .toList();
       },
       builder: (context, controller, focusNode) {
