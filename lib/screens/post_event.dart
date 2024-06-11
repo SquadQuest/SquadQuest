@@ -60,7 +60,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
     try {
       var data = {
         'title': _titleController.text.trim(),
-        'topic': ref.read(_topicProvider)?.name,
+        'topic': ref.read(_topicProvider),
         'start_date': startDate,
         'start_time_min': ref.read(_startTimeMinProvider),
         'start_time_max': ref.read(_startTimeMaxProvider),
