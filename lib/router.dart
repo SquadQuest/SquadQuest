@@ -8,6 +8,7 @@ import 'package:squad_quest/screens/verify.dart';
 import 'package:squad_quest/screens/initialize_profile.dart';
 import 'package:squad_quest/screens/home.dart';
 import 'package:squad_quest/screens/settings.dart';
+import 'package:squad_quest/screens/post_event.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -46,6 +47,11 @@ final routerProvider = Provider((ref) {
         name: 'settings',
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        name: 'post-event',
+        path: '/post-event',
+        builder: (context, state) => const PostEventScreen(),
       ),
     ],
   );

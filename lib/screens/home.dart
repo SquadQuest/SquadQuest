@@ -32,6 +32,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ],
         ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            setState(() {
+              context.push('/post-event');
+            });
+          },
+          // shape: customizations[index].$3,
+          child: const Icon(Icons.add),
+        ),
         body: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
