@@ -6,7 +6,7 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) {
   return ThemeMode.dark;
 });
 
-class SettingsController extends AsyncNotifier<void> {
+class SettingsController extends Notifier<void> {
   @override
   void build() {
     // no-op
