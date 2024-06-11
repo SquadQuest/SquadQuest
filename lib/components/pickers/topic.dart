@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,7 +65,7 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
       controller: _textController,
       suggestionsCallback: (search) async {
         final topicsList = await ref.read(topicsListProvider.future);
-        log("Searching for: $search");
+
         _lastSearch = search = search.toLowerCase();
         return topicsList.where((topic) {
           return topic.name.toLowerCase().contains(search);
@@ -77,16 +75,20 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
       },
       builder: (context, controller, focusNode) {
         return TextField(
-            controller: controller,
-            focusNode: focusNode,
-            enableSuggestions: false,
-            textCapitalization: TextCapitalization.none,
-            inputFormatters: [
-              FilteringTextInputFormatter.deny(RegExp(r'[^a-z\.0-9\-]'))
-            ],
-            decoration: const InputDecoration(
-              labelText: 'Topic for event',
-            ));
+          controller: controller,
+          focusNode: focusNode,
+          enableSuggestions: false,
+          textCapitalization: TextCapitalization.none,
+          inputFormatters: [
+            FilteringTextInputFormatter.deny(RegExp(r'[^a-z\.0-9\-]'))
+          ],
+          decoration: const InputDecoration(
+            labelText: 'Topic for event',
+          ),
+          onSubmitted: (value) {
+            _onValueChanged(Topic(id: null, name: value));
+          },
+        );
       },
       itemBuilder: (context, topic) {
         int? matchIndex;
