@@ -80,6 +80,9 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
         return TextField(
             controller: controller,
             focusNode: focusNode,
+            inputFormatters: [
+              FilteringTextInputFormatter.deny(RegExp(r'[^a-z\.0-9\-]'))
+            ],
             decoration: const InputDecoration(
               labelText: 'Topic for event',
             ));
