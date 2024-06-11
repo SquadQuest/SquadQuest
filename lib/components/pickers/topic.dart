@@ -42,7 +42,7 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
     }
 
     ref.read(_valueProvider!.notifier).state = value;
-    FocusScope.of(context).unfocus();
+    FocusScope.of(context).nextFocus();
   }
 
   @override
