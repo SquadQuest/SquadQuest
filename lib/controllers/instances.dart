@@ -59,7 +59,9 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
 
     // update loaded topics with newly created one
     if (loadedInstances != null) {
-      state = AsyncValue.data([...loadedInstances, insertedInstance]);
+      List<Instance> updatedList = [...loadedInstances, insertedInstance];
+      updatedList.sort((a, b) => a.startTimeMin.compareTo(b.startTimeMin));
+      state = AsyncValue.data(updatedList);
     }
 
     return insertedInstance;
