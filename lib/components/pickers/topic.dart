@@ -80,6 +80,8 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
         return TextField(
             controller: controller,
             focusNode: focusNode,
+            enableSuggestions: false,
+            textCapitalization: TextCapitalization.none,
             inputFormatters: [
               FilteringTextInputFormatter.deny(RegExp(r'[^a-z\.0-9\-]'))
             ],
