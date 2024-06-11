@@ -27,11 +27,20 @@ class FormTopicPicker extends ConsumerStatefulWidget {
 class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
   StateProvider<Topic?>? _valueProvider;
   final _textController = TextEditingController();
+  final _focusNode = FocusNode();
+  Topic? _activeTopic;
   String? _lastSearch;
 
   void _onValueChanged(Topic value) {
     final lastValue = ref.read(_valueProvider!);
 
+    if (_activeTopic != null && value.name == _activeTopic!.name) {
+      return;
+    }
+
+    _activeTopic = value;
+
+    ref.read(_valueProvider!.notifier).state = value;
     _textController.text = value.name;
 
     if (widget.onChanged != null &&
@@ -39,8 +48,15 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
       widget.onChanged!(value);
     }
 
-    ref.read(_valueProvider!.notifier).state = value;
     FocusScope.of(context).nextFocus();
+  }
+
+  void _onTextSubmitted(String value) async {
+    value = value.toLowerCase();
+
+    final topicsList = await ref.read(topicsProvider.future);
+    _onValueChanged(topicsList.firstWhere((topic) => topic.name == value,
+        orElse: () => Topic(id: null, name: value)));
   }
 
   @override
@@ -55,12 +71,19 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
     if (initialValue != null) {
       _textController.text = initialValue.name;
     }
+
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        _onTextSubmitted(_textController.text.toLowerCase());
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return TypeAheadField<Topic>(
       controller: _textController,
+      focusNode: _focusNode,
       suggestionsCallback: (search) async {
         final topicsList = await ref.read(topicsProvider.future);
 
@@ -83,12 +106,7 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
           decoration: const InputDecoration(
             labelText: 'Topic for event',
           ),
-          onSubmitted: (value) async {
-            final topicsList = await ref.read(topicsProvider.future);
-            _onValueChanged(topicsList.firstWhere(
-                (topic) => topic.name.toLowerCase() == value.toLowerCase(),
-                orElse: () => Topic(id: null, name: value)));
-          },
+          onSubmitted: _onTextSubmitted,
         );
       },
       itemBuilder: (context, topic) {
