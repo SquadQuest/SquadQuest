@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/controllers/home.dart';
 import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/components/instance_tile.dart';
+import 'package:squad_quest/components/tiles/instance.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});

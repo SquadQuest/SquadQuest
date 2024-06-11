@@ -1,9 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:squad_quest/models/user.dart';
 import 'package:squad_quest/models/topic.dart';
 
 typedef InstanceID = String;
 
 enum InstanceVisibility { private, friends, public }
+
+Map<InstanceVisibility, Icon> visibilityIcons = {
+  InstanceVisibility.private: const Icon(Icons.lock),
+  InstanceVisibility.friends: const Icon(Icons.people),
+  InstanceVisibility.public: const Icon(Icons.public),
+};
 
 class Instance {
   Instance({
