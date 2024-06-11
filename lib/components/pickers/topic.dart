@@ -59,12 +59,10 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
 
   @override
   Widget build(BuildContext context) {
-    final Topic? value = ref.watch(_valueProvider!);
-
     return TypeAheadField<Topic>(
       controller: _textController,
       suggestionsCallback: (search) async {
-        final topicsList = await ref.read(topicsListProvider.future);
+        final topicsList = await ref.read(topicsProvider.future);
 
         _lastSearch = search = search.toLowerCase();
         return topicsList.where((topic) {
