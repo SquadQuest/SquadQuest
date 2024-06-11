@@ -49,7 +49,6 @@ class _FormDatePickerState extends ConsumerState<FormDatePicker> {
 
     _firstDate = widget.firstDate ?? DateTime.now();
     _lastDate = widget.lastDate ?? DateTime.now().add(const Duration(days: 30));
-    ;
   }
 
   @override
