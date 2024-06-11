@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squad_quest/controllers/home.dart';
+import 'package:squad_quest/controllers/instances.dart';
 import 'package:squad_quest/controllers/auth.dart';
 import 'package:squad_quest/components/tiles/instance.dart';
 
@@ -17,7 +17,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
-    final instancesList = ref.watch(instancesListProvider);
+    final instancesList = ref.watch(instancesProvider);
 
     return SafeArea(
       child: Scaffold(
@@ -66,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: ElevatedButton(
                 child: const Text('Refresh'),
                 onPressed: () {
-                  ref.read(instancesListProvider.notifier).refresh();
+                  ref.read(instancesProvider.notifier).refresh();
                 },
               ))
             ],
