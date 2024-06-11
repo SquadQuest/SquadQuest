@@ -50,3 +50,14 @@ using (
         WHERE member = auth.uid()
     )
 );
+
+
+-- Authenticated users can insert instances
+create policy "Authenticated users can insert instances"
+on "public"."instances"
+as PERMISSIVE
+for INSERT
+to authenticated
+with check (
+    true
+);
