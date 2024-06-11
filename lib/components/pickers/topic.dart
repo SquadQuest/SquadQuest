@@ -85,8 +85,11 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
           decoration: const InputDecoration(
             labelText: 'Topic for event',
           ),
-          onSubmitted: (value) {
-            _onValueChanged(Topic(id: null, name: value));
+          onSubmitted: (value) async {
+            final topicsList = await ref.read(topicsProvider.future);
+            _onValueChanged(topicsList.firstWhere(
+                (topic) => topic.name.toLowerCase() == value.toLowerCase(),
+                orElse: () => Topic(id: null, name: value)));
           },
         );
       },
