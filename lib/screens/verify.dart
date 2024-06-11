@@ -73,6 +73,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
             child: Column(
               children: [
                 TextFormField(
+                  autofocus: true,
                   readOnly: submitted,
                   keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.done,
@@ -89,6 +90,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
                     return null;
                   },
                   controller: _tokenController,
+                  onFieldSubmitted: (_) => _submitToken(context),
                 ),
                 const SizedBox(height: 16),
                 submitted

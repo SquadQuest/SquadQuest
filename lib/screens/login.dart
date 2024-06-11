@@ -86,6 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               children: [
                 TextFormField(
+                  autofocus: true,
                   readOnly: submitted,
                   autofillHints: const [AutofillHints.telephoneNumber],
                   keyboardType: TextInputType.phone,
@@ -103,6 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     return null;
                   },
                   controller: _phoneController,
+                  onFieldSubmitted: (_) => _submitPhone(context),
                 ),
                 const SizedBox(height: 16),
                 submitted
