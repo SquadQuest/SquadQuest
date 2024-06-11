@@ -16,7 +16,20 @@ class Topic {
     );
   }
 
-  // Map<String, dynamic> toMap() {
-  //   ...
-  // }
+  Map<String, dynamic> toMap() {
+    final data = {
+      'name': name,
+    };
+
+    if (id != null) {
+      data['id'] = id!;
+    }
+
+    return data;
+  }
+
+  @override
+  String toString() {
+    return 'Topic{id: $id, name: $name}';
+  }
 }

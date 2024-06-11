@@ -14,22 +14,22 @@ Map<InstanceVisibility, Icon> visibilityIcons = {
 
 class Instance {
   Instance({
-    required this.id,
-    required this.createdAt,
+    this.id,
+    this.createdAt,
     this.createdBy,
-    required this.createdById,
+    this.createdById,
     required this.startTimeMin,
     required this.startTimeMax,
     this.topic,
-    required this.topicId,
+    this.topicId,
     required this.title,
     required this.visibility,
   });
 
-  final InstanceID id;
-  final DateTime createdAt;
+  final InstanceID? id;
+  final DateTime? createdAt;
   final UserProfile? createdBy;
-  final UserID createdById;
+  final UserID? createdById;
   final DateTime startTimeMin;
   final DateTime startTimeMax;
   final Topic? topic;
@@ -62,7 +62,24 @@ class Instance {
     );
   }
 
-  // Map<String, dynamic> toMap() {
-  // ...
-  // }
+  Map<String, dynamic> toMap() {
+    final data = {
+      'start_time_min': startTimeMin.toIso8601String(),
+      'start_time_max': startTimeMax.toIso8601String(),
+      'topic': topic?.id ?? topicId,
+      'title': title,
+      'visibility': visibility.name,
+    };
+
+    if (id != null) {
+      data['id'] = id!;
+    }
+
+    return data;
+  }
+
+  @override
+  String toString() {
+    return 'Instance{id: $id, title: $title}';
+  }
 }

@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/models/instance.dart';
 import 'package:squad_quest/models/topic.dart';
@@ -9,6 +10,7 @@ import 'package:squad_quest/components/pickers/date.dart';
 import 'package:squad_quest/components/pickers/time.dart';
 import 'package:squad_quest/components/pickers/visibility.dart';
 import 'package:squad_quest/components/pickers/topic.dart';
+import 'package:squad_quest/controllers/instances.dart';
 
 TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
   if (minutes == 0) {
@@ -48,32 +50,82 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
   bool startTimeMaxSet = false;
   bool submitted = false;
 
+  void _showValidationError(String error) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Your event isn\'t ready to post:\n\n$error'),
+    ));
+  }
+
   void _submitEvent(BuildContext context) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // setState(() {
-    //   submitted = true;
-    // });
+    final TimeOfDay? startTimeMin = ref.read(_startTimeMinProvider);
+    final TimeOfDay? startTimeMax = ref.read(_startTimeMaxProvider);
+    final InstanceVisibility? visibility = ref.read(_visibilityProvider);
+
+    // Apply validation rules
+    if (startDate == null) {
+      return _showValidationError('Please select a date for the event');
+    }
+
+    if (startTimeMin == null) {
+      return _showValidationError(
+          'Please select an earliest start time for the event');
+    }
+
+    if (startTimeMax == null) {
+      return _showValidationError(
+          'Please select a latest start time for the event');
+    }
+
+    final startDateTimeMin = DateTime(
+      startDate!.year,
+      startDate!.month,
+      startDate!.day,
+      startTimeMin.hour,
+      startTimeMin.minute,
+    );
+
+    final startDateTimeMax = DateTime(
+      startDate!.year,
+      startDate!.month,
+      startDate!.day,
+      startTimeMax.hour,
+      startTimeMax.minute,
+    );
+
+    if (startDateTimeMax.isBefore(startDateTimeMin)) {
+      return _showValidationError(
+          'Latest start time must be after earliest start time');
+    }
+
+    if (visibility == null) {
+      return _showValidationError('Please select a visibility for the event');
+    }
+
+    setState(() {
+      submitted = true;
+    });
 
     try {
-      var data = {
-        'title': _titleController.text.trim(),
-        'topic': ref.read(_topicProvider),
-        'start_date': startDate,
-        'start_time_min': ref.read(_startTimeMinProvider),
-        'start_time_max': ref.read(_startTimeMaxProvider),
-        'visibility': ref.read(_visibilityProvider),
-      };
+      final instancesController = ref.read(instancesProvider.notifier);
 
-      log('Build data: $data');
-      // await ref.read(authControllerProvider.notifier).updateProfile({
-      //   'first_name': _firstNameController.text.trim(),
-      //   'last_name': _lastNameController.text.trim(),
-      //   'profile_initialized': true,
-      // });
+      final Instance draftInstance = Instance(
+          title: _titleController.text.trim(),
+          topic: ref.read(_topicProvider),
+          startTimeMin: startDateTimeMin,
+          startTimeMax: startDateTimeMax,
+          visibility: visibility);
+
+      final Instance savedInstance =
+          await instancesController.createInstance(draftInstance);
+
+      log('Saved instance: $savedInstance');
     } catch (error) {
+      log('Error saving instance : $error');
+
       setState(() {
         submitted = false;
       });
@@ -89,7 +141,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
 
     if (!context.mounted) return;
 
-    // context.go('/');
+    context.go('/');
   }
 
   @override
@@ -136,6 +188,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
                 ),
                 FormDatePicker(
                     labelText: 'Date to meet up on',
+                    initialValue: startDate,
                     onChanged: (DateTime date) {
                       setState(() {
                         startDate = date;
@@ -166,7 +219,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
                     valueProvider: _visibilityProvider),
                 const SizedBox(height: 16),
                 submitted
-                    ? const CircularProgressIndicator()
+                    ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
                         onPressed:
                             submitted ? null : () => _submitEvent(context),
