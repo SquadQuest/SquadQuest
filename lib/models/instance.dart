@@ -33,7 +33,7 @@ class Instance {
   final DateTime startTimeMin;
   final DateTime startTimeMax;
   final Topic? topic;
-  final TopicID topicId;
+  final TopicID? topicId;
   final String title;
   final InstanceVisibility visibility;
 

@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/models/instance.dart';
+import 'package:squad_quest/models/topic.dart';
 import 'package:squad_quest/components/pickers/date.dart';
 import 'package:squad_quest/components/pickers/time.dart';
 import 'package:squad_quest/components/pickers/visibility.dart';
+import 'package:squad_quest/components/pickers/topic.dart';
 
 TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
   if (minutes == 0) {
@@ -34,7 +36,7 @@ class PostEventScreen extends ConsumerStatefulWidget {
 class _PostEventScreenState extends ConsumerState<PostEventScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _topicController = TextEditingController();
+  final _topicProvider = StateProvider<Topic?>((ref) => null);
   final _startTimeMinProvider =
       StateProvider<TimeOfDay?>((ref) => _plusMinutes(TimeOfDay.now(), 60));
   final _startTimeMaxProvider =
@@ -58,14 +60,14 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
     try {
       var data = {
         'title': _titleController.text.trim(),
-        'topic': _topicController.text.trim(),
+        'topic': ref.read(_topicProvider)?.name,
         'start_date': startDate,
         'start_time_min': ref.read(_startTimeMinProvider),
         'start_time_max': ref.read(_startTimeMaxProvider),
         'visibility': ref.read(_visibilityProvider),
       };
 
-      log('Build data');
+      log('Build data: $data');
       // await ref.read(authControllerProvider.notifier).updateProfile({
       //   'first_name': _firstNameController.text.trim(),
       //   'last_name': _lastNameController.text.trim(),
@@ -125,6 +127,10 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
                   },
                   controller: _titleController,
                 ),
+                const SizedBox(
+                  height: 24,
+                ),
+                FormTopicPicker(valueProvider: _topicProvider),
                 const SizedBox(
                   height: 24,
                 ),

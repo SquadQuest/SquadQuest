@@ -6,7 +6,7 @@ class Topic {
     required this.name,
   });
 
-  final TopicID id;
+  final TopicID? id;
   final String name;
 
   factory Topic.fromMap(Map<String, dynamic> map) {
