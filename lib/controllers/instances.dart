@@ -28,7 +28,6 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
   }
 
   Future<void> refresh() async {
-    state = const AsyncLoading();
     state = await AsyncValue.guard(fetch);
   }
 

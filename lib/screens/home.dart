@@ -38,16 +38,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               context.push('/post-event');
             });
           },
-          // shape: customizations[index].$3,
           child: const Icon(Icons.add),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Text(
-                  'Logged in as ${user?.userMetadata!['first_name']} ${user?.userMetadata!['last_name']}'),
-              Expanded(
+        body: Column(
+          children: [
+            Text(
+                'Logged in as ${user?.userMetadata!['first_name']} ${user?.userMetadata!['last_name']}'),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  return ref.read(instancesProvider.notifier).refresh();
+                },
                 child: instancesList.when(
                     data: (instances) {
                       return ListView.builder(
@@ -62,15 +63,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     error: (error, stackTrace) =>
                         Center(child: Text('Error: $error'))),
               ),
-              Center(
-                  child: ElevatedButton(
-                child: const Text('Refresh'),
-                onPressed: () {
-                  ref.read(instancesProvider.notifier).refresh();
-                },
-              ))
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
