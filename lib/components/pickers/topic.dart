@@ -32,20 +32,15 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
   String? _lastSearch;
 
   void _onValueChanged(Topic value) {
-    final lastValue = ref.read(_valueProvider!);
-
-    if (_activeTopic != null && value.name == _activeTopic!.name) {
-      return;
-    }
-
-    _activeTopic = value;
-
-    ref.read(_valueProvider!.notifier).state = value;
     _textController.text = value.name;
 
-    if (widget.onChanged != null &&
-        (lastValue == null || value.name != lastValue.name)) {
-      widget.onChanged!(value);
+    ref.read(_valueProvider!.notifier).state = value;
+
+    if ((_activeTopic == null || value.name != _activeTopic!.name)) {
+      _activeTopic = value;
+      if (widget.onChanged != null) {
+        widget.onChanged!(value);
+      }
     }
 
     FocusScope.of(context).nextFocus();
