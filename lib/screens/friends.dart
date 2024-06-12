@@ -44,14 +44,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         appBar: AppBar(
           title: const Text('Buddy List'),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            setState(() {
-              context.push('/post-event');
-            });
-          },
-          child: const Icon(Icons.add),
-        ),
+        // floatingActionButton: FloatingActionButton(
+        //   onPressed: () {
+        //     setState(() {
+        //       context.push('/friends/add');
+        //     });
+        //   },
+        //   child: const Icon(Icons.person_add),
+        // ),
         drawer: const AppDrawer(),
         body: RefreshIndicator(
           onRefresh: () async {
