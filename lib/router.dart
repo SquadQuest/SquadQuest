@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:squad_quest/screens/splash.dart';
 import 'package:squad_quest/screens/login.dart';
 import 'package:squad_quest/screens/verify.dart';
-import 'package:squad_quest/screens/initialize_profile.dart';
+import 'package:squad_quest/screens/profile.dart';
 import 'package:squad_quest/screens/home.dart';
 import 'package:squad_quest/screens/settings.dart';
 import 'package:squad_quest/screens/post_event.dart';
@@ -34,9 +34,9 @@ final routerProvider = Provider((ref) {
         builder: (context, state) => const VerifyScreen(),
       ),
       GoRoute(
-        name: 'initialize-profile',
-        path: '/initialize-profile',
-        builder: (context, state) => const InitializeProfileScreen(),
+        name: 'profile',
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         name: 'home',

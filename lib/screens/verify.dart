@@ -57,7 +57,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
 
     if (!context.mounted) return;
 
-    context.go(authProider.isProfileInitialized ? '/' : '/initialize-profile');
+    context.go(authProider.isProfileInitialized ? '/' : '/profile');
   }
 
   @override

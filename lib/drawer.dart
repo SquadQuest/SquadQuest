@@ -29,9 +29,12 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
             context.go('/');
             break;
           case 1:
-            context.go('/settings');
+            context.go('/profile');
             break;
           case 2:
+            context.go('/settings');
+            break;
+          case 3:
             newSelection = 0;
             await ref.read(authControllerProvider.notifier).signOut();
             if (context.mounted) {
@@ -54,6 +57,10 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
           icon: Icon(Icons.home),
           selectedIcon: Icon(Icons.home_filled),
           label: Text('Home'),
+        ),
+        const NavigationDrawerDestination(
+          icon: Icon(Icons.person),
+          label: Text('Profile'),
         ),
         const NavigationDrawerDestination(
           icon: Icon(Icons.settings),

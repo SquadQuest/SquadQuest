@@ -2,18 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squad_quest/drawer.dart';
 import 'package:squad_quest/controllers/auth.dart';
 
-class InitializeProfileScreen extends ConsumerStatefulWidget {
-  const InitializeProfileScreen({super.key});
+class ProfileScreen extends ConsumerStatefulWidget {
+  const ProfileScreen({super.key});
 
   @override
-  ConsumerState<InitializeProfileScreen> createState() =>
-      _InitializeProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _InitializeProfileScreenState
-    extends ConsumerState<InitializeProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -59,8 +58,10 @@ class _InitializeProfileScreenState
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Set up your profile'),
+          title: const Text(
+              'Set up your profile'), // TODO: vary based on profile state
         ),
+        drawer: const AppDrawer(), // TODO: hide if profile is not initialized
         body: AutofillGroup(
           child: Form(
             key: _formKey,
