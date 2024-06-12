@@ -9,8 +9,8 @@ using (
 );
 
 
--- Friends & members can read friends instances
-create policy "Friends & members can read friends instances"
+-- Creator & friends & members can read friends instances
+create policy "Creator & friends & members can read friends instances"
 on "public"."instances"
 as PERMISSIVE
 for SELECT
@@ -18,7 +18,8 @@ to public
 using (
     visibility = 'friends'
     AND (
-        id IN (
+        created_by = auth.uid()
+        OR id IN (
             SELECT instance
             FROM instance_members
             WHERE member = auth.uid()
@@ -36,18 +37,21 @@ using (
 );
 
 
--- Members can read private instances
-create policy "Members can read private instances"
+-- Creator & members can read private instances
+create policy "Creator & members can read private instances"
 on "public"."instances"
 as PERMISSIVE
 for SELECT
 to public
 using (
     visibility = 'private'
-    AND id IN (
-        SELECT instance
-        FROM instance_members
-        WHERE member = auth.uid()
+    AND (
+        created_by = auth.uid()
+        OR id IN (
+            SELECT instance
+            FROM instance_members
+            WHERE member = auth.uid()
+        )
     )
 );
 
