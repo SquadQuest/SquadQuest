@@ -46,13 +46,13 @@ class Instance {
 
     return Instance(
       id: map['id'] as InstanceID,
-      createdAt: DateTime.parse(map['created_at']),
+      createdAt: DateTime.parse(map['created_at']).toLocal(),
       createdBy: createdByModel,
       createdById: createdByModel == null
           ? map['created_by'] as UserID
           : createdByModel.id,
-      startTimeMin: DateTime.parse(map['start_time_min']),
-      startTimeMax: DateTime.parse(map['start_time_max']),
+      startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
+      startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
       topic: topicModel,
       topicId: topicModel == null ? map['topic'] as TopicID : topicModel.id,
       title: map['title'] as String,
@@ -64,8 +64,8 @@ class Instance {
 
   Map<String, dynamic> toMap() {
     final data = {
-      'start_time_min': startTimeMin.toIso8601String(),
-      'start_time_max': startTimeMax.toIso8601String(),
+      'start_time_min': startTimeMin.toUtc().toIso8601String(),
+      'start_time_max': startTimeMax.toUtc().toIso8601String(),
       'topic': topic?.id ?? topicId,
       'title': title,
       'visibility': visibility.name,
