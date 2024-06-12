@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squad_quest/drawer.dart';
 import 'package:squad_quest/controllers/instances.dart';
-import 'package:squad_quest/controllers/auth.dart';
 import 'package:squad_quest/components/tiles/instance.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -16,21 +16,12 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(userProvider);
     final instancesList = ref.watch(instancesProvider);
 
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Welcome to SquadQuest'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                context.push('/settings');
-              },
-            ),
-          ],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
@@ -40,31 +31,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           },
           child: const Icon(Icons.add),
         ),
-        body: Column(
-          children: [
-            Text(
-                'Logged in as ${user?.userMetadata!['first_name']} ${user?.userMetadata!['last_name']}'),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  return ref.read(instancesProvider.notifier).refresh();
-                },
-                child: instancesList.when(
-                    data: (instances) {
-                      return ListView.builder(
-                        itemCount: instances.length,
-                        itemBuilder: (context, index) {
-                          return InstanceTile(instance: instances[index]);
-                        },
-                      );
-                    },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, stackTrace) =>
-                        Center(child: Text('Error: $error'))),
-              ),
-            ),
-          ],
+        drawer: const AppDrawer(),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            return ref.read(instancesProvider.notifier).refresh();
+          },
+          child: instancesList.when(
+              data: (instances) {
+                return ListView.builder(
+                  itemCount: instances.length,
+                  itemBuilder: (context, index) {
+                    return InstanceTile(instance: instances[index]);
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stackTrace) =>
+                  Center(child: Text('Error: $error'))),
         ),
       ),
     );

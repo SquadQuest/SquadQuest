@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import 'package:squad_quest/drawer.dart';
 import 'package:squad_quest/controllers/settings.dart';
-import 'package:squad_quest/controllers/auth.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -22,6 +21,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         appBar: AppBar(
           title: const Text('Settings'),
         ),
+        drawer: const AppDrawer(),
         body: Padding(
             padding: const EdgeInsets.all(16),
             child:
@@ -46,21 +46,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   )
                 ],
               ),
-              const Spacer(flex: 1),
-              Center(
-                  child: ElevatedButton(
-                onPressed: () async {
-                  await ref.read(authControllerProvider.notifier).signOut();
-
-                  if (!context.mounted) return;
-
-                  context.go('/login');
-                },
-                child: const Text(
-                  'Sign out',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              ))
             ])),
       ),
     );
