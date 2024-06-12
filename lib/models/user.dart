@@ -19,7 +19,16 @@ class UserProfile {
     );
   }
 
-  // Map<String, dynamic> toMap() {
-  //   ...
-  // }
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'first_name': firstName,
+      'last_name': lastName,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'UserProfile{id: $id, firstName: $firstName, lastName: $lastName}';
+  }
 }

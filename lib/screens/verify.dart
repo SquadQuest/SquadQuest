@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
+import 'package:squad_quest/controllers/profile.dart';
 
 final RegExp otpCodeRegExp = RegExp(r'^\d{6}$');
 
@@ -32,10 +33,10 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
     final token = _tokenController.text.trim();
     log('Verifying token');
 
-    final authProider = ref.read(authControllerProvider.notifier);
+    final authController = ref.read(authControllerProvider.notifier);
 
     try {
-      await authProider.verifyOTP(
+      await authController.verifyOTP(
         token: token,
       );
       log('Verified token');
@@ -55,9 +56,11 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
       return;
     }
 
+    final profile = await ref.read(profileProvider.notifier).fetch();
+
     if (!context.mounted) return;
 
-    context.go(authProider.isProfileInitialized ? '/' : '/profile');
+    context.go(profile == null ? '/profile' : '/');
   }
 
   @override

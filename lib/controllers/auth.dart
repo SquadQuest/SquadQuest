@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/services/supabase.dart';
+import 'package:squad_quest/controllers/profile.dart';
 
 export 'package:squad_quest/services/supabase.dart' show Session, User;
 
@@ -54,7 +55,7 @@ class AuthController extends AsyncNotifier<Session?> {
     state = AsyncValue.data(response.session);
   }
 
-  Future<void> updateProfile(Map<String, Object> data) async {
+  Future<void> updateUserAttributes(Map<String, Object> data) async {
     final supabase = ref.read(supabaseProvider);
 
     final UserResponse response = await supabase.auth.updateUser(
@@ -69,6 +70,8 @@ class AuthController extends AsyncNotifier<Session?> {
   Future<void> signOut() async {
     state = const AsyncValue.loading();
     await ref.read(supabaseProvider).auth.signOut();
+    ref.read(userProvider.notifier).state = null;
+    ref.read(profileProvider.notifier).state = const AsyncValue.data(null);
     state = const AsyncValue.data(null);
   }
 }

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/drawer.dart';
 import 'package:squad_quest/controllers/auth.dart';
+import 'package:squad_quest/controllers/profile.dart';
+import 'package:squad_quest/models/user.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -29,9 +31,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
 
     try {
-      await ref.read(authControllerProvider.notifier).updateProfile({
-        'first_name': _firstNameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
+      final session = await ref.read(authControllerProvider.future);
+      final profileController = ref.read(profileProvider.notifier);
+
+      final draftProfile = UserProfile(
+        id: session!.user.id,
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+      );
+
+      final savedProfile = await profileController.save(draftProfile);
+
+      await ref.read(authControllerProvider.notifier).updateUserAttributes({
+        'first_name': savedProfile.firstName,
+        'last_name': savedProfile.lastName,
         'profile_initialized': true,
       });
     } catch (error) {
@@ -54,7 +67,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    final profile = ref.read(profileProvider);
+
+    if (profile.hasValue && profile.value != null) {
+      _firstNameController.text = profile.value!.firstName;
+      _lastNameController.text = profile.value!.lastName;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen(profileProvider, (previous, next) {
+      if (next.hasValue && next.value != null) {
+        _firstNameController.text = next.value!.firstName;
+        _lastNameController.text = next.value!.lastName;
+      }
+    });
+
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
