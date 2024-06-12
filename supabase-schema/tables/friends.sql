@@ -1,3 +1,9 @@
+create type public.friend_status as enum (
+    'requested',
+    'declined',
+    'accepted'
+);
+
 create table
   public.friends (
     id uuid not null default gen_random_uuid (),

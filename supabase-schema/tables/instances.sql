@@ -1,3 +1,9 @@
+create type public.instance_visibility as enum (
+    'private',
+    'friends',
+    'public'
+);
+
 create table
   public.instances (
     id uuid not null default gen_random_uuid (),
