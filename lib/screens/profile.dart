@@ -80,6 +80,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profile = ref.watch(profileProvider).value;
+
     ref.listen(profileProvider, (previous, next) {
       if (next.hasValue && next.value != null) {
         _firstNameController.text = next.value!.firstName;
@@ -90,10 +92,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-              'Set up your profile'), // TODO: vary based on profile state
+          title: profile != null
+              ? const Text('Update your profile')
+              : const Text('Set up your profile'),
         ),
-        drawer: const AppDrawer(), // TODO: hide if profile is not initialized
+        drawer: profile != null ? const AppDrawer() : null,
         body: AutofillGroup(
           child: Form(
             key: _formKey,

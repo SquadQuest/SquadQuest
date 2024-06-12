@@ -11,11 +11,11 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
   static const _defaultSelect = '*';
 
   @override
-  Future<UserProfile> build() async {
+  Future<UserProfile?> build() async {
     return fetch();
   }
 
-  Future<UserProfile> fetch() async {
+  Future<UserProfile?> fetch() async {
     final supabase = ref.read(supabaseProvider);
     final authController = await ref.read(authControllerProvider.future);
 
@@ -24,10 +24,10 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
         .select(_defaultSelect)
         .eq('id', authController!.user.id)
         .withConverter((data) => data.map(UserProfile.fromMap).toList());
+    final profile = profiles.isNotEmpty ? profiles.first : null;
+    state = AsyncValue.data(profile);
 
-    state = AsyncValue.data(profiles.first);
-
-    return profiles.first;
+    return profile;
   }
 
   Future<UserProfile> save(UserProfile profile) async {
