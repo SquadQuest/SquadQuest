@@ -4,23 +4,19 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squad_quest/controllers/auth.dart';
 
-final _appDrawerSelectionProvider = StateProvider<int>((ref) {
-  return 0;
-});
-
 class _MenuItem {
   static const divider = Key('divider');
 
   final IconData icon;
   final String label;
   final String route;
-  final Future<void> Function(WidgetRef ref)? beforeNavigate;
+  final Future<void> Function(WidgetRef ref)? afterNavigate;
 
   _MenuItem({
     required this.icon,
     required this.label,
     required this.route,
-    this.beforeNavigate,
+    this.afterNavigate,
   });
 }
 
@@ -45,9 +41,8 @@ final _menu = [
     icon: Icons.logout,
     label: 'Sign out',
     route: '/login',
-    beforeNavigate: (ref) async {
+    afterNavigate: (ref) async {
       await ref.read(authControllerProvider.notifier).signOut();
-      ref.read(_appDrawerSelectionProvider.notifier).state = 0;
     },
   ),
 ];
@@ -62,28 +57,23 @@ class AppDrawer extends ConsumerStatefulWidget {
 }
 
 class _AppDrawerState extends ConsumerState<AppDrawer> {
-  _onDestinationSelected(int newSelection) async {
-    final menuItem = _menuItems[newSelection];
-
-    ref.read(_appDrawerSelectionProvider.notifier).state = newSelection;
-
-    if (menuItem.beforeNavigate != null) {
-      await menuItem.beforeNavigate!(ref);
-    }
-
-    if (context.mounted) {
-      context.go(menuItem.route);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
-    final appDrawerSelection = ref.watch(_appDrawerSelectionProvider);
 
     return NavigationDrawer(
-      selectedIndex: appDrawerSelection,
-      onDestinationSelected: _onDestinationSelected,
+      selectedIndex: null,
+      onDestinationSelected: (int newSelection) async {
+        final menuItem = _menuItems[newSelection];
+
+        Navigator.pop(context);
+
+        context.go(menuItem.route);
+
+        if (menuItem.afterNavigate != null) {
+          await menuItem.afterNavigate!(ref);
+        }
+      },
       children: <Widget>[
         UserAccountsDrawerHeader(
             decoration: const BoxDecoration(
