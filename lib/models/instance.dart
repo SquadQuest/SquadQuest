@@ -3,8 +3,11 @@ import 'package:squad_quest/models/user.dart';
 import 'package:squad_quest/models/topic.dart';
 
 typedef InstanceID = String;
+typedef InstanceMemberID = String;
 
 enum InstanceVisibility { private, friends, public }
+
+enum InstanceMemberStatus { invited, no, maybe, yes, omw }
 
 Map<InstanceVisibility, Icon> visibilityIcons = {
   InstanceVisibility.private: const Icon(Icons.lock),
@@ -25,7 +28,19 @@ class Instance {
     required this.title,
     required this.visibility,
     required this.locationDescription,
-  });
+  })  : assert(
+            (id != null &&
+                    createdAt != null &&
+                    (createdBy != null || createdById != null)) ||
+                (id == null && createdAt == null && createdBy == null),
+            'id, createdAt, and createdBy must be all null or all non-null'),
+        assert(
+            createdById == null ||
+                createdBy == null ||
+                createdBy.id == createdById,
+            'createdBy.id and createdById must match if both are set'),
+        assert(topic == null || topicId == null || topic.id == topicId,
+            'topic.id and topicId must match if both are set');
 
   final InstanceID? id;
   final DateTime? createdAt;
@@ -85,5 +100,90 @@ class Instance {
   @override
   String toString() {
     return 'Instance{id: $id, title: $title}';
+  }
+}
+
+class InstanceMember {
+  InstanceMember({
+    this.id,
+    this.createdAt,
+    this.createdBy,
+    this.createdById,
+    this.instance,
+    this.instanceId,
+    this.member,
+    this.memberId,
+    required this.status,
+  })  : assert(
+            (id != null &&
+                    createdAt != null &&
+                    (createdBy != null || createdById != null)) ||
+                (id == null && createdAt == null && createdBy == null),
+            'id, createdAt, and createdBy must be all null or all non-null'),
+        assert(
+            createdById == null ||
+                createdBy == null ||
+                createdBy.id == createdById,
+            'createdBy.id and createdById must match if both are set'),
+        assert(
+            instance == null || instanceId == null || instance.id == instanceId,
+            'instance.id and instanceId must match if both are set'),
+        assert(member == null || memberId == null || member.id == memberId,
+            'member.id and memberId must match if both are set');
+
+  final InstanceID? id;
+  final DateTime? createdAt;
+  final UserProfile? createdBy;
+  final UserID? createdById;
+  final Instance? instance;
+  final InstanceID? instanceId;
+  final UserProfile? member;
+  final UserID? memberId;
+  final InstanceMemberStatus status;
+
+  factory InstanceMember.fromMap(Map<String, dynamic> map) {
+    final createdByModel = map['created_by'] is Map
+        ? UserProfile.fromMap(map['created_by'])
+        : null;
+    final instanceModel =
+        map['instance'] is Map ? Instance.fromMap(map['instance']) : null;
+    final memberModel =
+        map['member'] is Map ? UserProfile.fromMap(map['member']) : null;
+
+    return InstanceMember(
+      id: map['id'] as InstanceMemberID,
+      createdAt: DateTime.parse(map['created_at']).toLocal(),
+      createdBy: createdByModel,
+      createdById: createdByModel == null
+          ? map['created_by'] as UserID
+          : createdByModel.id,
+      instance: instanceModel,
+      instanceId:
+          instanceModel == null ? map['instance'] as TopicID : instanceModel.id,
+      member: memberModel,
+      memberId: memberModel == null ? map['member'] as UserID : memberModel.id,
+      status: InstanceMemberStatus.values.firstWhere(
+        (e) => e.name == map['status'],
+      ),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    final data = {
+      'instance': instance?.id ?? instanceId,
+      'member': member?.id ?? memberId,
+      'status': status.name,
+    };
+
+    if (id != null) {
+      data['id'] = id!;
+    }
+
+    return data;
+  }
+
+  @override
+  String toString() {
+    return 'InstanceMember{instance: $instanceId, member: $memberId, status: $status}';
   }
 }

@@ -15,6 +15,7 @@ class EventDetailsScreen extends ConsumerStatefulWidget {
 
 class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   Instance? instance;
+  final List<bool> _rsvpSelection = [false, false, false, false];
 
   @override
   void initState() {
@@ -32,6 +33,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final instancesController = ref.read(instancesProvider.notifier);
+
     return SafeArea(
       child: Scaffold(
         appBar: instance == null
@@ -53,7 +56,47 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       Text(
                           'Date: ${eventDateFormat.format(instance!.startTimeMin)}'),
                       Text(
-                          'Starting between: ${eventTimeFormat.format(instance!.startTimeMin)}–${eventTimeFormat.format(instance!.startTimeMax)}')
+                          'Starting between: ${eventTimeFormat.format(instance!.startTimeMin)}–${eventTimeFormat.format(instance!.startTimeMax)}'),
+                      const Spacer(flex: 1),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'RSVP: ',
+                          ),
+                          ToggleButtons(
+                            isSelected: _rsvpSelection,
+                            onPressed: (int index) async {
+                              setState(() {
+                                for (int buttonIndex = 0;
+                                    buttonIndex < _rsvpSelection.length;
+                                    buttonIndex++) {
+                                  _rsvpSelection[buttonIndex] =
+                                      buttonIndex == index &&
+                                          !_rsvpSelection[index];
+                                }
+                              });
+
+                              final updatedInstanceMember =
+                                  await instancesController.rsvp(
+                                      instance!,
+                                      _rsvpSelection[index]
+                                          ? InstanceMemberStatus
+                                              .values[index + 1]
+                                          : null);
+
+                              // TODO: apply updatedInstanceMember to any already-loaded list
+                              updatedInstanceMember;
+                            },
+                            children: const [
+                              Text('No'),
+                              Text('Maybe'),
+                              Text('Yes'),
+                              Text('OMW')
+                            ],
+                          ),
+                        ],
+                      )
                     ])),
       ),
     );

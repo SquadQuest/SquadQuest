@@ -65,7 +65,7 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
 
       final insertedFriend = Friend.fromMap(response.data);
 
-      // update loaded friends with newly created one
+      // update loaded friends with created/updated one
       if (loadedFriends != null) {
         final index = loadedFriends.indexWhere((f) => f.id == friend.id);
 
