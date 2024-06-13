@@ -26,4 +26,29 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
   Future<void> refresh() async {
     state = await AsyncValue.guard(fetch);
   }
+
+  Future<Friend> sendFriendRequest(String phone) async {
+    final List<Friend>? loadedFriends =
+        state.hasValue ? state.asData!.value : null;
+
+    final supabase = ref.read(supabaseProvider);
+
+    try {
+      final response = await supabase.functions
+          .invoke('friend-request', body: {'phone': phone});
+
+      final insertedFriend = Friend.fromMap(response.data);
+
+      // update loaded friends with newly created one
+      if (loadedFriends != null) {
+        List<Friend> updatedList = [...loadedFriends, insertedFriend];
+        state = AsyncValue.data(updatedList);
+      }
+
+      // return insertedFriend;
+      return insertedFriend;
+    } on FunctionException catch (error) {
+      throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
+    }
+  }
 }

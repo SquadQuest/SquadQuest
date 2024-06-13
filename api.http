@@ -1,7 +1,5 @@
 @baseUrl = https://chris-devbox.phl.io/functions/v1
 @token = YOUR_TOKEN_HERE
-@person1Id = OTHER_PERSON_UUID_HERE
-@person2Id = OTHER_OTHER_PERSON_UUID_HERE
 
 ###
 
@@ -9,10 +7,10 @@ GET {{baseUrl}}/db-test
 
 ### Send friend request
 
-POST {{baseUrl}}/send-friend-request
+POST {{baseUrl}}/friend-request
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
     {
-        "requestee": "{{person2Id}}"
+        "phone": "15556667777"
     }

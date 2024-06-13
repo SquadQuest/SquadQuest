@@ -1,9 +1,9 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:grouped_list/grouped_list.dart';
 
+import 'package:squad_quest/common.dart';
 import 'package:squad_quest/drawer.dart';
 import 'package:squad_quest/controllers/auth.dart';
 import 'package:squad_quest/controllers/friends.dart';
@@ -44,14 +44,31 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         appBar: AppBar(
           title: const Text('Buddy List'),
         ),
-        // floatingActionButton: FloatingActionButton(
-        //   onPressed: () {
-        //     setState(() {
-        //       context.push('/friends/add');
-        //     });
-        //   },
-        //   child: const Icon(Icons.person_add),
-        // ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final String? phone = await _showAddFriendDialog();
+
+            if (phone == null) {
+              // dialog cancelled
+              return;
+            }
+
+            try {
+              await ref.read(friendsProvider.notifier).sendFriendRequest(phone);
+            } catch (error) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('Failed to send friend request:\n\n$error'),
+              ));
+              return;
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Friend request sent!'),
+            ));
+          },
+          child: const Icon(Icons.person_add),
+        ),
         drawer: const AppDrawer(),
         body: RefreshIndicator(
           onRefresh: () async {
@@ -108,5 +125,83 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         ),
       ),
     );
+  }
+
+  Future<dynamic> _showAddFriendDialog() async {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          final theme = Theme.of(context);
+          final formKey = GlobalKey<FormState>();
+          final phoneController = TextEditingController();
+
+          return Dialog(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Send friend request',
+                        style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      autofocus: true,
+                      autofillHints: const [AutofillHints.telephoneNumber],
+                      keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.done,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.phone),
+                        labelText: 'Enter your friend\'s phone number',
+                      ),
+                      inputFormatters: [phoneInputFilter],
+                      validator: (value) {
+                        if (value == null ||
+                            value.isEmpty ||
+                            normalizePhone(value).length != 11) {
+                          return 'Please enter a valid phone number';
+                        }
+                        return null;
+                      },
+                      controller: phoneController,
+                      onFieldSubmitted: (_) {
+                        if (!formKey.currentState!.validate()) {
+                          return;
+                        }
+
+                        Navigator.of(context)
+                            .pop(normalizePhone(phoneController.text));
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    OverflowBar(
+                        alignment: MainAxisAlignment.end,
+                        spacing: 16,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (!formKey.currentState!.validate()) {
+                                return;
+                              }
+
+                              Navigator.of(context)
+                                  .pop(normalizePhone(phoneController.text));
+                            },
+                            child: const Text('Send'),
+                          ),
+                        ]),
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
   }
 }
