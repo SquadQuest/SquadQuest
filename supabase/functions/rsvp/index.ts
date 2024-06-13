@@ -108,9 +108,9 @@ Deno.serve(async (request) => {
             // posting null status to an RSVP that doesn't exist is a no-op
         }
 
-        // return new friend request
+        // return new RSVP
         return new Response(
-            JSON.stringify(rsvp),
+            rsvp ? JSON.stringify(rsvp) : null,
             {
                 headers: { "Content-Type": "application/json" },
                 status: rsvp ? 200 : 204,
