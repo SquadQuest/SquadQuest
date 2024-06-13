@@ -45,29 +45,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           title: const Text('Buddy List'),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final String? phone = await _showAddFriendDialog();
-
-            if (phone == null) {
-              // dialog cancelled
-              return;
-            }
-
-            try {
-              await ref.read(friendsProvider.notifier).sendFriendRequest(phone);
-            } catch (error) {
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('Failed to send friend request:\n\n$error'),
-              ));
-              return;
-            }
-
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Friend request sent!'),
-            ));
-          },
+          onPressed: () => _sendFriendRequest(context),
           child: const Icon(Icons.person_add),
         ),
         drawer: const AppDrawer(),
@@ -79,6 +57,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               data: (friends) {
                 return GroupedListView(
                   elements: myUser == null ? <Friend>[] : friends,
+                  physics: const AlwaysScrollableScrollPhysics(),
                   useStickyGroupSeparators: true,
                   // floatingHeader: true,
                   stickyHeaderBackgroundColor:
@@ -116,7 +95,15 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                           FriendStatus.accepted => null,
                           FriendStatus.declined =>
                             const Text('Request declined'),
-                        });
+                        },
+                        trailing: friend.status == FriendStatus.requested &&
+                                friend.requestee?.id == myUser.id
+                            ? IconButton.filledTonal(
+                                icon: const Icon(Icons.next_plan_outlined),
+                                onPressed: () =>
+                                    _respondFriendRequest(context, friend),
+                              )
+                            : null);
                   },
                 );
               },
@@ -126,6 +113,84 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         ),
       ),
     );
+  }
+
+  void _respondFriendRequest(context, Friend friend) async {
+    final bool? action = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Respond to friend request'),
+            content: Text(
+                'Do you want to accept or decline the friend request from ${friend.requester!.firstName} ${friend.requester!.lastName}?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(null);
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+                child: const Text('Decline'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+                child: const Text('Accept'),
+              ),
+            ],
+          );
+        });
+
+    if (action == null) {
+      // dialog cancelled
+      return;
+    }
+
+    try {
+      await ref.read(friendsProvider.notifier).respondToFriendRequest(
+          friend, action ? FriendStatus.accepted : FriendStatus.declined);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Failed to respond to friend request:\n\n$error'),
+      ));
+      return;
+    }
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content:
+          Text(action ? 'Friend request accepted!' : 'Friend request declined'),
+    ));
+  }
+
+  void _sendFriendRequest(BuildContext context) async {
+    final String? phone = await _showAddFriendDialog();
+
+    if (phone == null) {
+      // dialog cancelled
+      return;
+    }
+
+    try {
+      await ref.read(friendsProvider.notifier).sendFriendRequest(phone);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Failed to send friend request:\n\n$error'),
+      ));
+      return;
+    }
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Friend request sent!'),
+    ));
   }
 
   Future<dynamic> _showAddFriendDialog() async {

@@ -35,7 +35,7 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
 
     try {
       final response = await supabase.functions
-          .invoke('friend-request', body: {'phone': phone});
+          .invoke('send-friend-request', body: {'phone': phone});
 
       final insertedFriend = Friend.fromMap(response.data);
 
@@ -43,6 +43,40 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
       if (loadedFriends != null) {
         List<Friend> updatedList = [...loadedFriends, insertedFriend];
         state = AsyncValue.data(updatedList);
+      }
+
+      // return insertedFriend;
+      return insertedFriend;
+    } on FunctionException catch (error) {
+      throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
+    }
+  }
+
+  Future<Friend> respondToFriendRequest(
+      Friend friend, FriendStatus action) async {
+    final List<Friend>? loadedFriends =
+        state.hasValue ? state.asData!.value : null;
+
+    final supabase = ref.read(supabaseProvider);
+
+    try {
+      final response = await supabase.functions.invoke('action-friend-request',
+          body: {'friend_id': friend.id, 'action': action.name});
+
+      final insertedFriend = Friend.fromMap(response.data);
+
+      // update loaded friends with newly created one
+      if (loadedFriends != null) {
+        final index = loadedFriends.indexWhere((f) => f.id == friend.id);
+
+        if (index != -1) {
+          List<Friend> updatedList = [
+            ...loadedFriends.sublist(0, index),
+            insertedFriend,
+            ...loadedFriends.sublist(index + 1)
+          ];
+          state = AsyncValue.data(updatedList);
+        }
       }
 
       // return insertedFriend;

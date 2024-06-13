@@ -22,8 +22,8 @@ Deno.serve(async (request) => {
     const anonSupabase = createAnonSupabaseClient(request);
 
     // get requesting user
-    const requesterUser = await getSupabaseUser(anonSupabase, request);
-    if (!requesterUser) {
+    const currentUser = await getSupabaseUser(anonSupabase, request);
+    if (!currentUser) {
       throw new HttpError(
         "Authorized user not found",
         403,
@@ -48,14 +48,23 @@ Deno.serve(async (request) => {
       );
     }
 
+    // prevent friending yourself
+    if (requesteeUser.id == currentUser.id) {
+      throw new HttpError(
+        "You can't be friends with yourself",
+        400,
+        "self-friending",
+      );
+    }
+
     // check that no link exists already in either direction
     const { count: existingFriendsCount, error: existingFriendsError } =
       await serviceRoleSupabase.from(
         "friends",
       )
         .select("*", { count: "exact", head: true })
-        .in("requester", [requesterUser.id, requesteeUser.id])
-        .in("requestee", [requesterUser.id, requesteeUser.id]);
+        .in("requester", [currentUser.id, requesteeUser.id])
+        .in("requestee", [currentUser.id, requesteeUser.id]);
     if (existingFriendsError) throw existingFriendsError;
     if (existingFriendsCount! > 0) {
       throw new HttpError(
@@ -69,7 +78,7 @@ Deno.serve(async (request) => {
     const { data: newFriendRequest, error: insertError } =
       await serviceRoleSupabase.from("friends")
         .insert({
-          requester: requesterUser.id,
+          requester: currentUser.id,
           requestee: requesteeUser.id,
           status: "requested",
         })
