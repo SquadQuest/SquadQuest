@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -84,6 +85,9 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
                     prefixIcon: Icon(Icons.pin_outlined),
                     labelText: 'Enter the code sent to your phone',
                   ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r'[^0-9]'))
+                  ],
                   validator: (value) {
                     if (value == null ||
                         value.isEmpty ||
