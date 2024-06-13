@@ -1,6 +1,5 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -85,9 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     prefixIcon: Icon(Icons.phone),
                     labelText: 'Enter your phone number',
                   ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.deny(RegExp(r'[^+\(\) 0-9\-]'))
-                  ],
+                  inputFormatters: [phoneInputFilter],
                   validator: (value) {
                     if (value == null ||
                         value.isEmpty ||
