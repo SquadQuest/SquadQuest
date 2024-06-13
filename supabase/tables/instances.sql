@@ -8,7 +8,7 @@ create table
   public.instances (
     id uuid not null default gen_random_uuid (),
     created_at timestamp with time zone not null default now(),
-    created_by uuid null default uid (),
+    created_by uuid not null default uid (),
     start_time_min timestamp with time zone null,
     start_time_max timestamp with time zone null,
     topic uuid null,
