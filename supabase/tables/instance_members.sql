@@ -2,7 +2,8 @@ create type public.instance_member_status as enum (
     'invited',
     'no',
     'maybe',
-    'yes'
+    'yes',
+    'omw'
 );
 
 create table
