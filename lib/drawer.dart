@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squad_quest/common.dart';
 import 'package:squad_quest/controllers/auth.dart';
 
 class _MenuItem {
@@ -86,7 +87,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
             ),
             accountName: Text(
                 '${user?.userMetadata!['first_name']} ${user?.userMetadata!['last_name']}'),
-            accountEmail: Text('${user?.phone}')),
+            accountEmail: Text(formatPhone(user!.phone!))),
         ..._menu.map((menuItem) => switch (menuItem) {
               _MenuItem.divider => const Divider(thickness: 1),
               (_MenuItem _) => NavigationDrawerDestination(
