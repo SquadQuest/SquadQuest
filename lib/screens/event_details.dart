@@ -82,10 +82,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Event Details Screen for ${instance!.title}'),
                         Text('Location: ${instance!.locationDescription}'),
                         Text('Topic: ${instance!.topic?.name}'),
                         Text('Posted by: ${instance!.createdBy?.fullName}'),
+                        Text('Visibility: ${instance!.visibility.name}'),
                         Text(
                             'Date: ${eventDateFormat.format(instance!.startTimeMin)}'),
                         Text(
