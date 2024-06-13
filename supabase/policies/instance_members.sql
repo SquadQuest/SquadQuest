@@ -22,34 +22,3 @@ to authenticated
 using (
     true
 );
-
-create policy "Service Role can read all RSVPs"
-on "public"."instance_members"
-as PERMISSIVE
-for SELECT
-to service_role
-using (
-    true
-);
-
-create policy "Service Role can insert RSVP"
-on "public"."instance_members"
-as PERMISSIVE
-for INSERT
-to service_role
-with check (
-    true
-);
-
-
-create policy "Service Role can update RSVPs"
-on "public"."instance_members"
-as PERMISSIVE
-for UPDATE
-to service_role
-using (
-    true
-)
-with check (
-    true
-);
