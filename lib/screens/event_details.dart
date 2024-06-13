@@ -5,7 +5,9 @@ import 'package:grouped_list/grouped_list.dart';
 import 'package:squad_quest/controllers/auth.dart';
 import 'package:squad_quest/controllers/instances.dart';
 import 'package:squad_quest/controllers/rsvps.dart';
+import 'package:squad_quest/models/friend.dart';
 import 'package:squad_quest/models/instance.dart';
+import 'package:squad_quest/components/friends_list.dart';
 
 final _statusGroupOrder = {
   InstanceMemberStatus.omw: 0,
@@ -28,6 +30,39 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   Instance? instance;
   final List<bool> _rsvpSelection = [false, false, false, false];
   List<InstanceMember>? rsvps;
+
+  void _sendInvitations(BuildContext context) async {
+    final inviteUserIds = await _showInvitationDialog();
+
+    if (inviteUserIds == null || inviteUserIds.length == 0) {
+      return;
+    }
+
+    final sentInvitations =
+        await ref.read(rsvpsProvider.notifier).invite(instance!, inviteUserIds);
+
+    setState(() {
+      rsvps = [
+        ...rsvps!,
+        ...sentInvitations,
+      ];
+    });
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          'Sent ${sentInvitations.length == 1 ? 'invitation' : 'invitations'} to ${sentInvitations.length} ${sentInvitations.length == 1 ? 'friend' : 'friends'}'),
+    ));
+  }
+
+  Future<dynamic> _showInvitationDialog() async {
+    return showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (BuildContext context) =>
+            const FriendsList(status: FriendStatus.accepted));
+  }
 
   @override
   void initState() {
@@ -75,6 +110,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               : AppBar(
                   title: Text(instance!.title),
                 ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => _sendInvitations(context),
+            child: const Icon(Icons.mail),
+          ),
           body: instance == null
               ? const Center(child: CircularProgressIndicator())
               : Padding(
@@ -204,6 +243,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                   ];
                                 }
                               });
+
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Text(
+                                    'You\'ve RSVPed ${savedRsvp!.status.name}'),
+                              ));
                             },
                             children: const [
                               Text('No'),

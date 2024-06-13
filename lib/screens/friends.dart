@@ -7,7 +7,6 @@ import 'package:squad_quest/common.dart';
 import 'package:squad_quest/drawer.dart';
 import 'package:squad_quest/controllers/auth.dart';
 import 'package:squad_quest/controllers/friends.dart';
-import 'package:squad_quest/models/user.dart';
 import 'package:squad_quest/models/friend.dart';
 
 final _statusGroupOrder = {
@@ -25,14 +24,6 @@ class FriendsScreen extends ConsumerStatefulWidget {
 
 class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   static final _requestDateFormat = DateFormat('MMM d, h:mm a');
-
-  UserProfile _getFriendProfile(String myUserId, Friend friend) {
-    if (friend.requesterId == myUserId) {
-      return friend.requestee!;
-    }
-
-    return friend.requester!;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,10 +70,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                         style: const TextStyle(fontSize: 18),
                       )),
                   itemBuilder: (context, friend) {
-                    final friendProfile = _getFriendProfile(myUser!.id, friend);
+                    final friendProfile = friend.getOtherProfile(myUser!.id);
                     return ListTile(
                         leading: friendStatusIcons[friend.status],
-                        title: Text(friendProfile.fullName),
+                        title: Text(friendProfile!.fullName),
                         subtitle: switch (friend.status) {
                           FriendStatus.requested => switch (
                                 friend.requester!.id == myUser.id) {

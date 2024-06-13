@@ -32,6 +32,16 @@ class Friend {
   final UserID? requesteeId;
   final FriendStatus status;
 
+  UserProfile? getOtherProfile(UserID userId) {
+    if (requesterId == userId) {
+      return requestee;
+    } else if (requesteeId == userId) {
+      return requester;
+    }
+
+    return null;
+  }
+
   factory Friend.fromMap(Map<String, dynamic> map) {
     final requesterModel =
         map['requester'] is Map ? UserProfile.fromMap(map['requester']) : null;

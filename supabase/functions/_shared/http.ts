@@ -1,3 +1,9 @@
+function assert(shouldBeTrue: boolean, message: string, status: number = 400, errorId?: string) {
+  if (!shouldBeTrue) {
+    throw new HttpError(message, status, errorId);
+  }
+}
+
 function assertMethod(request: Request, method: string) {
   if (request.method != method) {
     throw new HttpError(`Only ${method} supported`, 405);
@@ -66,7 +72,7 @@ class HttpError extends Error {
   }
 }
 
-function debugResponse(message: string, data: object | undefined) {
+function debugResponse(message: string, data?: object) {
   return new Response(
     JSON.stringify({ message, data }),
     {
@@ -77,6 +83,7 @@ function debugResponse(message: string, data: object | undefined) {
 }
 
 export {
+  assert,
   assertJson,
   assertMethod,
   assertPost,

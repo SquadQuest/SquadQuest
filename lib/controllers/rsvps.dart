@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/services/supabase.dart';
 import 'package:squad_quest/models/instance.dart';
+import 'package:squad_quest/models/user.dart';
 
 final rsvpsProvider =
     AsyncNotifierProvider<RsvpsController, List<InstanceMember>>(
@@ -88,6 +89,21 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
       }
 
       return instanceMember;
+    } on FunctionException catch (error) {
+      throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
+    }
+  }
+
+  Future<List<InstanceMember>> invite(
+      Instance instance, List<UserID> userIds) async {
+    final supabase = ref.read(supabaseProvider);
+
+    try {
+      final response = await supabase.functions.invoke('invite',
+          body: {'instance_id': instance.id, 'users': userIds});
+
+      return List<InstanceMember>.from(response.data
+          .map((invitationData) => InstanceMember.fromMap(invitationData)));
     } on FunctionException catch (error) {
       throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
     }

@@ -38,3 +38,19 @@ Authorization: Bearer {{token}}
         "instance_id": "INSTANCE_UUID",
         "status": "maybe"
     }
+
+
+
+### Invite friends to an event
+
+POST {{baseUrl}}/invite
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+    {
+        "instance_id": "INSTANCE_UUID",
+        "users": [
+            "FRIEND_UUID",
+            "FRIEND_UUID_1"
+        ]
+    }
