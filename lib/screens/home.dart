@@ -5,6 +5,7 @@ import 'package:grouped_list/grouped_list.dart';
 
 import 'package:squad_quest/drawer.dart';
 import 'package:squad_quest/controllers/instances.dart';
+import 'package:squad_quest/controllers/rsvps.dart';
 import 'package:squad_quest/components/tiles/instance.dart';
 import 'package:squad_quest/models/instance.dart';
 
@@ -25,6 +26,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final instancesList = ref.watch(instancesProvider);
+    final rsvpsList = ref.watch(rsvpsProvider);
 
     return SafeArea(
       child: Scaffold(
@@ -74,6 +76,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   itemBuilder: (context, instance) {
                     return InstanceTile(
                         instance: instance,
+                        rsvp: rsvpsList.hasValue
+                            ? rsvpsList.value!
+                                .cast<InstanceMember?>()
+                                .firstWhere(
+                                    (rsvp) => rsvp!.instanceId == instance.id,
+                                    orElse: () => null)
+                            : null,
                         onTap: () {
                           context.push('/events/${instance.id}');
                         });
