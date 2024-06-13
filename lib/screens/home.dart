@@ -48,6 +48,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 return GroupedListView(
                   elements: instances,
+                  physics: const AlwaysScrollableScrollPhysics(),
                   useStickyGroupSeparators: true,
                   // floatingHeader: true,
                   stickyHeaderBackgroundColor:
