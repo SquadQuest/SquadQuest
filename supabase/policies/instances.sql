@@ -3,7 +3,7 @@ create policy "Everyone can read public instances"
 on "public"."instances"
 as PERMISSIVE
 for SELECT
-to public
+to authenticated
 using (
     visibility = 'public'
 );
@@ -14,7 +14,7 @@ create policy "Creator & friends & members can read friends instances"
 on "public"."instances"
 as PERMISSIVE
 for SELECT
-to public
+to authenticated
 using (
     visibility = 'friends'
     AND (
@@ -42,7 +42,7 @@ create policy "Creator & members can read private instances"
 on "public"."instances"
 as PERMISSIVE
 for SELECT
-to public
+to authenticated
 using (
     visibility = 'private'
     AND (

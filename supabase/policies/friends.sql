@@ -8,7 +8,6 @@ using (
     auth.uid() in (requester, requestee)
 );
 
-
 create policy "Service Role can read all friends"
 on "public"."friends"
 as PERMISSIVE
@@ -22,7 +21,7 @@ create policy "Service Role can insert friends"
 on "public"."friends"
 as PERMISSIVE
 for INSERT
-to public
+to service_role
 with check (
     true
 );
@@ -32,7 +31,10 @@ create policy "Service Role can update friends"
 on "public"."friends"
 as PERMISSIVE
 for UPDATE
-to public
+to service_role
+using (
+    true
+)
 with check (
     true
 );
