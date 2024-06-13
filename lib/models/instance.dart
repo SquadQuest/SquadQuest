@@ -15,6 +15,14 @@ Map<InstanceVisibility, Icon> visibilityIcons = {
   InstanceVisibility.public: const Icon(Icons.public),
 };
 
+Map<InstanceMemberStatus, Icon> rsvpIcons = {
+  InstanceMemberStatus.invited: const Icon(Icons.mail),
+  InstanceMemberStatus.no: const Icon(Icons.cancel),
+  InstanceMemberStatus.maybe: const Icon(Icons.question_mark),
+  InstanceMemberStatus.yes: const Icon(Icons.check_circle),
+  InstanceMemberStatus.omw: const Icon(Icons.run_circle_outlined),
+};
+
 class Instance {
   Instance({
     this.id,

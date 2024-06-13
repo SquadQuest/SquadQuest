@@ -15,7 +15,6 @@ final instancesProvider =
 
 class InstancesController extends AsyncNotifier<List<Instance>> {
   static const _defaultSelect = '*, topic(*), created_by(*)';
-  // static const _defaultMemberSelect = '*, member(*)';
 
   @override
   Future<List<Instance>> build() async {
@@ -88,23 +87,5 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
         .single();
 
     return Instance.fromMap(data);
-  }
-
-  Future<InstanceMember?> rsvp(
-      Instance instance, InstanceMemberStatus? status) async {
-    final supabase = ref.read(supabaseProvider);
-
-    try {
-      final response = await supabase.functions.invoke('rsvp',
-          body: {'instance_id': instance.id, 'status': status?.name});
-
-      final instanceMember = response.data['status'] == null
-          ? null
-          : InstanceMember.fromMap(response.data);
-
-      return instanceMember;
-    } on FunctionException catch (error) {
-      throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
-    }
   }
 }

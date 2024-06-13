@@ -61,6 +61,7 @@ Deno.serve(async (request) => {
         if (existingRsvpError) throw existingRsvpError;
 
         // branch actions
+        const defaultSelect = '*, member(*)';
         let rsvp;
         if (status == null && existingRsvp && existingRsvp.created_by == currentUser.id) {
             // delete RSVP if user created it and they're removing their RSVP
@@ -69,7 +70,7 @@ Deno.serve(async (request) => {
             )
                 .delete()
                 .eq("id", existingRsvp.id)
-                .select()
+                .select(defaultSelect)
                 .single();
             if (deletedRsvpError) throw deletedRsvpError;
 
@@ -82,7 +83,7 @@ Deno.serve(async (request) => {
             )
                 .update({ status: status ?? 'invited' })
                 .eq("id", existingRsvp.id)
-                .select()
+                .select(defaultSelect)
                 .single();
             if (updatedRsvpError) throw updatedRsvpError;
 
@@ -98,13 +99,13 @@ Deno.serve(async (request) => {
                     member: currentUser.id,
                     status: status
                 })
-                .select()
+                .select(defaultSelect)
                 .single();
             if (insertedRsvpError) throw insertedRsvpError;
 
             rsvp = insertedRsvp;
         } else {
-            // posting null status no an RSVP that doesn't exist is a no-op
+            // posting null status to an RSVP that doesn't exist is a no-op
         }
 
         // return new friend request

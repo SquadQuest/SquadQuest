@@ -82,8 +82,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                     final friendProfile = _getFriendProfile(myUser!.id, friend);
                     return ListTile(
                         leading: friendStatusIcons[friend.status],
-                        title: Text(
-                            '${friendProfile.firstName} ${friendProfile.lastName}'),
+                        title: Text(friendProfile.fullName),
                         subtitle: switch (friend.status) {
                           FriendStatus.requested => switch (
                                 friend.requester!.id == myUser.id) {
