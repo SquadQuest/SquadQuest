@@ -13,5 +13,5 @@ class InstanceTile extends ListTile {
             leading: visibilityIcons[instance.visibility],
             title: Text(instance.title),
             subtitle: Text(
-                'Topic: ${instance.topic?.name}\nPosted by: ${instance.createdBy?.firstName} ${instance.createdBy?.lastName}\nDate: ${_dateFormat.format(instance.startTimeMin)}\nStarting between: ${_timeFormat.format(instance.startTimeMin)}–${_timeFormat.format(instance.startTimeMax)}'));
+                'Location: ${instance.locationDescription}\nTopic: ${instance.topic?.name}\nPosted by: ${instance.createdBy?.firstName} ${instance.createdBy?.lastName}\nDate: ${_dateFormat.format(instance.startTimeMin)}\nStarting between: ${_timeFormat.format(instance.startTimeMin)}–${_timeFormat.format(instance.startTimeMax)}'));
 }

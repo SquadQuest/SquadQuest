@@ -24,6 +24,7 @@ class Instance {
     this.topicId,
     required this.title,
     required this.visibility,
+    required this.locationDescription,
   });
 
   final InstanceID? id;
@@ -36,6 +37,7 @@ class Instance {
   final TopicID? topicId;
   final String title;
   final InstanceVisibility visibility;
+  final String locationDescription;
 
   factory Instance.fromMap(Map<String, dynamic> map) {
     final createdByModel = map['created_by'] is Map
@@ -59,6 +61,7 @@ class Instance {
       visibility: InstanceVisibility.values.firstWhere(
         (e) => e.name == map['visibility'],
       ),
+      locationDescription: map['location_description'] as String,
     );
   }
 
@@ -69,6 +72,7 @@ class Instance {
       'topic': topic?.id ?? topicId,
       'title': title,
       'visibility': visibility.name,
+      'location_description': locationDescription,
     };
 
     if (id != null) {

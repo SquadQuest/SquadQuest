@@ -14,6 +14,7 @@ create table
     topic uuid null,
     title character varying null,
     visibility public.instance_visibility null default 'private'::instance_visibility,
+    location_description text not null,
     constraint instances_pkey primary key (id),
     constraint instances_topic_fkey foreign key (topic) references topics (id),
     constraint instances_created_by_fkey foreign key (created_by) references profiles (id)

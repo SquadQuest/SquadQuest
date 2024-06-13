@@ -38,6 +38,7 @@ class PostEventScreen extends ConsumerStatefulWidget {
 class _PostEventScreenState extends ConsumerState<PostEventScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
+  final _locationDescriptionController = TextEditingController();
   final _topicProvider = StateProvider<Topic?>((ref) => null);
   final _startTimeMinProvider =
       StateProvider<TimeOfDay?>((ref) => _plusMinutes(TimeOfDay.now(), 60));
@@ -117,7 +118,8 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
           topic: ref.read(_topicProvider),
           startTimeMin: startDateTimeMin,
           startTimeMax: startDateTimeMax,
-          visibility: visibility);
+          visibility: visibility,
+          locationDescription: _locationDescriptionController.text.trim());
 
       final Instance savedInstance =
           await instancesController.createInstance(draftInstance);
@@ -173,7 +175,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
                   readOnly: submitted,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
-                    // prefixIcon: Icon(Icons.banner),
+                    // prefixIcon: Icon(Icons.flag),
                     labelText: 'Title for event',
                   ),
                   validator: (value) {
@@ -183,6 +185,24 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
                     return null;
                   },
                   controller: _titleController,
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+                TextFormField(
+                  readOnly: submitted,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    // prefixIcon: Icon(Icons.pin_drop),
+                    labelText: 'Description of location',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter location descrption';
+                    }
+                    return null;
+                  },
+                  controller: _locationDescriptionController,
                 ),
                 const SizedBox(
                   height: 24,
