@@ -7,10 +7,34 @@ GET {{baseUrl}}/db-test
 
 ### Send friend request
 
-POST {{baseUrl}}/friend-request
+POST {{baseUrl}}/send-friend-request
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
     {
         "phone": "15556667777"
+    }
+
+
+### Respond to friend request
+
+POST {{baseUrl}}/action-friend-request
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+    {
+        "friend_id": "FRIEND_UUID",
+        "action": "declined"
+    }
+
+
+### RSVP to event
+
+POST {{baseUrl}}/rsvp
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+    {
+        "instance_id": "INSTANCE_UUID",
+        "status": "maybe"
     }
