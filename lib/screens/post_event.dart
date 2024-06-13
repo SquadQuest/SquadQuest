@@ -141,6 +141,10 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
 
     if (!context.mounted) return;
 
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Event posted!'),
+    ));
+
     context.go('/');
   }
 
