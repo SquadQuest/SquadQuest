@@ -35,10 +35,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final profileController = ref.read(profileProvider.notifier);
 
       final draftProfile = UserProfile(
-        id: session!.user.id,
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-      );
+          id: session!.user.id,
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          phone: session.user.phone!);
 
       final savedProfile = await profileController.save(draftProfile);
 
