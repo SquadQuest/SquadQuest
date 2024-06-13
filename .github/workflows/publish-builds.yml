@@ -1,8 +1,10 @@
-name: 'Publish: Flutter Web Build'
+name: 'Publish: Flutter Builds'
 
 on:
   push:
     branches: [ main ]
+  release:
+    types: [ published ]
 
 permissions:
   id-token: write
@@ -33,11 +35,22 @@ jobs:
       - name: Build for web
         run: fvm flutter build web --base-href "/SquadQuest/"
 
-      - name: Upload artifact
-        # Automatically uploads an artifact from the './_site' directory by default
+      - name: Upload web artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
+
+      - name: Build for Android
+        if: ${{ github.event_name == 'release' }}
+        run: fvm flutter build apk
+
+      - name: Upload APK to release
+        if: ${{ github.event_name == 'release' }}
+        uses: alexellis/upload-assets@0.4.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          asset_paths: '["build/app/outputs/flutter-apk/app-release.apk"]'
 
   deploy:
     runs-on: ubuntu-latest
