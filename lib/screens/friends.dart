@@ -36,7 +36,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final myUserId = ref.watch(userProvider)!.id;
+    final myUser = ref.watch(userProvider);
     final friendsList = ref.watch(friendsProvider);
 
     return SafeArea(
@@ -63,6 +63,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               return;
             }
 
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('Friend request sent!'),
             ));
@@ -77,7 +78,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           child: friendsList.when(
               data: (friends) {
                 return GroupedListView(
-                  elements: friends,
+                  elements: myUser == null ? <Friend>[] : friends,
                   useStickyGroupSeparators: true,
                   // floatingHeader: true,
                   stickyHeaderBackgroundColor:
@@ -99,14 +100,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                         style: const TextStyle(fontSize: 18),
                       )),
                   itemBuilder: (context, friend) {
-                    final friendProfile = _getFriendProfile(myUserId, friend);
+                    final friendProfile = _getFriendProfile(myUser!.id, friend);
                     return ListTile(
                         leading: friendStatusIcons[friend.status],
                         title: Text(
                             '${friendProfile.firstName} ${friendProfile.lastName}'),
                         subtitle: switch (friend.status) {
                           FriendStatus.requested => switch (
-                                friend.requester!.id == myUserId) {
+                                friend.requester!.id == myUser.id) {
                               true => Text(
                                   'Request sent ${_requestDateFormat.format(friend.createdAt!)}'),
                               false => Text(
