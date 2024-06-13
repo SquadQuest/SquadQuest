@@ -162,7 +162,8 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
         appBar: AppBar(
           title: const Text('Post an event'),
         ),
-        body: AutofillGroup(
+        body: Padding(
+          padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
