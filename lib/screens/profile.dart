@@ -102,6 +102,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             key: _formKey,
             child: Column(
               children: [
+                if (profile == null)
+                  const Text(
+                    'Welcome to SquadQuest!\n\nPlease set up your profile to get started:',
+                    textAlign: TextAlign.center,
+                  ),
+                const SizedBox(height: 16),
                 TextFormField(
                   readOnly: submitted,
                   autofillHints: const [AutofillHints.givenName],
@@ -136,7 +142,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   },
                   controller: _lastNameController,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 32),
                 submitted
                     ? const CircularProgressIndicator()
                     : ElevatedButton(

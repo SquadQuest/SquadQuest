@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/router.dart';
+import 'package:squad_quest/controllers/profile.dart';
 import 'package:squad_quest/controllers/settings.dart';
 
 class MyApp extends ConsumerWidget {
@@ -11,6 +12,20 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themMode = ref.watch(themeModeProvider);
     final router = ref.watch(routerProvider);
+    final profile = ref.read(profileProvider);
+
+    if (profile.hasValue) {
+      if (profile.value == null) {
+        router.go('/profile');
+      }
+    } else {
+      ref.listen(profileProvider, (previous, next) {
+        if (next.hasValue && next.value == null) {
+          Future.delayed(
+              const Duration(seconds: 1), () => router.go('/profile'));
+        }
+      });
+    }
 
     return MaterialApp.router(
       title: 'Squad Quest',
