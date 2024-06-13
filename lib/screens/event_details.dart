@@ -138,71 +138,85 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       ])),
           bottomNavigationBar: myUser == null
               ? null
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'RSVP: ',
-                    ),
-                    ToggleButtons(
-                      isSelected: _rsvpSelection,
-                      onPressed: (int selectedIndex) async {
-                        setState(() {
-                          for (int buttonIndex = 0;
-                              buttonIndex < _rsvpSelection.length;
-                              buttonIndex++) {
-                            _rsvpSelection[buttonIndex] =
-                                buttonIndex == selectedIndex &&
-                                    !_rsvpSelection[selectedIndex];
-                          }
-                        });
+              : Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 16),
+                      const Text(
+                        'RSVP: ',
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: LayoutBuilder(builder: (context, constraints) {
+                          return ToggleButtons(
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(8)),
+                            constraints: BoxConstraints.expand(
+                                width: constraints.maxWidth / 4 -
+                                    (_rsvpSelection.length - 1)),
+                            isSelected: _rsvpSelection,
+                            onPressed: (int selectedIndex) async {
+                              setState(() {
+                                for (int buttonIndex = 0;
+                                    buttonIndex < _rsvpSelection.length;
+                                    buttonIndex++) {
+                                  _rsvpSelection[buttonIndex] =
+                                      buttonIndex == selectedIndex &&
+                                          !_rsvpSelection[selectedIndex];
+                                }
+                              });
 
-                        final savedRsvp = await rsvpsController.save(
-                            instance!,
-                            _rsvpSelection[selectedIndex]
-                                ? InstanceMemberStatus.values[selectedIndex + 1]
-                                : null);
+                              final savedRsvp = await rsvpsController.save(
+                                  instance!,
+                                  _rsvpSelection[selectedIndex]
+                                      ? InstanceMemberStatus
+                                          .values[selectedIndex + 1]
+                                      : null);
 
-                        // update current event's rsvp list
-                        if (rsvps == null) {
-                          return;
-                        }
+                              // update current event's rsvp list
+                              if (rsvps == null) {
+                                return;
+                              }
 
-                        final existingIndex = rsvps!
-                            .indexWhere((rsvp) => rsvp.memberId == myUser.id);
+                              final existingIndex = rsvps!.indexWhere(
+                                  (rsvp) => rsvp.memberId == myUser.id);
 
-                        setState(() {
-                          if (existingIndex == -1) {
-                            // append a new rsvp
-                            rsvps = [
-                              ...rsvps!,
-                              savedRsvp!,
-                            ];
-                          } else if (savedRsvp == null) {
-                            // remove existing rsvp
-                            rsvps = [
-                              ...rsvps!.sublist(0, existingIndex),
-                              ...rsvps!.sublist(existingIndex + 1)
-                            ];
-                          } else {
-                            // replace existing rsvp
-                            rsvps = [
-                              ...rsvps!.sublist(0, existingIndex),
-                              savedRsvp,
-                              ...rsvps!.sublist(existingIndex + 1)
-                            ];
-                          }
-                        });
-                      },
-                      children: const [
-                        Text('No'),
-                        Text('Maybe'),
-                        Text('Yes'),
-                        Text('OMW')
-                      ],
-                    ),
-                  ],
-                )),
+                              setState(() {
+                                if (existingIndex == -1) {
+                                  // append a new rsvp
+                                  rsvps = [
+                                    ...rsvps!,
+                                    savedRsvp!,
+                                  ];
+                                } else if (savedRsvp == null) {
+                                  // remove existing rsvp
+                                  rsvps = [
+                                    ...rsvps!.sublist(0, existingIndex),
+                                    ...rsvps!.sublist(existingIndex + 1)
+                                  ];
+                                } else {
+                                  // replace existing rsvp
+                                  rsvps = [
+                                    ...rsvps!.sublist(0, existingIndex),
+                                    savedRsvp,
+                                    ...rsvps!.sublist(existingIndex + 1)
+                                  ];
+                                }
+                              });
+                            },
+                            children: const [
+                              Text('No'),
+                              Text('Maybe'),
+                              Text('Yes'),
+                              Text('OMW')
+                            ],
+                          );
+                        }),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                  ))),
     );
   }
 }
