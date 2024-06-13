@@ -1,3 +1,5 @@
+import 'package:squad_quest/common.dart';
+
 typedef UserID = String;
 
 class UserProfile {
@@ -12,6 +14,9 @@ class UserProfile {
   final String firstName;
   final String lastName;
   final String phone;
+
+  String get fullName => '$firstName $lastName';
+  String get phoneFormatted => formatPhone(phone);
 
   factory UserProfile.fromMap(Map<String, dynamic> map) {
     return UserProfile(

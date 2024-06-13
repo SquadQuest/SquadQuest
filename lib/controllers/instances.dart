@@ -1,9 +1,13 @@
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/services/supabase.dart';
 import 'package:squad_quest/controllers/topics.dart';
 import 'package:squad_quest/models/instance.dart';
 import 'package:squad_quest/models/topic.dart';
+
+final eventDateFormat = DateFormat('E, MMM d');
+final eventTimeFormat = DateFormat('h:mm a');
 
 final instancesProvider =
     AsyncNotifierProvider<InstancesController, List<Instance>>(
@@ -63,5 +67,24 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     }
 
     return insertedInstance;
+  }
+
+  Future<Instance> getById(InstanceID id) async {
+    final List<Instance>? loadedInstances =
+        state.hasValue ? state.asData!.value : null;
+
+    if (loadedInstances != null) {
+      return loadedInstances.firstWhere((instance) => instance.id == id);
+    }
+
+    final supabase = ref.read(supabaseProvider);
+
+    final data = await supabase
+        .from('instances')
+        .select(_defaultSelect)
+        .eq('id', id)
+        .single();
+
+    return Instance.fromMap(data);
   }
 }

@@ -71,8 +71,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 18),
                       )),
-                  itemBuilder: (context, element) {
-                    return InstanceTile(instance: element);
+                  itemBuilder: (context, instance) {
+                    return InstanceTile(
+                        instance: instance,
+                        onTap: () {
+                          context.push('/events/${instance.id}');
+                        });
                   },
                   itemComparator: (instance1, instance2) {
                     // sort past events in reverse chronological order
