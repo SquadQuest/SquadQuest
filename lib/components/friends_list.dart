@@ -46,7 +46,6 @@ class _FriendsListState extends ConsumerState<FriendsList> {
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             TextFormField(
-              autofocus: true,
               textInputAction: TextInputAction.done,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.search),
@@ -86,6 +85,7 @@ class _FriendsListState extends ConsumerState<FriendsList> {
                                 } else {
                                   _selectedUsers.remove(otherProfile.id);
                                 }
+                                FocusScope.of(context).unfocus();
                               });
                             },
                           );
