@@ -155,8 +155,11 @@ class InstanceMember {
         : null;
     final instanceModel =
         map['instance'] is Map ? Instance.fromMap(map['instance']) : null;
-    final memberModel =
-        map['member'] is Map ? UserProfile.fromMap(map['member']) : null;
+    final memberModel = map['member'] is UserProfile
+        ? map['member']
+        : map['member'] is Map
+            ? UserProfile.fromMap(map['member'])
+            : null;
 
     return InstanceMember(
       id: map['id'] as InstanceMemberID,

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/services/supabase.dart';
+import 'package:squad_quest/services/profiles_cache.dart';
 import 'package:squad_quest/models/instance.dart';
 import 'package:squad_quest/models/user.dart';
 
@@ -9,35 +10,38 @@ final rsvpsProvider =
         RsvpsController.new);
 
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
-  static const _defaultSelect = '*, member(*)';
+  static const _defaultSelect = '*';
 
   @override
   Future<List<InstanceMember>> build() async {
-    return fetchOwn();
-  }
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
 
-  Future<List<InstanceMember>> fetchOwn() async {
+    // subscribe to changes
     final supabase = ref.read(supabaseProvider);
-
-    return supabase
+    supabase
         .from('instance_members')
-        .select(_defaultSelect)
+        .stream(primaryKey: ['id'])
         .eq('member', supabase.auth.currentUser!.id)
-        .withConverter((data) => data.map(InstanceMember.fromMap).toList());
-  }
+        .listen((data) async {
+          final populatedData = await profilesCache.populateData(data);
+          state = AsyncValue.data(
+              populatedData.map(InstanceMember.fromMap).toList());
+        });
 
-  Future<void> refresh() async {
-    state = await AsyncValue.guard(fetchOwn);
+    return future;
   }
 
   Future<List<InstanceMember>> fetchByInstance(InstanceID instanceId) async {
     final supabase = ref.read(supabaseProvider);
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
 
-    return supabase
+    final data = await supabase
         .from('instance_members')
         .select(_defaultSelect)
-        .eq('instance', instanceId)
-        .withConverter((data) => data.map(InstanceMember.fromMap).toList());
+        .eq('instance', instanceId);
+
+    final populatedData = await profilesCache.populateData(data);
+    return populatedData.map(InstanceMember.fromMap).toList();
   }
 
   Future<InstanceMember?> save(
