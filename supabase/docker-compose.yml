@@ -318,6 +318,7 @@ services:
       - ./functions:/home/deno/functions:Z
     command:
       - start
+      - --verbose
       - --main-service
       - /home/deno/functions/main
 
