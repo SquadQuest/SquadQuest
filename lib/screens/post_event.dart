@@ -172,6 +172,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextFormField(
+                  autofocus: true,
                   readOnly: submitted,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
