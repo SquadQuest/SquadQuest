@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squadquest/router.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/services/push.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -13,6 +14,7 @@ class MyApp extends ConsumerWidget {
     final themMode = ref.watch(themeModeProvider);
     final router = ref.watch(routerProvider);
     final profile = ref.read(profileProvider);
+    final pushService = ref.read(pushServiceProvider.notifier);
 
     if (profile.hasValue) {
       if (profile.value == null) {
