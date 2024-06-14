@@ -1,4 +1,4 @@
-package com.example.squad_quest
+package app.squadquest
 
 import io.flutter.embedding.android.FlutterActivity
 

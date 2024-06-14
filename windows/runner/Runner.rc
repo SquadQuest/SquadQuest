@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "squad_quest" "\0"
+            VALUE "CompanyName", "app" "\0"
+            VALUE "FileDescription", "squadquest" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "squad_quest" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "squad_quest.exe" "\0"
-            VALUE "ProductName", "squad_quest" "\0"
+            VALUE "InternalName", "squadquest" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2024 app. All rights reserved." "\0"
+            VALUE "OriginalFilename", "squadquest.exe" "\0"
+            VALUE "ProductName", "squadquest" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

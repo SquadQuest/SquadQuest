@@ -1,6 +1,6 @@
 {
-    "name": "squad_quest",
-    "short_name": "squad_quest",
+    "name": "squadquest",
+    "short_name": "squadquest",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
