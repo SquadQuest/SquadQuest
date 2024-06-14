@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/supabase.dart';
-import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/models/user.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/models/user.dart';
 
 final profileProvider = AsyncNotifierProvider<ProfileController, UserProfile?>(
     ProfileController.new);

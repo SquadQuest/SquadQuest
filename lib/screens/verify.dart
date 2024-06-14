@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/controllers/profile.dart';
+import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/profile.dart';
 
 final RegExp otpCodeRegExp = RegExp(r'^\d{6}$');
 

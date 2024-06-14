@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squad_quest/drawer.dart';
-import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/controllers/profile.dart';
-import 'package:squad_quest/models/user.dart';
+import 'package:squadquest/drawer.dart';
+import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/models/user.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});

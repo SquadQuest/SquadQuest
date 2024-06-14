@@ -1,4 +1,4 @@
-# squad_quest
+# SquadQuest
 
 A new Flutter project.
 

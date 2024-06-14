@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squad_quest/models/instance.dart';
-import 'package:squad_quest/models/topic.dart';
-import 'package:squad_quest/components/pickers/date.dart';
-import 'package:squad_quest/components/pickers/time.dart';
-import 'package:squad_quest/components/pickers/visibility.dart';
-import 'package:squad_quest/components/pickers/topic.dart';
-import 'package:squad_quest/controllers/instances.dart';
+import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/components/pickers/date.dart';
+import 'package:squadquest/components/pickers/time.dart';
+import 'package:squadquest/components/pickers/visibility.dart';
+import 'package:squadquest/components/pickers/topic.dart';
+import 'package:squadquest/controllers/instances.dart';
 
 TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
   if (minutes == 0) {

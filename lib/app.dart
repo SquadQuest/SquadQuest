@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/router.dart';
-import 'package:squad_quest/controllers/profile.dart';
-import 'package:squad_quest/controllers/settings.dart';
+import 'package:squadquest/router.dart';
+import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/controllers/settings.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});

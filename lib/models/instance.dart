@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:squad_quest/models/user.dart';
-import 'package:squad_quest/models/topic.dart';
+import 'package:squadquest/models/user.dart';
+import 'package:squadquest/models/topic.dart';
 
 typedef InstanceID = String;
 typedef InstanceMemberID = String;

@@ -1,4 +1,4 @@
-import 'package:squad_quest/common.dart';
+import 'package:squadquest/common.dart';
 
 typedef UserID = String;
 

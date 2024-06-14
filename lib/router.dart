@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squad_quest/screens/splash.dart';
-import 'package:squad_quest/screens/login.dart';
-import 'package:squad_quest/screens/verify.dart';
-import 'package:squad_quest/screens/profile.dart';
-import 'package:squad_quest/screens/home.dart';
-import 'package:squad_quest/screens/settings.dart';
-import 'package:squad_quest/screens/post_event.dart';
-import 'package:squad_quest/screens/event_details.dart';
-import 'package:squad_quest/screens/friends.dart';
+import 'package:squadquest/screens/splash.dart';
+import 'package:squadquest/screens/login.dart';
+import 'package:squadquest/screens/verify.dart';
+import 'package:squadquest/screens/profile.dart';
+import 'package:squadquest/screens/home.dart';
+import 'package:squadquest/screens/settings.dart';
+import 'package:squadquest/screens/post_event.dart';
+import 'package:squadquest/screens/event_details.dart';
+import 'package:squadquest/screens/friends.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 

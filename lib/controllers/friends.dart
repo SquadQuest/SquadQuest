@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/supabase.dart';
-import 'package:squad_quest/models/friend.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/models/friend.dart';
 
 final friendsProvider = AsyncNotifierProvider<FriendsController, List<Friend>>(
     FriendsController.new);

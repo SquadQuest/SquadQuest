@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
 
-import 'package:squad_quest/common.dart';
-import 'package:squad_quest/drawer.dart';
-import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/controllers/friends.dart';
-import 'package:squad_quest/models/friend.dart';
+import 'package:squadquest/common.dart';
+import 'package:squadquest/drawer.dart';
+import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/friends.dart';
+import 'package:squadquest/models/friend.dart';
 
 final _statusGroupOrder = {
   FriendStatus.requested: 0,

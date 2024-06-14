@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:squad_quest/controllers/instances.dart';
-import 'package:squad_quest/models/instance.dart';
+import 'package:squadquest/controllers/instances.dart';
+import 'package:squadquest/models/instance.dart';
 
 class InstanceTile extends ListTile {
   final Instance instance;

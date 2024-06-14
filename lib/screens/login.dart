@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squad_quest/common.dart';
-import 'package:squad_quest/controllers/auth.dart';
+import 'package:squadquest/common.dart';
+import 'package:squadquest/controllers/auth.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});

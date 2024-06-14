@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 
-import 'package:squad_quest/models/topic.dart';
-import 'package:squad_quest/controllers/topics.dart';
+import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/controllers/topics.dart';
 
 class FormTopicPicker extends ConsumerStatefulWidget {
   final String labelText;

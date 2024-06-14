@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/supabase.dart';
-import 'package:squad_quest/models/topic.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/models/topic.dart';
 
 final topicsProvider =
     AsyncNotifierProvider<TopicsController, List<Topic>>(TopicsController.new);

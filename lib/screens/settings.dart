@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/drawer.dart';
-import 'package:squad_quest/controllers/settings.dart';
+import 'package:squadquest/drawer.dart';
+import 'package:squadquest/controllers/settings.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/models/instance.dart';
+import 'package:squadquest/models/instance.dart';
 
 class FormVisibilityPicker extends ConsumerStatefulWidget {
   final String labelText;

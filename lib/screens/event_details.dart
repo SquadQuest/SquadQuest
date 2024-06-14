@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
 
-import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/controllers/instances.dart';
-import 'package:squad_quest/controllers/rsvps.dart';
-import 'package:squad_quest/models/user.dart';
-import 'package:squad_quest/models/friend.dart';
-import 'package:squad_quest/models/instance.dart';
-import 'package:squad_quest/components/friends_list.dart';
+import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/instances.dart';
+import 'package:squadquest/controllers/rsvps.dart';
+import 'package:squadquest/models/user.dart';
+import 'package:squadquest/models/friend.dart';
+import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/components/friends_list.dart';
 
 final _statusGroupOrder = {
   InstanceMemberStatus.omw: 0,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:squad_quest/models/user.dart';
+import 'package:squadquest/models/user.dart';
 
 typedef FriendID = String;
 

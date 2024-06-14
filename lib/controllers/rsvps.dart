@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/supabase.dart';
-import 'package:squad_quest/services/profiles_cache.dart';
-import 'package:squad_quest/models/instance.dart';
-import 'package:squad_quest/models/user.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/services/profiles_cache.dart';
+import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/user.dart';
 
 final rsvpsProvider =
     AsyncNotifierProvider<RsvpsController, List<InstanceMember>>(

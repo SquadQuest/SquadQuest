@@ -1,11 +1,11 @@
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/supabase.dart';
-import 'package:squad_quest/controllers/topics.dart';
-import 'package:squad_quest/controllers/rsvps.dart';
-import 'package:squad_quest/models/instance.dart';
-import 'package:squad_quest/models/topic.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/controllers/topics.dart';
+import 'package:squadquest/controllers/rsvps.dart';
+import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/topic.dart';
 
 final eventDateFormat = DateFormat('E, MMM d');
 final eventTimeFormat = DateFormat('h:mm a');

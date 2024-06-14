@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grouped_list/grouped_list.dart';
 
-import 'package:squad_quest/drawer.dart';
-import 'package:squad_quest/controllers/instances.dart';
-import 'package:squad_quest/controllers/rsvps.dart';
-import 'package:squad_quest/components/tiles/instance.dart';
-import 'package:squad_quest/models/instance.dart';
+import 'package:squadquest/drawer.dart';
+import 'package:squadquest/controllers/instances.dart';
+import 'package:squadquest/controllers/rsvps.dart';
+import 'package:squadquest/components/tiles/instance.dart';
+import 'package:squadquest/models/instance.dart';
 
 enum _InstanceGroup {
   current,

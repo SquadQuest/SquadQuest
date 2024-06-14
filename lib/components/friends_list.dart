@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/controllers/auth.dart';
-import 'package:squad_quest/controllers/friends.dart';
-import 'package:squad_quest/models/friend.dart';
-import 'package:squad_quest/models/user.dart';
+import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/friends.dart';
+import 'package:squadquest/models/friend.dart';
+import 'package:squadquest/models/user.dart';
 
 class FriendsList extends ConsumerStatefulWidget {
   final FriendStatus? status;

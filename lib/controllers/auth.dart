@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squad_quest/services/supabase.dart';
-import 'package:squad_quest/controllers/profile.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/controllers/profile.dart';
 
-export 'package:squad_quest/services/supabase.dart' show Session, User;
+export 'package:squadquest/services/supabase.dart' show Session, User;
 
 final authControllerProvider =
     AsyncNotifierProvider<AuthController, Session?>(AuthController.new);

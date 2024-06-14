@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'package:squad_quest/services/supabase.dart';
-import 'package:squad_quest/app.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/app.dart';
 
 void main() async {
   // Load .env file
