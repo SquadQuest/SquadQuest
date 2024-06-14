@@ -216,10 +216,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                       : null);
 
                               // update current event's rsvp list
-                              if (rsvps == null) {
-                                return;
-                              }
-
+                              if (rsvps != null) {
                               final existingIndex = rsvps!.indexWhere(
                                   (rsvp) => rsvp.memberId == myUser.id);
 
@@ -245,6 +242,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                   ];
                                 }
                               });
+                              }
 
                               if (!context.mounted) return;
 
@@ -254,9 +252,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
                               _rsvpSnackbar = ScaffoldMessenger.of(context)
                                   .showSnackBar(SnackBar(
-                                content: Text(
-                                    'You\'ve RSVPed ${savedRsvp!.status.name}'),
+                                content: Text(savedRsvp == null
+                                    ? 'You\'ve removed your RSVP'
+                                    : 'You\'ve RSVPed ${savedRsvp!.status.name}'),
                               ));
+
+                              _rsvpSnackbar?.closed.then((reason) {
+                                _rsvpSnackbar = null;
+                              });
                             },
                             children: const [
                               Text('No'),
