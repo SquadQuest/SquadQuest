@@ -1,0 +1,3 @@
+chris-devbox.phl.io {
+	reverse_proxy localhost:8000
+}

@@ -135,6 +135,12 @@ services:
       GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP}
       GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM}
 
+      GOTRUE_SMS_PROVIDER: ${SMS_PROVIDER}
+
+      GOTRUE_SMS_TWILIO_VERIFY_ACCOUNT_SID: ${TWILIO_VERIFY_ACCOUNT_SID}
+      GOTRUE_SMS_TWILIO_VERIFY_AUTH_TOKEN: ${TWILIO_VERIFY_AUTH_TOKEN}
+      GOTRUE_SMS_TWILIO_VERIFY_MESSAGE_SERVICE_SID: ${TWILIO_VERIFY_MESSAGE_SERVICE_SID}
+
       # Uncomment to enable custom access token hook. You'll need to create a public.custom_access_token_hook function and grant necessary permissions.
       # See: https://supabase.com/docs/guides/auth/auth-hooks#hook-custom-access-token for details
       # GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_ENABLED="true"
@@ -309,7 +315,7 @@ services:
       # TODO: Allow configuring VERIFY_JWT per function. This PR might help: https://github.com/supabase/cli/pull/786
       VERIFY_JWT: "${FUNCTIONS_VERIFY_JWT}"
     volumes:
-      - ./volumes/functions:/home/deno/functions:Z
+      - ./functions:/home/deno/functions:Z
     command:
       - start
       - --main-service
