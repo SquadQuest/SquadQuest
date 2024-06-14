@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squad_quest/services/supabase.dart';
 import 'package:squad_quest/controllers/topics.dart';
+import 'package:squad_quest/controllers/rsvps.dart';
 import 'package:squad_quest/models/instance.dart';
 import 'package:squad_quest/models/topic.dart';
 
@@ -53,6 +54,7 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
       instanceData['topic'] = insertedTopic.id;
     }
 
+    // create event instance
     final insertedData = await supabase
         .from('instances')
         .insert(instanceData)
@@ -61,11 +63,16 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
 
     final insertedInstance = Instance.fromMap(insertedData);
 
-    // update loaded topics with newly created one
+    // update loaded instances with newly created one
     if (loadedInstances != null) {
       List<Instance> updatedList = [...loadedInstances, insertedInstance];
       state = AsyncValue.data(updatedList);
     }
+
+    // create rsvp
+    await ref
+        .read(rsvpsProvider.notifier)
+        .save(insertedInstance, InstanceMemberStatus.yes);
 
     return insertedInstance;
   }
