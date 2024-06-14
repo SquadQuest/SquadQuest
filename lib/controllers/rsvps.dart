@@ -10,8 +10,6 @@ final rsvpsProvider =
         RsvpsController.new);
 
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
-  static const _defaultSelect = '*';
-
   @override
   Future<List<InstanceMember>> build() async {
     final profilesCache = ref.read(profilesCacheProvider.notifier);
@@ -31,17 +29,19 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     return future;
   }
 
-  Future<List<InstanceMember>> fetchByInstance(InstanceID instanceId) async {
+  void subscribeByInstance(
+      InstanceID instanceId, Function(List<InstanceMember>) onData) async {
     final supabase = ref.read(supabaseProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
 
-    final data = await supabase
+    supabase
         .from('instance_members')
-        .select(_defaultSelect)
-        .eq('instance', instanceId);
-
-    final populatedData = await profilesCache.populateData(data);
-    return populatedData.map(InstanceMember.fromMap).toList();
+        .stream(primaryKey: ['id'])
+        .eq('instance', instanceId)
+        .listen((data) async {
+          final populatedData = await profilesCache.populateData(data);
+          onData(populatedData.map(InstanceMember.fromMap).toList());
+        });
   }
 
   Future<InstanceMember?> save(

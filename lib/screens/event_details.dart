@@ -5,6 +5,7 @@ import 'package:grouped_list/grouped_list.dart';
 import 'package:squad_quest/controllers/auth.dart';
 import 'package:squad_quest/controllers/instances.dart';
 import 'package:squad_quest/controllers/rsvps.dart';
+import 'package:squad_quest/models/user.dart';
 import 'package:squad_quest/models/friend.dart';
 import 'package:squad_quest/models/instance.dart';
 import 'package:squad_quest/components/friends_list.dart';
@@ -78,23 +79,27 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         this.instance = instance;
       });
 
-      ref.read(rsvpsProvider.notifier).fetchByInstance(widget.id).then((rsvps) {
-        setState(() {
-          this.rsvps = rsvps;
-        });
+      ref.read(authControllerProvider.future).then((session) {
+        final UserID myUserId = session!.user.id;
 
-        ref.read(authControllerProvider.future).then((session) {
-          if (session == null) {
-            return;
-          }
+        ref.read(rsvpsProvider.notifier).subscribeByInstance(widget.id,
+            (rsvps) {
+          setState(() {
+            this.rsvps = rsvps;
+          });
 
           final myRsvp = rsvps.cast<InstanceMember?>().firstWhere(
-              (rsvp) => rsvp?.memberId == session.user.id,
+              (rsvp) => rsvp?.memberId == myUserId,
               orElse: () => null);
 
-          if (myRsvp != null && myRsvp.status.index > 0) {
-            _rsvpSelection[myRsvp.status.index - 1] = true;
-          }
+          setState(() {
+            for (int buttonIndex = 0;
+                buttonIndex < _rsvpSelection.length;
+                buttonIndex++) {
+              _rsvpSelection[buttonIndex] =
+                  myRsvp != null && buttonIndex == myRsvp.status.index - 1;
+            }
+          });
         });
       });
     });
@@ -217,31 +222,31 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
                               // update current event's rsvp list
                               if (rsvps != null) {
-                              final existingIndex = rsvps!.indexWhere(
-                                  (rsvp) => rsvp.memberId == myUser.id);
+                                final existingIndex = rsvps!.indexWhere(
+                                    (rsvp) => rsvp.memberId == myUser.id);
 
-                              setState(() {
-                                if (existingIndex == -1) {
-                                  // append a new rsvp
-                                  rsvps = [
-                                    ...rsvps!,
-                                    savedRsvp!,
-                                  ];
-                                } else if (savedRsvp == null) {
-                                  // remove existing rsvp
-                                  rsvps = [
-                                    ...rsvps!.sublist(0, existingIndex),
-                                    ...rsvps!.sublist(existingIndex + 1)
-                                  ];
-                                } else {
-                                  // replace existing rsvp
-                                  rsvps = [
-                                    ...rsvps!.sublist(0, existingIndex),
-                                    savedRsvp,
-                                    ...rsvps!.sublist(existingIndex + 1)
-                                  ];
-                                }
-                              });
+                                setState(() {
+                                  if (existingIndex == -1) {
+                                    // append a new rsvp
+                                    rsvps = [
+                                      ...rsvps!,
+                                      savedRsvp!,
+                                    ];
+                                  } else if (savedRsvp == null) {
+                                    // remove existing rsvp
+                                    rsvps = [
+                                      ...rsvps!.sublist(0, existingIndex),
+                                      ...rsvps!.sublist(existingIndex + 1)
+                                    ];
+                                  } else {
+                                    // replace existing rsvp
+                                    rsvps = [
+                                      ...rsvps!.sublist(0, existingIndex),
+                                      savedRsvp,
+                                      ...rsvps!.sublist(existingIndex + 1)
+                                    ];
+                                  }
+                                });
                               }
 
                               if (!context.mounted) return;
