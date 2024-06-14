@@ -30,6 +30,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   Instance? instance;
   final List<bool> _rsvpSelection = [false, false, false, false];
   List<InstanceMember>? rsvps;
+  ScaffoldFeatureController? _rsvpSnackbar;
 
   void _sendInvitations(BuildContext context) async {
     final inviteUserIds = await _showInvitationDialog();
@@ -68,6 +69,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   void initState() {
     super.initState();
 
+    // handle my RSVP status for this event
     ref
         .read(instancesProvider.notifier)
         .getById(widget.id)
@@ -246,7 +248,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
                               if (!context.mounted) return;
 
-                              ScaffoldMessenger.of(context)
+                              if (_rsvpSnackbar != null) {
+                                _rsvpSnackbar!.close();
+                              }
+
+                              _rsvpSnackbar = ScaffoldMessenger.of(context)
                                   .showSnackBar(SnackBar(
                                 content: Text(
                                     'You\'ve RSVPed ${savedRsvp!.status.name}'),
