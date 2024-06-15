@@ -2,7 +2,7 @@
     "name": "SquadQuest",
     "short_name": "SquadQuest",
     "start_url": ".",
-    "display": "standalone",
+    "display": "fullscreen",
     "background_color": "#141218",
     "theme_color": "#F29C38",
     "description": "Do more stuff with people you want to spend more time with",
