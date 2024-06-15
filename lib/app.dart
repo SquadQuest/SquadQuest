@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/router.dart';
+import 'package:squadquest/theme.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/firebase.dart';
 
@@ -15,8 +16,6 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final router = ref.watch(routerProvider);
-    final lightTheme = ThemeData();
-    final darkTheme = ThemeData.dark();
 
     // (temporarily)? display any push notification in-app
     ref.listen(firebaseMessagingStreamProvider, (previous, message) {
@@ -29,9 +28,9 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp.router(
       scaffoldMessengerKey: _scaffoldKey,
-      title: 'Squad Quest',
-      theme: lightTheme,
-      darkTheme: darkTheme,
+      title: 'SquadQuest',
+      theme: appThemeLight,
+      darkTheme: appThemeDark,
       themeMode: themeMode,
       routerConfig: router,
     );
