@@ -75,7 +75,11 @@ class FirebaseMessagingService {
     );
 
     // get FCM device token
-    token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
+    try {
+      token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
+    } catch (error) {
+      log('Error getting FCM token: $error');
+    }
 
     // save FCM token to profile—main forced the service to initialize before the app is run so profile will never be set already
     ref.listen(profileProvider, (_, profile) async {
@@ -112,17 +116,22 @@ class FirebaseMessagingService {
     _streamController.add(message);
   }
 
-  Future<NotificationSettings> requestPermissions() async {
+  Future<NotificationSettings?> requestPermissions() async {
     if (settings != null) return settings!;
 
-    return settings = await messaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: true,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
+    try {
+      return settings = await messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: true,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+    } catch (error) {
+      log('Error requesting FCM permissions: $error');
+      return null;
+    }
   }
 }
