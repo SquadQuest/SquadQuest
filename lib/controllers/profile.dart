@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/models/user.dart';
@@ -51,6 +52,8 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
   }
 
   Future<UserProfile> save(UserProfile profile) async {
+    logger.i({'profile:save': profile});
+
     assert(profile.id.isNotEmpty, 'Cannot save a profile with no ID');
 
     final supabase = ref.read(supabaseClientProvider);
@@ -70,7 +73,8 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
   }
 
   Future<UserProfile> patch(Map<String, dynamic> patchData) async {
-    log('ProfileController.patch: patchData: $patchData');
+    logger.i({'profile:patch': patchData});
+
     final currentProfile = state.value;
 
     if (currentProfile == null) {

@@ -4,7 +4,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:squadquest/controllers/settings.dart';
-import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/app.dart';
@@ -34,8 +33,6 @@ void main() async {
   // Initialize any providers that need to be always-on
   container.read(firebaseMessagingServiceProvider);
   container.read(settingsControllerProvider);
-
-  loggerDemo();
 
   // Run the app
   runApp(UncontrolledProviderScope(

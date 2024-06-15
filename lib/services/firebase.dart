@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:squadquest/controllers/profile.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/firebase_options.dart';
 
 export 'package:firebase_core/firebase_core.dart';
@@ -28,7 +28,7 @@ final firebaseMessagingStreamProvider = StreamProvider<RemoteMessage>((ref) {
 });
 
 Future<FirebaseApp> buildFirebaseApp() async {
-  log('buildFirebaseApp');
+  loggerNoStack.t('buildFirebaseApp');
 
   final app = Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -42,12 +42,7 @@ Future<FirebaseApp> buildFirebaseApp() async {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await buildFirebaseApp();
 
-  log("Handling a background message: ${message.messageId} data=${message.data}");
-  inspect(message);
-
-  if (message.notification != null) {
-    log('Background message also contained a notification:\n\ttitle: ${message.notification?.title}\n\tbody: ${message.notification?.body}');
-  }
+  loggerNoStack.t({'message:background': message});
 }
 
 class FirebaseMessagingService {
@@ -63,7 +58,7 @@ class FirebaseMessagingService {
   }
 
   void _init() async {
-    log('FirebaseMessagingService._init');
+    loggerNoStack.t('FirebaseMessagingService._init');
 
     messaging = FirebaseMessaging.instance;
 
@@ -77,13 +72,15 @@ class FirebaseMessagingService {
     // get FCM device token
     try {
       token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
+      loggerNoStack.i('Got FCM token: $token');
     } catch (error) {
-      log('Error getting FCM token: $error');
+      logger.e('Error getting FCM token', error: error);
     }
 
     // save FCM token to profile—main forced the service to initialize before the app is run so profile will never be set already
-    ref.listen(profileProvider, (_, profile) async {
-      log('FirebaseMessagingService._init.onProfileChange: profile=${profile.value}, token=$token');
+    ref.listen(profileProvider, (previous, profile) async {
+      loggerNoStack.i(
+          {'profile:previous': previous?.value, 'profile:next': profile.value});
       if (profile.value != null &&
           token != null &&
           profile.value!.fcmToken != token) {
@@ -106,12 +103,8 @@ class FirebaseMessagingService {
   }
 
   void _onMessage(RemoteMessage message, bool? wasBackground) {
-    log('FirebaseMessagingService._onMessage: wasBackground=$wasBackground messageId=${message.messageId} data=${message.data}');
-    inspect(message);
-
-    if (message.notification != null) {
-      log('Foreground message also contained a notification:\n\ttitle: ${message.notification?.title}\n\tbody: ${message.notification?.body}');
-    }
+    loggerNoStack
+        .t({'message:foreground': message, 'background': wasBackground});
 
     _streamController.add(message);
   }
@@ -130,7 +123,7 @@ class FirebaseMessagingService {
         sound: true,
       );
     } catch (error) {
-      log('Error requesting FCM permissions: $error');
+      logger.e('Error requesting FCM permissions', error: error);
       return null;
     }
   }
