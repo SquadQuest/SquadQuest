@@ -18,7 +18,7 @@ class AuthController extends Notifier<Session?> {
 
   @override
   Session? build() {
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     return supabase.auth.currentSession;
   }
@@ -34,13 +34,13 @@ class AuthController extends Notifier<Session?> {
   Future<void> signInWithOtp({required String phone}) async {
     _verifyingPhone = phone;
 
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     await supabase.auth.signInWithOtp(phone: phone);
   }
 
   Future<void> verifyOTP({required String token}) async {
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     final AuthResponse response = await supabase.auth.verifyOTP(
       type: OtpType.sms,
@@ -57,7 +57,7 @@ class AuthController extends Notifier<Session?> {
   }
 
   Future<void> updateUserAttributes(Map<String, Object> data) async {
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     await supabase.auth.updateUser(
       UserAttributes(
@@ -67,7 +67,7 @@ class AuthController extends Notifier<Session?> {
   }
 
   Future<void> signOut() async {
-    await ref.read(supabaseProvider).auth.signOut();
+    await ref.read(supabaseClientProvider).auth.signOut();
     state = null;
   }
 }

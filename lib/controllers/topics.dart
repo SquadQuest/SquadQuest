@@ -15,7 +15,7 @@ class TopicsController extends AsyncNotifier<List<Topic>> {
   }
 
   Future<List<Topic>> fetch() async {
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     return supabase
         .from('topics')
@@ -35,7 +35,7 @@ class TopicsController extends AsyncNotifier<List<Topic>> {
     final List<Topic>? loadedTopics =
         state.hasValue ? state.asData!.value : null;
 
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     final Map topicData = topic.toMap();
 

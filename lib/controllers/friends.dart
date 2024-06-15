@@ -15,7 +15,7 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
   }
 
   Future<List<Friend>> fetch() async {
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     return supabase
         .from('friends')
@@ -31,7 +31,7 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
     final List<Friend>? loadedFriends =
         state.hasValue ? state.asData!.value : null;
 
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     try {
       final response = await supabase.functions
@@ -57,7 +57,7 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
     final List<Friend>? loadedFriends =
         state.hasValue ? state.asData!.value : null;
 
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     try {
       final response = await supabase.functions.invoke('action-friend-request',

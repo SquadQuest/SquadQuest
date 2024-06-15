@@ -34,7 +34,7 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
         .toList();
 
     if (missingIds.isNotEmpty) {
-      final supabase = ref.read(supabaseProvider);
+      final supabase = ref.read(supabaseClientProvider);
       await supabase
           .from('profiles')
           .select('*')

@@ -14,7 +14,7 @@ void main() async {
   await dotenv.load(fileName: ".env");
 
   // Initialize Supabase
-  await Supabase.initialize(
+  final supabaseApp = await Supabase.initialize(
     url: dotenv.get('SUPABASE_URL'),
     anonKey: dotenv.get('SUPABASE_ANON_KEY'),
   );
@@ -28,6 +28,6 @@ void main() async {
   // SettingsController for changes, then passes it further down to the
   // SettingsView.
   runApp(ProviderScope(
-      overrides: [supabaseProvider.overrideWithValue(Supabase.instance.client)],
+      overrides: [supabaseAppProvider.overrideWithValue(supabaseApp)],
       child: const MyApp()));
 }

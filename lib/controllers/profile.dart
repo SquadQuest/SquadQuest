@@ -28,7 +28,7 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
   }
 
   Future<UserProfile?> fetch() async {
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
     final session = ref.read(authControllerProvider);
     log('ProfileController.fetch: session: ${session == null ? 'no' : 'yes'}');
 
@@ -53,7 +53,7 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
   Future<UserProfile> save(UserProfile profile) async {
     assert(profile.id.isNotEmpty, 'Cannot save a profile with no ID');
 
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     final Map profileData = profile.toMap();
 

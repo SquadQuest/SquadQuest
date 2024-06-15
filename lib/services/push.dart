@@ -51,7 +51,7 @@ class PushService extends Notifier<String?> {
         token; // TODO: store something more useful? _messaging if it's cached?
 
     // save token to profile
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
     await supabase
         .from('profiles')
         .update({'fcm_token': token}).eq('id', session.user.id);

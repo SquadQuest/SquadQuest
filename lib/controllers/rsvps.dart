@@ -16,7 +16,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     final profilesCache = ref.read(profilesCacheProvider.notifier);
 
     // subscribe to changes
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
     supabase
         .from('instance_members')
         .stream(primaryKey: ['id'])
@@ -32,7 +32,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
 
   StreamSubscription subscribeByInstance(
       InstanceID instanceId, Function(List<InstanceMember>) onData) {
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
 
     return supabase
@@ -50,7 +50,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     final List<InstanceMember>? loadedRsvps =
         state.hasValue ? state.asData!.value : null;
 
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     try {
       final response = await supabase.functions.invoke('rsvp',
@@ -101,7 +101,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
 
   Future<List<InstanceMember>> invite(
       Instance instance, List<UserID> userIds) async {
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     try {
       final response = await supabase.functions.invoke('invite',

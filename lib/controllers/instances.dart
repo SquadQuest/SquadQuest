@@ -23,7 +23,7 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
   }
 
   Future<List<Instance>> fetch() async {
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     return supabase
         .from('instances')
@@ -42,7 +42,7 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     final List<Instance>? loadedInstances =
         state.hasValue ? state.asData!.value : null;
 
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     final Map instanceData = instance.toMap();
 
@@ -85,7 +85,7 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
       return loadedInstances.firstWhere((instance) => instance.id == id);
     }
 
-    final supabase = ref.read(supabaseProvider);
+    final supabase = ref.read(supabaseClientProvider);
 
     final data = await supabase
         .from('instances')
