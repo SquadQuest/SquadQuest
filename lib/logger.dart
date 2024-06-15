@@ -2,10 +2,12 @@ import 'package:logger/logger.dart';
 
 final logger = Logger(
   printer: PrettyPrinter(methodCount: 3),
+  filter: ProductionFilter()
 );
 
 final loggerNoStack = Logger(
-  printer: PrettyPrinter(methodCount: 0),
+  printer: PrettyPrinter(methodCount: 0),,
+  filter: ProductionFilter()
 );
 
 void loggerDemo() {
