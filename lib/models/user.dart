@@ -8,12 +8,14 @@ class UserProfile {
     required this.firstName,
     required this.lastName,
     required this.phone,
+    required this.fcmToken,
   });
 
   final UserID id;
   final String firstName;
   final String lastName;
   final String phone;
+  final String? fcmToken;
 
   String get fullName => '$firstName $lastName';
   String get phoneFormatted => formatPhone(phone);
@@ -24,6 +26,7 @@ class UserProfile {
       firstName: map['first_name'] as String,
       lastName: map['last_name'] as String,
       phone: map['phone'] as String,
+      fcmToken: map['fcm_token'],
     );
   }
 
@@ -32,7 +35,8 @@ class UserProfile {
       'id': id,
       'first_name': firstName,
       'last_name': lastName,
-      'phone': phone
+      'phone': phone,
+      'fcm_token': fcmToken,
     };
   }
 

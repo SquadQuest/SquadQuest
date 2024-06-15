@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/services/firebase.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -43,12 +44,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     log('SplashScreen.build: session: ${session == null ? 'no' : 'yes'}, profile: $profile');
     if (profile.hasValue) {
-      _afterMinSplashTime(() {
-        context.go(session == null
-            ? '/login'
-            : profile.value == null
-                ? '/profile'
-                : '/');
+      _afterMinSplashTime(() async {
+        await ref.read(firebaseMessagingServiceProvider).requestPermissions();
+
+        if (context.mounted) {
+          context.go(session == null
+              ? '/login'
+              : profile.value == null
+                  ? '/profile'
+                  : '/');
+        }
       });
     }
 

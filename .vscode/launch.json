@@ -19,6 +19,7 @@
             ],
             "attachSimplePort": 9229,
             "outputCapture": "std",
+            "envFile": "${workspaceFolder}/supabase/functions/.env"
         },
         {
             "type": "node",

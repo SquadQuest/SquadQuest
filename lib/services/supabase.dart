@@ -20,7 +20,7 @@ final supabaseAuthStateChangesProvider = StreamProvider<AuthState?>((ref) {
   return supabase.auth.onAuthStateChange;
 });
 
-Future<Supabase> buildSupabaseApp(DotEnv dotEnv) async {
+Future<Supabase> buildSupabaseApp() async {
   log('buildSupabaseApp');
   return Supabase.initialize(
     url: dotenv.get('SUPABASE_URL'),

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 
 import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/app.dart';
 
 void main() async {
@@ -14,17 +13,23 @@ void main() async {
   await dotenv.load(fileName: ".env");
 
   // Initialize Supabase
-  final supabaseApp = await buildSupabaseApp(dotenv);
+  final supabaseApp = await buildSupabaseApp();
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  final firebaseApp = await buildFirebaseApp();
 
-  // Run the app and pass in the SettingsController. The app listens to the
-  // SettingsController for changes, then passes it further down to the
-  // SettingsView.
-  runApp(ProviderScope(
-      overrides: [supabaseAppProvider.overrideWithValue(supabaseApp)],
-      child: const MyApp()));
+  // Initialize a custom provider container
+  final container = ProviderContainer(overrides: [
+    supabaseAppProvider.overrideWithValue(supabaseApp),
+    firebaseAppProvider.overrideWithValue(firebaseApp)
+  ]);
+
+  // Initialize any providers that need to be always-on
+  container.read(firebaseMessagingServiceProvider);
+
+  // Run the app
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: MyApp(),
+  ));
 }

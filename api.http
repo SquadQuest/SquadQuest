@@ -54,3 +54,20 @@ Authorization: Bearer {{token}}
             "FRIEND_UUID_1"
         ]
     }
+
+### Push test
+
+POST {{baseUrl}}/push-test
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+    {
+        "type": "INSERT",
+        "schema": "public",
+        "table": "notifications",
+        "record": {
+            "id": "PLACEHOLDER_ID",
+            "user_id": "USER_UUID_HERE",
+            "body": "Hello World!"
+        }
+    }
