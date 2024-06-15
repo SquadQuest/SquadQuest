@@ -166,96 +166,98 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
         ),
         body: Padding(
           padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  autofocus: true,
-                  readOnly: submitted,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    // prefixIcon: Icon(Icons.flag),
-                    labelText: 'Title for event',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter event title';
-                    }
-                    return null;
-                  },
-                  controller: _titleController,
-                ),
-                const SizedBox(
-                  height: 24,
-                ),
-                TextFormField(
-                  readOnly: submitted,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    // prefixIcon: Icon(Icons.pin_drop),
-                    labelText: 'Description of location',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter location descrption';
-                    }
-                    return null;
-                  },
-                  controller: _locationDescriptionController,
-                ),
-                const SizedBox(
-                  height: 24,
-                ),
-                FormTopicPicker(valueProvider: _topicProvider),
-                const SizedBox(
-                  height: 24,
-                ),
-                FormDatePicker(
-                    labelText: 'Date to meet up on',
-                    initialValue: startDate,
-                    onChanged: (DateTime date) {
-                      setState(() {
-                        startDate = date;
-                      });
-                    }),
-                const SizedBox(height: 16),
-                FormTimePicker(
-                    labelText: 'Earliest time to meet up at',
-                    valueProvider: _startTimeMinProvider,
-                    onChanged: (TimeOfDay time) {
-                      if (!startTimeMaxSet) {
-                        ref.read(_startTimeMaxProvider.notifier).state =
-                            _plusMinutes(time, 15);
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    autofocus: true,
+                    readOnly: submitted,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      // prefixIcon: Icon(Icons.flag),
+                      labelText: 'Title for event',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter event title';
                       }
-                    }),
-                const SizedBox(height: 16),
-                FormTimePicker(
-                    labelText: 'Latest time to meet up by',
-                    valueProvider: _startTimeMaxProvider,
-                    onChanged: (TimeOfDay time) {
-                      setState(() {
-                        startTimeMaxSet = true;
-                      });
-                    }),
-                const SizedBox(height: 16),
-                FormVisibilityPicker(
-                    labelText: 'Visibility of this posting',
-                    valueProvider: _visibilityProvider),
-                const SizedBox(height: 16),
-                submitted
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed:
-                            submitted ? null : () => _submitEvent(context),
-                        child: const Text(
-                          'Post',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                      )
-              ],
+                      return null;
+                    },
+                    controller: _titleController,
+                  ),
+                  const SizedBox(
+                    height: 24,
+                  ),
+                  TextFormField(
+                    readOnly: submitted,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      // prefixIcon: Icon(Icons.pin_drop),
+                      labelText: 'Description of location',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter location descrption';
+                      }
+                      return null;
+                    },
+                    controller: _locationDescriptionController,
+                  ),
+                  const SizedBox(
+                    height: 24,
+                  ),
+                  FormTopicPicker(valueProvider: _topicProvider),
+                  const SizedBox(
+                    height: 24,
+                  ),
+                  FormDatePicker(
+                      labelText: 'Date to meet up on',
+                      initialValue: startDate,
+                      onChanged: (DateTime date) {
+                        setState(() {
+                          startDate = date;
+                        });
+                      }),
+                  const SizedBox(height: 16),
+                  FormTimePicker(
+                      labelText: 'Earliest time to meet up at',
+                      valueProvider: _startTimeMinProvider,
+                      onChanged: (TimeOfDay time) {
+                        if (!startTimeMaxSet) {
+                          ref.read(_startTimeMaxProvider.notifier).state =
+                              _plusMinutes(time, 15);
+                        }
+                      }),
+                  const SizedBox(height: 16),
+                  FormTimePicker(
+                      labelText: 'Latest time to meet up by',
+                      valueProvider: _startTimeMaxProvider,
+                      onChanged: (TimeOfDay time) {
+                        setState(() {
+                          startTimeMaxSet = true;
+                        });
+                      }),
+                  const SizedBox(height: 16),
+                  FormVisibilityPicker(
+                      labelText: 'Visibility of this posting',
+                      valueProvider: _visibilityProvider),
+                  const SizedBox(height: 16),
+                  submitted
+                      ? const Center(child: CircularProgressIndicator())
+                      : ElevatedButton(
+                          onPressed:
+                              submitted ? null : () => _submitEvent(context),
+                          child: const Text(
+                            'Post',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                        )
+                ],
+              ),
             ),
           ),
         ),
