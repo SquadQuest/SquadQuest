@@ -1,28 +1,20 @@
+import 'dart:developer';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/services/supabase.dart';
-import 'package:squadquest/controllers/profile.dart';
 
 export 'package:squadquest/services/supabase.dart' show Session, User;
 
 final authControllerProvider =
-    AsyncNotifierProvider<AuthController, Session?>(AuthController.new);
+    NotifierProvider<AuthController, Session?>(AuthController.new);
 
-final userProvider = StateProvider<User?>((ref) {
-  final authController = ref.watch(authControllerProvider);
-  return authController.value?.user;
-});
+class AuthController extends Notifier<Session?> {
+  final List<Function(Session)> _onAuthenticatedCallbacks = [];
 
-class AuthController extends AsyncNotifier<Session?> {
   AuthController();
 
-  String? _phone;
-  bool get isProfileInitialized =>
-      ref
-          .read(userProvider.notifier)
-          .state
-          ?.userMetadata?['profile_initialized'] ??
-      false;
+  String? _verifyingPhone;
 
   @override
   Session? build() {
@@ -31,10 +23,16 @@ class AuthController extends AsyncNotifier<Session?> {
     return supabase.auth.currentSession;
   }
 
-  Future<void> signInWithOtp({required String phone}) async {
-    state = const AsyncValue.loading();
+  void onAuthenticated(Function(Session) callback) {
+    _onAuthenticatedCallbacks.add(callback);
 
-    _phone = phone;
+    if (state != null) {
+      callback(state!);
+    }
+  }
+
+  Future<void> signInWithOtp({required String phone}) async {
+    _verifyingPhone = phone;
 
     final supabase = ref.read(supabaseProvider);
 
@@ -42,36 +40,34 @@ class AuthController extends AsyncNotifier<Session?> {
   }
 
   Future<void> verifyOTP({required String token}) async {
-    state = const AsyncValue.loading();
-
     final supabase = ref.read(supabaseProvider);
 
     final AuthResponse response = await supabase.auth.verifyOTP(
       type: OtpType.sms,
-      phone: _phone,
+      phone: _verifyingPhone,
       token: token,
     );
 
-    state = AsyncValue.data(response.session);
+    state = response.session;
+
+    log('AuthController.verifyOTP: _onAuthenticatedCallbacks: ${_onAuthenticatedCallbacks.length}');
+    for (final callback in _onAuthenticatedCallbacks) {
+      callback(response.session!);
+    }
   }
 
   Future<void> updateUserAttributes(Map<String, Object> data) async {
     final supabase = ref.read(supabaseProvider);
 
-    final UserResponse response = await supabase.auth.updateUser(
+    await supabase.auth.updateUser(
       UserAttributes(
         data: data,
       ),
     );
-
-    ref.read(userProvider.notifier).state = response.user;
   }
 
   Future<void> signOut() async {
-    state = const AsyncValue.loading();
     await ref.read(supabaseProvider).auth.signOut();
-    ref.read(userProvider.notifier).state = null;
-    ref.read(profileProvider.notifier).state = const AsyncValue.data(null);
-    state = const AsyncValue.data(null);
+    state = null;
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/services/supabase.dart';
@@ -12,18 +14,36 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
 
   @override
   Future<UserProfile?> build() async {
+    log('ProfileController.build');
+
+    // clear profile on logout
+    ref.listen(authControllerProvider, (previous, session) {
+      log('ProfileController.build.authChange: session: ${session == null ? 'no' : 'yes'}, previous: ${previous == null ? 'no' : 'yes'}');
+      if (session == null) {
+        state = const AsyncValue.data(null);
+      }
+    });
+
     return fetch();
   }
 
   Future<UserProfile?> fetch() async {
     final supabase = ref.read(supabaseProvider);
-    final authController = await ref.read(authControllerProvider.future);
+    final session = ref.read(authControllerProvider);
+    log('ProfileController.fetch: session: ${session == null ? 'no' : 'yes'}');
+
+    if (session == null) {
+      return null;
+    }
+
+    state = const AsyncValue.loading();
 
     final profiles = await supabase
         .from('profiles')
         .select(_defaultSelect)
-        .eq('id', authController!.user.id)
+        .eq('id', session.user.id)
         .withConverter((data) => data.map(UserProfile.fromMap).toList());
+
     final profile = profiles.isNotEmpty ? profiles.first : null;
     state = AsyncValue.data(profile);
 

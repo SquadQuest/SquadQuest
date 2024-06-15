@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
@@ -70,45 +72,66 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   void initState() {
     super.initState();
 
-    // handle my RSVP status for this event
-    ref
-        .read(instancesProvider.notifier)
-        .getById(widget.id)
-        .then((Instance instance) {
+    final session = ref.read(authControllerProvider);
+    log('EventDetailsScreen.initState: rsvps=$rsvps, session=${session == null ? 'no' : 'yes'}');
+
+    loadEvent(ref);
+
+    if (session != null) {
+      loadRsvps(ref, session);
+    }
+  }
+
+  Future<void> loadEvent(WidgetRef ref) async {
+    log('EventDetailsScreen.loadEvents');
+
+    final loadedInstance = await ref.read(instancesProvider.notifier).getById(widget.id);
+
+    setState(() {
+      instance = loadedInstance;
+    });
+  }
+
+  void loadRsvps(WidgetRef ref, Session session) {
+    log('EventDetailsScreen.loadRsvps: rsvps=$rsvps, session=${session == null ? 'no' : 'yes'}');
+    final UserID myUserId = session.user.id;
+
+    ref.read(rsvpsProvider.notifier).subscribeByInstance(widget.id, (rsvps) {
       setState(() {
-        this.instance = instance;
+        this.rsvps = rsvps;
       });
 
-      ref.read(authControllerProvider.future).then((session) {
-        final UserID myUserId = session!.user.id;
+      final myRsvp = rsvps
+          .cast<InstanceMember?>()
+          .firstWhere((rsvp) => rsvp?.memberId == myUserId, orElse: () => null);
 
-        ref.read(rsvpsProvider.notifier).subscribeByInstance(widget.id,
-            (rsvps) {
-          setState(() {
-            this.rsvps = rsvps;
-          });
-
-          final myRsvp = rsvps.cast<InstanceMember?>().firstWhere(
-              (rsvp) => rsvp?.memberId == myUserId,
-              orElse: () => null);
-
-          setState(() {
-            for (int buttonIndex = 0;
-                buttonIndex < _rsvpSelection.length;
-                buttonIndex++) {
-              _rsvpSelection[buttonIndex] =
-                  myRsvp != null && buttonIndex == myRsvp.status.index - 1;
-            }
-          });
-        });
+      setState(() {
+        for (int buttonIndex = 0;
+            buttonIndex < _rsvpSelection.length;
+            buttonIndex++) {
+          _rsvpSelection[buttonIndex] =
+              myRsvp != null && buttonIndex == myRsvp.status.index - 1;
+        }
       });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final myUser = ref.watch(userProvider);
+    final session = ref.watch(authControllerProvider);
     final rsvpsController = ref.read(rsvpsProvider.notifier);
+
+    log('EventDetailsScreen.build: rsvps=$rsvps, session=${session == null ? 'no' : 'yes'}');
+    // if (session != null) {
+    //   loadRsvps(ref, session);
+    // } else {
+    //   ref.listen(authControllerProvider, (previous, session) {
+    //     log('EventDetailsScreen.build.authChange: session=${session == null ? 'no' : 'yes'}, previous: ${previous == null ? 'no' : 'yes'}');
+    //     if (session != null) {
+    //       loadRsvps(ref, session);
+    //     }
+    //   });
+    // }
 
     return SafeArea(
       child: Scaffold(
@@ -182,7 +205,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                     },
                                   )),
                       ])),
-          bottomNavigationBar: myUser == null
+          bottomNavigationBar: session == null
               ? null
               : Padding(
                   padding: const EdgeInsets.only(bottom: 16),
@@ -223,7 +246,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                               // update current event's rsvp list
                               if (rsvps != null) {
                                 final existingIndex = rsvps!.indexWhere(
-                                    (rsvp) => rsvp.memberId == myUser.id);
+                                    (rsvp) => rsvp.memberId == session.user.id);
 
                                 setState(() {
                                   if (existingIndex == -1) {
@@ -259,7 +282,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                   .showSnackBar(SnackBar(
                                 content: Text(savedRsvp == null
                                     ? 'You\'ve removed your RSVP'
-                                    : 'You\'ve RSVPed ${savedRsvp!.status.name}'),
+                                    : 'You\'ve RSVPed ${savedRsvp.status.name}'),
                               ));
 
                               _rsvpSnackbar?.closed.then((reason) {

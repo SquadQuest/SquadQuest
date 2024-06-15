@@ -65,7 +65,7 @@ class AppDrawer extends ConsumerStatefulWidget {
 class _AppDrawerState extends ConsumerState<AppDrawer> {
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(userProvider);
+    final session = ref.watch(authControllerProvider);
 
     return NavigationDrawer(
       selectedIndex: null,
@@ -81,13 +81,14 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
         }
       },
       children: <Widget>[
-        UserAccountsDrawerHeader(
-            decoration: const BoxDecoration(
-              color: Colors.blue,
-            ),
-            accountName: Text(
-                '${user?.userMetadata!['first_name']} ${user?.userMetadata!['last_name']}'),
-            accountEmail: Text(formatPhone(user!.phone!))),
+        if (session != null)
+          UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(
+                color: Colors.blue,
+              ),
+              accountName: Text(
+                  '${session.user.userMetadata!['first_name']} ${session.user.userMetadata!['last_name']}'),
+              accountEmail: Text(formatPhone(session.user.phone!))),
         ..._menu.map((menuItem) => switch (menuItem) {
               _MenuItem.divider => const Divider(thickness: 1),
               (_MenuItem _) => NavigationDrawerDestination(

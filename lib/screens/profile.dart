@@ -31,7 +31,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
 
     try {
-      final session = await ref.read(authControllerProvider.future);
+      final session = ref.read(authControllerProvider);
       final profileController = ref.read(profileProvider.notifier);
 
       final draftProfile = UserProfile(

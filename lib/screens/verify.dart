@@ -32,7 +32,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
     });
 
     final token = _tokenController.text.trim();
-    log('Verifying token');
+    log('Verifying OTP');
 
     final authController = ref.read(authControllerProvider.notifier);
 
@@ -40,9 +40,9 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
       await authController.verifyOTP(
         token: token,
       );
-      log('Verified token');
+      log('Verified OTP');
     } catch (error) {
-      log('Error verifying token: $error');
+      log('Error verifying OTP: $error');
 
       setState(() {
         submitted = false;

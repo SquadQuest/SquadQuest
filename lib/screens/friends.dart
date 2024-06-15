@@ -27,8 +27,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final myUser = ref.watch(userProvider);
+    final session = ref.watch(authControllerProvider);
     final friendsList = ref.watch(friendsProvider);
+
+    if (session == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return SafeArea(
       child: Scaffold(
@@ -47,7 +51,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           child: friendsList.when(
               data: (friends) {
                 return GroupedListView(
-                  elements: myUser == null ? <Friend>[] : friends,
+                  elements: friends,
                   physics: const AlwaysScrollableScrollPhysics(),
                   useStickyGroupSeparators: true,
                   // floatingHeader: true,
@@ -70,13 +74,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                         style: const TextStyle(fontSize: 18),
                       )),
                   itemBuilder: (context, friend) {
-                    final friendProfile = friend.getOtherProfile(myUser!.id);
+                    final friendProfile =
+                        friend.getOtherProfile(session.user.id);
                     return ListTile(
                         leading: friendStatusIcons[friend.status],
                         title: Text(friendProfile!.fullName),
                         subtitle: switch (friend.status) {
                           FriendStatus.requested => switch (
-                                friend.requester!.id == myUser.id) {
+                                friend.requester!.id == session.user.id) {
                               true => Text(
                                   'Request sent ${_requestDateFormat.format(friend.createdAt!)}'),
                               false => Text(
@@ -87,7 +92,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                             const Text('Request declined'),
                         },
                         trailing: friend.status == FriendStatus.requested &&
-                                friend.requestee?.id == myUser.id
+                                friend.requestee?.id == session.user.id
                             ? IconButton.filledTonal(
                                 icon: const Icon(Icons.next_plan_outlined),
                                 onPressed: () =>

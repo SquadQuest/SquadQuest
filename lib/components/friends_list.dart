@@ -32,8 +32,12 @@ class _FriendsListState extends ConsumerState<FriendsList> {
 
   @override
   Widget build(BuildContext context) {
-    final myUser = ref.watch(userProvider);
+    final session = ref.watch(authControllerProvider);
     final friendsList = ref.watch(friendsProvider);
+
+    if (session == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return SizedBox(
       height: MediaQuery.of(context).size.height * .75,
@@ -65,7 +69,7 @@ class _FriendsListState extends ConsumerState<FriendsList> {
                           }
 
                           final otherProfile =
-                              friend.getOtherProfile(myUser!.id);
+                              friend.getOtherProfile(session.user.id);
 
                           return _searchQuery.isEmpty ||
                               otherProfile!.fullName
@@ -73,7 +77,7 @@ class _FriendsListState extends ConsumerState<FriendsList> {
                                   .contains(_searchQuery);
                         }).map((friend) {
                           final otherProfile =
-                              friend.getOtherProfile(myUser!.id);
+                              friend.getOtherProfile(session.user.id);
 
                           return CheckboxListTile(
                             title: Text(otherProfile!.fullName),
