@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -31,6 +32,7 @@ class EventDetailsScreen extends ConsumerStatefulWidget {
 
 class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   Instance? instance;
+  late StreamSubscription rsvpSubscription;
   final List<bool> _rsvpSelection = [false, false, false, false];
   List<InstanceMember>? rsvps;
   ScaffoldFeatureController? _rsvpSnackbar;
@@ -85,7 +87,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   Future<void> loadEvent(WidgetRef ref) async {
     log('EventDetailsScreen.loadEvents');
 
-    final loadedInstance = await ref.read(instancesProvider.notifier).getById(widget.id);
+    final loadedInstance =
+        await ref.read(instancesProvider.notifier).getById(widget.id);
 
     setState(() {
       instance = loadedInstance;
@@ -96,7 +99,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     log('EventDetailsScreen.loadRsvps: rsvps=$rsvps, session=${session == null ? 'no' : 'yes'}');
     final UserID myUserId = session.user.id;
 
-    ref.read(rsvpsProvider.notifier).subscribeByInstance(widget.id, (rsvps) {
+    rsvpSubscription = ref
+        .read(rsvpsProvider.notifier)
+        .subscribeByInstance(widget.id, (rsvps) {
       setState(() {
         this.rsvps = rsvps;
       });
@@ -302,5 +307,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ],
                   ))),
     );
+  }
+
+  @override
+  void dispose() {
+    log('EventDetailsScreen.dispose: rsvpSubscription=$rsvpSubscription');
+    rsvpSubscription.cancel();
+    super.dispose();
   }
 }

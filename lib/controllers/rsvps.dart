@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/services/supabase.dart';
@@ -29,12 +30,12 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     return future;
   }
 
-  void subscribeByInstance(
-      InstanceID instanceId, Function(List<InstanceMember>) onData) async {
+  StreamSubscription subscribeByInstance(
+      InstanceID instanceId, Function(List<InstanceMember>) onData) {
     final supabase = ref.read(supabaseProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
 
-    supabase
+    return supabase
         .from('instance_members')
         .stream(primaryKey: ['id'])
         .eq('instance', instanceId)
