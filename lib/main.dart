@@ -14,10 +14,7 @@ void main() async {
   await dotenv.load(fileName: ".env");
 
   // Initialize Supabase
-  final supabaseApp = await Supabase.initialize(
-    url: dotenv.get('SUPABASE_URL'),
-    anonKey: dotenv.get('SUPABASE_ANON_KEY'),
-  );
+  final supabaseApp = await buildSupabaseApp(dotenv);
 
   // Initialize Firebase
   await Firebase.initializeApp(

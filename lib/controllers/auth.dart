@@ -20,6 +20,10 @@ class AuthController extends Notifier<Session?> {
   Session? build() {
     final supabase = ref.read(supabaseClientProvider);
 
+    // ref.listen(supabaseAuthStateChangesProvider, (previous, state) {
+    //   log('AuthController.build.authStateChange: state: ${state.value?.event}, previous: ${previous?.value?.event}');
+    // });
+
     return supabase.auth.currentSession;
   }
 
