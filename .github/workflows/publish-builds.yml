@@ -37,7 +37,7 @@ jobs:
 
       - name: Build for web
         if: ${{ github.event_name == 'push' }}
-        run: fvm flutter build web --base-href "/SquadQuest/"
+        run: fvm flutter build web
 
       - name: Upload web artifact
         if: ${{ github.event_name == 'push' }}
