@@ -18,7 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Flutter Version Management CLI
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Flutter Version Management CLI
         uses: flutter-actions/setup-fvm@v1
 
       - name: Install Flutter SDK
