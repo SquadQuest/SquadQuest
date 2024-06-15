@@ -31,16 +31,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
 
     try {
-      final session = ref.read(authControllerProvider);
       final profileController = ref.read(profileProvider.notifier);
 
-      final draftProfile = UserProfile(
-          id: session!.user.id,
-          firstName: _firstNameController.text.trim(),
-          lastName: _lastNameController.text.trim(),
-          phone: session.user.phone!);
-
-      final savedProfile = await profileController.save(draftProfile);
+      final savedProfile = await profileController.patch({
+        'first_name': _firstNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+      });
 
       await ref.read(authControllerProvider.notifier).updateUserAttributes({
         'first_name': savedProfile.firstName,
