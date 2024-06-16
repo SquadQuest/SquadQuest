@@ -77,13 +77,15 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
 
     final currentProfile = state.value;
 
+    late UserProfile patchedProfile;
     if (currentProfile == null) {
-      throw Exception('Cannot patch a profile that has not been fetched');
+      patchedProfile = UserProfile.fromMap(patchData);
+    } else {
+      final patchedProfileData = currentProfile.toMap();
+      patchedProfileData.addAll(patchData);
+      patchedProfile = UserProfile.fromMap(patchedProfileData);
     }
 
-    final patchedProfileData = currentProfile.toMap();
-    patchedProfileData.addAll(patchData);
-
-    return save(UserProfile.fromMap(patchedProfileData));
+    return save(patchedProfile);
   }
 }
