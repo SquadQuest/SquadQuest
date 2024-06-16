@@ -1,4 +1,5 @@
 import {
+  assert,
   assertPost,
   getRequiredJsonParameters,
   HttpError,
@@ -60,6 +61,14 @@ serve(async (request) => {
       .eq("member", currentUser.id)
       .maybeSingle();
   if (existingRsvpError) throw existingRsvpError;
+
+  // verify user has access to event
+  assert(
+    event.visibility == "public" || existingRsvp,
+    "This event is not public and you were not invited yet",
+    403,
+    "not-invited",
+  );
 
   // branch actions
   const defaultSelect = "*, member(*)";
