@@ -67,13 +67,14 @@ async function getSupabaseUser(
   return supabaseUser = data.user;
 }
 
-async function getSupabaseUserProfile(request: Request) {
-  const user = await getSupabaseUser(request);
-
+async function getSupabaseUserProfile(
+  request: Request,
+  userId?: string | null,
+) {
   const { data, error } = await getAnonSupabaseClient(request)
     .from("profiles")
     .select("*")
-    .eq("id", user!.id)
+    .eq("id", userId ?? (await getSupabaseUser(request))!.id)
     .single();
 
   if (error) {

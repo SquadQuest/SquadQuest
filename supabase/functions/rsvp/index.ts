@@ -8,7 +8,10 @@ import {
 import {
   getServiceRoleSupabaseClient,
   getSupabaseUser,
+  getSupabaseUserProfile,
 } from "../_shared/supabase.ts";
+import { Notification, postMessage } from "../_shared/fcm.ts";
+import { scrubProfile } from "../_shared/squadquest.ts";
 
 serve(async (request) => {
   // process request
@@ -72,10 +75,17 @@ serve(async (request) => {
 
   // branch actions
   const defaultSelect = "*, member(*)";
+  const userFullName =
+    `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`;
   let rsvp;
+  let notification: Notification | null = null;
+
   if (existingRsvp && existingRsvp.status == (status ?? "invited")) {
     // no-op
     rsvp = existingRsvp;
+
+    // enrich data
+    rsvp.member = await getSupabaseUserProfile(request, rsvp.member.id);
   } else if (
     status == null && existingRsvp &&
     existingRsvp.created_by == currentUser.id
@@ -93,6 +103,11 @@ serve(async (request) => {
 
     deletedRsvp.status = null;
     rsvp = deletedRsvp;
+
+    notification = {
+      title: event.title,
+      body: `RSVP removed for ${userFullName}`,
+    };
   } else if (existingRsvp) {
     // update existing RSVP
     const { data: updatedRsvp, error: updatedRsvpError } =
@@ -106,6 +121,13 @@ serve(async (request) => {
     if (updatedRsvpError) throw updatedRsvpError;
 
     rsvp = updatedRsvp;
+
+    notification = {
+      title: event.title,
+      body: status == "invited"
+        ? `RSVP removed for ${userFullName}`
+        : `RSVP ${status} (from ${existingRsvp.status}) for ${userFullName}`,
+    };
   } else if (status) {
     // insert new RSVP
     const { data: insertedRsvp, error: insertedRsvpError } =
@@ -123,8 +145,42 @@ serve(async (request) => {
     if (insertedRsvpError) throw insertedRsvpError;
 
     rsvp = insertedRsvp;
+
+    notification = {
+      title: event.title,
+      body: `RSVP ${status} for ${userFullName}`,
+    };
   } else {
     // posting null status to an RSVP that doesn't exist is a no-op
+  }
+
+  // scrub profile data
+  rsvp.member = scrubProfile(rsvp.member);
+
+  // send notification to host
+  if (notification && event.created_by != currentUser.id) {
+    const hostProfile = await getSupabaseUserProfile(request, event.created_by);
+
+    if (hostProfile.fcm_token) {
+      await postMessage({
+        token: hostProfile.fcm_token,
+        notification,
+        data: {
+          json: JSON.stringify({ event, rsvp }),
+        },
+        android: {
+          collapseKey: "rsvp",
+          // notification: {
+          //   icon: "ic_mail_outline",
+          // },
+        },
+        apns: {
+          headers: {
+            "apns-collapse-id": "rsvp",
+          },
+        },
+      });
+    }
   }
 
   // return new RSVP

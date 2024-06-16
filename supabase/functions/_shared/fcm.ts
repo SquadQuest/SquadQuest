@@ -20,6 +20,8 @@ interface Message {
   name?: string;
   notification?: Notification;
   data?: { [key: string]: string };
+  android?: { collapseKey?: string; notification?: { icon: string } };
+  apns?: { headers: { "apns-collapse-id": string } };
 }
 
 function getAccessToken(): Promise<string> {
@@ -58,7 +60,9 @@ async function postMessage(
 
   const responseData = await response.json();
   if (response.status < 200 || 299 < response.status) {
-    throw responseData;
+    const message = responseData?.error?.message ??
+      `status=${response.status}, response=${JSON.stringify(responseData)}`;
+    throw `Failed to send push notification: ${message}`;
   }
 
   return responseData;
