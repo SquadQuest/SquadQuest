@@ -49,7 +49,7 @@ class FirebaseMessagingService {
   final Ref ref;
   late final FirebaseMessaging messaging;
   NotificationSettings? settings;
-  late final String? token;
+  String? token;
   final _streamController = StreamController<RemoteMessage>.broadcast();
   Stream<RemoteMessage> get stream => _streamController.stream;
 
