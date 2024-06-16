@@ -1,6 +1,3 @@
-@baseUrl = https://chris-devbox.phl.io/functions/v1
-@token = YOUR_TOKEN_HERE
-
 ###
 
 GET {{baseUrl}}/db-test
@@ -12,7 +9,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
     {
-        "phone": "15556667777"
+        "phone": "{{friendPhone}}"
     }
 
 
@@ -23,7 +20,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
     {
-        "friend_id": "FRIEND_UUID",
+        "friend_id": "{{friendId}}",
         "action": "declined"
     }
 
@@ -35,7 +32,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
     {
-        "instance_id": "INSTANCE_UUID",
+        "instance_id": "{{instanceId}}",
         "status": "maybe"
     }
 
@@ -48,10 +45,10 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
     {
-        "instance_id": "INSTANCE_UUID",
+        "instance_id": "{{instanceId}}",
         "users": [
-            "FRIEND_UUID",
-            "FRIEND_UUID_1"
+            "{{friendId}}",
+            "{{friend2Id}}"
         ]
     }
 
@@ -67,7 +64,7 @@ Authorization: Bearer {{token}}
         "table": "notifications",
         "record": {
             "id": "PLACEHOLDER_ID",
-            "user_id": "USER_UUID_HERE",
+            "user_id": "{{userId}}",
             "body": "Hello World!"
         }
     }
