@@ -73,7 +73,10 @@ serve(async (request) => {
   // branch actions
   const defaultSelect = "*, member(*)";
   let rsvp;
-  if (
+  if (existingRsvp && existingRsvp.status == (status ?? "invited")) {
+    // no-op
+    rsvp = existingRsvp;
+  } else if (
     status == null && existingRsvp &&
     existingRsvp.created_by == currentUser.id
   ) {
