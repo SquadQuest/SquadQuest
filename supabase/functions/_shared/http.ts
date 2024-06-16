@@ -1,7 +1,7 @@
 function serve(handler: Deno.ServeHandler) {
-  Deno.serve((request, info) => {
+  Deno.serve(async (request, info) => {
     try {
-      return handler(request, info);
+      return await handler(request, info);
     } catch (error) {
       if (error instanceof HttpError) {
         let message = error.message;
