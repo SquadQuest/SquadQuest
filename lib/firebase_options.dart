@@ -42,12 +42,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyA87qGDgjT9CSoW2skUs-af-qsF5oU0-X0',
-    appId: '1:902139539375:web:8abd605c3ceace4077c95a',
+    appId: '1:902139539375:web:8ffb7afcec26c91c77c95a',
     messagingSenderId: '902139539375',
     projectId: 'squadquest-d8665',
     authDomain: 'squadquest-d8665.firebaseapp.com',
     storageBucket: 'squadquest-d8665.appspot.com',
-    measurementId: 'G-MGQNWDYJJ7',
+    measurementId: 'G-HCYKP80G02',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'squadquest-d8665.appspot.com',
     measurementId: 'G-4SMR1LJEHB',
   );
+
 }
