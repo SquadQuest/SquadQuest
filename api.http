@@ -33,7 +33,7 @@ Authorization: Bearer {{token}}
 
     {
         "instance_id": "{{instanceId}}",
-        "status": "maybe"
+        "status": "no"
     }
 
 
