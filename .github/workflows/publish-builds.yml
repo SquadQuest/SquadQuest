@@ -43,7 +43,7 @@ jobs:
 
       - name: Build for web
         if: ${{ github.event_name == 'push' }}
-        run: fvm flutter build web
+        run: fvm flutter build web --dart-define=PRODUCTION_LOGGING=true
         # run: fvm flutter build web --profile --source-maps --dart-define=Dart2jsOptimization=O0 --dart-define=PRODUCTION_LOGGING=true
 
       - name: Upload web artifact
