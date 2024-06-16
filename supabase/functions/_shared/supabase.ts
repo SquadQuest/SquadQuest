@@ -1,12 +1,16 @@
 import {
   createClient,
   SupabaseClient,
+  User,
 } from "https://esm.sh/@supabase/supabase-js";
 
 import { HttpError } from "./http.ts";
 
-function createServiceRoleSupabaseClient() {
-  return createClient(
+let serviceRoleSupabaseClient: SupabaseClient | null;
+function getServiceRoleSupabaseClient() {
+  if (serviceRoleSupabaseClient) return serviceRoleSupabaseClient;
+
+  return serviceRoleSupabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     {
@@ -19,8 +23,11 @@ function createServiceRoleSupabaseClient() {
   );
 }
 
-function createAnonSupabaseClient(request: Request) {
-  return createClient(
+let anonSupabaseClient: SupabaseClient | null;
+function getAnonSupabaseClient(request: Request) {
+  if (anonSupabaseClient) return anonSupabaseClient;
+
+  return anonSupabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     {
@@ -31,12 +38,16 @@ function createAnonSupabaseClient(request: Request) {
   );
 }
 
+let supabaseUser: User | null;
+
 const authorizationHeaderRegexp =
   /^Bearer ([A-Za-z0-9_-]{2,}(?:\.[A-Za-z0-9_-]{2,}){2})$/;
+
 async function getSupabaseUser(
-  supabaseClient: SupabaseClient,
   request: Request,
 ) {
+  if (supabaseUser) return supabaseUser;
+
   const authHeader = request.headers.get("Authorization");
 
   if (authHeader == null) {
@@ -52,12 +63,29 @@ async function getSupabaseUser(
 
   const token = authHeader.replace(authorizationHeaderRegexp, "$1");
 
-  const { data } = await supabaseClient.auth.getUser(token);
-  return data.user;
+  const { data } = await getAnonSupabaseClient(request).auth.getUser(token);
+  return supabaseUser = data.user;
+}
+
+async function getSupabaseUserProfile(request: Request) {
+  const user = await getSupabaseUser(request);
+
+  const { data, error } = await getAnonSupabaseClient(request)
+    .from("profiles")
+    .select("*")
+    .eq("id", user!.id)
+    .single();
+
+  if (error) {
+    throw new HttpError(`Error getting user profile: ${error.message}`, 500);
+  }
+
+  return data;
 }
 
 export {
-  createAnonSupabaseClient,
-  createServiceRoleSupabaseClient,
+  getAnonSupabaseClient,
+  getServiceRoleSupabaseClient,
   getSupabaseUser,
+  getSupabaseUserProfile,
 };
