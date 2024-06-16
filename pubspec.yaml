@@ -41,6 +41,7 @@ dependencies:
   firebase_messaging: ^15.0.1
   shared_preferences: ^2.2.3
   logger: ^2.3.0
+  web_browser_detect: ^2.0.3
 
 
   # The following adds the Cupertino Icons font to your application.

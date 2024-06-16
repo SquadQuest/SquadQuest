@@ -73,6 +73,7 @@ class FirebaseMessagingService {
     try {
       token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
       loggerNoStack.i('Got FCM token: $token');
+      ref.read(firebaseMessagingTokenProvider.notifier).state = token;
     } catch (error) {
       logger.e('Error getting FCM token', error: error);
     }
