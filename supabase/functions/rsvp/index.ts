@@ -167,6 +167,7 @@ serve(async (request) => {
         notification,
         data: {
           json: JSON.stringify({ event, rsvp }),
+          url: `https://squadquest.app/#/events/${event.id}`,
         },
         android: {
           collapseKey: "rsvp",
