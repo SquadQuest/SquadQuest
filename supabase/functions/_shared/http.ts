@@ -1,4 +1,43 @@
-function assert(shouldBeTrue: boolean, message: string, status: number = 400, errorId?: string) {
+function serve(handler: Deno.ServeHandler) {
+  Deno.serve((request, info) => {
+    try {
+      return handler(request, info);
+    } catch (error) {
+      if (error instanceof HttpError) {
+        let message = error.message;
+
+        if (error.errorId) {
+          message = `${error.errorId}: ${message}`;
+        }
+
+        return new Response(
+          message,
+          {
+            status: error.code,
+          },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          message: String(error?.message ?? error),
+          error_id: error.errorId,
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 500,
+        },
+      );
+    }
+  });
+}
+
+function assert(
+  shouldBeTrue: boolean,
+  message: string,
+  status: number = 400,
+  errorId?: string,
+) {
   if (!shouldBeTrue) {
     throw new HttpError(message, status, errorId);
   }
@@ -87,7 +126,8 @@ export {
   assertJson,
   assertMethod,
   assertPost,
+  debugResponse,
   getRequiredJsonParameters,
   HttpError,
-  debugResponse,
+  serve,
 };
