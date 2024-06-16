@@ -22,6 +22,23 @@
             "envFile": "${workspaceFolder}/supabase/functions/.env"
         },
         {
+            "request": "launch",
+            "name": "Deno: rsvp",
+            "type": "node",
+            "program": "${workspaceFolder}/supabase/functions/rsvp/index.ts",
+            "cwd": "${workspaceFolder}/supabase/functions/rsvp",
+            "env": {},
+            "runtimeExecutable": "/Users/chris/.deno/bin/deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-wait",
+                "--allow-all"
+            ],
+            "attachSimplePort": 9229,
+            "outputCapture": "std",
+            "envFile": "${workspaceFolder}/supabase/functions/.env"
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch api-test",
