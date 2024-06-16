@@ -25,7 +25,7 @@ serve(async (request) => {
   const responseData = await postMessage({
     token: fcmToken,
     notification: {
-      title: `Notification from Supabase`,
+      title: `Test Notification`,
       body: payload.record.body,
     },
     data: { hello: "world" },
