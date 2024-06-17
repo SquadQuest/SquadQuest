@@ -36,9 +36,9 @@ self.addEventListener('notificationclick', function (event) {
           console.log('found! navigating and switching focus...');
 
           client.postMessage({
-            messageType: 'notification-clicked',
+            messageType: 'notification-opened',
             messageId: fcmMessageId,
-            data: { urlHash: url.hash, ...data }
+            data
           });
 
           return client.focus();

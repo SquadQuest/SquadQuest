@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/router.dart';
 import 'package:squadquest/theme.dart';
@@ -18,12 +21,35 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     // (temporarily)? display any push notification in-app
-    ref.listen(firebaseMessagingStreamProvider, (previous, message) {
-      if (message.value?.notification == null) return;
+    ref.listen(firebaseMessagingStreamProvider, (previous, record) {
+      final (:type, :message) = record.value!;
 
-      _scaffoldKey.currentState?.showSnackBar(SnackBar(
-          content: Text(
-              '${message.value?.notification?.title ?? ''}\n\n${message.value?.notification?.body ?? ''}')));
+      switch (type) {
+        case 'message-received':
+          _scaffoldKey.currentState?.showSnackBar(SnackBar(
+              content: Text(
+                  '${message.notification?.title ?? ''}\n\n${message.notification?.body ?? ''}')));
+
+        case 'notification-opened':
+          final data = jsonDecode(message.data['json']);
+
+          switch (message.data['notificationType']) {
+            case 'rsvp':
+              final context = navigatorKey.currentContext;
+              if (context == null) return;
+
+              // if the top of the stack is the event details page, replace it
+              final go =
+                  router.routerDelegate.currentConfiguration.last.route.name ==
+                          'event-details'
+                      ? context.pushReplacementNamed
+                      : context.pushNamed;
+
+              go('event-details',
+                  pathParameters: {'id': data['event']['id'] as String});
+              break;
+          }
+      }
     });
 
     return MaterialApp.router(

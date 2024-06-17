@@ -12,6 +12,10 @@ import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/interop/set_handler.stub.dart'
     if (dart.library.html) 'package:squadquest/interop/set_handler.web.dart';
 
+export 'package:firebase_messaging/firebase_messaging.dart' show RemoteMessage;
+
+typedef FirebaseStreamRecord = ({String type, RemoteMessage message});
+
 final firebaseAppProvider = Provider<FirebaseApp>((_) {
   throw UnimplementedError();
 });
@@ -23,7 +27,8 @@ final firebaseMessagingServiceProvider =
 
 final firebaseMessagingTokenProvider = StateProvider<String?>((_) => null);
 
-final firebaseMessagingStreamProvider = StreamProvider<RemoteMessage>((ref) {
+final firebaseMessagingStreamProvider =
+    StreamProvider<FirebaseStreamRecord>((ref) {
   final firebaseMessagingService = ref.watch(firebaseMessagingServiceProvider);
   return firebaseMessagingService.stream;
 });
@@ -43,7 +48,7 @@ Future<FirebaseApp> buildFirebaseApp() async {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await buildFirebaseApp();
 
-  loggerNoStack.t({'message:background': message});
+  loggerNoStack.t({'message:background': message.toMap()});
 }
 
 class FirebaseMessagingService {
@@ -51,8 +56,8 @@ class FirebaseMessagingService {
   late final FirebaseMessaging messaging;
   NotificationSettings? settings;
   String? token;
-  final _streamController = StreamController<RemoteMessage>.broadcast();
-  Stream<RemoteMessage> get stream => _streamController.stream;
+  final _streamController = StreamController<FirebaseStreamRecord>.broadcast();
+  Stream<FirebaseStreamRecord> get stream => _streamController.stream;
 
   FirebaseMessagingService(this.ref) {
     _init();
@@ -110,7 +115,7 @@ class FirebaseMessagingService {
     // catch notification clicks on web
     if (kIsWeb) {
       // set a global handler on window instead of listening to messages to ensure there is only ever a single handler across hot reloads
-      setWebHandler('onNotificationClicked', _onNotificationClicked);
+      setWebHandler('onWebNotificationOpened', _onWebNotificationOpened);
     }
   }
 
@@ -120,26 +125,27 @@ class FirebaseMessagingService {
       'was-background': wasBackground
     });
 
-    _streamController.add(message);
+    _streamController.add((type: 'message-received', message: message));
   }
 
   void _onMessageOpened(RemoteMessage message) {
     loggerNoStack.t({'message:opened': message.toMap()});
+    _streamController.add((type: 'notification-opened', message: message));
   }
 
-  void _onNotificationClicked(Map data) {
+  void _onWebNotificationOpened(Map data) {
     final message = RemoteMessage(
         messageType: data['messageType'],
         messageId: data['messageId'],
         data: {
+          'notificationType': data['data']?['notificationType'],
           'url': data['data']?['url'],
           'json': data['data']?['json'],
-          'urlHash': data['data']?['urlHash'],
         });
 
     loggerNoStack.t({'onNotificationClicked': message.toMap()});
 
-    _streamController.add(message);
+    _streamController.add((type: 'notification-opened', message: message));
   }
 
   Future<NotificationSettings?> requestPermissions() async {

@@ -53,8 +53,8 @@
         console.log('index.html received message', event.data);
 
         // relay message where Flutter app can catch it
-        if (event.data.messageType == 'notification-clicked' && window.onNotificationClicked) {
-          window.onNotificationClicked(event.data);
+        if (event.data.messageType == 'notification-opened' && window.onWebNotificationOpened) {
+          window.onWebNotificationOpened(event.data);
         }
       });
     }
