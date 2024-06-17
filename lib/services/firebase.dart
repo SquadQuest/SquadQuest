@@ -1,17 +1,16 @@
 import 'dart:async';
-import 'dart:js' as js; // ignore: avoid_web_libraries_in_flutter
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:squadquest/controllers/profile.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/firebase_options.dart';
-
-export 'package:firebase_core/firebase_core.dart';
+import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/interop/set_handler.stub.dart'
+    if (dart.library.html) 'package:squadquest/interop/set_handler.web.dart';
 
 final firebaseAppProvider = Provider<FirebaseApp>((_) {
   throw UnimplementedError();
@@ -111,20 +110,7 @@ class FirebaseMessagingService {
     // catch notification clicks on web
     if (kIsWeb) {
       // set a global handler on window instead of listening to messages to ensure there is only ever a single handler across hot reloads
-      js.context['onNotificationClicked'] = (eventPayload) {
-        final message = RemoteMessage(
-            messageType: eventPayload?['messageType'],
-            messageId: eventPayload?['messageId'],
-            data: {
-              'url': eventPayload?['data']?['url'],
-              'json': eventPayload?['data']?['json'],
-              'urlHash': eventPayload?['data']?['urlHash'],
-            });
-
-        loggerNoStack.t({'onNotificationClicked': message.toMap()});
-
-        _streamController.add(message);
-      };
+      setWebHandler('onNotificationClicked', _onNotificationClicked);
     }
   }
 
@@ -139,6 +125,21 @@ class FirebaseMessagingService {
 
   void _onMessageOpened(RemoteMessage message) {
     loggerNoStack.t({'message:opened': message.toMap()});
+  }
+
+  void _onNotificationClicked(Map data) {
+    final message = RemoteMessage(
+        messageType: data['messageType'],
+        messageId: data['messageId'],
+        data: {
+          'url': data['data']?['url'],
+          'json': data['data']?['json'],
+          'urlHash': data['data']?['urlHash'],
+        });
+
+    loggerNoStack.t({'onNotificationClicked': message.toMap()});
+
+    _streamController.add(message);
   }
 
   Future<NotificationSettings?> requestPermissions() async {
