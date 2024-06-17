@@ -45,8 +45,16 @@
 
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./firebase-messaging-sw.js?v=23");
+        navigator.serviceWorker.register("./firebase-messaging-sw.js?v=38");
       });
+
+      // Listen to service worker messages sent via postMessage()
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        console.log('index.html received message', event.data);
+
+        // relay message where Flutter app can catch it
+        window.postMessage(event.data);
+      })
     }
   </script>
 </body>

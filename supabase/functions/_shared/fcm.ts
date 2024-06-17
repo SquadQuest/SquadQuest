@@ -1,28 +1,7 @@
-import {
-  getAnonSupabaseClient,
-  getServiceRoleSupabaseClient,
-  getSupabaseUser,
-} from "../_shared/supabase.ts";
-
 import { JWT } from "npm:google-auth-library@9";
 import serviceAccount from "../firebase-service-account.json" with {
   type: "json",
 };
-
-interface Notification {
-  title: string;
-  body: string;
-  image?: string;
-}
-
-interface Message {
-  token?: string;
-  name?: string;
-  notification?: Notification;
-  data?: { [key: string]: string };
-  android?: { collapseKey?: string; notification?: { icon: string } };
-  apns?: { headers: { "apns-collapse-id": string } };
-}
 
 function getAccessToken(): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -41,9 +20,57 @@ function getAccessToken(): Promise<string> {
   });
 }
 
+interface Message {
+  token?: string;
+  title: string;
+  body: string;
+
+  url?: string;
+  payload?: object;
+  collapseKey?: string;
+  icon?: string;
+}
+
 async function postMessage(
-  message: Message,
+  {
+    token,
+    title,
+    body,
+    icon = "https://squadquest.app/icons/Icon-192.png",
+    ...options
+  }: Message,
 ): Promise<Message> {
+  // deno-lint-ignore no-explicit-any
+  const message: any = {
+    token,
+    notification: {
+      title,
+      body,
+    },
+    data: {},
+    android: {},
+    apns: { headers: {} },
+    webpush: { notification: {} },
+  };
+
+  if (options.url) {
+    message.data.url = options.url;
+  }
+
+  if (options.payload) {
+    message.data.json = JSON.stringify(options.payload);
+  }
+
+  if (options.collapseKey) {
+    message.android.collapseKey = options.collapseKey;
+    message.apns.headers["apns-collapse-id"] = options.collapseKey;
+    message.webpush.notification.tag = options.collapseKey;
+  }
+
+  if (icon) {
+    message.webpush.notification.icon = icon;
+  }
+
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
     {
@@ -52,9 +79,7 @@ async function postMessage(
         "Content-Type": "application/json",
         Authorization: `Bearer ${await getAccessToken()}`,
       },
-      body: JSON.stringify({
-        message,
-      }),
+      body: JSON.stringify({ message }),
     },
   );
 
@@ -68,6 +93,6 @@ async function postMessage(
   return responseData;
 }
 
-export type { Notification };
+// export type { Notification };
 
 export { getAccessToken, postMessage };

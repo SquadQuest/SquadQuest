@@ -101,6 +101,10 @@ class FirebaseMessagingService {
 
     FirebaseMessaging.onMessageOpenedApp
         .listen((message) => _onMessage(message, true));
+
+    // handle interaction with background notifications
+    // - NOTE: this does not currently work on the web because Flutter hasn't figured out how to communicate from the service worker back to the UI thread
+    FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpened);
   }
 
   void _onMessage(RemoteMessage message, bool? wasBackground) {
@@ -108,6 +112,14 @@ class FirebaseMessagingService {
         .t({'message:foreground': message, 'background': wasBackground});
 
     _streamController.add(message);
+  }
+
+  void _onMessageOpened(RemoteMessage message) {
+    loggerNoStack.t({
+      'message:opened': message.notification?.title,
+      'body': message.notification?.body,
+      'payload': message.data
+    });
   }
 
   Future<NotificationSettings?> requestPermissions() async {
