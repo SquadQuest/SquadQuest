@@ -35,7 +35,7 @@
   <link rel="manifest" href="manifest.json">
 </head>
 
-<body>
+<body style="background-color: #141218">
   <script src="flutter_bootstrap.js" async></script>
   <script>
     // request permissions again just for good measure
@@ -45,7 +45,17 @@
 
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./firebase-messaging-sw.js?v=23");
+        navigator.serviceWorker.register("./firebase-messaging-sw.js?v=39");
+      });
+
+      // relay notification clicks from service worker to Flutter app
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        console.log('index.html received message', event.data);
+
+        // relay message where Flutter app can catch it
+        if (event.data.messageType == 'notification-opened' && window.onWebNotificationOpened) {
+          window.onWebNotificationOpened(event.data);
+        }
       });
     }
   </script>

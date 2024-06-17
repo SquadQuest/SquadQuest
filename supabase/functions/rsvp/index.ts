@@ -10,7 +10,7 @@ import {
   getSupabaseUser,
   getSupabaseUserProfile,
 } from "../_shared/supabase.ts";
-import { Notification, postMessage } from "../_shared/fcm.ts";
+import { postMessage } from "../_shared/fcm.ts";
 import { scrubProfile } from "../_shared/squadquest.ts";
 
 serve(async (request) => {
@@ -78,7 +78,7 @@ serve(async (request) => {
   const userFullName =
     `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`;
   let rsvp;
-  let notification: Notification | null = null;
+  let notificationBody: string | null = null;
 
   if (existingRsvp && existingRsvp.status == (status ?? "invited")) {
     // no-op
@@ -104,10 +104,7 @@ serve(async (request) => {
     deletedRsvp.status = null;
     rsvp = deletedRsvp;
 
-    notification = {
-      title: event.title,
-      body: `RSVP removed for ${userFullName}`,
-    };
+    notificationBody = `RSVP removed for ${userFullName}`;
   } else if (existingRsvp) {
     // update existing RSVP
     const { data: updatedRsvp, error: updatedRsvpError } =
@@ -122,12 +119,9 @@ serve(async (request) => {
 
     rsvp = updatedRsvp;
 
-    notification = {
-      title: event.title,
-      body: status == "invited"
-        ? `RSVP removed for ${userFullName}`
-        : `RSVP ${status} (from ${existingRsvp.status}) for ${userFullName}`,
-    };
+    notificationBody = status == "invited"
+      ? `RSVP removed for ${userFullName}`
+      : `RSVP ${status} (from ${existingRsvp.status}) for ${userFullName}`;
   } else if (status) {
     // insert new RSVP
     const { data: insertedRsvp, error: insertedRsvpError } =
@@ -146,10 +140,7 @@ serve(async (request) => {
 
     rsvp = insertedRsvp;
 
-    notification = {
-      title: event.title,
-      body: `RSVP ${status} for ${userFullName}`,
-    };
+    notificationBody = `RSVP ${status} for ${userFullName}`;
   } else {
     // posting null status to an RSVP that doesn't exist is a no-op
   }
@@ -158,28 +149,17 @@ serve(async (request) => {
   rsvp.member = scrubProfile(rsvp.member);
 
   // send notification to host
-  if (notification && event.created_by != currentUser.id) {
+  if (notificationBody && event.created_by != currentUser.id) {
     const hostProfile = await getSupabaseUserProfile(request, event.created_by);
 
     if (hostProfile.fcm_token) {
       await postMessage({
         token: hostProfile.fcm_token,
-        notification,
-        data: {
-          json: JSON.stringify({ event, rsvp }),
-          url: `https://squadquest.app/#/events/${event.id}`,
-        },
-        android: {
-          collapseKey: "rsvp",
-          // notification: {
-          //   icon: "ic_mail_outline",
-          // },
-        },
-        apns: {
-          headers: {
-            "apns-collapse-id": "rsvp",
-          },
-        },
+        title: event.title,
+        body: notificationBody,
+        url: `https://squadquest.app/#/events/${event.id}`,
+        payload: { event, rsvp },
+        collapseKey: "rsvp",
       });
     }
   }

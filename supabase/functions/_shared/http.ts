@@ -1,5 +1,7 @@
+const port = (Deno.env.get("PORT") ?? 8000) as number;
+
 function serve(handler: Deno.ServeHandler) {
-  Deno.serve(async (request, info) => {
+  Deno.serve({ port }, async (request, info) => {
     try {
       return await handler(request, info);
     } catch (error) {

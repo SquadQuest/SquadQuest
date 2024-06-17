@@ -3,6 +3,10 @@ supabase.squadquest.app {
 	reverse_proxy localhost:8000
 }
 
+functions.dev.squadquest.app {
+	reverse_proxy localhost:8001
+}
+
 dev.squadquest.app {
 	file_server {
 		root ../build/web/
