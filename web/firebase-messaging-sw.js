@@ -72,9 +72,4 @@ self.addEventListener('notificationclick', function (event) {
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
 
-// request permissions again just for good measure
-Notification.requestPermission().then(permission => {
-  console.log('Notification permission: ', permission);
-});
-
 console.log('firebase-messaging-sw.js loaded!');

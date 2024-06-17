@@ -38,9 +38,14 @@
 <body>
   <script src="flutter_bootstrap.js" async></script>
   <script>
+    // request permissions again just for good measure
+    Notification.requestPermission().then(permission => {
+      console.log('Notification permission: ', permission);
+    });
+
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./firebase-messaging-sw.js?v=22");
+        navigator.serviceWorker.register("./firebase-messaging-sw.js?v=23");
       });
     }
   </script>
