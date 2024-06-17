@@ -1,14 +1,21 @@
 // notificationclick handler must be installed before FCM is loaded
 // - see: https://stackoverflow.com/questions/66224762/notificationclick-is-not-fired-for-remote-notifications
 self.addEventListener('notificationclick', function (event) {
-  const { url: incomingUrl } = event.notification.data?.FCM_MSG?.data;
+  console.log('notificationclick received: ', event.notification, event.data);
 
-  console.log('notificationclick received: ', event.notification.title, incomingUrl, event);
+  const { fcmMessageId, data } = event.notification.data?.FCM_MSG;
 
-  if (!incomingUrl) {
+  // skip non-data notifications
+  if (!data) {
     return;
   }
 
+  const { url: incomingUrl } = data;
+
+  // parse url field in data
+  if (!incomingUrl) {
+    return;
+  }
   const url = new URL(incomingUrl);
 
   // modify host if needed to support development
@@ -16,27 +23,32 @@ self.addEventListener('notificationclick', function (event) {
     url.host = location.host;
   }
 
-  event.notification.close(); // Android needs explicit close.
+  // close handled notification
+  event.notification.close();
+
+  // look for existing window/tab with the target URL's hostname to send a message to, or open the URL
   event.waitUntil(
     clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(windowClients => {
       for (client of windowClients) {
-        // Check if there is already a window/tab open with the target URL
         console.log(`checking ${client.url} against ${url.href}`);
+
         if (new URL(client.url).host === url.host && 'focus' in client) {
-          // If so, just focus it.
           console.log('found! navigating and switching focus...');
+
           client.postMessage({
-            action: 'redirect-from-notificationclick',
-            hash: url.hash,
-          })
+            messageType: 'notification-clicked',
+            messageId: fcmMessageId,
+            data: { urlHash: url.hash, ...data }
+          });
+
           return client.focus();
         }
       }
 
-      // If not, then open the target URL in a new window/tab.
+      // open URL in new window if no existing window was found to message
       if (clients.openWindow) {
         console.log('Going to open window: ', url.href);
-        // return clients.openWindow(url.href);
+        return clients.openWindow(url.href); // TODO: uncomment
       }
     })
   );
@@ -62,39 +74,8 @@ firebase.initializeApp({
   measurementId: "G-HCYKP80G02"
 });
 
+// must be called even if we're not using the messaging interface here
 const messaging = firebase.messaging();
-
-
-// configure background message handler for FCM remote messages
-messaging.onBackgroundMessage(function (payload) {
-  console.log('Received background message ', payload);
-
-  const payloadData = payload.data.json && JSON.parse(payload.data.json);
-  console.log('Parsed payload data ', payloadData);
-
-  // post notification locally
-  // const promiseChain = clients
-  //   .matchAll({
-  //     type: "window",
-  //     includeUncontrolled: true
-  //   })
-  //   .then(windowClients => {
-  //     for (client of windowClients) {
-  //       client.postMessage(payload);
-  //     }
-  //   })
-  //   .then(() => {
-  //     const title = 'SW: ' + payload.notification.title;
-  //     const options = {
-  //       body: payload.notification.body,
-  //       icon: '/icons/Icon-192.png',
-  //       data: { ...payloadData, url: payload.data.url }
-  //     };
-  //     console.log(`Showing notification: ${title}`, options);
-  //     return registration.showNotification(title, options);
-  //   });
-  // return promiseChain;
-});
 
 
 // all done

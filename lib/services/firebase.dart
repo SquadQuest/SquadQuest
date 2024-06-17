@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:html' as html; // ignore: avoid_web_libraries_in_flutter
+import 'dart:js' as js; // ignore: avoid_web_libraries_in_flutter
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -108,44 +108,37 @@ class FirebaseMessagingService {
     // - NOTE: this does not currently work on the web because Flutter hasn't figured out how to communicate from the service worker back to the UI thread
     FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpened);
 
-    // listen directly to service worker events
-
-    // TODO: move logic to router.dart somehow?
+    // catch notification clicks on web
     if (kIsWeb) {
-      (html.document.window as html.Window)
-          .navigator
-          .serviceWorker
-          ?.addEventListener('message', (html.Event event) {
-        var data = (event as html.MessageEvent).data;
-        logger.i({'onServiceWorkerMessage': data});
-      });
+      // set a global handler on window instead of listening to messages to ensure there is only ever a single handler across hot reloads
+      js.context['onNotificationClicked'] = (eventPayload) {
+        final message = RemoteMessage(
+            messageType: eventPayload?['messageType'],
+            messageId: eventPayload?['messageId'],
+            data: {
+              'url': eventPayload?['data']?['url'],
+              'json': eventPayload?['data']?['json'],
+              'urlHash': eventPayload?['data']?['urlHash'],
+            });
 
-      html.document.window?.addEventListener('message', (html.Event event) {
-        var data = (event as html.MessageEvent).data;
-        logger.i({'onBrowserMessage': data});
+        loggerNoStack.t({'onNotificationClicked': message.toMap()});
 
-        // if (data['action'] == 'redirect-from-notificationclick') {
-        //   if (data['action'].substring(0, 9) == '#/events/') {
-        //     _scaffoldKey.currentContext?.push(data['action'].substring(2));
-        //   }
-        // }
-      });
+        _streamController.add(message);
+      };
     }
   }
 
   void _onMessage(RemoteMessage message, bool? wasBackground) {
-    loggerNoStack
-        .t({'message:foreground': message, 'background': wasBackground});
+    loggerNoStack.t({
+      'message:foreground': message.toMap(),
+      'was-background': wasBackground
+    });
 
     _streamController.add(message);
   }
 
   void _onMessageOpened(RemoteMessage message) {
-    loggerNoStack.t({
-      'message:opened': message.notification?.title,
-      'body': message.notification?.body,
-      'payload': message.data
-    });
+    loggerNoStack.t({'message:opened': message.toMap()});
   }
 
   Future<NotificationSettings?> requestPermissions() async {
