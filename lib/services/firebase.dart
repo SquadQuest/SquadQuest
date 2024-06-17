@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:html' as html; // ignore: avoid_web_libraries_in_flutter
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -105,6 +107,30 @@ class FirebaseMessagingService {
     // handle interaction with background notifications
     // - NOTE: this does not currently work on the web because Flutter hasn't figured out how to communicate from the service worker back to the UI thread
     FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpened);
+
+    // listen directly to service worker events
+
+    // TODO: move logic to router.dart somehow?
+    if (kIsWeb) {
+      (html.document.window as html.Window)
+          .navigator
+          .serviceWorker
+          ?.addEventListener('message', (html.Event event) {
+        var data = (event as html.MessageEvent).data;
+        logger.i({'onServiceWorkerMessage': data});
+      });
+
+      html.document.window?.addEventListener('message', (html.Event event) {
+        var data = (event as html.MessageEvent).data;
+        logger.i({'onBrowserMessage': data});
+
+        // if (data['action'] == 'redirect-from-notificationclick') {
+        //   if (data['action'].substring(0, 9) == '#/events/') {
+        //     _scaffoldKey.currentContext?.push(data['action'].substring(2));
+        //   }
+        // }
+      });
+    }
   }
 
   void _onMessage(RemoteMessage message, bool? wasBackground) {
