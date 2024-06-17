@@ -1,3 +1,10 @@
-chris-devbox.phl.io {
+chris-devbox.phl.io,
+supabase.squadquest.app {
 	reverse_proxy localhost:8000
+}
+
+dev.squadquest.app {
+	file_server {
+		root ../build/web/
+	}
 }
