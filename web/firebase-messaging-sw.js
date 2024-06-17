@@ -30,7 +30,7 @@ messaging.onBackgroundMessage(function (payload) {
       }
     })
     .then(() => {
-      const title = payload.notification.title;
+      const title = 'SW: ' + payload.notification.title;
       const options = {
         body: payload.notification.body,
         icon: '/icons/Icon-192.png',
@@ -71,5 +71,10 @@ self.addEventListener('notificationclick', function (event) {
 // claim the current window immediately
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+
+// request permissions again just for good measure
+Notification.requestPermission().then(permission => {
+  console.log('Notification permission: ', permission);
+});
 
 console.log('firebase-messaging-sw.js loaded!');
