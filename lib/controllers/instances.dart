@@ -72,7 +72,7 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     // create rsvp
     await ref
         .read(rsvpsProvider.notifier)
-        .save(insertedInstance, InstanceMemberStatus.yes);
+        .save(insertedInstance.id!, InstanceMemberStatus.yes);
 
     return insertedInstance;
   }
@@ -87,12 +87,16 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
 
     final supabase = ref.read(supabaseClientProvider);
 
-    final data = await supabase
-        .from('instances')
-        .select(_defaultSelect)
-        .eq('id', id)
-        .single();
+    try {
+      final data = await supabase
+          .from('instances')
+          .select(_defaultSelect)
+          .eq('id', id)
+          .single();
 
-    return Instance.fromMap(data);
+      return Instance.fromMap(data);
+    } catch (error) {
+      throw 'Could not load instance with ID $id';
+    }
   }
 }

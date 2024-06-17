@@ -46,7 +46,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   }
 
   Future<InstanceMember?> save(
-      Instance instance, InstanceMemberStatus? status) async {
+      InstanceID instanceId, InstanceMemberStatus? status) async {
     final List<InstanceMember>? loadedRsvps =
         state.hasValue ? state.asData!.value : null;
 
@@ -54,7 +54,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
 
     try {
       final response = await supabase.functions.invoke('rsvp',
-          body: {'instance_id': instance.id, 'status': status?.name});
+          body: {'instance_id': instanceId, 'status': status?.name});
 
       final instanceMember = response.data['status'] == null
           ? null
@@ -65,7 +65,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
         final index = instanceMember != null
             ? loadedRsvps.indexWhere((f) => f.id == instanceMember.id)
             : loadedRsvps.indexWhere((f) =>
-                f.instanceId == instance.id &&
+                f.instanceId == instanceId &&
                 f.memberId == supabase.auth.currentUser!.id);
 
         late List<InstanceMember> updatedList;
@@ -100,12 +100,12 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   }
 
   Future<List<InstanceMember>> invite(
-      Instance instance, List<UserID> userIds) async {
+      InstanceID instanceId, List<UserID> userIds) async {
     final supabase = ref.read(supabaseClientProvider);
 
     try {
       final response = await supabase.functions.invoke('invite',
-          body: {'instance_id': instance.id, 'users': userIds});
+          body: {'instance_id': instanceId, 'users': userIds});
 
       return List<InstanceMember>.from(response.data
           .map((invitationData) => InstanceMember.fromMap(invitationData)));

@@ -21,17 +21,23 @@ final _statusGroupOrder = {
   InstanceMemberStatus.invited: 4,
 };
 
-class EventDetailsScreen extends ConsumerStatefulWidget {
-  final InstanceID id;
+final eventDetailsProvider = FutureProvider.autoDispose
+    .family<Instance, InstanceID>((ref, instanceId) async {
+  final instancesController = ref.watch(instancesProvider.notifier);
+  return instancesController.getById(instanceId);
+});
 
-  const EventDetailsScreen({super.key, required this.id});
+class EventDetailsScreen extends ConsumerStatefulWidget {
+  final InstanceID instanceId;
+
+  const EventDetailsScreen({super.key, required this.instanceId});
 
   @override
   ConsumerState<EventDetailsScreen> createState() => _EventDetailsScreenState();
 }
 
 class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
-  Instance? instance;
+  // Instance? instance;
   late StreamSubscription rsvpSubscription;
   final List<bool> _rsvpSelection = [false, false, false, false];
   List<InstanceMember>? rsvps;
@@ -44,8 +50,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       return;
     }
 
-    final sentInvitations =
-        await ref.read(rsvpsProvider.notifier).invite(instance!, inviteUserIds);
+    final sentInvitations = await ref
+        .read(rsvpsProvider.notifier)
+        .invite(widget.instanceId, inviteUserIds);
 
     setState(() {
       rsvps = [
@@ -77,31 +84,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     final session = ref.read(authControllerProvider);
     log('EventDetailsScreen.initState: rsvps=$rsvps, session=${session == null ? 'no' : 'yes'}');
 
-    loadEvent(ref);
-
     if (session != null) {
       loadRsvps(ref, session);
     }
   }
 
-  Future<void> loadEvent(WidgetRef ref) async {
-    log('EventDetailsScreen.loadEvents');
-
-    final loadedInstance =
-        await ref.read(instancesProvider.notifier).getById(widget.id);
-
-    setState(() {
-      instance = loadedInstance;
-    });
-  }
-
   void loadRsvps(WidgetRef ref, Session session) {
-    log('EventDetailsScreen.loadRsvps: rsvps=$rsvps, session=${session == null ? 'no' : 'yes'}');
+    log('EventDetailsScreen.loadRsvps: rsvps=$rsvps');
     final UserID myUserId = session.user.id;
 
     rsvpSubscription = ref
         .read(rsvpsProvider.notifier)
-        .subscribeByInstance(widget.id, (rsvps) {
+        .subscribeByInstance(widget.instanceId, (rsvps) {
       setState(() {
         this.rsvps = rsvps;
       });
@@ -124,92 +118,96 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(authControllerProvider);
+    final eventAsync = ref.watch(eventDetailsProvider(widget.instanceId));
     final rsvpsController = ref.read(rsvpsProvider.notifier);
 
     log('EventDetailsScreen.build: rsvps=$rsvps, session=${session == null ? 'no' : 'yes'}');
-    // if (session != null) {
-    //   loadRsvps(ref, session);
-    // } else {
-    //   ref.listen(authControllerProvider, (previous, session) {
-    //     log('EventDetailsScreen.build.authChange: session=${session == null ? 'no' : 'yes'}, previous: ${previous == null ? 'no' : 'yes'}');
-    //     if (session != null) {
-    //       loadRsvps(ref, session);
-    //     }
-    //   });
-    // }
 
     return SafeArea(
       child: Scaffold(
-          appBar: instance == null
-              ? null
-              : AppBar(
-                  title: Text(instance!.title),
-                ),
+          appBar: AppBar(
+              title: eventAsync.when(
+            data: (event) => Text(event.title),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const Text('Error loading event details'),
+          )),
           floatingActionButton: FloatingActionButton(
             onPressed: () => _sendInvitations(context),
             child: const Icon(Icons.mail),
           ),
-          body: instance == null
-              ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text('Location: ${instance!.locationDescription}'),
-                        Text('Topic: ${instance!.topic?.name}'),
-                        Text('Posted by: ${instance!.createdBy?.fullName}'),
-                        Text('Visibility: ${instance!.visibility.name}'),
-                        Text(
-                            'Date: ${eventDateFormat.format(instance!.startTimeMin)}'),
-                        Text(
-                            'Starting between: ${eventTimeFormat.format(instance!.startTimeMin)}–${eventTimeFormat.format(instance!.startTimeMax)}'),
-                        Expanded(
-                            child: rsvps == null
-                                ? const Center(
-                                    child: CircularProgressIndicator())
-                                : GroupedListView(
-                                    elements: rsvps!,
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    useStickyGroupSeparators: true,
-                                    stickyHeaderBackgroundColor:
-                                        Theme.of(context)
-                                            .scaffoldBackgroundColor,
-                                    groupBy: (InstanceMember rsvp) =>
-                                        rsvp.status,
-                                    groupComparator: (group1, group2) {
-                                      return _statusGroupOrder[group1]!
-                                          .compareTo(
-                                              _statusGroupOrder[group2]!);
-                                    },
-                                    groupSeparatorBuilder:
-                                        (InstanceMemberStatus group) => Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(
-                                              switch (group) {
-                                                InstanceMemberStatus.omw =>
-                                                  'OMW!',
-                                                InstanceMemberStatus.yes =>
-                                                  'Attending',
-                                                InstanceMemberStatus.maybe =>
-                                                  'Might be attending',
-                                                InstanceMemberStatus.no =>
-                                                  'Not attending',
-                                                InstanceMemberStatus.invited =>
-                                                  'Invited',
-                                              },
-                                              textAlign: TextAlign.center,
-                                              style:
-                                                  const TextStyle(fontSize: 18),
-                                            )),
-                                    itemBuilder: (context, rsvp) {
-                                      return ListTile(
-                                          leading: rsvpIcons[rsvp.status],
-                                          title: Text(rsvp.member!.fullName));
-                                    },
-                                  )),
-                      ])),
+          body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: eventAsync.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => Center(child: Text(error.toString())),
+                  data: (event) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text('Location: ${event.locationDescription}'),
+                            Text('Topic: ${event.topic?.name}'),
+                            Text('Posted by: ${event.createdBy?.fullName}'),
+                            Text('Visibility: ${event.visibility.name}'),
+                            Text(
+                                'Date: ${eventDateFormat.format(event.startTimeMin)}'),
+                            Text(
+                                'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
+                            Expanded(
+                                child: rsvps == null
+                                    ? const Center(
+                                        child: CircularProgressIndicator())
+                                    : GroupedListView(
+                                        elements: rsvps!,
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
+                                        useStickyGroupSeparators: true,
+                                        stickyHeaderBackgroundColor:
+                                            Theme.of(context)
+                                                .scaffoldBackgroundColor,
+                                        groupBy: (InstanceMember rsvp) =>
+                                            rsvp.status,
+                                        groupComparator: (group1, group2) {
+                                          return _statusGroupOrder[group1]!
+                                              .compareTo(
+                                                  _statusGroupOrder[group2]!);
+                                        },
+                                        groupSeparatorBuilder:
+                                            (InstanceMemberStatus group) =>
+                                                Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Text(
+                                                      switch (group) {
+                                                        InstanceMemberStatus
+                                                              .omw =>
+                                                          'OMW!',
+                                                        InstanceMemberStatus
+                                                              .yes =>
+                                                          'Attending',
+                                                        InstanceMemberStatus
+                                                              .maybe =>
+                                                          'Might be attending',
+                                                        InstanceMemberStatus
+                                                              .no =>
+                                                          'Not attending',
+                                                        InstanceMemberStatus
+                                                              .invited =>
+                                                          'Invited',
+                                                      },
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: const TextStyle(
+                                                          fontSize: 18),
+                                                    )),
+                                        itemBuilder: (context, rsvp) {
+                                          return ListTile(
+                                              leading: rsvpIcons[rsvp.status],
+                                              title:
+                                                  Text(rsvp.member!.fullName));
+                                        },
+                                      )),
+                          ]))),
           bottomNavigationBar: session == null
               ? null
               : Padding(
@@ -242,7 +240,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                               });
 
                               final savedRsvp = await rsvpsController.save(
-                                  instance!,
+                                  widget.instanceId,
                                   _rsvpSelection[selectedIndex]
                                       ? InstanceMemberStatus
                                           .values[selectedIndex + 1]
