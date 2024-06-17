@@ -34,7 +34,7 @@ messaging.onBackgroundMessage(function (payload) {
       const options = {
         body: payload.notification.body,
         icon: '/icons/Icon-192.png',
-        data: payloadData
+        data: { ...payloadData, url: payload.data.url }
       };
       console.log(`Showing notification: ${title}`, options);
       return registration.showNotification(title, options);
@@ -45,7 +45,7 @@ messaging.onBackgroundMessage(function (payload) {
 self.addEventListener('notificationclick', function (event) {
   console.log('notificationclick received: ', event);
 
-  const url = `https://cwqvpckp-80.use.devtunnels.ms/#/events/${event.notification.data.event.id}`;
+  const { url } = event.notification.data;
 
   event.notification.close(); // Android needs explicit close.
   event.waitUntil(
