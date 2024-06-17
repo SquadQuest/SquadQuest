@@ -10,8 +10,10 @@
             "type": "node",
             "program": "${workspaceFolder}/supabase/functions/push-test/index.ts",
             "cwd": "${workspaceFolder}/supabase/functions/push-test",
-            "env": {},
-            "runtimeExecutable": "/Users/chris/.deno/bin/deno",
+            "env": {
+                "PORT": "8001"
+            },
+            "runtimeExecutable": "deno",
             "runtimeArgs": [
                 "run",
                 "--inspect-wait",
@@ -27,8 +29,10 @@
             "type": "node",
             "program": "${workspaceFolder}/supabase/functions/rsvp/index.ts",
             "cwd": "${workspaceFolder}/supabase/functions/rsvp",
-            "env": {},
-            "runtimeExecutable": "/Users/chris/.deno/bin/deno",
+            "env": {
+                "PORT": "8001"
+            },
+            "runtimeExecutable": "deno",
             "runtimeArgs": [
                 "run",
                 "--inspect-wait",
