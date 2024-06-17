@@ -59,7 +59,7 @@ final routerProvider = Provider((ref) {
         name: 'event-details',
         path: '/events/:id',
         builder: (context, GoRouterState state) =>
-            EventDetailsScreen(id: state.pathParameters['id']!),
+            EventDetailsScreen(instanceId: state.pathParameters['id']!),
       ),
       GoRoute(
         name: 'friends',
