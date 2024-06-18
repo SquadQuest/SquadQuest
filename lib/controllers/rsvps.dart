@@ -23,7 +23,8 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
         .stream(primaryKey: ['id'])
         .eq('member', supabase.auth.currentUser!.id)
         .listen((data) async {
-          final populatedData = await profilesCache.populateData(data);
+          final populatedData = await profilesCache
+              .populateData(data, [(idKey: 'member', modelKey: 'member')]);
           state = AsyncValue.data(
               populatedData.map(InstanceMember.fromMap).toList());
         });

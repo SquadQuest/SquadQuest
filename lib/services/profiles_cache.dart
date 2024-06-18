@@ -23,32 +23,37 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
 
   Future<List<Map<String, dynamic>>> populateData(
       List<Map<String, dynamic>> data,
-      {String idKey = 'member',
-      String modelKey = 'member'}) async {
-    // fetch missing profiles
-    final List<UserID> missingIds = data
-        .map((Map item) => item[idKey])
-        .whereType<UserID>()
-        .where((UserID id) => !state.containsKey(id))
-        .toSet()
-        .toList();
+      List<({String idKey, String modelKey})> fields) async {
+    // build set of missing IDs
+    final Set<UserID> missingIds = {};
+    for (final datum in data) {
+      for (final field in fields) {
+        final UserID userId = datum[field.idKey];
+        if (!state.containsKey(userId)) {
+          missingIds.add(userId);
+        }
+      }
+    }
 
+    // fetch missing profiles into cache
     if (missingIds.isNotEmpty) {
       final supabase = ref.read(supabaseClientProvider);
       await supabase
           .from('profiles')
           .select('*')
-          .inFilter('id', missingIds)
+          .inFilter('id', missingIds.toList())
           .withConverter((data) => data.map(UserProfile.fromMap).toList())
           .then(cacheProfiles);
     }
 
     // return hydrated data
     return data.map((Map<String, dynamic> item) {
-      if (item.containsKey(idKey) && item[idKey] is UserID) {
-        final UserProfile? profile = state[item[idKey]];
-        if (profile != null) {
-          item[modelKey] = profile;
+      for (final field in fields) {
+        if (item.containsKey(field.idKey) && item[field.idKey] is UserID) {
+          final UserProfile? profile = state[item[field.idKey]];
+          if (profile != null) {
+            item[field.modelKey] = profile;
+          }
         }
       }
       return item;
