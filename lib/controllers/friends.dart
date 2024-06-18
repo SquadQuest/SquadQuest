@@ -13,10 +13,10 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
 
   @override
   Future<List<Friend>> build() async {
+    final supabase = ref.read(supabaseClientProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
 
     // subscribe to changes
-    final supabase = ref.read(supabaseClientProvider);
     supabase.from('friends').stream(primaryKey: ['id']).listen((data) async {
       final populatedData = await profilesCache.populateData(data, [
         (idKey: 'requester', modelKey: 'requester'),

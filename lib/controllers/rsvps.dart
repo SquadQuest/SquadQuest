@@ -14,10 +14,10 @@ final rsvpsProvider =
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   @override
   Future<List<InstanceMember>> build() async {
+    final supabase = ref.read(supabaseClientProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
 
     // subscribe to changes
-    final supabase = ref.read(supabaseClientProvider);
     supabase
         .from('instance_members')
         .stream(primaryKey: ['id'])
