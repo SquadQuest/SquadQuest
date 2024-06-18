@@ -33,30 +33,134 @@
 
   <title>SquadQuest</title>
   <link rel="manifest" href="manifest.json">
+
+  <style type="text/css">
+    .preflight-modal {
+      background-color: #141218;
+      color: #F29C38;
+      font-family: sans-serif;
+      font-size: 5vw;
+
+      text-align: center;
+
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    .preflight-modaln p,
+    .preflight-modal h1 {
+      padding: 0 1em;
+      margin: 1em 0;
+    }
+
+    .preflight-modal button {
+      font-size: 75px;
+      margin-top: 1em;
+    }
+  </style>
 </head>
 
 <body style="background-color: #141218">
-  <script src="flutter_bootstrap.js" async></script>
-  <script>
-    // request permissions again just for good measure
-    Notification.requestPermission().then(permission => {
-      console.log('Notification permission: ', permission);
-    });
 
+  <div id="add-to-homescreen" class="preflight-modal" style="display: none">
+    <h1>Welcome to SquadQuest!</h1>
+    <p>I see you're using Safari on iOS</p>
+    <p>For the best experience, add this website to your home screen by clicking the 📤 button and then scrolling down
+      to "Add to Home Screen"</p>
+    <p>This is necessary for push notifications to work when you get a friend request, invited to an event, or someone
+      RSVPs to one of your events.</p>
+    <button id="add-to-homescreen-decline">I don't wanna!</button>
+  </div>
+
+  <div id="request-notification-permission" class="preflight-modal" style="display: none">
+    <h1>Almost there...</h1>
+    <p>Now that we're in Home Screen mode, you're ready to go!</p>
+    <p>When you launch SquadQuest, you'll be prompted to allow notifications.</p>
+    <p>Allowing them will enable you to get push notifications when you get a friend request, invited to an event, or
+      someone
+      RSVPs to one of your events.</p>
+    <p>If you choose "Don't Allow", delete and re-add SquadQuest to your Home Screen to be prompted again.</p>
+    <button id="request-notification-permission-launch">Launch SquadQuest!</button>
+  </div>
+
+  <script>
+    // load FCM service worked and proxy notification events
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./firebase-messaging-sw.js?v=39");
+        navigator.serviceWorker.register("./firebase-messaging-sw.js?v=40");
       });
 
       // relay notification clicks from service worker to Flutter app
       navigator.serviceWorker.addEventListener('message', (event) => {
-        console.log('index.html received message', event.data);
-
         // relay message where Flutter app can catch it
         if (event.data.messageType == 'notification-opened' && window.onWebNotificationOpened) {
           window.onWebNotificationOpened(event.data);
         }
       });
+    }
+
+
+    // Pre-launch screens for mobile Safari
+    const addToHomescreenCt = document.getElementById('add-to-homescreen');
+    const requestNotificationPermissionCt = document.getElementById('request-notification-permission');
+    runPreflightChecklist();
+
+    function runPreflightChecklist() {
+      const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+      const isInStandaloneMode = ('standalone' in window.navigator) && window.navigator.standalone;
+      const canRequestNotificationPermission = 'Notification' in window && Notification.permission != 'granted' && !localStorage.getItem('request-notification-permission-declined');
+      const addToHomescreenDeclined = localStorage.getItem('add-to-homescreen-declined');
+      const enablePushNotificationsDeclined = localStorage.getItem('push-notifications-declined');
+
+      if (isIos && !isInStandaloneMode && !addToHomescreenDeclined) {
+        showAddToHomeScreen();
+      } else if (isIos && isInStandaloneMode && canRequestNotificationPermission) {
+        showRequestNotificationPermission();
+      } else {
+        loadFlutterApp();
+      }
+    }
+
+    function showAddToHomeScreen() {
+      addToHomescreenCt.style.display = 'block';
+
+      document.getElementById('add-to-homescreen-decline').addEventListener('click', function (event) {
+        event.preventDefault();
+        localStorage.setItem('add-to-homescreen-declined', true);
+        loadFlutterApp();
+      });
+    }
+
+    function showRequestNotificationPermission() {
+      requestNotificationPermissionCt.style.display = 'block';
+
+      document.getElementById('request-notification-permission-launch').addEventListener('click', function (event) {
+        event.preventDefault();
+        requestNotificationPermissionCt.style.display = 'none';
+        Notification.requestPermission().then(function (result) {
+          // store result because mobile Safari will lie about Notification.permission until we request permission
+          if (result == 'denied') {
+            localStorage.setItem('request-notification-permission-declined', true);
+          }
+
+          loadFlutterApp();
+        });
+      });
+    }
+
+    function loadFlutterApp() {
+      console.log('loading flutter app');
+      addToHomescreenCt.style.display = 'none';
+      requestNotificationPermissionCt.style.display = 'none';
+
+      const scriptTag = document.createElement('script');
+      scriptTag.src = 'flutter_bootstrap.js';
+      scriptTag.async = true;
+      document.body.appendChild(scriptTag);
     }
   </script>
 </body>
