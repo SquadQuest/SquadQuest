@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/models/friend.dart';
 
 final friendsProvider = AsyncNotifierProvider<FriendsController, List<Friend>>(
@@ -11,7 +13,19 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
 
   @override
   Future<List<Friend>> build() async {
-    return fetch();
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
+
+    // subscribe to changes
+    final supabase = ref.read(supabaseClientProvider);
+    supabase.from('friends').stream(primaryKey: ['id']).listen((data) async {
+      final populatedData = await profilesCache.populateData(data, [
+        (idKey: 'requester', modelKey: 'requester'),
+        (idKey: 'requestee', modelKey: 'requestee')
+      ]);
+      state = AsyncValue.data(populatedData.map(Friend.fromMap).toList());
+    });
+
+    return future;
   }
 
   Future<List<Friend>> fetch() async {
@@ -28,9 +42,6 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
   }
 
   Future<Friend> sendFriendRequest(String phone) async {
-    final List<Friend>? loadedFriends =
-        state.hasValue ? state.asData!.value : null;
-
     final supabase = ref.read(supabaseClientProvider);
 
     try {
@@ -40,9 +51,15 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
       final insertedFriend = Friend.fromMap(response.data);
 
       // update loaded friends with newly created one
-      if (loadedFriends != null) {
-        List<Friend> updatedList = [...loadedFriends, insertedFriend];
-        state = AsyncValue.data(updatedList);
+      if (state.hasValue && state.value != null) {
+        state = AsyncValue.data(updateListWithRecord<Friend>(
+            state.value!,
+            (existing) =>
+                (existing.requesterId == insertedFriend.requesterId &&
+                    existing.requesteeId == insertedFriend.requesteeId) ||
+                (existing.requesterId == insertedFriend.requesteeId &&
+                    existing.requesteeId == insertedFriend.requesterId),
+            insertedFriend));
       }
 
       // return insertedFriend;
@@ -54,9 +71,6 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
 
   Future<Friend> respondToFriendRequest(
       Friend friend, FriendStatus action) async {
-    final List<Friend>? loadedFriends =
-        state.hasValue ? state.asData!.value : null;
-
     final supabase = ref.read(supabaseClientProvider);
 
     try {
@@ -66,17 +80,15 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
       final insertedFriend = Friend.fromMap(response.data);
 
       // update loaded friends with created/updated one
-      if (loadedFriends != null) {
-        final index = loadedFriends.indexWhere((f) => f.id == friend.id);
-
-        if (index != -1) {
-          List<Friend> updatedList = [
-            ...loadedFriends.sublist(0, index),
-            insertedFriend,
-            ...loadedFriends.sublist(index + 1)
-          ];
-          state = AsyncValue.data(updatedList);
-        }
+      if (state.hasValue && state.value != null) {
+        state = AsyncValue.data(updateListWithRecord<Friend>(
+            state.value!,
+            (existing) =>
+                (existing.requesterId == insertedFriend.requesterId &&
+                    existing.requesteeId == insertedFriend.requesteeId) ||
+                (existing.requesterId == insertedFriend.requesteeId &&
+                    existing.requesteeId == insertedFriend.requesterId),
+            insertedFriend));
       }
 
       // return insertedFriend;

@@ -64,6 +64,8 @@ serve(async (request) => {
     existingRsvp.map((rsvp) => rsvp.member),
   );
 
+  // TODO: check that user has permission to invite to this event
+
   // get list of user's friends
   const { data: friends, error: friendsError } = await serviceRoleSupabase
     .from(

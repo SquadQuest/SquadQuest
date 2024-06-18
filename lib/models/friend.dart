@@ -43,11 +43,17 @@ class Friend {
   }
 
   factory Friend.fromMap(Map<String, dynamic> map) {
-    final requesterModel =
-        map['requester'] is Map ? UserProfile.fromMap(map['requester']) : null;
+    final requesterModel = map['requester'] is UserProfile
+        ? map['requester']
+        : map['requester'] is Map
+            ? UserProfile.fromMap(map['requester'])
+            : null;
 
-    final requesteeModel =
-        map['requestee'] is Map ? UserProfile.fromMap(map['requestee']) : null;
+    final requesteeModel = map['requestee'] is UserProfile
+        ? map['requestee']
+        : map['requestee'] is Map
+            ? UserProfile.fromMap(map['requestee'])
+            : null;
 
     return Friend(
       id: map['id'] as FriendID,
