@@ -38,7 +38,6 @@ class MyApp extends ConsumerWidget {
 
           switch (message.data['notificationType']) {
             case 'rsvp':
-
               // if the top of the stack is the event details page, replace it
               final go =
                   router.routerDelegate.currentConfiguration.last.route.name ==
@@ -48,6 +47,17 @@ class MyApp extends ConsumerWidget {
 
               go('event-details',
                   pathParameters: {'id': data['event']['id'] as String});
+            case 'invitation':
+              // if the top of the stack is the event details page, replace it
+              final go =
+                  router.routerDelegate.currentConfiguration.last.route.name ==
+                          'event-details'
+                      ? navContext.pushReplacementNamed
+                      : navContext.pushNamed;
+
+              go('event-details', pathParameters: {
+                'id': data['invitation']['instance'] as String
+              });
             case 'friend-request-received':
             case 'friend-request-accepted':
               navContext.goNamed('friends');
