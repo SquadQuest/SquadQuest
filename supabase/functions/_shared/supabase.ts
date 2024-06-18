@@ -38,16 +38,12 @@ function getAnonSupabaseClient(request: Request) {
   );
 }
 
-let supabaseUser: User | null;
-
 const authorizationHeaderRegexp =
   /^Bearer ([A-Za-z0-9_-]{2,}(?:\.[A-Za-z0-9_-]{2,}){2})$/;
 
 async function getSupabaseUser(
   request: Request,
 ) {
-  if (supabaseUser) return supabaseUser;
-
   const authHeader = request.headers.get("Authorization");
 
   if (authHeader == null) {
@@ -64,7 +60,7 @@ async function getSupabaseUser(
   const token = authHeader.replace(authorizationHeaderRegexp, "$1");
 
   const { data } = await getAnonSupabaseClient(request).auth.getUser(token);
-  return supabaseUser = data.user;
+  return data.user;
 }
 
 async function getSupabaseUserProfile(
