@@ -26,9 +26,13 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
       List<({String idKey, String modelKey})> fields) async {
     // build set of missing IDs
     final Set<UserID> missingIds = {};
-    for (final datum in data) {
+    for (final item in data) {
       for (final field in fields) {
-        final UserID userId = datum[field.idKey];
+        if (item[field.modelKey] is UserProfile) {
+          continue;
+        }
+
+        final UserID userId = item[field.idKey];
         if (!state.containsKey(userId)) {
           missingIds.add(userId);
         }
@@ -49,6 +53,10 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
     // return hydrated data
     return data.map((Map<String, dynamic> item) {
       for (final field in fields) {
+        if (item[field.modelKey] is UserProfile) {
+          continue;
+        }
+
         if (item.containsKey(field.idKey) && item[field.idKey] is UserID) {
           final UserProfile? profile = state[item[field.idKey]];
           if (profile != null) {
