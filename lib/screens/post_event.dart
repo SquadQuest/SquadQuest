@@ -125,6 +125,15 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
           await instancesController.createInstance(draftInstance);
 
       log('Saved instance: $savedInstance');
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Event posted!'),
+      ));
+
+      context.pushReplacementNamed('event-details',
+          pathParameters: {'id': savedInstance.id!});
     } catch (error) {
       log('Error saving instance : $error');
 
@@ -137,17 +146,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Failed to post event:\n\n$error'),
       ));
-
-      return;
     }
-
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Event posted!'),
-    ));
-
-    context.go('/');
   }
 
   @override
