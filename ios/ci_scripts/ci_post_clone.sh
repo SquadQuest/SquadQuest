@@ -10,6 +10,10 @@ cd $CI_PRIMARY_REPOSITORY_PATH # change working directory to the root of your cl
 curl -fsSL https://fvm.app/install.sh | bash
 fvm use
 
+# Place secrets Xcode Cloud secret environment variables
+echo "${FLUTTER_ENV_BASE64}" | base64 -d >./.env
+echo "${GOOGLE_SERVICES_BASE64}" | base64 -d >./android/app/google-services.json
+
 # Install Flutter artifacts for iOS (--ios), or macOS (--macos) platforms.
 flutter precache --ios
 
