@@ -50,6 +50,16 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           },
           child: friendsList.when(
               data: (friends) {
+                if (friends.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text(
+                      'You have no friends yet! Get a friend to join SquadQuest and then send a request via their phone number with the button below.',
+                      style: TextStyle(fontSize: 20),
+                    ),
+                  );
+                }
+
                 return GroupedListView(
                   elements: friends,
                   physics: const AlwaysScrollableScrollPhysics(),
