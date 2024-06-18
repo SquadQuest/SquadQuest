@@ -66,12 +66,44 @@ serve(async (request) => {
   if (existingRsvpError) throw existingRsvpError;
 
   // verify user has access to event
-  assert(
-    event.visibility == "public" || existingRsvp,
-    "This event is not public and you were not invited yet",
-    403,
-    "not-invited",
-  );
+  switch (event.visibility) {
+    case "private":
+      // only creater and those invited can RSVP
+      assert(
+        event.created_by == currentUser.id || existingRsvp,
+        "This event is private and you were not invited yet",
+        403,
+        "not-invited",
+      );
+      break;
+    case "friends": {
+      // the creator and people invited can RSVP
+      if (event.created_by == currentUser.id || existingRsvp) {
+        break;
+      }
+
+      // friends can too
+      const { count: friendshipCount, error: friendshipError } =
+        await serviceRoleSupabase.from(
+          "friends",
+        )
+          .select("*", { count: "exact", head: true })
+          .in("requester", [currentUser.id, event.created_by])
+          .in("requestee", [currentUser.id, event.created_by]);
+      if (friendshipError) throw friendshipError;
+
+      assert(
+        friendshipCount! > 0,
+        "This event is for friends only and you are not on the host's friends list",
+        403,
+        "not-invited-or-friends",
+      );
+
+      break;
+    }
+    case "public":
+      // anyone can RSVP
+  }
 
   // branch actions
   const defaultSelect = "*, member(*)";
