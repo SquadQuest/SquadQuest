@@ -14,13 +14,13 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  late Browser browser;
+  late Browser? browser;
 
   @override
   void initState() {
     super.initState();
 
-    browser = Browser();
+    browser = Browser.detectOrNull();
   }
 
   @override
@@ -59,11 +59,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ],
               ),
               const Spacer(),
-              Text('Browser name: ${browser.browser}'),
-              Text('Browser version ${browser.version}'),
-              SizedBox(height: 16),
+              if (browser != null) ...[
+                Text('Browser name: ${browser!.browser}'),
+                Text('Browser version ${browser!.version}'),
+                const SizedBox(height: 16),
+              ],
               Text('FCM token: $fcmToken'),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               ElevatedButton(
                   onPressed: () async {
                     await ref
