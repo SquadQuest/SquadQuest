@@ -8,6 +8,8 @@ import {
   getServiceRoleSupabaseClient,
   getSupabaseUser,
 } from "../_shared/supabase.ts";
+import { postMessage } from "../_shared/fcm.ts";
+import { scrubProfile } from "../_shared/squadquest.ts";
 
 serve(async (request) => {
   // process request
@@ -112,8 +114,33 @@ serve(async (request) => {
       "instance_members",
     )
       .insert(invitations)
-      .select("*, member(*)");
+      .select("*, created_by(*), member(*)");
   if (insertedInvitationsError) throw insertedInvitationsError;
+
+  // send notifications to recipients
+  for (const insertedInvitation of insertedInvitations) {
+    // scrub profile data
+    const fcmToken = insertedInvitation.member.fcm_token;
+    insertedInvitation.created_by = scrubProfile(insertedInvitation.created_by);
+    insertedInvitation.member = scrubProfile(insertedInvitation.member);
+
+    if (fcmToken) {
+      try {
+        await postMessage({
+          notificationType: "invitation",
+          token: fcmToken,
+          title: event.title,
+          body:
+            `${insertedInvitation.created_by.first_name} ${insertedInvitation.created_by.last_name} has invited you!`,
+          url: `https://squadquest.app/#/events/${event.id}`,
+          payload: { invitation: insertedInvitation },
+          collapseKey: "invitation",
+        });
+      } catch (error) {
+        // continue with next invitee
+      }
+    }
+  }
 
   // return new invitations
   return new Response(
