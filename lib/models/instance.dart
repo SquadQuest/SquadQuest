@@ -69,7 +69,11 @@ class Instance {
             ? UserProfile.fromMap(map['created_by'])
             : null;
 
-    final topicModel = map['topic'] is Map ? Topic.fromMap(map['topic']) : null;
+    final topicModel = map['topic'] is Topic
+        ? map['topic']
+        : map['topic'] is Map
+            ? Topic.fromMap(map['topic'])
+            : null;
 
     return Instance(
       id: map['id'] as InstanceID,

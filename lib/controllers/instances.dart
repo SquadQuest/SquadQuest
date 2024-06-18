@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
+import 'package:squadquest/services/topics_cache.dart';
 import 'package:squadquest/controllers/topics.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/models/instance.dart';
@@ -27,11 +28,19 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
   Future<List<Instance>> fetch() async {
     final supabase = ref.read(supabaseClientProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
+    final topicsCache = ref.read(topicsCacheProvider.notifier);
 
     // subscribe to changes
     supabase.from('instances').stream(primaryKey: ['id']).listen((data) async {
-      final populatedData = await profilesCache
+      // populate created_by field with profile data
+      var populatedData = await profilesCache
           .populateData(data, [(idKey: 'created_by', modelKey: 'created_by')]);
+
+      // populate topic field with topic data
+      populatedData = await topicsCache
+          .populateData(data, [(idKey: 'topic', modelKey: 'topic')]);
+
+      // convert to model instances and update state
       state = AsyncValue.data(populatedData.map(Instance.fromMap).toList());
     });
 

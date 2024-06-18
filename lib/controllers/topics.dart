@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/services/topics_cache.dart';
 import 'package:squadquest/models/topic.dart';
 
 final topicsProvider =
@@ -16,12 +17,18 @@ class TopicsController extends AsyncNotifier<List<Topic>> {
 
   Future<List<Topic>> fetch() async {
     final supabase = ref.read(supabaseClientProvider);
+    final topicsCache = ref.read(topicsCacheProvider.notifier);
 
-    return supabase
+    final topics = await supabase
         .from('topics')
         .select(_defaultSelect)
         .order('name', ascending: true)
         .withConverter((data) => data.map(Topic.fromMap).toList());
+
+    // add loaded topics to topics cache
+    topicsCache.cacheTopics(topics);
+
+    return topics;
   }
 
   Future<void> refresh() async {
