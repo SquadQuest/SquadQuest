@@ -1,7 +1,9 @@
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/topics.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/models/instance.dart';
@@ -24,12 +26,16 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
 
   Future<List<Instance>> fetch() async {
     final supabase = ref.read(supabaseClientProvider);
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
 
-    return supabase
-        .from('instances')
-        .select(_defaultSelect)
-        .order('start_time_min', ascending: true)
-        .withConverter((data) => data.map(Instance.fromMap).toList());
+    // subscribe to changes
+    supabase.from('instances').stream(primaryKey: ['id']).listen((data) async {
+      final populatedData = await profilesCache
+          .populateData(data, [(idKey: 'created_by', modelKey: 'created_by')]);
+      state = AsyncValue.data(populatedData.map(Instance.fromMap).toList());
+    });
+
+    return future;
   }
 
   Future<void> refresh() async {
@@ -38,9 +44,6 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
 
   Future<Instance> createInstance(Instance instance) async {
     assert(instance.id == null, 'Cannot create an instance with an ID');
-
-    final List<Instance>? loadedInstances =
-        state.hasValue ? state.asData!.value : null;
 
     final supabase = ref.read(supabaseClientProvider);
 
@@ -64,9 +67,9 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     final insertedInstance = Instance.fromMap(insertedData);
 
     // update loaded instances with newly created one
-    if (loadedInstances != null) {
-      List<Instance> updatedList = [...loadedInstances, insertedInstance];
-      state = AsyncValue.data(updatedList);
+    if (state.hasValue && state.value != null) {
+      state = AsyncValue.data(updateListWithRecord<Instance>(state.value!,
+          (existing) => existing.id == insertedInstance.id, insertedInstance));
     }
 
     // create rsvp

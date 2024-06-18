@@ -63,9 +63,11 @@ class Instance {
   final String locationDescription;
 
   factory Instance.fromMap(Map<String, dynamic> map) {
-    final createdByModel = map['created_by'] is Map
-        ? UserProfile.fromMap(map['created_by'])
-        : null;
+    final createdByModel = map['created_by'] is UserProfile
+        ? map['created_by']
+        : map['created_by'] is Map
+            ? UserProfile.fromMap(map['created_by'])
+            : null;
 
     final topicModel = map['topic'] is Map ? Topic.fromMap(map['topic']) : null;
 
@@ -150,11 +152,16 @@ class InstanceMember {
   final InstanceMemberStatus status;
 
   factory InstanceMember.fromMap(Map<String, dynamic> map) {
-    final createdByModel = map['created_by'] is Map
-        ? UserProfile.fromMap(map['created_by'])
-        : null;
-    final instanceModel =
-        map['instance'] is Map ? Instance.fromMap(map['instance']) : null;
+    final createdByModel = map['created_by'] is UserProfile
+        ? map['created_by']
+        : map['created_by'] is Map
+            ? UserProfile.fromMap(map['created_by'])
+            : null;
+    final instanceModel = map['instance'] is Instance
+        ? map['instance']
+        : map['instance'] is Map
+            ? Instance.fromMap(map['instance'])
+            : null;
     final memberModel = map['member'] is UserProfile
         ? map['member']
         : map['member'] is Map
