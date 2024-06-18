@@ -93,10 +93,16 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     final List<Instance>? loadedInstances =
         state.hasValue ? state.asData!.value : null;
 
-    if (loadedInstances != null) {
-      return loadedInstances.firstWhere((instance) => instance.id == id);
+    // try to get the instance from the controller's loaded list first
+    final Instance? loadedInstance = loadedInstances
+        ?.cast<Instance?>()
+        .firstWhere((instance) => instance!.id == id, orElse: () => null);
+
+    if (loadedInstance != null) {
+      return loadedInstance;
     }
 
+    // fall back on querying Superbase
     final supabase = ref.read(supabaseClientProvider);
 
     try {

@@ -110,6 +110,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                               )
                             : null);
                   },
+                  itemComparator: (friend1, friend2) =>
+                      friend2.createdAt!.compareTo(friend1.createdAt!),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
