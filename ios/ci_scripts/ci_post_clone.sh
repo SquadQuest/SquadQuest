@@ -16,10 +16,10 @@ fvm install
 fvm use --skip-pub-get
 
 # Install Flutter artifacts for iOS (--ios), or macOS (--macos) platforms.
-flutter precache --ios
+fvm flutter precache --ios
 
 # Install Flutter dependencies.
-flutter pub get
+fvm flutter pub get
 
 # Install CocoaPods using Homebrew.
 HOMEBREW_NO_AUTO_UPDATE=1 # disable homebrew's automatic updates.
