@@ -93,7 +93,7 @@ serve(async (request) => {
       token: fcmToken,
       title: "Friend request accepted!",
       body:
-        `${updatedFriendRequest.requester.first_name} ${updatedFriendRequest.requester.last_name} is now your friend`,
+        `${updatedFriendRequest.requestee.first_name} ${updatedFriendRequest.requestee.last_name} is now your friend`,
       url: `https://squadquest.app/#/friends`,
       payload: { friendship: updatedFriendRequest },
       collapseKey: "friend-request-accepted",
