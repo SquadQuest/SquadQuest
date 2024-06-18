@@ -11,6 +11,11 @@ final rsvpsProvider =
     AsyncNotifierProvider<RsvpsController, List<InstanceMember>>(
         RsvpsController.new);
 
+final rsvpsPerEventProvider = AutoDisposeAsyncNotifierProviderFamily<
+    InstanceRsvpsController,
+    List<InstanceMember>,
+    InstanceID>(InstanceRsvpsController.new);
+
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   @override
   Future<List<InstanceMember>> build() async {
@@ -89,5 +94,59 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     } on FunctionException catch (error) {
       throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
     }
+  }
+}
+
+class InstanceRsvpsController
+    extends AutoDisposeFamilyAsyncNotifier<List<InstanceMember>, InstanceID> {
+  late InstanceID instanceId;
+  late StreamSubscription _subscription;
+
+  InstanceRsvpsController();
+
+  @override
+  Future<List<InstanceMember>> build(InstanceID arg) async {
+    instanceId = arg;
+
+    // subscribe to changes
+    _subscription = ref
+        .read(supabaseClientProvider)
+        .from('instance_members')
+        .stream(primaryKey: ['id'])
+        .eq('instance', instanceId)
+        .listen(_onData);
+
+    // cancel subscription when provider is disposed
+    ref.onDispose(() {
+      _subscription.cancel();
+    });
+
+    return future;
+  }
+
+  void _onData(List<Map<String, dynamic>> data) async {
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
+
+    final populatedData = await profilesCache
+        .populateData(data, [(idKey: 'member', modelKey: 'member')]);
+    state = AsyncValue.data(populatedData.map(InstanceMember.fromMap).toList());
+  }
+
+  Future<InstanceMember?> save(InstanceMemberStatus? status) async {
+    final supabase = ref.read(supabaseClientProvider);
+    final rsvpsController = ref.read(rsvpsProvider.notifier);
+    final savedRsvp = await rsvpsController.save(instanceId, status);
+
+    // update loaded rsvps with created/updated one
+    if (state.hasValue && state.value != null) {
+      state = AsyncValue.data(updateListWithRecord<InstanceMember>(
+          state.value!,
+          (existing) =>
+              existing.instanceId == instanceId &&
+              existing.memberId == supabase.auth.currentUser!.id,
+          savedRsvp));
+    }
+
+    return savedRsvp;
   }
 }

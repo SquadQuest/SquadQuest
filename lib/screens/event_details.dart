@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,6 @@ import 'package:squadquest/logger.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
-import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/components/friends_list.dart';
@@ -40,9 +38,6 @@ class EventDetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
-  // Instance? instance;
-  late StreamSubscription rsvpSubscription;
-  final List<bool> _rsvpSelection = [false, false, false, false];
   List<InstanceMember>? rsvps;
   ScaffoldFeatureController? _rsvpSnackbar;
 
@@ -56,13 +51,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     final sentInvitations = await ref
         .read(rsvpsProvider.notifier)
         .invite(widget.instanceId, inviteUserIds);
-
-    setState(() {
-      rsvps = [
-        ...rsvps!,
-        ...sentInvitations,
-      ];
-    });
 
     if (!context.mounted) return;
 
@@ -80,41 +68,34 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             title: 'Find friends to invite', status: FriendStatus.accepted));
   }
 
-  @override
-  void initState() {
-    super.initState();
+  Future<void> _saveRsvp(InstanceMemberStatus? status) async {
+    final eventRsvpsController =
+        ref.read(rsvpsPerEventProvider(widget.instanceId).notifier);
 
-    final session = ref.read(authControllerProvider);
-    log('EventDetailsScreen.initState: rsvps=$rsvps, session=${session == null ? 'no' : 'yes'}');
+    final savedRsvp = await eventRsvpsController.save(status);
 
-    if (session != null) {
-      loadRsvps(ref, session);
+    loggerNoStack
+        .i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
+
+    if (_rsvpSnackbar != null) {
+      try {
+        _rsvpSnackbar!.close();
+      } catch (error) {
+        logger.e(error);
+      }
+      _rsvpSnackbar = null;
     }
-  }
 
-  void loadRsvps(WidgetRef ref, Session session) {
-    log('EventDetailsScreen.loadRsvps: rsvps=$rsvps');
-    final UserID myUserId = session.user.id;
+    if (!context.mounted) return;
 
-    rsvpSubscription = ref
-        .read(rsvpsProvider.notifier)
-        .subscribeByInstance(widget.instanceId, (rsvps) {
-      setState(() {
-        this.rsvps = rsvps;
-      });
+    _rsvpSnackbar = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(savedRsvp == null
+          ? 'You\'ve removed your RSVP'
+          : 'You\'ve RSVPed ${savedRsvp.status.name}'),
+    ));
 
-      final myRsvp = rsvps
-          .cast<InstanceMember?>()
-          .firstWhere((rsvp) => rsvp?.memberId == myUserId, orElse: () => null);
-
-      setState(() {
-        for (int buttonIndex = 0;
-            buttonIndex < _rsvpSelection.length;
-            buttonIndex++) {
-          _rsvpSelection[buttonIndex] =
-              myRsvp != null && buttonIndex == myRsvp.status.index - 1;
-        }
-      });
+    _rsvpSnackbar?.closed.then((reason) {
+      _rsvpSnackbar = null;
     });
   }
 
@@ -122,10 +103,26 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   Widget build(BuildContext context) {
     final session = ref.watch(authControllerProvider);
     final eventAsync = ref.watch(eventDetailsProvider(widget.instanceId));
-    final rsvpsController = ref.read(rsvpsProvider.notifier);
+    final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(widget.instanceId));
 
-    log('EventDetailsScreen.build: rsvps=$rsvps, session=${session == null ? 'no' : 'yes'}');
+    // build RSVP buttons selection from rsvps list
+    List<bool> myRsvpSelection = List.filled(4, true);
+    if (eventRsvpsAsync.hasValue &&
+        eventRsvpsAsync.value != null &&
+        session != null) {
+      final myRsvp = eventRsvpsAsync.value!.cast<InstanceMember?>().firstWhere(
+          (rsvp) => rsvp?.memberId == session.user.id,
+          orElse: () => null);
 
+      for (int buttonIndex = 0;
+          buttonIndex < myRsvpSelection.length;
+          buttonIndex++) {
+        myRsvpSelection[buttonIndex] =
+            myRsvp != null && buttonIndex == myRsvp.status.index - 1;
+      }
+    }
+
+    // build widgets
     return SafeArea(
       child: Scaffold(
           appBar: AppBar(
@@ -157,60 +154,71 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                             Text(
                                 'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
                             Expanded(
-                                child: rsvps == null
-                                    ? const Center(
-                                        child: CircularProgressIndicator())
-                                    : GroupedListView(
-                                        elements: rsvps!,
-                                        physics:
-                                            const AlwaysScrollableScrollPhysics(),
-                                        useStickyGroupSeparators: true,
-                                        stickyHeaderBackgroundColor:
-                                            Theme.of(context)
-                                                .scaffoldBackgroundColor,
-                                        groupBy: (InstanceMember rsvp) =>
-                                            rsvp.status,
-                                        groupComparator: (group1, group2) {
-                                          return _statusGroupOrder[group1]!
-                                              .compareTo(
-                                                  _statusGroupOrder[group2]!);
-                                        },
-                                        groupSeparatorBuilder:
-                                            (InstanceMemberStatus group) =>
-                                                Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Text(
-                                                      switch (group) {
-                                                        InstanceMemberStatus
-                                                              .omw =>
-                                                          'OMW!',
-                                                        InstanceMemberStatus
-                                                              .yes =>
-                                                          'Attending',
-                                                        InstanceMemberStatus
-                                                              .maybe =>
-                                                          'Might be attending',
-                                                        InstanceMemberStatus
-                                                              .no =>
-                                                          'Not attending',
-                                                        InstanceMemberStatus
-                                                              .invited =>
-                                                          'Invited',
-                                                      },
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: const TextStyle(
-                                                          fontSize: 18),
-                                                    )),
-                                        itemBuilder: (context, rsvp) {
-                                          return ListTile(
-                                              leading: rsvpIcons[rsvp.status],
-                                              title:
-                                                  Text(rsvp.member!.fullName));
-                                        },
-                                      )),
+                                child: eventRsvpsAsync.when(
+                                    loading: () => const Center(
+                                        child: CircularProgressIndicator()),
+                                    error: (error, _) => Text('Error: $error'),
+                                    data: (eventRsvps) => eventRsvps.isEmpty
+                                        ? const Padding(
+                                            padding: EdgeInsets.all(32),
+                                            child: Text(
+                                              'No one has RSVPed to this event yet. Be the first! And then invite your friends with the button below.',
+                                              style: TextStyle(fontSize: 20),
+                                            ),
+                                          )
+                                        : GroupedListView(
+                                            elements: eventRsvps,
+                                            physics:
+                                                const AlwaysScrollableScrollPhysics(),
+                                            useStickyGroupSeparators: true,
+                                            stickyHeaderBackgroundColor:
+                                                Theme.of(context)
+                                                    .scaffoldBackgroundColor,
+                                            groupBy: (InstanceMember rsvp) =>
+                                                rsvp.status,
+                                            groupComparator: (group1, group2) {
+                                              return _statusGroupOrder[group1]!
+                                                  .compareTo(_statusGroupOrder[
+                                                      group2]!);
+                                            },
+                                            groupSeparatorBuilder:
+                                                (InstanceMemberStatus group) =>
+                                                    Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Text(
+                                                          switch (group) {
+                                                            InstanceMemberStatus
+                                                                  .omw =>
+                                                              'OMW!',
+                                                            InstanceMemberStatus
+                                                                  .yes =>
+                                                              'Attending',
+                                                            InstanceMemberStatus
+                                                                  .maybe =>
+                                                              'Might be attending',
+                                                            InstanceMemberStatus
+                                                                  .no =>
+                                                              'Not attending',
+                                                            InstanceMemberStatus
+                                                                  .invited =>
+                                                              'Invited',
+                                                          },
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 18),
+                                                        )),
+                                            itemBuilder: (context, rsvp) {
+                                              return ListTile(
+                                                  leading:
+                                                      rsvpIcons[rsvp.status],
+                                                  title: Text(
+                                                      rsvp.member!.fullName));
+                                            },
+                                          ))),
                           ]))),
           bottomNavigationBar: session == null
               ? null
@@ -230,75 +238,27 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                 const BorderRadius.all(Radius.circular(8)),
                             constraints: BoxConstraints.expand(
                                 width: constraints.maxWidth / 4 -
-                                    (_rsvpSelection.length - 1)),
-                            isSelected: _rsvpSelection,
+                                    (myRsvpSelection.length - 1)),
+                            isSelected: myRsvpSelection,
                             onPressed: (int selectedIndex) async {
-                              setState(() {
-                                for (int buttonIndex = 0;
-                                    buttonIndex < _rsvpSelection.length;
-                                    buttonIndex++) {
-                                  _rsvpSelection[buttonIndex] =
-                                      buttonIndex == selectedIndex &&
-                                          !_rsvpSelection[selectedIndex];
-                                }
-                              });
+                              // update button state (will not apply to UI until action updates RSVP list though)
+                              for (int buttonIndex = 0;
+                                  buttonIndex < myRsvpSelection.length;
+                                  buttonIndex++) {
+                                myRsvpSelection[buttonIndex] =
+                                    buttonIndex == selectedIndex &&
+                                        !myRsvpSelection[selectedIndex];
+                              }
 
-                              final savedRsvp = await rsvpsController.save(
-                                  widget.instanceId,
-                                  _rsvpSelection[selectedIndex]
+                              // convert index and button state to desired status
+                              InstanceMemberStatus? status =
+                                  myRsvpSelection[selectedIndex]
                                       ? InstanceMemberStatus
                                           .values[selectedIndex + 1]
-                                      : null);
+                                      : null;
 
-                              // update current event's rsvp list
-                              if (rsvps != null) {
-                                final existingIndex = rsvps!.indexWhere(
-                                    (rsvp) => rsvp.memberId == session.user.id);
-
-                                setState(() {
-                                  if (existingIndex == -1) {
-                                    // append a new rsvp
-                                    rsvps = [
-                                      ...rsvps!,
-                                      savedRsvp!,
-                                    ];
-                                  } else if (savedRsvp == null) {
-                                    // remove existing rsvp
-                                    rsvps = [
-                                      ...rsvps!.sublist(0, existingIndex),
-                                      ...rsvps!.sublist(existingIndex + 1)
-                                    ];
-                                  } else {
-                                    // replace existing rsvp
-                                    rsvps = [
-                                      ...rsvps!.sublist(0, existingIndex),
-                                      savedRsvp,
-                                      ...rsvps!.sublist(existingIndex + 1)
-                                    ];
-                                  }
-                                });
-                              }
-
-                              if (!context.mounted) return;
-
-                              if (_rsvpSnackbar != null) {
-                                try {
-                                  _rsvpSnackbar!.close();
-                                } catch (error) {
-                                  logger.e(error);
-                                }
-                              }
-
-                              _rsvpSnackbar = ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Text(savedRsvp == null
-                                    ? 'You\'ve removed your RSVP'
-                                    : 'You\'ve RSVPed ${savedRsvp.status.name}'),
-                              ));
-
-                              _rsvpSnackbar?.closed.then((reason) {
-                                _rsvpSnackbar = null;
-                              });
+                              // save
+                              _saveRsvp(status);
                             },
                             children: const [
                               Text('No'),
@@ -313,12 +273,5 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     ],
                   ))),
     );
-  }
-
-  @override
-  void dispose() {
-    log('EventDetailsScreen.dispose: rsvpSubscription=$rsvpSubscription');
-    rsvpSubscription.cancel();
-    super.dispose();
   }
 }
