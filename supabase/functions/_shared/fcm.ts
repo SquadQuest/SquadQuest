@@ -22,6 +22,7 @@ function getAccessToken(): Promise<string> {
 
 interface Message {
   token?: string;
+  notificationType: string;
   title: string;
   body: string;
 
@@ -34,6 +35,7 @@ interface Message {
 async function postMessage(
   {
     token,
+    notificationType,
     title,
     body,
     icon = "https://squadquest.app/icons/Icon-192.png",
@@ -47,7 +49,7 @@ async function postMessage(
       title,
       body,
     },
-    data: {},
+    data: { notificationType },
     android: {},
     apns: { headers: {} },
     webpush: { notification: {} },

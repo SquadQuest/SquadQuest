@@ -154,6 +154,7 @@ serve(async (request) => {
 
     if (hostProfile.fcm_token) {
       await postMessage({
+        notificationType: "rsvp",
         token: hostProfile.fcm_token,
         title: event.title,
         body: notificationBody,
