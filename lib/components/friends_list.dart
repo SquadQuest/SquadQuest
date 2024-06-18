@@ -7,9 +7,10 @@ import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/user.dart';
 
 class FriendsList extends ConsumerStatefulWidget {
+  final String title;
   final FriendStatus? status;
 
-  const FriendsList({super.key, this.status});
+  const FriendsList({super.key, this.title = 'Find friends', this.status});
 
   @override
   ConsumerState<FriendsList> createState() => _FriendsListState();
@@ -44,10 +45,8 @@ class _FriendsListState extends ConsumerState<FriendsList> {
       child: Padding(
         padding: const EdgeInsets.only(top: 16, bottom: 16),
         child: Column(
-          // mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Send friend request',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             TextFormField(
               textInputAction: TextInputAction.done,

@@ -76,8 +76,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     return showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        builder: (BuildContext context) =>
-            const FriendsList(status: FriendStatus.accepted));
+        builder: (BuildContext context) => const FriendsList(
+            title: 'Find friends to invite', status: FriendStatus.accepted));
   }
 
   @override
