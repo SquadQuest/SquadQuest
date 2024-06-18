@@ -24,3 +24,32 @@ String formatPhone(String phone) {
 
 final phoneInputFilter =
     FilteringTextInputFormatter.deny(RegExp(r'[^+\(\) 0-9\-]'));
+
+List<T> updateListWithRecord<T>(
+    List<T> list, bool Function(T) where, T? record) {
+  late List<T> updatedList;
+  final currentIndex = list.indexWhere(where);
+
+  if (currentIndex == -1) {
+    // append a new record
+    updatedList = [
+      ...list,
+      record!,
+    ];
+  } else if (record == null) {
+    // remove existing record
+    updatedList = [
+      ...list.sublist(0, currentIndex),
+      ...list.sublist(currentIndex + 1)
+    ];
+  } else {
+    // replace existing record
+    updatedList = [
+      ...list.sublist(0, currentIndex),
+      record,
+      ...list.sublist(currentIndex + 1)
+    ];
+  }
+
+  return updatedList;
+}

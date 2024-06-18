@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/models/instance.dart';
@@ -40,16 +41,14 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
         .stream(primaryKey: ['id'])
         .eq('instance', instanceId)
         .listen((data) async {
-          final populatedData = await profilesCache.populateData(data);
+          final populatedData = await profilesCache
+              .populateData(data, [(idKey: 'member', modelKey: 'member')]);
           onData(populatedData.map(InstanceMember.fromMap).toList());
         });
   }
 
   Future<InstanceMember?> save(
       InstanceID instanceId, InstanceMemberStatus? status) async {
-    final List<InstanceMember>? loadedRsvps =
-        state.hasValue ? state.asData!.value : null;
-
     final supabase = ref.read(supabaseClientProvider);
 
     try {
@@ -60,37 +59,14 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
           ? null
           : InstanceMember.fromMap(response.data);
 
-      // update loaded friends with created/updated one
-      if (loadedRsvps != null) {
-        final index = instanceMember != null
-            ? loadedRsvps.indexWhere((f) => f.id == instanceMember.id)
-            : loadedRsvps.indexWhere((f) =>
-                f.instanceId == instanceId &&
-                f.memberId == supabase.auth.currentUser!.id);
-
-        late List<InstanceMember> updatedList;
-        if (index == -1) {
-          // append a new rsvp
-          updatedList = [
-            ...loadedRsvps,
-            instanceMember!,
-          ];
-        } else if (instanceMember == null) {
-          // remove existing rsvp
-          updatedList = [
-            ...loadedRsvps.sublist(0, index),
-            ...loadedRsvps.sublist(index + 1)
-          ];
-        } else {
-          // replace existing rsvp
-          updatedList = [
-            ...loadedRsvps.sublist(0, index),
-            instanceMember,
-            ...loadedRsvps.sublist(index + 1)
-          ];
-        }
-
-        state = AsyncValue.data(updatedList);
+      // update loaded rsvps with created/updated one
+      if (state.hasValue && state.value != null) {
+        state = AsyncValue.data(updateListWithRecord<InstanceMember>(
+            state.value!,
+            (existing) =>
+                existing.instanceId == instanceId &&
+                existing.memberId == supabase.auth.currentUser!.id,
+            instanceMember));
       }
 
       return instanceMember;
