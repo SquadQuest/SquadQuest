@@ -169,8 +169,9 @@ class InstanceMember {
           ? map['created_by'] as UserID
           : createdByModel.id,
       instance: instanceModel,
-      instanceId:
-          instanceModel == null ? map['instance'] as TopicID : instanceModel.id,
+      instanceId: instanceModel == null
+          ? map['instance'] as InstanceID
+          : instanceModel.id,
       member: memberModel,
       memberId: memberModel == null ? map['member'] as UserID : memberModel.id,
       status: InstanceMemberStatus.values.firstWhere(

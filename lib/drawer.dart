@@ -89,7 +89,9 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                   color: Colors.blue,
                 ),
                 accountName: Text(profile!.fullName),
-                accountEmail: Text(formatPhone(profile.phone))),
+                accountEmail: profile.phone == null
+                    ? null
+                    : Text(profile.phoneFormatted!)),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const SizedBox.shrink()),
         ..._menu.map((menuItem) => switch (menuItem) {
