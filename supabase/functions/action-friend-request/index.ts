@@ -8,6 +8,8 @@ import {
   getServiceRoleSupabaseClient,
   getSupabaseUser,
 } from "../_shared/supabase.ts";
+import { postMessage } from "../_shared/fcm.ts";
+import { scrubProfile } from "../_shared/squadquest.ts";
 
 serve(async (request) => {
   // process request
@@ -78,6 +80,25 @@ serve(async (request) => {
       .select("*, requester(*), requestee(*)")
       .single();
   if (updateError) throw updateError;
+
+  // scrub profile data
+  const fcmToken = updatedFriendRequest.requester.fcm_token;
+  updatedFriendRequest.requester = scrubProfile(updatedFriendRequest.requester);
+  updatedFriendRequest.requestee = scrubProfile(updatedFriendRequest.requestee);
+
+  // send notification to sender (if accepted)
+  if (fcmToken && action == "accepted") {
+    await postMessage({
+      notificationType: "friend-request-accepted",
+      token: fcmToken,
+      title: "Friend request accepted!",
+      body:
+        `${updatedFriendRequest.requester.first_name} ${updatedFriendRequest.requester.last_name} is now your friend`,
+      url: `https://squadquest.app/#/friends`,
+      payload: { friendship: updatedFriendRequest },
+      collapseKey: "friend-request-accepted",
+    });
+  }
 
   // return new friend request
   return new Response(

@@ -91,17 +91,17 @@ serve(async (request) => {
   newFriendRequest.requester = scrubProfile(newFriendRequest.requester);
   newFriendRequest.requestee = scrubProfile(newFriendRequest.requestee);
 
-  // send notification to host
+  // send notification to recipient
   if (fcmToken) {
     await postMessage({
-      notificationType: "friend-request",
+      notificationType: "friend-request-received",
       token: fcmToken,
       title: "New friend request!",
       body:
         `${newFriendRequest.requester.first_name} ${newFriendRequest.requester.last_name} wants to be your friend`,
       url: `https://squadquest.app/#/friends`,
       payload: { friendship: newFriendRequest },
-      collapseKey: "rsvp",
+      collapseKey: "friend-request-received",
     });
   }
 

@@ -48,7 +48,8 @@ class MyApp extends ConsumerWidget {
 
               go('event-details',
                   pathParameters: {'id': data['event']['id'] as String});
-            case 'friend-request':
+            case 'friend-request-received':
+            case 'friend-request-accepted':
               navContext.goNamed('friends');
           }
       }
