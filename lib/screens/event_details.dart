@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
@@ -281,7 +282,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                               if (!context.mounted) return;
 
                               if (_rsvpSnackbar != null) {
-                                _rsvpSnackbar!.close();
+                                try {
+                                  _rsvpSnackbar!.close();
+                                } catch (error) {
+                                  logger.e(error);
+                                }
                               }
 
                               _rsvpSnackbar = ScaffoldMessenger.of(context)
