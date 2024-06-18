@@ -8,7 +8,7 @@ cd $CI_PRIMARY_REPOSITORY_PATH # change working directory to the root of your cl
 
 # Place secrets Xcode Cloud secret environment variables
 echo "${FLUTTER_ENV_BASE64}" | base64 -d >./.env
-echo "${GOOGLE_SERVICES_BASE64}" | base64 -d >./Runner/GoogleService-Info.plist
+echo "${GOOGLE_SERVICES_BASE64}" | base64 -d >./ios/Runner/GoogleService-Info.plist
 
 # Install Flutter using fvm
 curl -fsSL https://fvm.app/install.sh | bash
