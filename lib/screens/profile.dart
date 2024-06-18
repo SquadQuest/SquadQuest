@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:squadquest/drawer.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
-import 'package:squadquest/models/user.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -38,7 +37,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         'id': session!.user.id,
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
-        'phone': session!.user.phone!,
+        'phone': session.user.phone!,
       });
 
       await ref.read(authControllerProvider.notifier).updateUserAttributes({
