@@ -31,11 +31,15 @@ List<T> updateListWithRecord<T>(
   final currentIndex = list.indexWhere(where);
 
   if (currentIndex == -1) {
-    // append a new record
-    updatedList = [
-      ...list,
-      record!,
-    ];
+    if (record == null) {
+      // no-op
+    } else {
+      // append a new record
+      updatedList = [
+        ...list,
+        record!,
+      ];
+    }
   } else if (record == null) {
     // remove existing record
     updatedList = [
