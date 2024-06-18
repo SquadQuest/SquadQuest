@@ -43,6 +43,25 @@
             "envFile": "${workspaceFolder}/supabase/functions/.env"
         },
         {
+            "request": "launch",
+            "name": "Deno: send-friend-request",
+            "type": "node",
+            "program": "${workspaceFolder}/supabase/functions/send-friend-request/index.ts",
+            "cwd": "${workspaceFolder}/supabase/functions/send-friend-request",
+            "env": {
+                "PORT": "8001"
+            },
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-wait",
+                "--allow-all"
+            ],
+            "attachSimplePort": 9229,
+            "outputCapture": "std",
+            "envFile": "${workspaceFolder}/supabase/functions/.env"
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch api-test",

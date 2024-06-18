@@ -31,23 +31,25 @@ class MyApp extends ConsumerWidget {
                   '${message.notification?.title ?? ''}\n\n${message.notification?.body ?? ''}')));
 
         case 'notification-opened':
+          final navContext = navigatorKey.currentContext;
           final data = jsonDecode(message.data['json']);
+
+          if (navContext == null) return;
 
           switch (message.data['notificationType']) {
             case 'rsvp':
-              final context = navigatorKey.currentContext;
-              if (context == null) return;
 
               // if the top of the stack is the event details page, replace it
               final go =
                   router.routerDelegate.currentConfiguration.last.route.name ==
                           'event-details'
-                      ? context.pushReplacementNamed
-                      : context.pushNamed;
+                      ? navContext.pushReplacementNamed
+                      : navContext.pushNamed;
 
               go('event-details',
                   pathParameters: {'id': data['event']['id'] as String});
-              break;
+            case 'friend-request':
+              navContext.goNamed('friends');
           }
       }
     });
