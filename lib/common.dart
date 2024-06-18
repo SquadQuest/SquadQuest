@@ -33,11 +33,12 @@ List<T> updateListWithRecord<T>(
   if (currentIndex == -1) {
     if (record == null) {
       // no-op
+      updatedList = list;
     } else {
       // append a new record
       updatedList = [
         ...list,
-        record!,
+        record,
       ];
     }
   } else if (record == null) {
