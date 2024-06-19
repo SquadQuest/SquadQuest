@@ -37,22 +37,6 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     return future;
   }
 
-  StreamSubscription subscribeByInstance(
-      InstanceID instanceId, Function(List<InstanceMember>) onData) {
-    final supabase = ref.read(supabaseClientProvider);
-    final profilesCache = ref.read(profilesCacheProvider.notifier);
-
-    return supabase
-        .from('instance_members')
-        .stream(primaryKey: ['id'])
-        .eq('instance', instanceId)
-        .listen((data) async {
-          final populatedData = await profilesCache
-              .populateData(data, [(idKey: 'member', modelKey: 'member')]);
-          onData(populatedData.map(InstanceMember.fromMap).toList());
-        });
-  }
-
   Future<InstanceMember?> save(
       InstanceID instanceId, InstanceMemberStatus? status) async {
     final supabase = ref.read(supabaseClientProvider);
