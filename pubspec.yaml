@@ -42,6 +42,8 @@ dependencies:
   shared_preferences: ^2.2.3
   logger: ^2.3.0
   web_browser_detect: ^2.0.3
+  maplibre_gl: ^0.20.0
+  location: ^6.0.2
 
 
   # The following adds the Cupertino Icons font to your application.
