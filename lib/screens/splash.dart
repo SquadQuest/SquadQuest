@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/router.dart';
+import 'package:squadquest/drawer.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/services/firebase.dart';
@@ -59,7 +60,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         final router = ref.read(routerProvider);
         final splashNextScreen = ref.read(splashNextScreenProvider);
 
-        logger.d({
+        logger.t({
           'after splash min time': {
             'last-route-name':
                 router.routerDelegate.currentConfiguration.last.route.name,
@@ -69,32 +70,44 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
         if (router.routerDelegate.currentConfiguration.last.route.name !=
             'splash') {
-          logger.d('skipping splash nav because current route is not splash');
+          logger.t('skipping splash nav because current route is not splash');
           return;
         }
 
         if (context.mounted) {
           // send user to login screen if not authenticated
           if (session == null) {
-            context.go('/login');
+            context.goNamed('login');
             return;
           }
 
           // send user to profile screen if profile is not set
           if (profile.value == null) {
-            context.go('/profile');
+            context.goNamed('profile');
             return;
           }
 
-          // always replace the splash screen with the home screen
-          context.go('/');
+          // go to the home screen if no splashNextScreen has been set
+          if (splashNextScreen == null) {
+            context.goNamed('home');
+            return;
+          }
 
-          // push the queued splashNextScreen if one has been set
-          if (splashNextScreen != null) {
-            context.pushNamed(splashNextScreen.name,
+          // if splashNextScreen is in the drawer navigation, go directly to it replacing the splash screen
+          if (isDrawerRoute(splashNextScreen.name)) {
+            logger.t('replacing splash screen with drawer nav screen');
+            context.goNamed(splashNextScreen.name,
                 pathParameters: splashNextScreen.pathParameters ?? {});
             return;
           }
+
+          // put the home screen in the stack first
+          logger.t('pushing home screen before splashNextScreen');
+          context.goNamed('home');
+
+          // push the queued splashNextScreen after the home screen
+          context.pushNamed(splashNextScreen.name,
+              pathParameters: splashNextScreen.pathParameters ?? {});
         }
       });
     }
