@@ -8,3 +8,6 @@ create table
     constraint location_points_pkey primary key (id),
     constraint public_location_points_created_by_fkey foreign key (created_by) references profiles (id) on delete cascade
   );
+
+-- delete data older than 3 days every hour
+SELECT cron.schedule('55 * * * *', $$DELETE FROM location_points WHERE timestamp < now() - interval 3 day'$$);
