@@ -63,5 +63,6 @@ as PERMISSIVE
 for INSERT
 to authenticated
 with check (
-    true
+    (select auth.uid()) = created_by
+    OR created_by IS NULL
 );
