@@ -25,28 +25,28 @@ final _menu = [
   _MenuItem(
     icon: Icons.home,
     label: 'Home',
-    route: '/',
+    route: 'home',
   ),
   _MenuItem(
     icon: Icons.people,
     label: 'Buddy List',
-    route: '/friends',
+    route: 'friends',
   ),
   _MenuItem(
     icon: Icons.person,
     label: 'Profile',
-    route: '/profile',
+    route: 'profile',
   ),
   _MenuItem(
     icon: Icons.settings,
     label: 'Settings',
-    route: '/settings',
+    route: 'settings',
   ),
   _MenuItem.divider,
   _MenuItem(
     icon: Icons.logout,
     label: 'Sign out',
-    route: '/login',
+    route: 'login',
     afterNavigate: (ref) async {
       await ref.read(authControllerProvider.notifier).signOut();
     },
@@ -54,6 +54,10 @@ final _menu = [
 ];
 
 final _menuItems = _menu.whereType<_MenuItem>().toList();
+
+bool isDrawerRoute(String routeName) {
+  return _menuItems.any((item) => item.route == routeName);
+}
 
 class AppDrawer extends ConsumerStatefulWidget {
   const AppDrawer({super.key});
@@ -74,7 +78,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
 
         Navigator.pop(context);
 
-        context.go(menuItem.route);
+        context.goNamed(menuItem.route);
 
         if (menuItem.afterNavigate != null) {
           await menuItem.afterNavigate!(ref);
