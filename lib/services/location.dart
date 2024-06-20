@@ -39,7 +39,8 @@ class LocationService {
         onTapBringToFront: true,
         iconName: 'ic_stat_person_pin_circle',
         title: 'SquadQuest is tracking your location',
-        subtitle: 'Friends going to the same event can see where you are');
+        subtitle: 'Friends going to the same event can see where you are',
+        description: 'Tracks stored for 3 days');
 
     _serviceEnabled = await _location.serviceEnabled();
     _permissionGranted = await _location.hasPermission();
