@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:location/location.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/drawer.dart';
+import 'package:squadquest/services/location.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -14,46 +14,17 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
-  final Location _location = new Location();
-  bool _serviceEnabled = false;
-  PermissionStatus? _permissionGranted;
-  LocationData? _locationData;
-
   @override
   void initState() {
     super.initState();
 
-    _initializeLocation();
-  }
+    final locationService = ref.read(locationServiceProvider);
 
-  void _initializeLocation() async {
-    _serviceEnabled = await _location.serviceEnabled();
-    if (!_serviceEnabled) {
-      _serviceEnabled = await _location.requestService();
-      if (!_serviceEnabled) {
-        return;
-      }
-    }
-
-    _permissionGranted = await _location.hasPermission();
-    if (_permissionGranted == PermissionStatus.denied) {
-      _permissionGranted = await _location.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
-        return;
-      }
-    }
-
-    _locationData = await _location.getLocation();
-
-    _location.onLocationChanged.listen((LocationData currentLocation) {
-      logger.d({'location': currentLocation});
-    });
+    locationService.startTracking();
   }
 
   @override
   Widget build(BuildContext context) {
-    // _updateUserLocation(ref);
-
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -70,14 +41,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           myLocationEnabled: true,
           myLocationRenderMode: MyLocationRenderMode.compass,
           myLocationTrackingMode: MyLocationTrackingMode.tracking,
-          // markers: userLocation != null
-          //     ? [
-          //         Marker(
-          //           id: 'user-location',
-          //           position: userLocation,
-          //         ),
-          //       ]
-          //     : [],
         ),
       ),
     );
