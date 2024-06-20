@@ -74,14 +74,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
     final savedRsvp = await eventRsvpsController.save(status);
 
-    loggerNoStack
-        .i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
+    logger.i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
 
     if (_rsvpSnackbar != null) {
       try {
         _rsvpSnackbar!.close();
       } catch (error) {
-        logger.e(error);
+        loggerWithStack.e(error);
       }
       _rsvpSnackbar = null;
     }

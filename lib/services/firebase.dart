@@ -34,7 +34,7 @@ final firebaseMessagingStreamProvider =
 });
 
 Future<FirebaseApp> buildFirebaseApp() async {
-  loggerNoStack.t('buildFirebaseApp');
+  logger.t('buildFirebaseApp');
 
   final app = Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -48,7 +48,7 @@ Future<FirebaseApp> buildFirebaseApp() async {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await buildFirebaseApp();
 
-  loggerNoStack.t({
+  logger.t({
     'message:background': {
       'message-id': message.messageId,
       'message-type': message.messageType,
@@ -71,7 +71,7 @@ class FirebaseMessagingService {
   }
 
   void _init() async {
-    loggerNoStack.t('FirebaseMessagingService._init');
+    logger.t('FirebaseMessagingService._init');
 
     messaging = FirebaseMessaging.instance;
 
@@ -85,7 +85,7 @@ class FirebaseMessagingService {
     // get FCM device token
     try {
       token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
-      loggerNoStack.i('Got FCM token: $token');
+      logger.i('Got FCM token: $token');
       ref.read(firebaseMessagingTokenProvider.notifier).state = token;
     } catch (error) {
       logger.e('Error getting FCM token', error: error);
@@ -93,7 +93,7 @@ class FirebaseMessagingService {
 
     // save FCM token to profile—main forced the service to initialize before the app is run so profile will never be set already
     ref.listen(profileProvider, (previous, profile) async {
-      loggerNoStack.i({
+      logger.i({
         'profile:previous': previous?.value,
         'profile:next----': profile.value
       });
@@ -126,7 +126,7 @@ class FirebaseMessagingService {
   }
 
   void _onMessage(RemoteMessage message) {
-    loggerNoStack.t({
+    logger.t({
       'message:received': {
         'message-id': message.messageId,
         'message-type': message.messageType,
@@ -139,7 +139,7 @@ class FirebaseMessagingService {
   }
 
   void _onMessageOpened(RemoteMessage message) {
-    loggerNoStack.t({
+    logger.t({
       'message:opened': {
         'message-id': message.messageId,
         'message-type': message.messageType,
@@ -160,7 +160,7 @@ class FirebaseMessagingService {
           'json': data['data']?['json'],
         });
 
-    loggerNoStack.t({
+    logger.t({
       'notification:opened-web': {
         'message-id': message.messageId,
         'message-type': message.messageType,

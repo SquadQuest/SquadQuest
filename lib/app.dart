@@ -36,7 +36,7 @@ class MyApp extends ConsumerWidget {
         case 'notification-opened':
           final data = jsonDecode(message.data['json']);
 
-          loggerNoStack.d({
+          logger.d({
             'notification-opened': {
               'message-id': message.messageId,
               'message-type': message.messageType,
@@ -79,7 +79,7 @@ class MyApp extends ConsumerWidget {
     final currentScreenName =
         router.routerDelegate.currentConfiguration.last.route.name;
 
-    loggerNoStack.d({
+    logger.d({
       'goToNotificationRoute': {
         'route-name': routeName,
         'path-parameters': pathParameters,
@@ -88,8 +88,7 @@ class MyApp extends ConsumerWidget {
     });
 
     if (navContext == null) {
-      loggerNoStack
-          .d('goToNotificationRoute: navigatorKey.currentContext is null');
+      logger.d('goToNotificationRoute: navigatorKey.currentContext is null');
       return;
     }
 

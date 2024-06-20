@@ -59,7 +59,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         final router = ref.read(routerProvider);
         final splashNextScreen = ref.read(splashNextScreenProvider);
 
-        loggerNoStack.d({
+        logger.d({
           'after splash min time': {
             'last-route-name':
                 router.routerDelegate.currentConfiguration.last.route.name,
@@ -69,8 +69,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
         if (router.routerDelegate.currentConfiguration.last.route.name !=
             'splash') {
-          loggerNoStack
-              .d('skipping splash nav because current route is not splash');
+          logger.d('skipping splash nav because current route is not splash');
           return;
         }
 
