@@ -26,6 +26,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+    final developerMode = ref.watch(developerModeProvider);
     final fcmToken = ref.watch(firebaseMessagingTokenProvider);
 
     return SafeArea(
@@ -62,21 +63,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 leading: const Icon(Icons.color_lens),
               ),
-              const Spacer(),
-              if (browser != null) ...[
-                Text('Browser name: ${browser!.browser}'),
-                Text('Browser version ${browser!.version}'),
+              CheckboxListTile(
+                title: const Text('Developer mode'),
+                value: developerMode,
+                onChanged: (bool? developerMode) {
+                  ref.read(developerModeProvider.notifier).state =
+                      developerMode ?? false;
+                },
+                secondary: const Icon(Icons.developer_mode),
+              ),
+              if (developerMode) ...[
+                const Spacer(),
+                if (browser != null) ...[
+                  Text('Browser name: ${browser!.browser}'),
+                  Text('Browser version ${browser!.version}'),
+                  const SizedBox(height: 16),
+                ],
+                Text('FCM token: $fcmToken'),
                 const SizedBox(height: 16),
-              ],
-              Text('FCM token: $fcmToken'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                  onPressed: () async {
-                    await ref
-                        .read(firebaseMessagingServiceProvider)
-                        .requestPermissions();
-                  },
-                  child: const Text('Request notification permission'))
+                ElevatedButton(
+                    onPressed: () async {
+                      await ref
+                          .read(firebaseMessagingServiceProvider)
+                          .requestPermissions();
+                    },
+                    child: const Text('Request notification permission'))
+              ]
             ])),
       ),
     );
