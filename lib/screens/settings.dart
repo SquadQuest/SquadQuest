@@ -38,25 +38,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              DropdownButton<ThemeMode>(
-                value: themeMode,
-                onChanged: (ThemeMode? themeMode) {
-                  ref.read(themeModeProvider.notifier).state = themeMode!;
-                },
-                items: const [
-                  DropdownMenuItem(
-                    value: ThemeMode.system,
-                    child: Text('System Theme'),
-                  ),
-                  DropdownMenuItem(
-                    value: ThemeMode.light,
-                    child: Text('Light Theme'),
-                  ),
-                  DropdownMenuItem(
-                    value: ThemeMode.dark,
-                    child: Text('Dark Theme'),
-                  )
-                ],
+              ListTile(
+                title: const Text('Theme Mode'),
+                trailing: DropdownButton<ThemeMode>(
+                  value: themeMode,
+                  onChanged: (ThemeMode? themeMode) {
+                    ref.read(themeModeProvider.notifier).state = themeMode!;
+                  },
+                  items: const [
+                    DropdownMenuItem(
+                      value: ThemeMode.system,
+                      child: Text('System Theme'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.light,
+                      child: Text('Light Theme'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text('Dark Theme'),
+                    )
+                  ],
+                ),
+                leading: const Icon(Icons.color_lens),
               ),
               const Spacer(),
               if (browser != null) ...[
