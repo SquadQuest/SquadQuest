@@ -34,7 +34,7 @@ final firebaseMessagingStreamProvider =
 });
 
 Future<FirebaseApp> buildFirebaseApp() async {
-  loggerNoStack.t('buildFirebaseApp');
+  logger.t('buildFirebaseApp');
 
   final app = Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -48,7 +48,14 @@ Future<FirebaseApp> buildFirebaseApp() async {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await buildFirebaseApp();
 
-  loggerNoStack.t({'message:background': message.toMap()});
+  logger.t({
+    'message:background': {
+      'message-id': message.messageId,
+      'message-type': message.messageType,
+      'notification-title': message.notification?.title,
+      'notification-body': message.notification?.body,
+    }
+  });
 }
 
 class FirebaseMessagingService {
@@ -64,7 +71,7 @@ class FirebaseMessagingService {
   }
 
   void _init() async {
-    loggerNoStack.t('FirebaseMessagingService._init');
+    logger.t('FirebaseMessagingService._init');
 
     messaging = FirebaseMessaging.instance;
 
@@ -78,7 +85,7 @@ class FirebaseMessagingService {
     // get FCM device token
     try {
       token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
-      loggerNoStack.i('Got FCM token: $token');
+      logger.i('Got FCM token: $token');
       ref.read(firebaseMessagingTokenProvider.notifier).state = token;
     } catch (error) {
       logger.e('Error getting FCM token', error: error);
@@ -86,8 +93,10 @@ class FirebaseMessagingService {
 
     // save FCM token to profile—main forced the service to initialize before the app is run so profile will never be set already
     ref.listen(profileProvider, (previous, profile) async {
-      loggerNoStack.i(
-          {'profile:previous': previous?.value, 'profile:next': profile.value});
+      logger.i({
+        'profile:previous': previous?.value,
+        'profile:next----': profile.value
+      });
       if (profile.value != null &&
           token != null &&
           profile.value!.fcmToken != token) {
@@ -98,15 +107,12 @@ class FirebaseMessagingService {
     });
 
     // listen for foreground and background messages
-    FirebaseMessaging.onMessage.listen((message) => _onMessage(message, false));
+    FirebaseMessaging.onMessage.listen((message) => _onMessage(message));
 
     RemoteMessage? initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) {
-      _onMessage(initialMessage, true);
+      _onMessageOpened(initialMessage);
     }
-
-    FirebaseMessaging.onMessageOpenedApp
-        .listen((message) => _onMessage(message, true));
 
     // handle interaction with background notifications
     // - NOTE: this does not currently work on the web because Flutter hasn't figured out how to communicate from the service worker back to the UI thread
@@ -119,17 +125,28 @@ class FirebaseMessagingService {
     }
   }
 
-  void _onMessage(RemoteMessage message, bool? wasBackground) {
-    loggerNoStack.t({
-      'message:foreground': message.toMap(),
-      'was-background': wasBackground
+  void _onMessage(RemoteMessage message) {
+    logger.t({
+      'message:received': {
+        'message-id': message.messageId,
+        'message-type': message.messageType,
+        'notification-title': message.notification?.title,
+        'notification-body': message.notification?.body,
+      }
     });
 
     _streamController.add((type: 'message-received', message: message));
   }
 
   void _onMessageOpened(RemoteMessage message) {
-    loggerNoStack.t({'message:opened': message.toMap()});
+    logger.t({
+      'message:opened': {
+        'message-id': message.messageId,
+        'message-type': message.messageType,
+        'notification-title': message.notification?.title,
+        'notification-body': message.notification?.body,
+      }
+    });
     _streamController.add((type: 'notification-opened', message: message));
   }
 
@@ -143,7 +160,14 @@ class FirebaseMessagingService {
           'json': data['data']?['json'],
         });
 
-    loggerNoStack.t({'onNotificationClicked': message.toMap()});
+    logger.t({
+      'notification:opened-web': {
+        'message-id': message.messageId,
+        'message-type': message.messageType,
+        'notification-title': message.notification?.title,
+        'notification-body': message.notification?.body,
+      }
+    });
 
     _streamController.add((type: 'notification-opened', message: message));
   }

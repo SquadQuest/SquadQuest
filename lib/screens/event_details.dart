@@ -74,14 +74,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
     final savedRsvp = await eventRsvpsController.save(status);
 
-    loggerNoStack
-        .i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
+    logger.i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
 
     if (_rsvpSnackbar != null) {
       try {
         _rsvpSnackbar!.close();
       } catch (error) {
-        logger.e(error);
+        loggerWithStack.e(error);
       }
       _rsvpSnackbar = null;
     }
@@ -106,7 +105,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(widget.instanceId));
 
     // build RSVP buttons selection from rsvps list
-    List<bool> myRsvpSelection = List.filled(4, true);
+    List<bool> myRsvpSelection = List.filled(4, false);
     if (eventRsvpsAsync.hasValue &&
         eventRsvpsAsync.value != null &&
         session != null) {

@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/router.dart';
 import 'package:squadquest/theme.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/firebase.dart';
+import 'package:squadquest/screens/splash.dart';
 
 class MyApp extends ConsumerWidget {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
@@ -26,41 +28,36 @@ class MyApp extends ConsumerWidget {
 
       switch (type) {
         case 'message-received':
+          // (temporarily)? display any push notification in-app
           _scaffoldKey.currentState?.showSnackBar(SnackBar(
               content: Text(
                   '${message.notification?.title ?? ''}\n\n${message.notification?.body ?? ''}')));
 
         case 'notification-opened':
-          final navContext = navigatorKey.currentContext;
           final data = jsonDecode(message.data['json']);
 
-          if (navContext == null) return;
+          logger.d({
+            'notification-opened': {
+              'message-id': message.messageId,
+              'message-type': message.messageType,
+              'notification-title': message.notification?.title,
+              'notification-body': message.notification?.body,
+              'notification-type': type,
+              'data': data,
+            }
+          });
 
           switch (message.data['notificationType']) {
             case 'rsvp':
-              // if the top of the stack is the event details page, replace it
-              final go =
-                  router.routerDelegate.currentConfiguration.last.route.name ==
-                          'event-details'
-                      ? navContext.pushReplacementNamed
-                      : navContext.pushNamed;
-
-              go('event-details',
+              goToNotificationRoute(ref, 'event-details',
                   pathParameters: {'id': data['event']['id'] as String});
             case 'invitation':
-              // if the top of the stack is the event details page, replace it
-              final go =
-                  router.routerDelegate.currentConfiguration.last.route.name ==
-                          'event-details'
-                      ? navContext.pushReplacementNamed
-                      : navContext.pushNamed;
-
-              go('event-details', pathParameters: {
+              goToNotificationRoute(ref, 'event-details', pathParameters: {
                 'id': data['invitation']['instance'] as String
               });
             case 'friend-request-received':
             case 'friend-request-accepted':
-              navContext.goNamed('friends');
+              goToNotificationRoute(ref, 'friends');
           }
       }
     });
@@ -73,5 +70,43 @@ class MyApp extends ConsumerWidget {
       themeMode: themeMode,
       routerConfig: router,
     );
+  }
+
+  void goToNotificationRoute(WidgetRef ref, String routeName,
+      {Map<String, String> pathParameters = const {}}) {
+    final navContext = navigatorKey.currentContext;
+    final router = ref.read(routerProvider);
+    final currentScreenName =
+        router.routerDelegate.currentConfiguration.last.route.name;
+
+    logger.d({
+      'goToNotificationRoute': {
+        'route-name': routeName,
+        'path-parameters': pathParameters,
+        'current-screen-name': currentScreenName
+      }
+    });
+
+    if (navContext == null) {
+      logger.d('goToNotificationRoute: navigatorKey.currentContext is null');
+      return;
+    }
+
+    // if the current screen is splash, queue the notification route for it to handle
+    if (currentScreenName == 'splash') {
+      ref.read(splashNextScreenProvider.notifier).state =
+          (name: routeName, pathParameters: pathParameters);
+      return;
+    }
+
+    // if the current screen is that same as the notification route, replace it
+    if (currentScreenName == routeName) {
+      navContext.pushReplacementNamed(routeName,
+          pathParameters: pathParameters);
+      return;
+    }
+
+    // otherwise, push the notification route
+    navContext.pushNamed(routeName, pathParameters: pathParameters);
   }
 }

@@ -4,9 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/logger.dart';
+import 'package:squadquest/router.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/services/firebase.dart';
+
+typedef SplashNextScreenRecord = ({
+  String name,
+  Map<String, String>? pathParameters
+});
+final splashNextScreenProvider =
+    StateProvider<SplashNextScreenRecord?>((_) => null);
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -47,12 +56,45 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       _afterMinSplashTime(() async {
         await ref.read(firebaseMessagingServiceProvider).requestPermissions();
 
+        final router = ref.read(routerProvider);
+        final splashNextScreen = ref.read(splashNextScreenProvider);
+
+        logger.d({
+          'after splash min time': {
+            'last-route-name':
+                router.routerDelegate.currentConfiguration.last.route.name,
+            'splash-next-screen': splashNextScreen
+          }
+        });
+
+        if (router.routerDelegate.currentConfiguration.last.route.name !=
+            'splash') {
+          logger.d('skipping splash nav because current route is not splash');
+          return;
+        }
+
         if (context.mounted) {
-          context.go(session == null
-              ? '/login'
-              : profile.value == null
-                  ? '/profile'
-                  : '/');
+          // send user to login screen if not authenticated
+          if (session == null) {
+            context.go('/login');
+            return;
+          }
+
+          // send user to profile screen if profile is not set
+          if (profile.value == null) {
+            context.go('/profile');
+            return;
+          }
+
+          // always replace the splash screen with the home screen
+          context.go('/');
+
+          // push the queued splashNextScreen if one has been set
+          if (splashNextScreen != null) {
+            context.pushNamed(splashNextScreen.name,
+                pathParameters: splashNextScreen.pathParameters ?? {});
+            return;
+          }
         }
       });
     }
