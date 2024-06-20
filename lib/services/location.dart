@@ -33,6 +33,14 @@ class LocationService {
 
   void _init() async {
     _location = Location();
+    _location.changeSettings(interval: 5000);
+    _location.changeNotificationOptions(
+        channelName: 'Location Sharing',
+        onTapBringToFront: true,
+        iconName: 'ic_stat_person_pin_circle',
+        title: 'SquadQuest is tracking your location',
+        subtitle: 'Friends going to the same event can see where you are');
+
     _serviceEnabled = await _location.serviceEnabled();
     _permissionGranted = await _location.hasPermission();
 
