@@ -1,5 +1,5 @@
 {
-  "dart.flutterSdkPath": ".fvm/versions/3.22.1",
+  "dart.flutterSdkPath": ".fvm/versions/3.22.2",
   "dart.analysisExcludedFolders": [
     ".fvm",
     ".pub",
@@ -20,5 +20,5 @@
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
   "java.import.gradle.enabled": false,
-  "java.autobuild.enabled": false,
+  "java.autobuild.enabled": false
 }

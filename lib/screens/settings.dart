@@ -26,6 +26,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+    final developerMode = ref.watch(developerModeProvider);
     final fcmToken = ref.watch(firebaseMessagingTokenProvider);
 
     return SafeArea(
@@ -38,41 +39,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              DropdownButton<ThemeMode>(
-                value: themeMode,
-                onChanged: (ThemeMode? themeMode) {
-                  ref.read(themeModeProvider.notifier).state = themeMode!;
-                },
-                items: const [
-                  DropdownMenuItem(
-                    value: ThemeMode.system,
-                    child: Text('System Theme'),
-                  ),
-                  DropdownMenuItem(
-                    value: ThemeMode.light,
-                    child: Text('Light Theme'),
-                  ),
-                  DropdownMenuItem(
-                    value: ThemeMode.dark,
-                    child: Text('Dark Theme'),
-                  )
-                ],
-              ),
-              const Spacer(),
-              if (browser != null) ...[
-                Text('Browser name: ${browser!.browser}'),
-                Text('Browser version ${browser!.version}'),
-                const SizedBox(height: 16),
-              ],
-              Text('FCM token: $fcmToken'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                  onPressed: () async {
-                    await ref
-                        .read(firebaseMessagingServiceProvider)
-                        .requestPermissions();
+              ListTile(
+                title: const Text('Theme Mode'),
+                trailing: DropdownButton<ThemeMode>(
+                  value: themeMode,
+                  onChanged: (ThemeMode? themeMode) {
+                    ref.read(themeModeProvider.notifier).state = themeMode!;
                   },
-                  child: const Text('Request notification permission'))
+                  items: const [
+                    DropdownMenuItem(
+                      value: ThemeMode.system,
+                      child: Text('System Theme'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.light,
+                      child: Text('Light Theme'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text('Dark Theme'),
+                    )
+                  ],
+                ),
+                leading: const Icon(Icons.color_lens),
+              ),
+              CheckboxListTile(
+                title: const Text('Developer mode'),
+                value: developerMode,
+                onChanged: (bool? developerMode) {
+                  ref.read(developerModeProvider.notifier).state =
+                      developerMode ?? false;
+                },
+                secondary: const Icon(Icons.developer_mode),
+              ),
+              if (developerMode) ...[
+                const Spacer(),
+                if (browser != null) ...[
+                  Text('Browser name: ${browser!.browser}'),
+                  Text('Browser version ${browser!.version}'),
+                  const SizedBox(height: 16),
+                ],
+                Text('FCM token: $fcmToken'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                    onPressed: () async {
+                      await ref
+                          .read(firebaseMessagingServiceProvider)
+                          .requestPermissions();
+                    },
+                    child: const Text('Request notification permission'))
+              ]
             ])),
       ),
     );

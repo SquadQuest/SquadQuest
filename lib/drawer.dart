@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/controllers/settings.dart';
 
 class _MenuItem {
   static const divider = Key('divider');
@@ -12,12 +13,14 @@ class _MenuItem {
   final String label;
   final String route;
   final Future<void> Function(WidgetRef ref)? afterNavigate;
+  final bool developerMode;
 
   _MenuItem({
     required this.icon,
     required this.label,
     required this.route,
     this.afterNavigate,
+    this.developerMode = false,
   });
 }
 
@@ -70,6 +73,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
+    final developerMode = ref.watch(developerModeProvider);
 
     return NavigationDrawer(
       selectedIndex: null,
@@ -96,7 +100,12 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     : Text(profile.phoneFormatted!)),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const SizedBox.shrink()),
-        ..._menu.map((menuItem) => switch (menuItem) {
+        ..._menu
+            .where((menuItem) =>
+                menuItem is! _MenuItem ||
+                !menuItem.developerMode ||
+                developerMode)
+            .map((menuItem) => switch (menuItem) {
               _MenuItem.divider => const Divider(thickness: 1),
               (_MenuItem _) => NavigationDrawerDestination(
                   icon: Icon(menuItem.icon),

@@ -9,14 +9,20 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError();
 });
 
+final settingsControllerProvider = Provider<SettingsController>((ref) {
+  return SettingsController(ref);
+});
+
 final themeModeProvider = StateProvider<ThemeMode>((ref) {
   final prefs = ref.read(sharedPreferencesProvider);
   final themeMode = prefs.getString('themeMode') ?? 'dark';
   return ThemeMode.values.firstWhere((e) => e.name == themeMode);
 });
 
-final settingsControllerProvider = Provider<SettingsController>((ref) {
-  return SettingsController(ref);
+final developerModeProvider = StateProvider<bool>((ref) {
+  final prefs = ref.read(sharedPreferencesProvider);
+  final developerMode = prefs.getString('developerMode') ?? 'false';
+  return developerMode == 'true';
 });
 
 class SettingsController {
@@ -31,8 +37,13 @@ class SettingsController {
     final prefs = ref.read(sharedPreferencesProvider);
 
     ref.listen(themeModeProvider, (_, themeMode) {
-      log('SettingsController.themeModeProvider=${themeMode.name}');
+      log('SettingsController.themeMode=${themeMode.name}');
       prefs.setString('themeMode', themeMode.name);
+    });
+
+    ref.listen(developerModeProvider, (_, developerMode) {
+      log('SettingsController.developerMode=$developerMode');
+      prefs.setString('developerMode', developerMode.toString());
     });
   }
 }
