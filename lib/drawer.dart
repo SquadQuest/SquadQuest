@@ -45,6 +45,12 @@ final _menu = [
     label: 'Settings',
     route: 'settings',
   ),
+  _MenuItem(
+    icon: Icons.map,
+    label: 'Map',
+    route: 'map',
+    developerMode: true,
+  ),
   _MenuItem.divider,
   _MenuItem(
     icon: Icons.logout,
@@ -106,13 +112,13 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                 !menuItem.developerMode ||
                 developerMode)
             .map((menuItem) => switch (menuItem) {
-              _MenuItem.divider => const Divider(thickness: 1),
-              (_MenuItem _) => NavigationDrawerDestination(
-                  icon: Icon(menuItem.icon),
-                  label: Text(menuItem.label),
-                ),
-              _ => throw 'Invalid menu item: $menuItem',
-            })
+                  _MenuItem.divider => const Divider(thickness: 1),
+                  (_MenuItem _) => NavigationDrawerDestination(
+                      icon: Icon(menuItem.icon),
+                      label: Text(menuItem.label),
+                    ),
+                  _ => throw 'Invalid menu item: $menuItem',
+                })
       ],
     );
   }
