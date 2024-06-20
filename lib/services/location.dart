@@ -33,7 +33,10 @@ class LocationService {
 
   void _init() async {
     _location = Location();
-    _location.changeSettings(interval: 5000);
+    _location.changeSettings(
+        interval: 5000,
+        distanceFilter:
+            5); // sample location every 5 seconds if distance is at least 5 meters
     _location.changeNotificationOptions(
         channelName: 'Location Sharing',
         onTapBringToFront: true,
