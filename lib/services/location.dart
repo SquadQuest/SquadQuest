@@ -18,6 +18,9 @@ final locationStreamProvider = StreamProvider<LocationData>((ref) {
 class LocationService {
   final Ref ref;
 
+  bool _initialized = false;
+  final List<Completer> _onInitialized = [];
+
   late Location _location;
   bool _serviceEnabled = false;
   bool _backgroundEnabled = false;
@@ -33,10 +36,6 @@ class LocationService {
 
   void _init() async {
     _location = Location();
-    _location.changeSettings(
-        interval: 5000,
-        distanceFilter:
-            5); // sample location every 5 seconds if distance is at least 5 meters
     _location.changeNotificationOptions(
         channelName: 'Location Sharing',
         onTapBringToFront: true,
@@ -54,10 +53,29 @@ class LocationService {
         'permissionGranted': _permissionGranted,
       }
     });
+
+    // mark that initialization is complete
+    _initialized = true;
+
+    // complete any queued futures
+    if (_onInitialized.isNotEmpty) {
+      await startTracking();
+
+      for (final completer in _onInitialized) {
+        completer.complete();
+      }
+    }
   }
 
-  void startTracking() async {
+  Future<void> startTracking() async {
     logger.d('LocationService.startTracking');
+
+    if (!_initialized) {
+      // queue a future to complete afer initialization
+      final completer = Completer();
+      _onInitialized.add(completer);
+      return completer.future;
+    }
 
     if (!_serviceEnabled) {
       _serviceEnabled = await _location.requestService();
@@ -72,6 +90,12 @@ class LocationService {
         return;
       }
     }
+
+    // this call can only be made after permission is granted
+    _location.changeSettings(
+        interval: 5000,
+        distanceFilter:
+            5); // sample location every 5 seconds if distance is at least 5 meters
 
     _backgroundEnabled = await _location.enableBackgroundMode(enable: true);
 
