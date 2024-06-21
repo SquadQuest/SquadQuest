@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -59,12 +61,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     //     circleOpacity: 0.5,
     //   ));
     // }
-    controller!.addLine(LineOptions(
-      geometry: points,
+    int lineLength = 750;
+    final line = await controller!.addLine(LineOptions(
+      geometry: points.sublist(0, lineLength),
       lineColor: '#ff0000',
       lineWidth: 5.0,
       lineOpacity: 0.5,
     ));
+
+    Timer.periodic(const Duration(milliseconds: 10), (timer) {
+      controller!.updateLine(
+          line, LineOptions(geometry: points.sublist(0, ++lineLength)));
+    });
+
+    logger.d('line: $line');
+
+    // TODO: create method that takes a the points list and a cursor index and returns a list of lines up to a threshold distance where each line subdivides the list of points by a fixed portion of the total time of the segment. Color the lines based on their average distance from the lead time
   }
 
   @override
