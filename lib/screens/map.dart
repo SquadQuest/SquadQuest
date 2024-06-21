@@ -40,6 +40,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final points = await supabase
         .from('location_tracks')
         .select('location_text')
+        .eq('created_by', supabase.auth.currentUser!.id)
         .order('timestamp')
         .withConverter((data) {
       return data.map((row) {
