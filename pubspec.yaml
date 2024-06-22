@@ -44,6 +44,7 @@ dependencies:
   web_browser_detect: ^2.0.3
   maplibre_gl: ^0.20.0
   location: ^6.0.2
+  geobase: ^1.2.0
 
 
   # The following adds the Cupertino Icons font to your application.
