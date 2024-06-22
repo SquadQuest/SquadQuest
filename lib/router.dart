@@ -11,6 +11,7 @@ import 'package:squadquest/screens/settings.dart';
 import 'package:squadquest/screens/post_event.dart';
 import 'package:squadquest/screens/event_details.dart';
 import 'package:squadquest/screens/friends.dart';
+import 'package:squadquest/screens/map.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -65,6 +66,11 @@ final routerProvider = Provider((ref) {
         name: 'friends',
         path: '/friends',
         builder: (context, state) => const FriendsScreen(),
+      ),
+      GoRoute(
+        name: 'map',
+        path: '/map',
+        builder: (context, state) => const MapScreen(),
       ),
     ],
   );
