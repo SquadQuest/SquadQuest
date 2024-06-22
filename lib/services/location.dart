@@ -5,6 +5,7 @@ import 'package:location/location.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/models/instance.dart';
 
 final locationServiceProvider = Provider<LocationService>((ref) {
   return LocationService(ref);
@@ -22,6 +23,9 @@ class LocationService {
   final List<Completer> _onInitialized = [];
   bool _startingTracking = false;
   bool tracking = false;
+
+  StreamSubscription? _streamSubscription;
+  List<InstanceID> _trackingInstanceIds = [];
 
   late Location _location;
   bool _serviceEnabled = false;
@@ -69,8 +73,11 @@ class LocationService {
     }
   }
 
-  Future<void> startTracking() async {
-    // TODO: add event id
+  Future<void> startTracking([InstanceID? instanceId]) async {
+    // register instanceId
+    if (instanceId != null) {
+      _trackingInstanceIds.add(instanceId);
+    }
 
     // queue a future to complete after initialization if not initialized yet
     if (!_initialized) {
@@ -115,7 +122,8 @@ class LocationService {
       _streamController.add(_lastLocation!);
     }
 
-    _location.onLocationChanged.listen(_onLocationChanged);
+    _streamSubscription =
+        _location.onLocationChanged.listen(_onLocationChanged);
 
     logger.d({
       'serviceEnabled': _serviceEnabled,
@@ -130,23 +138,55 @@ class LocationService {
     logger.d('LocationService.startTracking -> finished');
   }
 
+  Future<void> stopTracking(InstanceID? instanceId) async {
+    // remove instanceId
+    if (instanceId == null) {
+      _trackingInstanceIds.clear();
+    } else {
+      _trackingInstanceIds.remove(instanceId);
+    }
+
+    // if still tracking other instances, return
+    if (_trackingInstanceIds.isNotEmpty) {
+      return;
+    }
+
+    // stop tracking location
+    logger.d('LocationService.stopTracking');
+    await _streamSubscription?.cancel();
+    await _location.enableBackgroundMode(enable: false);
+
+    tracking = false;
+
+    logger.d('LocationService.stopTracking -> finished');
+  }
+
   void _onLocationChanged(LocationData currentLocation) async {
     logger.t({'_onLocationChanged': currentLocation});
 
     _lastLocation = currentLocation;
 
-    // write to database
-    final supabase = ref.read(supabaseClientProvider);
+    // generate records for each active event
+    final insertData = _trackingInstanceIds.map((instanceId) {
+      // TODO: save more of the available data?
+      return {
+        'event': instanceId,
+        'timestamp':
+            DateTime.fromMillisecondsSinceEpoch(currentLocation.time!.toInt())
+                .toUtc()
+                .toIso8601String(),
+        'location':
+            'POINT(${currentLocation.longitude} ${currentLocation.latitude})',
+      };
+    }).toList();
 
-    // TODO: save more of the available data?
-    await supabase.from('location_points').insert({
-      'timestamp':
-          DateTime.fromMillisecondsSinceEpoch(currentLocation.time!.toInt())
-              .toUtc()
-              .toIso8601String(),
-      'location':
-          'POINT(${currentLocation.longitude} ${currentLocation.latitude})',
-    });
+    // write to database
+    if (insertData.isNotEmpty) {
+      await ref
+          .read(supabaseClientProvider)
+          .from('location_points')
+          .insert(insertData);
+    }
 
     // broadcast on stream
     _streamController.add(currentLocation);

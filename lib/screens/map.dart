@@ -9,7 +9,6 @@ import 'package:squadquest/drawer.dart';
 import 'package:squadquest/models/location_point.dart';
 import 'package:squadquest/models/map_segment.dart';
 import 'package:squadquest/services/supabase.dart';
-import 'package:squadquest/services/location.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -37,8 +36,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Future<void> _loadTracks() async {
     final supabase = ref.read(supabaseClientProvider);
 
-    // final positionTimestamps = <Geographic, DateTime>{};
-    // TODO: select from raw points
     supabase
         .from('location_points')
         .stream(primaryKey: ['id'])
@@ -157,10 +154,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   void initState() {
     super.initState();
-
-    final locationService = ref.read(locationServiceProvider);
-
-    locationService.startTracking();
   }
 
   @override
@@ -179,7 +172,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             zoom: 11.75,
           ),
           styleString:
-              'https://api.maptiler.com/maps/outdoor-v2/style.json?key=XYHvSt2RxwZPOxjSj98n',
+              'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
           myLocationEnabled: true,
           myLocationRenderMode: MyLocationRenderMode.compass,
           myLocationTrackingMode: MyLocationTrackingMode.tracking,
