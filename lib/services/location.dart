@@ -71,20 +71,22 @@ class LocationService {
 
   Future<void> startTracking() async {
     // TODO: add event id
-    logger.d('LocationService.startTracking');
 
-    if (tracking || _startingTracking) {
-      return;
-    }
-    _startingTracking = true;
-
+    // queue a future to complete after initialization if not initialized yet
     if (!_initialized) {
-      // queue a future to complete afer initialization
       final completer = Completer();
       _onInitialized.add(completer);
       return completer.future;
     }
 
+    // if already tracking, return
+    if (tracking || _startingTracking) {
+      return;
+    }
+    _startingTracking = true;
+
+    // start tracking location
+    logger.d('LocationService.startTracking');
     if (!_serviceEnabled) {
       _serviceEnabled = await _location.requestService();
       if (!_serviceEnabled) {
@@ -124,6 +126,8 @@ class LocationService {
 
     _startingTracking = false;
     tracking = true;
+
+    logger.d('LocationService.startTracking -> finished');
   }
 
   void _onLocationChanged(LocationData currentLocation) async {
