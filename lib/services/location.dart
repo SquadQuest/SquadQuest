@@ -20,6 +20,8 @@ class LocationService {
 
   bool _initialized = false;
   final List<Completer> _onInitialized = [];
+  bool _startingTracking = false;
+  bool tracking = false;
 
   late Location _location;
   bool _serviceEnabled = false;
@@ -68,7 +70,13 @@ class LocationService {
   }
 
   Future<void> startTracking() async {
+    // TODO: add event id
     logger.d('LocationService.startTracking');
+
+    if (tracking || _startingTracking) {
+      return;
+    }
+    _startingTracking = true;
 
     if (!_initialized) {
       // queue a future to complete afer initialization
@@ -113,6 +121,9 @@ class LocationService {
       'backgroundEnabled': _backgroundEnabled,
       'lastLocation': _lastLocation
     });
+
+    _startingTracking = false;
+    tracking = true;
   }
 
   void _onLocationChanged(LocationData currentLocation) async {
