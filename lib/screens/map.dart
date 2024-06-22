@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geobase/geobase.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/drawer.dart';
-import 'package:squadquest/services/location.dart';
+import 'package:squadquest/models/location_point.dart';
+import 'package:squadquest/models/map_segment.dart';
 import 'package:squadquest/services/supabase.dart';
-
-typedef PointRecord = ({DateTime timestamp, Geographic position});
+import 'package:squadquest/services/location.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -46,22 +45,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         .eq('created_by', supabase.auth.currentUser!.id)
         .order('timestamp', ascending: false)
         .listen((data) {
-          final List<PointRecord> points = data.map((row) {
-            final [longitude, latitude] = row['location_text']
-                .substring(6, row['location_text'].length - 1)
-                .split(' ');
-            return (
-              timestamp: DateTime.parse(row['timestamp']),
-              position: Geographic(
-                  lon: double.parse(longitude), lat: double.parse(latitude))
-            );
-          }).toList();
+          final List<LocationPoint> points =
+              data.map(LocationPoint.fromMap).toList();
 
           _renderTracks(points);
         });
   }
 
-  Future<void> _renderTracks(List<PointRecord> points) async {
+  Future<void> _renderTracks(List<LocationPoint> points) async {
     logger.d({'rendering tracks': points.length});
     // clear existing line and skip if points list is empty
     if (points.length < 2) {
@@ -116,7 +107,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     // build segments
     var segments =
-        _Segment.subdivide(points, threshold: .0001, maxDistance: .005);
+        MapSegment.subdivide(points, threshold: .0001, maxDistance: .005);
 
     // render segments to lines with faded color based on distance from lead time
     final earliestMilleseconds = segments.last.earliestMilliseconds;
@@ -195,96 +186,5 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ),
       ),
     );
-  }
-}
-
-class _Segment {
-  final List<PointRecord> pointRecords;
-
-  // basic information
-  int get length => pointRecords.length;
-  DateTime get earliest => pointRecords.last.timestamp;
-  int get earliestMilliseconds => earliest.millisecondsSinceEpoch;
-  DateTime get latest => pointRecords.first.timestamp;
-  int get latestMilliseconds => latest.millisecondsSinceEpoch;
-
-  // geobase representations
-  LineString? _lineString;
-  LineString get lineString =>
-      _lineString ??
-      (_lineString = LineString.from(
-          pointRecords.map((record) => record.position).toList()));
-  Iterable<Position> get positions => lineString.chain.positions;
-
-  // maplibre representations
-  List<LatLng> get latLngList =>
-      positions.map((position) => LatLng(position.y, position.x)).toList();
-
-  // calculations
-  double? _distance;
-  double get distance => _distance ?? (_distance = lineString.length2D());
-
-  int? _durationMilliseconds;
-  int get durationMilliseconds => latestMilliseconds - earliestMilliseconds;
-  Duration? _duration;
-  Duration get duration =>
-      _duration ?? (_duration = Duration(milliseconds: durationMilliseconds));
-
-  int? _midMilliseconds;
-  int get midMilliseconds =>
-      _midMilliseconds ?? (earliestMilliseconds + durationMilliseconds ~/ 2);
-  DateTime? _midTimestamp;
-  DateTime get midTimestamp =>
-      _midTimestamp ??
-      (_midTimestamp = DateTime.fromMillisecondsSinceEpoch(midMilliseconds));
-
-  _Segment(this.pointRecords)
-      : assert(pointRecords.length >= 2,
-            'pointRecords must have at least 2 entries'),
-        assert(
-            pointRecords.first.timestamp.isAfter(pointRecords.last.timestamp),
-            'pointRecords must be in reverse chronological order');
-
-  static subdivide(List<PointRecord> points,
-      {double threshold = 0.002, double? maxDistance}) {
-    final segments = <_Segment>[];
-
-    int currentSegmentStart = 0;
-    _Segment? currentSegment;
-    double distanceSum = 0;
-
-    for (int i = currentSegmentStart + 1; i < points.length; i++) {
-      // skip point if it is a duplicate of the last point
-      if (i > 0 &&
-          points[i].timestamp.isAtSameMomentAs(points[i - 1].timestamp)) {
-        continue;
-      }
-
-      // draft current segment
-      currentSegment = _Segment(points.sublist(currentSegmentStart, i + 1));
-
-      // complete segment if distance exceeds threshold
-      if (currentSegment.distance > threshold) {
-        segments.add(currentSegment);
-        distanceSum += currentSegment.distance;
-
-        currentSegment = null;
-        currentSegmentStart = i;
-
-        if (maxDistance != null && distanceSum > maxDistance) {
-          break;
-        } else {
-          continue;
-        }
-      }
-    }
-
-    // add final segment
-    if (currentSegment != null) {
-      segments.add(currentSegment);
-      distanceSum += currentSegment.distance;
-    }
-
-    return segments;
   }
 }
