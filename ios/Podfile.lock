@@ -65,6 +65,12 @@ PODS:
   - GoogleUtilities/UserDefaults (7.13.3):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
+  - location (0.0.1):
+    - Flutter
+  - MapLibre (6.5.0)
+  - maplibre_gl (0.0.1):
+    - Flutter
+    - MapLibre (= 6.5.0)
   - nanopb (2.30910.0):
     - nanopb/decode (= 2.30910.0)
     - nanopb/encode (= 2.30910.0)
@@ -89,6 +95,8 @@ DEPENDENCIES:
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - Flutter (from `Flutter`)
   - flutter_keyboard_visibility (from `.symlinks/plugins/flutter_keyboard_visibility/ios`)
+  - location (from `.symlinks/plugins/location/ios`)
+  - maplibre_gl (from `.symlinks/plugins/maplibre_gl/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - pointer_interceptor_ios (from `.symlinks/plugins/pointer_interceptor_ios/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -103,6 +111,7 @@ SPEC REPOS:
     - FirebaseMessaging
     - GoogleDataTransport
     - GoogleUtilities
+    - MapLibre
     - nanopb
     - PromisesObjC
 
@@ -117,6 +126,10 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_keyboard_visibility:
     :path: ".symlinks/plugins/flutter_keyboard_visibility/ios"
+  location:
+    :path: ".symlinks/plugins/location/ios"
+  maplibre_gl:
+    :path: ".symlinks/plugins/maplibre_gl/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   pointer_interceptor_ios:
@@ -139,6 +152,9 @@ SPEC CHECKSUMS:
   flutter_keyboard_visibility: 0339d06371254c3eb25eeb90ba8d17dca8f9c069
   GoogleDataTransport: 6c09b596d841063d76d4288cc2d2f42cc36e1e2a
   GoogleUtilities: ea963c370a38a8069cc5f7ba4ca849a60b6d7d15
+  location: d5cf8598915965547c3f36761ae9cc4f4e87d22e
+  MapLibre: 0ebfa9329d313cec8bf0a5ba5a336a1dc903785e
+  maplibre_gl: 943a491fffb3337c1b9de57fd377206d18c16e34
   nanopb: 438bc412db1928dac798aa6fd75726007be04262
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   pointer_interceptor_ios: 508241697ff0947f853c061945a8b822463947c1

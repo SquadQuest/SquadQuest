@@ -67,4 +67,29 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
       return item;
     }).toList();
   }
+
+  Future<Map<UserID, UserProfile>> fetchProfiles(Set<UserID> userIds) async {
+    final result = <UserID, UserProfile>{};
+    final missingIds = userIds.where((userId) => !state.containsKey(userId));
+
+    // fetch missing profiles into cache
+    if (missingIds.isNotEmpty) {
+      final profiles = await ref
+          .read(supabaseClientProvider)
+          .from('profiles')
+          .select('*')
+          .inFilter('id', missingIds.toList())
+          .withConverter((data) => data.map(UserProfile.fromMap).toList());
+
+      // add profiles to cache
+      await cacheProfiles(profiles);
+    }
+
+    // add profiles to result
+    for (final userId in userIds) {
+      result[userId] = state[userId]!;
+    }
+
+    return result;
+  }
 }

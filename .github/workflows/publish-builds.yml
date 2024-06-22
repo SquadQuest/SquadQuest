@@ -1,8 +1,6 @@
 name: 'Publish: Flutter Builds'
 
 on:
-  push:
-    branches: [ main ]
   release:
     types: [ published ]
 
@@ -44,22 +42,18 @@ jobs:
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ./android/app/keystore.jks
 
       - name: Build for web
-        if: ${{ github.event_name == 'push' }}
         run: fvm flutter build web --dart-define=PRODUCTION_LOGGING=true
         # run: fvm flutter build web --profile --source-maps --dart-define=Dart2jsOptimization=O0 --dart-define=PRODUCTION_LOGGING=true
 
       - name: Upload web artifact
-        if: ${{ github.event_name == 'push' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
 
       - name: Build for Android
-        if: ${{ github.event_name == 'release' }}
         run: fvm flutter build apk
 
       - name: Upload APK to release
-        if: ${{ github.event_name == 'release' }}
         uses: alexellis/upload-assets@0.4.0
         env:
           GITHUB_TOKEN: ${{ github.token }}

@@ -6,13 +6,15 @@ import 'package:grouped_list/grouped_list.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/logger.dart';
+import 'package:squadquest/drawer.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/components/friends_list.dart';
-import 'package:squadquest/drawer.dart';
+import 'package:squadquest/components/event_map.dart';
+import 'package:squadquest/services/location.dart';
 
 final _statusGroupOrder = {
   InstanceMemberStatus.omw: 0,
@@ -21,6 +23,8 @@ final _statusGroupOrder = {
   InstanceMemberStatus.no: 3,
   InstanceMemberStatus.invited: 4,
 };
+
+enum Menu { map, getLink, edit, cancel }
 
 final eventDetailsProvider = FutureProvider.autoDispose
     .family<Instance, InstanceID>((ref, instanceId) async {
@@ -76,6 +80,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
     logger.i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
 
+    // start or stop tracking
+    final locationService = ref.read(locationServiceProvider);
+    if (status == InstanceMemberStatus.omw) {
+      await locationService.startTracking(widget.instanceId);
+    } else {
+      await locationService.stopTracking(widget.instanceId);
+    }
+
     if (_rsvpSnackbar != null) {
       try {
         _rsvpSnackbar!.close();
@@ -96,6 +108,31 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     _rsvpSnackbar?.closed.then((reason) {
       _rsvpSnackbar = null;
     });
+  }
+
+  void _onMenuSelect(Menu item) {
+    switch (item) {
+      case Menu.map:
+        _showMap();
+        break;
+      case Menu.getLink:
+        logger.i('Get link');
+        break;
+      case Menu.edit:
+        logger.i('Edit event');
+        break;
+      case Menu.cancel:
+        logger.i('Cancel event');
+        break;
+    }
+  }
+
+  Future<dynamic> _showMap() async {
+    return showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (BuildContext context) =>
+            EventMap(eventId: widget.instanceId));
   }
 
   @override
@@ -125,11 +162,51 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     return SafeArea(
       child: Scaffold(
           appBar: AppBar(
-              title: eventAsync.when(
-            data: (event) => Text(event.title),
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const Text('Error loading event details'),
-          )),
+            title: eventAsync.when(
+              data: (event) => Text(event.title),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const Text('Error loading event details'),
+            ),
+            actions: [
+              PopupMenuButton<Menu>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: _onMenuSelect,
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
+                  const PopupMenuItem<Menu>(
+                    value: Menu.map,
+                    child: ListTile(
+                      leading: Icon(Icons.map),
+                      title: Text('Open live map'),
+                    ),
+                  ),
+                  const PopupMenuItem<Menu>(
+                    value: Menu.getLink,
+                    child: ListTile(
+                      leading: Icon(Icons.link_outlined),
+                      title: Text('Get link'),
+                    ),
+                  ),
+                  if (eventAsync.value?.createdById == session?.user.id) ...[
+                    const PopupMenuDivider(),
+                    const PopupMenuItem<Menu>(
+                      value: Menu.edit,
+                      child: ListTile(
+                        leading: Icon(Icons.delete_outline),
+                        title: Text('Edit event'),
+                      ),
+                    ),
+                    const PopupMenuItem<Menu>(
+                      value: Menu.cancel,
+                      child: ListTile(
+                        leading: Icon(Icons.cancel),
+                        title: Text('Cancel event'),
+                      ),
+                    ),
+                  ]
+                ],
+              ),
+            ],
+          ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => _sendInvitations(context),
             child: const Icon(Icons.mail),
