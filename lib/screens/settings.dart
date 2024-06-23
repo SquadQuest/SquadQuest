@@ -31,7 +31,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return AppScaffold(
       title: 'Settings',
-      bodyPadding: const EdgeInsets.all(30),
+      bodyPadding: const EdgeInsets.all(16),
       body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         ListTile(
           title: const Text('Theme Mode'),
