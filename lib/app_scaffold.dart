@@ -12,6 +12,7 @@ class AppScaffold extends StatelessWidget {
   final Widget body;
   final EdgeInsetsGeometry? bodyPadding;
   final bool showDrawer;
+  final bool showLocationSharingSheet;
   final List<Widget>? actions;
   final FloatingActionButton? floatingActionButton;
   final Widget? bottomNavigationBar;
@@ -22,6 +23,7 @@ class AppScaffold extends StatelessWidget {
       required this.body,
       this.bodyPadding,
       this.showDrawer = true,
+      this.showLocationSharingSheet = true,
       this.actions,
       this.floatingActionButton,
       this.bottomNavigationBar});
@@ -35,8 +37,10 @@ class AppScaffold extends StatelessWidget {
       body: Consumer(
           child: body,
           builder: (_, ref, child) {
-            final padding =
-                EdgeInsets.only(bottom: ref.watch(_bottomPaddingProvider) ?? 0);
+            final padding = EdgeInsets.only(
+                bottom: showLocationSharingSheet
+                    ? ref.watch(_bottomPaddingProvider) ?? 0
+                    : 0);
             return Padding(
                 padding:
                     bodyPadding == null ? padding : padding.add(bodyPadding!),
@@ -47,24 +51,26 @@ class AppScaffold extends StatelessWidget {
         actions: actions,
       ),
       drawer: showDrawer ? const AppDrawer() : null,
-      bottomSheet: Consumer(builder: (_, ref, __) {
-        return NotificationListener<SizeChangedLayoutNotification>(
-            onNotification: (SizeChangedLayoutNotification notification) {
-              SchedulerBinding.instance.addPostFrameCallback((_) {
-                final bottomSheetBox = _bottomSheetKey.currentContext
-                    ?.findRenderObject() as RenderBox?;
+      bottomSheet: showLocationSharingSheet
+          ? Consumer(builder: (_, ref, __) {
+              return NotificationListener<SizeChangedLayoutNotification>(
+                  onNotification: (SizeChangedLayoutNotification notification) {
+                    SchedulerBinding.instance.addPostFrameCallback((_) {
+                      final bottomSheetBox = _bottomSheetKey.currentContext
+                          ?.findRenderObject() as RenderBox?;
 
-                ref.read(_bottomPaddingProvider.notifier).state =
-                    bottomSheetBox != null && bottomSheetBox.hasSize
-                        ? bottomSheetBox.size.height
-                        : null;
-              });
+                      ref.read(_bottomPaddingProvider.notifier).state =
+                          bottomSheetBox != null && bottomSheetBox.hasSize
+                              ? bottomSheetBox.size.height
+                              : null;
+                    });
 
-              return true;
-            },
-            child: SizeChangedLayoutNotifier(
-                child: LocationSharingSheet(key: _bottomSheetKey)));
-      }),
+                    return true;
+                  },
+                  child: SizeChangedLayoutNotifier(
+                      child: LocationSharingSheet(key: _bottomSheetKey)));
+            })
+          : null,
       floatingActionButton: floatingActionButton == null
           ? null
           : Consumer(

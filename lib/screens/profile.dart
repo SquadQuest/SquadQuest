@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squadquest/drawer.dart';
+import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 
@@ -89,73 +89,67 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     });
 
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: profile != null
-              ? const Text('Update your profile')
-              : const Text('Set up your profile'),
-        ),
-        drawer: profile != null ? const AppDrawer() : null,
-        body: AutofillGroup(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                if (profile == null)
-                  const Text(
-                    'Welcome to SquadQuest!\n\nPlease set up your profile to get started:',
-                    textAlign: TextAlign.center,
-                  ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  readOnly: submitted,
-                  autofillHints: const [AutofillHints.givenName],
-                  keyboardType: TextInputType.name,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.person),
-                    labelText: 'First name',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your first name';
-                    }
-                    return null;
-                  },
-                  controller: _firstNameController,
+    return AppScaffold(
+      title: profile != null ? 'Update your profile' : 'Set up your profile',
+      showDrawer: profile != null,
+      body: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              if (profile == null)
+                const Text(
+                  'Welcome to SquadQuest!\n\nPlease set up your profile to get started:',
+                  textAlign: TextAlign.center,
                 ),
-                TextFormField(
-                  readOnly: submitted,
-                  autofillHints: const [AutofillHints.familyName],
-                  keyboardType: TextInputType.name,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.person),
-                    labelText: 'Last name',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your last name';
-                    }
-                    return null;
-                  },
-                  controller: _lastNameController,
+              const SizedBox(height: 16),
+              TextFormField(
+                readOnly: submitted,
+                autofillHints: const [AutofillHints.givenName],
+                keyboardType: TextInputType.name,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.person),
+                  labelText: 'First name',
                 ),
-                const SizedBox(height: 32),
-                submitted
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed:
-                            submitted ? null : () => _submitProfile(context),
-                        child: const Text(
-                          'Save profile',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                      )
-              ],
-            ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your first name';
+                  }
+                  return null;
+                },
+                controller: _firstNameController,
+              ),
+              TextFormField(
+                readOnly: submitted,
+                autofillHints: const [AutofillHints.familyName],
+                keyboardType: TextInputType.name,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.person),
+                  labelText: 'Last name',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your last name';
+                  }
+                  return null;
+                },
+                controller: _lastNameController,
+              ),
+              const SizedBox(height: 32),
+              submitted
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed:
+                          submitted ? null : () => _submitProfile(context),
+                      child: const Text(
+                        'Save profile',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    )
+            ],
           ),
         ),
       ),

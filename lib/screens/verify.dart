@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 
@@ -74,53 +75,50 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Verify phone number'),
-        ),
-        body: AutofillGroup(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                TextFormField(
-                  autofocus: true,
-                  readOnly: submitted,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.pin_outlined),
-                    labelText: 'Enter the code sent to your phone',
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.deny(RegExp(r'[^0-9]'))
-                  ],
-                  validator: (value) {
-                    if (value == null ||
-                        value.isEmpty ||
-                        !otpCodeRegExp.hasMatch(value)) {
-                      return 'Please enter a valid one-time password';
-                    }
-                    return null;
-                  },
-                  controller: _tokenController,
-                  onFieldSubmitted: (_) => _submitToken(context),
+    return AppScaffold(
+      title: 'Verify phone number',
+      showDrawer: false,
+      showLocationSharingSheet: false,
+      body: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                autofocus: true,
+                readOnly: submitted,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.pin_outlined),
+                  labelText: 'Enter the code sent to your phone',
                 ),
-                const SizedBox(height: 16),
-                submitted
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed:
-                            submitted ? null : () => _submitToken(context),
-                        child: const Text(
-                          'Verify',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                      )
-              ],
-            ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[^0-9]'))
+                ],
+                validator: (value) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      !otpCodeRegExp.hasMatch(value)) {
+                    return 'Please enter a valid one-time password';
+                  }
+                  return null;
+                },
+                controller: _tokenController,
+                onFieldSubmitted: (_) => _submitToken(context),
+              ),
+              const SizedBox(height: 16),
+              submitted
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: submitted ? null : () => _submitToken(context),
+                      child: const Text(
+                        'Verify',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    )
+            ],
           ),
         ),
       ),
