@@ -180,14 +180,44 @@ serve(async (request) => {
   // scrub profile data
   rsvp.member = scrubProfile(rsvp.member);
 
-  // send notification to host
-  if (notificationBody && event.created_by != currentUser.id) {
-    const hostProfile = await getSupabaseUserProfile(request, event.created_by);
+  // build list of profiles to notify
+  const profilesToNotify = [];
 
-    if (hostProfile.fcm_token) {
+  if (notificationBody) {
+    // send to host if they're not the one RSVPing
+    if (event.created_by != currentUser.id) {
+      profilesToNotify.push(
+        await getSupabaseUserProfile(request, event.created_by),
+      );
+    }
+
+    // send to other guests who are RSVP'd for OMWs
+    if (status == "omw") {
+      const { data: rsvps, error: rsvpsError } = await serviceRoleSupabase
+        .from(
+          "instance_members",
+        )
+        .select("*, member(*)")
+        .eq("instance", instanceId)
+        .in("status", ["maybe", "yes", "omw"])
+        .neq("member", currentUser.id)
+        .neq("member", event.created_by);
+      if (rsvpsError) throw rsvpsError;
+
+      for (const rsvp of rsvps) {
+        profilesToNotify.push(rsvp.member);
+      }
+    }
+
+    // send notification to all queued recipients
+    for (const profile of profilesToNotify) {
+      if (!profile.fcm_token) {
+        continue;
+      }
+
       await postMessage({
         notificationType: "rsvp",
-        token: hostProfile.fcm_token,
+        token: profile.fcm_token,
         title: event.title,
         body: notificationBody,
         url: `https://squadquest.app/#/events/${event.id}`,
