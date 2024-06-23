@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
@@ -30,6 +32,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   void _onStyleLoadedCallback() async {
     logger.d('MapScreen._onStyleLoadedCallback');
+    await controller!.addImage(
+        'person-marker',
+        (await rootBundle.load('assets/symbols/person-marker.png'))
+            .buffer
+            .asUint8List());
+
+    final symbol = await controller!.addSymbol(const SymbolOptions(
+        geometry: LatLng(39.9550, -75.1605),
+        iconImage: 'person-marker',
+        iconSize: kIsWeb ? 0.25 : 0.75,
+        iconAnchor: 'bottom',
+        textField: 'Full Name',
+        textColor: '#ffffff',
+        textAnchor: 'top-left',
+        textSize: 8));
+
     _loadTracks();
   }
 

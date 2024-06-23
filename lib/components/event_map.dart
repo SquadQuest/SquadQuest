@@ -188,7 +188,7 @@ class _EventMapState extends ConsumerState<EventMap> {
           geometry: LatLng(
               userPoints.first.location.lat, userPoints.first.location.lon),
           iconImage: 'person-marker',
-          iconSize: 0.75,
+          iconSize: kIsWeb ? 0.25 : 0.75,
           iconAnchor: 'bottom',
           textField: userProfiles[userId]!.fullName,
           textColor: '#ffffff',
