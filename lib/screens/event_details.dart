@@ -5,9 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:go_router/go_router.dart';
+import 'package:squadquest/app_scaffold.dart';
 
 import 'package:squadquest/logger.dart';
-import 'package:squadquest/drawer.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
@@ -167,195 +167,183 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     }
 
     // build widgets
-    return SafeArea(
-      child: Scaffold(
-          appBar: AppBar(
-            title: eventAsync.when(
-              data: (event) => Text(event.title),
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const Text('Error loading event details'),
-            ),
-            actions: [
-              PopupMenuButton<Menu>(
-                icon: const Icon(Icons.more_vert),
-                onSelected: _onMenuSelect,
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
-                  const PopupMenuItem<Menu>(
-                    value: Menu.map,
-                    child: ListTile(
-                      leading: Icon(Icons.map),
-                      title: Text('Open live map'),
-                    ),
-                  ),
-                  const PopupMenuItem<Menu>(
-                    value: Menu.getLink,
-                    child: ListTile(
-                      leading: Icon(Icons.link_outlined),
-                      title: Text('Get link'),
-                    ),
-                  ),
-                  if (eventAsync.value?.createdById == session?.user.id) ...[
-                    const PopupMenuDivider(),
-                    const PopupMenuItem<Menu>(
-                      value: Menu.edit,
-                      child: ListTile(
-                        leading: Icon(Icons.delete_outline),
-                        title: Text('Edit event'),
-                      ),
-                    ),
-                    const PopupMenuItem<Menu>(
-                      value: Menu.cancel,
-                      child: ListTile(
-                        leading: Icon(Icons.cancel),
-                        title: Text('Cancel event'),
-                      ),
-                    ),
-                  ]
-                ],
+    return AppScaffold(
+        showDrawer: !context.canPop(),
+        title: eventAsync.when(
+          data: (event) => event.title,
+          loading: () => '',
+          error: (_, __) => 'Error loading event details',
+        ),
+        actions: [
+          PopupMenuButton<Menu>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: _onMenuSelect,
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
+              const PopupMenuItem<Menu>(
+                value: Menu.map,
+                child: ListTile(
+                  leading: Icon(Icons.map),
+                  title: Text('Open live map'),
+                ),
               ),
+              const PopupMenuItem<Menu>(
+                value: Menu.getLink,
+                child: ListTile(
+                  leading: Icon(Icons.link_outlined),
+                  title: Text('Get link'),
+                ),
+              ),
+              if (eventAsync.value?.createdById == session?.user.id) ...[
+                const PopupMenuDivider(),
+                const PopupMenuItem<Menu>(
+                  value: Menu.edit,
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline),
+                    title: Text('Edit event'),
+                  ),
+                ),
+                const PopupMenuItem<Menu>(
+                  value: Menu.cancel,
+                  child: ListTile(
+                    leading: Icon(Icons.cancel),
+                    title: Text('Cancel event'),
+                  ),
+                ),
+              ]
             ],
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _sendInvitations(context),
-            child: const Icon(Icons.mail),
-          ),
-          drawer: context.canPop() ? null : const AppDrawer(),
-          body: Padding(
-              padding: const EdgeInsets.all(16),
-              child: eventAsync.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, _) => Center(child: Text(error.toString())),
-                  data: (event) => Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text('Location: ${event.locationDescription}'),
-                            Text('Topic: ${event.topic?.name}'),
-                            Text('Posted by: ${event.createdBy?.fullName}'),
-                            Text('Visibility: ${event.visibility.name}'),
-                            Text(
-                                'Date: ${eventDateFormat.format(event.startTimeMin)}'),
-                            Text(
-                                'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
-                            Expanded(
-                                child: eventRsvpsAsync.when(
-                                    loading: () => const Center(
-                                        child: CircularProgressIndicator()),
-                                    error: (error, _) => Text('Error: $error'),
-                                    data: (eventRsvps) => eventRsvps.isEmpty
-                                        ? const Padding(
-                                            padding: EdgeInsets.all(32),
-                                            child: Text(
-                                              'No one has RSVPed to this event yet. Be the first! And then invite your friends with the button below.',
-                                              style: TextStyle(fontSize: 20),
-                                            ),
-                                          )
-                                        : GroupedListView(
-                                            elements: eventRsvps,
-                                            physics:
-                                                const AlwaysScrollableScrollPhysics(),
-                                            useStickyGroupSeparators: true,
-                                            stickyHeaderBackgroundColor:
-                                                Theme.of(context)
-                                                    .scaffoldBackgroundColor,
-                                            groupBy: (InstanceMember rsvp) =>
-                                                rsvp.status,
-                                            groupComparator: (group1, group2) {
-                                              return _statusGroupOrder[group1]!
-                                                  .compareTo(_statusGroupOrder[
-                                                      group2]!);
-                                            },
-                                            groupSeparatorBuilder:
-                                                (InstanceMemberStatus group) =>
-                                                    Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(8.0),
-                                                        child: Text(
-                                                          switch (group) {
-                                                            InstanceMemberStatus
-                                                                  .omw =>
-                                                              'OMW!',
-                                                            InstanceMemberStatus
-                                                                  .yes =>
-                                                              'Attending',
-                                                            InstanceMemberStatus
-                                                                  .maybe =>
-                                                              'Might be attending',
-                                                            InstanceMemberStatus
-                                                                  .no =>
-                                                              'Not attending',
-                                                            InstanceMemberStatus
-                                                                  .invited =>
-                                                              'Invited',
-                                                          },
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style:
-                                                              const TextStyle(
-                                                                  fontSize: 18),
-                                                        )),
-                                            itemBuilder: (context, rsvp) {
-                                              return ListTile(
-                                                  leading:
-                                                      rsvpIcons[rsvp.status],
-                                                  title: Text(
-                                                      rsvp.member!.fullName));
-                                            },
-                                          ))),
-                          ]))),
-          bottomNavigationBar: session == null
-              ? null
-              : Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
+        ],
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _sendInvitations(context),
+          child: const Icon(Icons.mail),
+        ),
+        bodyPadding: const EdgeInsets.all(16),
+        body: eventAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(child: Text(error.toString())),
+            data: (event) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(width: 16),
-                      const Text(
-                        'RSVP: ',
-                      ),
-                      const SizedBox(width: 16),
+                      Text('Location: ${event.locationDescription}'),
+                      Text('Topic: ${event.topic?.name}'),
+                      Text('Posted by: ${event.createdBy?.fullName}'),
+                      Text('Visibility: ${event.visibility.name}'),
+                      Text(
+                          'Date: ${eventDateFormat.format(event.startTimeMin)}'),
+                      Text(
+                          'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
                       Expanded(
-                        child: LayoutBuilder(builder: (context, constraints) {
-                          return ToggleButtons(
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(8)),
-                            constraints: BoxConstraints.expand(
-                                width: constraints.maxWidth / 4 -
-                                    (myRsvpSelection.length - 1)),
-                            isSelected: myRsvpSelection,
-                            onPressed: (int selectedIndex) async {
-                              // update button state (will not apply to UI until action updates RSVP list though)
-                              for (int buttonIndex = 0;
-                                  buttonIndex < myRsvpSelection.length;
-                                  buttonIndex++) {
-                                myRsvpSelection[buttonIndex] =
-                                    buttonIndex == selectedIndex &&
-                                        !myRsvpSelection[selectedIndex];
-                              }
+                          child: eventRsvpsAsync.when(
+                              loading: () => const Center(
+                                  child: CircularProgressIndicator()),
+                              error: (error, _) => Text('Error: $error'),
+                              data: (eventRsvps) => eventRsvps.isEmpty
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(32),
+                                      child: Text(
+                                        'No one has RSVPed to this event yet. Be the first! And then invite your friends with the button below.',
+                                        style: TextStyle(fontSize: 20),
+                                      ),
+                                    )
+                                  : GroupedListView(
+                                      elements: eventRsvps,
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      useStickyGroupSeparators: true,
+                                      stickyHeaderBackgroundColor:
+                                          Theme.of(context)
+                                              .scaffoldBackgroundColor,
+                                      groupBy: (InstanceMember rsvp) =>
+                                          rsvp.status,
+                                      groupComparator: (group1, group2) {
+                                        return _statusGroupOrder[group1]!
+                                            .compareTo(
+                                                _statusGroupOrder[group2]!);
+                                      },
+                                      groupSeparatorBuilder:
+                                          (InstanceMemberStatus group) =>
+                                              Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    switch (group) {
+                                                      InstanceMemberStatus
+                                                            .omw =>
+                                                        'OMW!',
+                                                      InstanceMemberStatus
+                                                            .yes =>
+                                                        'Attending',
+                                                      InstanceMemberStatus
+                                                            .maybe =>
+                                                        'Might be attending',
+                                                      InstanceMemberStatus.no =>
+                                                        'Not attending',
+                                                      InstanceMemberStatus
+                                                            .invited =>
+                                                        'Invited',
+                                                    },
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                        fontSize: 18),
+                                                  )),
+                                      itemBuilder: (context, rsvp) {
+                                        return ListTile(
+                                            leading: rsvpIcons[rsvp.status],
+                                            title: Text(rsvp.member!.fullName));
+                                      },
+                                    ))),
+                    ])),
+        bottomNavigationBar: session == null
+            ? null
+            : Padding(
+                padding: const EdgeInsets.only(bottom: 16, top: 16),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    const Text(
+                      'RSVP: ',
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: LayoutBuilder(builder: (context, constraints) {
+                        return ToggleButtons(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(8)),
+                          constraints: BoxConstraints.expand(
+                              width: constraints.maxWidth / 4 -
+                                  (myRsvpSelection.length - 1)),
+                          isSelected: myRsvpSelection,
+                          onPressed: (int selectedIndex) async {
+                            // update button state (will not apply to UI until action updates RSVP list though)
+                            for (int buttonIndex = 0;
+                                buttonIndex < myRsvpSelection.length;
+                                buttonIndex++) {
+                              myRsvpSelection[buttonIndex] =
+                                  buttonIndex == selectedIndex &&
+                                      !myRsvpSelection[selectedIndex];
+                            }
 
-                              // convert index and button state to desired status
-                              InstanceMemberStatus? status =
-                                  myRsvpSelection[selectedIndex]
-                                      ? InstanceMemberStatus
-                                          .values[selectedIndex + 1]
-                                      : null;
+                            // convert index and button state to desired status
+                            InstanceMemberStatus? status =
+                                myRsvpSelection[selectedIndex]
+                                    ? InstanceMemberStatus
+                                        .values[selectedIndex + 1]
+                                    : null;
 
-                              // save
-                              _saveRsvp(status);
-                            },
-                            children: const [
-                              Text('No'),
-                              Text('Maybe'),
-                              Text('Yes'),
-                              Text('OMW')
-                            ],
-                          );
-                        }),
-                      ),
-                      const SizedBox(width: 16),
-                    ],
-                  ))),
-    );
+                            // save
+                            _saveRsvp(status);
+                          },
+                          children: const [
+                            Text('No'),
+                            Text('Maybe'),
+                            Text('Yes'),
+                            Text('OMW')
+                          ],
+                        );
+                      }),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                )));
   }
 }

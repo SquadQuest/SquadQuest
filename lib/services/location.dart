@@ -16,6 +16,10 @@ final locationStreamProvider = StreamProvider<LocationData>((ref) {
   return locationService.stream;
 });
 
+final locationSharingProvider = StateProvider<bool>((ref) {
+  return false;
+});
+
 class LocationService {
   final Ref ref;
 
@@ -134,11 +138,12 @@ class LocationService {
 
     _startingTracking = false;
     tracking = true;
+    ref.read(locationSharingProvider.notifier).state = true;
 
     logger.d('LocationService.startTracking -> finished');
   }
 
-  Future<void> stopTracking(InstanceID? instanceId) async {
+  Future<void> stopTracking([InstanceID? instanceId]) async {
     // remove instanceId
     if (instanceId == null) {
       _trackingInstanceIds.clear();
@@ -158,6 +163,7 @@ class LocationService {
       await _streamSubscription?.cancel();
       await _location.enableBackgroundMode(enable: false);
       tracking = false;
+      ref.read(locationSharingProvider.notifier).state = false;
     }
 
     logger.d('LocationService.stopTracking -> finished');
