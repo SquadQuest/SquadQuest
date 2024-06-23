@@ -191,20 +191,22 @@ serve(async (request) => {
       );
     }
 
-    // send to other guests who are RSVP'd
-    const { data: rsvps, error: rsvpsError } = await serviceRoleSupabase
-      .from(
-        "instance_members",
-      )
-      .select("*, member(*)")
-      .eq("instance", instanceId)
-      .in("status", ["maybe", "yes", "omw"])
-      .neq("member", currentUser.id)
-      .neq("member", event.created_by);
-    if (rsvpsError) throw rsvpsError;
+    // send to other guests who are RSVP'd for OMWs
+    if (status == "omw") {
+      const { data: rsvps, error: rsvpsError } = await serviceRoleSupabase
+        .from(
+          "instance_members",
+        )
+        .select("*, member(*)")
+        .eq("instance", instanceId)
+        .in("status", ["maybe", "yes", "omw"])
+        .neq("member", currentUser.id)
+        .neq("member", event.created_by);
+      if (rsvpsError) throw rsvpsError;
 
-    for (const rsvp of rsvps) {
-      profilesToNotify.push(rsvp.member);
+      for (const rsvp of rsvps) {
+        profilesToNotify.push(rsvp.member);
+      }
     }
 
     // send notification to all queued recipients
