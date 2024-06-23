@@ -132,7 +132,7 @@ serve(async (request) => {
           title: event.title,
           body:
             `${insertedInvitation.created_by.first_name} ${insertedInvitation.created_by.last_name} has invited you!`,
-          url: `https://squadquest.app/#/events/${event.id}`,
+          url: `https://squadquest.app/events/${event.id}`,
           payload: { invitation: insertedInvitation },
           collapseKey: "invitation",
         });
