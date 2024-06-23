@@ -220,7 +220,7 @@ serve(async (request) => {
         token: profile.fcm_token,
         title: event.title,
         body: notificationBody,
-        url: `https://squadquest.app/#/events/${event.id}`,
+        url: `https://squadquest.app/events/${event.id}`,
         payload: { event, rsvp },
         collapseKey: "rsvp",
       });

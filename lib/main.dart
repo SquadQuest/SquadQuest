@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/supabase.dart';
@@ -10,6 +11,9 @@ import 'package:squadquest/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Activate path-based routing URL strategy for web
+  usePathUrlStrategy();
 
   // Load .env file
   await dotenv.load(fileName: ".env");

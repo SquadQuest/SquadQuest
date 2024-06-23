@@ -118,7 +118,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         break;
       case Menu.getLink:
         await Clipboard.setData(ClipboardData(
-            text: "https://squadquest.app/#/events/${widget.instanceId}"));
+            text: "https://squadquest.app/events/${widget.instanceId}"));
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
   flutter_dotenv: ^5.1.0
   flutter_riverpod: ^2.5.1
   flutter_typeahead: ^5.2.0
