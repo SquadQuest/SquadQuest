@@ -6,6 +6,8 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>CFBundleDisplayName</key>
 	<string>SquadQuest</string>
 	<key>CFBundleExecutable</key>
