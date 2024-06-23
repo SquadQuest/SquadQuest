@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
 
 import 'package:squadquest/common.dart';
-import 'package:squadquest/drawer.dart';
+import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/models/friend.dart';
@@ -34,90 +34,82 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Buddy List'),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _sendFriendRequest(context),
-          child: const Icon(Icons.person_add),
-        ),
-        drawer: const AppDrawer(),
-        body: RefreshIndicator(
-          onRefresh: () async {
-            return ref.read(friendsProvider.notifier).refresh();
-          },
-          child: friendsList.when(
-              data: (friends) {
-                if (friends.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Text(
-                      'You have no friends yet! Get a friend to join SquadQuest and then send a request via their phone number with the button below.',
-                      style: TextStyle(fontSize: 20),
-                    ),
-                  );
-                }
-
-                return GroupedListView(
-                  elements: friends,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  useStickyGroupSeparators: true,
-                  // floatingHeader: true,
-                  stickyHeaderBackgroundColor:
-                      Theme.of(context).scaffoldBackgroundColor,
-                  groupBy: (Friend friend) => friend.status,
-                  groupComparator: (group1, group2) {
-                    return _statusGroupOrder[group1]!
-                        .compareTo(_statusGroupOrder[group2]!);
-                  },
-                  groupSeparatorBuilder: (FriendStatus group) => Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        switch (group) {
-                          FriendStatus.requested => 'Request pending',
-                          FriendStatus.accepted => 'My Buddies',
-                          FriendStatus.declined => 'Declined',
-                        },
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 18),
-                      )),
-                  itemBuilder: (context, friend) {
-                    final friendProfile =
-                        friend.getOtherProfile(session.user.id);
-                    return ListTile(
-                        leading: friendStatusIcons[friend.status],
-                        title: Text(friendProfile!.fullName),
-                        subtitle: switch (friend.status) {
-                          FriendStatus.requested => switch (
-                                friend.requester!.id == session.user.id) {
-                              true => Text(
-                                  'Request sent ${_requestDateFormat.format(friend.createdAt!)}'),
-                              false => Text(
-                                  'Request received ${_requestDateFormat.format(friend.createdAt!)}'),
-                            },
-                          FriendStatus.accepted => null,
-                          FriendStatus.declined =>
-                            const Text('Request declined'),
-                        },
-                        trailing: friend.status == FriendStatus.requested &&
-                                friend.requestee?.id == session.user.id
-                            ? IconButton.filledTonal(
-                                icon: const Icon(Icons.next_plan_outlined),
-                                onPressed: () =>
-                                    _respondFriendRequest(context, friend),
-                              )
-                            : null);
-                  },
-                  itemComparator: (friend1, friend2) =>
-                      friend2.createdAt!.compareTo(friend1.createdAt!),
+    return AppScaffold(
+      title: 'Buddy List',
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _sendFriendRequest(context),
+        child: const Icon(Icons.person_add),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          return ref.read(friendsProvider.notifier).refresh();
+        },
+        child: friendsList.when(
+            data: (friends) {
+              if (friends.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Text(
+                    'You have no friends yet! Get a friend to join SquadQuest and then send a request via their phone number with the button below.',
+                    style: TextStyle(fontSize: 20),
+                  ),
                 );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stackTrace) =>
-                  Center(child: Text('Error: $error'))),
-        ),
+              }
+
+              return GroupedListView(
+                elements: friends,
+                physics: const AlwaysScrollableScrollPhysics(),
+                useStickyGroupSeparators: true,
+                // floatingHeader: true,
+                stickyHeaderBackgroundColor:
+                    Theme.of(context).scaffoldBackgroundColor,
+                groupBy: (Friend friend) => friend.status,
+                groupComparator: (group1, group2) {
+                  return _statusGroupOrder[group1]!
+                      .compareTo(_statusGroupOrder[group2]!);
+                },
+                groupSeparatorBuilder: (FriendStatus group) => Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      switch (group) {
+                        FriendStatus.requested => 'Request pending',
+                        FriendStatus.accepted => 'My Buddies',
+                        FriendStatus.declined => 'Declined',
+                      },
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 18),
+                    )),
+                itemBuilder: (context, friend) {
+                  final friendProfile = friend.getOtherProfile(session.user.id);
+                  return ListTile(
+                      leading: friendStatusIcons[friend.status],
+                      title: Text(friendProfile!.fullName),
+                      subtitle: switch (friend.status) {
+                        FriendStatus.requested => switch (
+                              friend.requester!.id == session.user.id) {
+                            true => Text(
+                                'Request sent ${_requestDateFormat.format(friend.createdAt!)}'),
+                            false => Text(
+                                'Request received ${_requestDateFormat.format(friend.createdAt!)}'),
+                          },
+                        FriendStatus.accepted => null,
+                        FriendStatus.declined => const Text('Request declined'),
+                      },
+                      trailing: friend.status == FriendStatus.requested &&
+                              friend.requestee?.id == session.user.id
+                          ? IconButton.filledTonal(
+                              icon: const Icon(Icons.next_plan_outlined),
+                              onPressed: () =>
+                                  _respondFriendRequest(context, friend),
+                            )
+                          : null);
+                },
+                itemComparator: (friend1, friend2) =>
+                    friend2.createdAt!.compareTo(friend1.createdAt!),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stackTrace) => Center(child: Text('Error: $error'))),
       ),
     );
   }
