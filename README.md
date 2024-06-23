@@ -21,9 +21,9 @@ Some major milestones currently envisioned include:
 1. [complete] **Event Invitations**: Send invitations to friends for any event you can see
 1. [complete] **Realtime Updates**: Screens update in real time when anything gets changed by someone else
 1. [complete] **Push Notifications**: Get instant notifications when you're outside the app when you receive a friend request, an event invitation, or someone RSVPs to an event you posted
+1. [complete] **Live Map**: See a live map under each event showing the event's pinned location and live markers for every attendee who has switched their RSVP to OMW
 1. [in-progress] **Native Android and iOS app**: Install SquadQuest from app stores for the smoothest possible experience (beta links available above)
 1. [upcoming] **Topic Subscription**: Maintain a list of topics you're interested in seeing and getting alerted about new events under
 1. [upcoming] **Editing Events**: Make changes to events you already posted
 1. [upcoming] **Cancel Events**: Set an event you created to cancelled and alert everyone who RSVPed
 1. [upcoming] **Event Map Pin**: Attach a pinned location on a map to an event
-1. [upcoming] **Live Map**: See a live map under each event showing the event's pinned location and live markers for every attendee who has switched their RSVP to OMW
