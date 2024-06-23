@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:go_router/go_router.dart';
@@ -97,26 +98,33 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       _rsvpSnackbar = null;
     }
 
-    if (!context.mounted) return;
-
-    _rsvpSnackbar = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(savedRsvp == null
-          ? 'You\'ve removed your RSVP'
-          : 'You\'ve RSVPed ${savedRsvp.status.name}'),
-    ));
+    if (mounted) {
+      _rsvpSnackbar = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(savedRsvp == null
+            ? 'You\'ve removed your RSVP'
+            : 'You\'ve RSVPed ${savedRsvp.status.name}'),
+      ));
+    }
 
     _rsvpSnackbar?.closed.then((reason) {
       _rsvpSnackbar = null;
     });
   }
 
-  void _onMenuSelect(Menu item) {
+  void _onMenuSelect(Menu item) async {
     switch (item) {
       case Menu.map:
         _showMap();
         break;
       case Menu.getLink:
-        logger.i('Get link');
+        await Clipboard.setData(ClipboardData(
+            text: "https://squadquest.app/#/events/${widget.instanceId}"));
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Event link copied to clipboard'),
+          ));
+        }
         break;
       case Menu.edit:
         logger.i('Edit event');

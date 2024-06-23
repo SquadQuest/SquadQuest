@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "app.squadquest",
+            "sha256_cert_fingerprints": [
+                "78:8B:BF:23:6B:68:31:44:66:C5:9E:91:C5:F7:3D:0A:B4:35:30:69:30:80:E4:90:86:7B:1B:8D:A1:54:56:61"
+            ]
+        }
+    }
+]

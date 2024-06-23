@@ -25,7 +25,7 @@ class LocationService {
   bool tracking = false;
 
   StreamSubscription? _streamSubscription;
-  List<InstanceID> _trackingInstanceIds = [];
+  final List<InstanceID> _trackingInstanceIds = [];
 
   late Location _location;
   bool _serviceEnabled = false;
