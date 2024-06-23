@@ -4,11 +4,16 @@
 set -e
 
 # The default execution directory of this script is the ci_scripts directory.
-cd $CI_PRIMARY_REPOSITORY_PATH # change working directory to the root of your cloned repo.
+cd "${CI_PRIMARY_REPOSITORY_PATH}" # change working directory to the root of your cloned repo.
 
 # Place secrets Xcode Cloud secret environment variables
 echo "${FLUTTER_ENV_BASE64}" | base64 -d >./.env
 echo "${GOOGLE_SERVICES_BASE64}" | base64 -d >./ios/Runner/GoogleService-Info.plist
+
+# Write version from tag
+if [ -n "${CI_TAG}" ]; then
+    sed -i '' "s/^version:.*/version: ${CI_TAG#v}/" pubspec.yaml
+fi
 
 # Install Flutter using fvm
 curl -fsSL https://fvm.app/install.sh | bash
