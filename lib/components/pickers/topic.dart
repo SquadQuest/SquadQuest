@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 
@@ -108,6 +109,18 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
             }
             return null;
           },
+        );
+      },
+      emptyBuilder: (context) => const Padding(
+          padding: EdgeInsets.all(16),
+          child:
+              Text('No existing topics found, but you can create a new one!')),
+      decorationBuilder: (context, child) {
+        return Material(
+          type: MaterialType.card,
+          elevation: 5,
+          surfaceTintColor: Colors.amber,
+          child: child,
         );
       },
       itemBuilder: (context, topic) {
