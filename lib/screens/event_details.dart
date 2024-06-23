@@ -97,13 +97,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       _rsvpSnackbar = null;
     }
 
-    if (!context.mounted) return;
-
-    _rsvpSnackbar = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(savedRsvp == null
-          ? 'You\'ve removed your RSVP'
-          : 'You\'ve RSVPed ${savedRsvp.status.name}'),
-    ));
+    if (mounted) {
+      _rsvpSnackbar = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(savedRsvp == null
+            ? 'You\'ve removed your RSVP'
+            : 'You\'ve RSVPed ${savedRsvp.status.name}'),
+      ));
+    }
 
     _rsvpSnackbar?.closed.then((reason) {
       _rsvpSnackbar = null;
