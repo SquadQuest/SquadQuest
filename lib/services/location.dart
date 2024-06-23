@@ -153,10 +153,12 @@ class LocationService {
 
     // stop tracking location
     logger.d('LocationService.stopTracking');
-    await _streamSubscription?.cancel();
-    await _location.enableBackgroundMode(enable: false);
 
-    tracking = false;
+    if (tracking) {
+      await _streamSubscription?.cancel();
+      await _location.enableBackgroundMode(enable: false);
+      tracking = false;
+    }
 
     logger.d('LocationService.stopTracking -> finished');
   }
