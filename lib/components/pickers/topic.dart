@@ -31,8 +31,8 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
   Topic? _activeTopic;
   String? _lastSearch;
 
-  void _onValueChanged(Topic value) {
-    _textController.text = value.name;
+  void _onValueChanged(Topic? value) {
+    _textController.text = value!.name;
 
     ref.read(_valueProvider!.notifier).state = value;
 
@@ -46,12 +46,12 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
     FocusScope.of(context).nextFocus();
   }
 
-  void _onTextSubmitted(String value) async {
-    value = value.toLowerCase();
+  void _onTextSaved(String? value) async {
+    value = value!.toLowerCase();
 
     final topicsList = await ref.read(topicsProvider.future);
     _onValueChanged(topicsList.firstWhere((topic) => topic.name == value,
-        orElse: () => Topic(id: null, name: value)));
+        orElse: () => Topic(id: null, name: value!)));
   }
 
   @override
@@ -69,7 +69,7 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
 
     _focusNode.addListener(() {
       if (!_focusNode.hasFocus) {
-        _onTextSubmitted(_textController.text.toLowerCase());
+        _onTextSaved(_textController.text.toLowerCase());
       }
     });
   }
@@ -90,7 +90,8 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
             .toList();
       },
       builder: (context, controller, focusNode) {
-        return TextField(
+        return TextFormField(
+          onSaved: _onTextSaved,
           controller: controller,
           focusNode: focusNode,
           enableSuggestions: false,
@@ -101,7 +102,12 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
           decoration: const InputDecoration(
             labelText: 'Topic for event',
           ),
-          onSubmitted: _onTextSubmitted,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please select or enter a topic';
+            }
+            return null;
+          },
         );
       },
       itemBuilder: (context, topic) {
