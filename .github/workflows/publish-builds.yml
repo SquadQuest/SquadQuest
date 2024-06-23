@@ -22,7 +22,7 @@ jobs:
 
       - name: Write tag version to pubspec.yaml
         run: |
-          sed "s/^version:.*/version: ${SOURCE_TAG#v}/" pubspec.yaml
+          sed -i "s/^version:.*/version: ${SOURCE_TAG#v}/" pubspec.yaml
 
       - name: Set up Java
         uses: actions/setup-java@v4
