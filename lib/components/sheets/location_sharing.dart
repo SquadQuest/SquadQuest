@@ -8,9 +8,9 @@ class LocationSharingSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final locationTracking = ref.watch(locationSharingProvider);
+    final locationSharing = ref.watch(locationSharingProvider);
 
-    if (!locationTracking) {
+    if (locationSharing == false) {
       return const SizedBox.shrink();
     }
 
@@ -20,22 +20,26 @@ class LocationSharingSheet extends ConsumerWidget {
           children: [
             const Icon(Icons.location_on),
             const SizedBox(width: 8),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Your location is currently being shared with your friends.',
+                locationSharing == true
+                    ? 'Your location is currently being shared with your friends.'
+                    : 'Initializing location sharing...',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                 ),
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(locationServiceProvider).stopTracking();
-              },
-              child: const Text('Stop'),
-            )
+            locationSharing == true
+                ? ElevatedButton(
+                    onPressed: () {
+                      ref.read(locationServiceProvider).stopTracking();
+                    },
+                    child: const Text('Stop'),
+                  )
+                : const CircularProgressIndicator()
           ],
         ));
   }

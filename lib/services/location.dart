@@ -16,7 +16,7 @@ final locationStreamProvider = StreamProvider<LocationData>((ref) {
   return locationService.stream;
 });
 
-final locationSharingProvider = StateProvider<bool>((ref) {
+final locationSharingProvider = StateProvider<bool?>((ref) {
   return false;
 });
 
@@ -95,6 +95,7 @@ class LocationService {
       return;
     }
     _startingTracking = true;
+    ref.read(locationSharingProvider.notifier).state = null;
 
     // start tracking location
     logger.d('LocationService.startTracking');
