@@ -6,7 +6,7 @@ SquadQuest is a completely free and open-source app that helps people plan event
 
 - Web: <https://squadquest.app>
 - iOS: <https://testflight.apple.com/join/1xppwmKm>
-- Android: <https://github.com/SquadQuest/SquadQuest/releases/latest/download/app-release.apk>
+- Android: <https://github.com/SquadQuest/SquadQuest/releases/latest/download/SquadQuest.apk>
 
 ## Roadmap
 

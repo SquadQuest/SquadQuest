@@ -75,15 +75,15 @@ jobs:
 
       - name: Rename builds
         run: |
-          mv "build/app/outputs/flutter-apk/app-release.apk" "build/app/outputs/flutter-apk/SquadQuest-${SOURCE_TAG}.apk"
-          mv "build/app/outputs/bundle/release/app-release.aab" "build/app/outputs/bundle/release/SquadQuest-${SOURCE_TAG}.aab"
+          mv "build/app/outputs/flutter-apk/app-release.apk" "build/app/outputs/flutter-apk/SquadQuest.apk"
+          mv "build/app/outputs/bundle/release/app-release.aab" "build/app/outputs/bundle/release/SquadQuest.aab"
 
       - name: Upload APK to release
         uses: alexellis/upload-assets@0.4.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          asset_paths: '["build/app/outputs/flutter-apk/SquadQuest-${{ env.SOURCE_TAG }}.apk", "build/app/outputs/bundle/release/SquadQuest-${{ env.SOURCE_TAG }}.aab"]'
+          asset_paths: '["build/app/outputs/flutter-apk/SquadQuest.apk", "build/app/outputs/bundle/release/SquadQuest.aab"]'
 
   deploy:
     runs-on: ubuntu-latest
