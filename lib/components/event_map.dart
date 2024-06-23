@@ -89,7 +89,7 @@ class _EventMapState extends ConsumerState<EventMap> {
             .asUint8List());
 
     // load trails
-    _loadTrails();
+    await _loadTrails();
   }
 
   Future<void> _loadTrails() async {
@@ -132,6 +132,11 @@ class _EventMapState extends ConsumerState<EventMap> {
         .fetchProfiles(pointsByUser.keys.toSet());
 
     // render each user's symbol and trail
+    double minLatitude = 90;
+    double maxLatitude = -90;
+    double minLongitude = 180;
+    double maxLongitude = -180;
+
     for (final UserID userId in pointsByUser.keys) {
       final List<LocationPoint> userPoints = pointsByUser[userId]!;
 
@@ -158,6 +163,23 @@ class _EventMapState extends ConsumerState<EventMap> {
       for (var i = 0; i < segments.length; i++) {
         final segment = segments[i];
 
+        // find min/max lat/lon
+        for (final point in segment.points) {
+          if (point.location.lat < minLatitude) {
+            minLatitude = point.location.lat;
+          }
+          if (point.location.lat > maxLatitude) {
+            maxLatitude = point.location.lat;
+          }
+          if (point.location.lon < minLongitude) {
+            minLongitude = point.location.lon;
+          }
+          if (point.location.lon > maxLongitude) {
+            maxLongitude = point.location.lon;
+          }
+        }
+
+        // build line
         final lineOptions = LineOptions(
           geometry: segment.latLngList,
           lineColor: '#ff0000',
@@ -188,7 +210,7 @@ class _EventMapState extends ConsumerState<EventMap> {
           geometry: LatLng(
               userPoints.first.location.lat, userPoints.first.location.lon),
           iconImage: 'person-marker',
-          iconSize: 0.75,
+          iconSize: kIsWeb ? 0.25 : 0.75,
           iconAnchor: 'bottom',
           textField: userProfiles[userId]!.fullName,
           textColor: '#ffffff',
@@ -219,5 +241,15 @@ class _EventMapState extends ConsumerState<EventMap> {
         trailsLinesByUser.remove(userId);
       }
     }
+
+    // move camera to new bounds
+    await controller!.animateCamera(CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+            northeast: LatLng(maxLatitude, maxLongitude),
+            southwest: LatLng(minLatitude, minLongitude)),
+        left: 50,
+        right: 50,
+        top: 50,
+        bottom: 50));
   }
 }

@@ -32,6 +32,7 @@ class LocationSharingSheet extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(width: 8),
             locationSharing == true
                 ? ElevatedButton(
                     onPressed: () {
