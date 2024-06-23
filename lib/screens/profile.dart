@@ -7,7 +7,9 @@ import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({super.key});
+  final String? redirect;
+
+  const ProfileScreen({super.key, this.redirect});
 
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
@@ -61,7 +63,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     if (!context.mounted) return;
 
-    context.go('/');
+    context.go(widget.redirect ?? '/');
   }
 
   @override

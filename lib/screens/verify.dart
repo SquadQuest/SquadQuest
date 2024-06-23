@@ -10,7 +10,9 @@ import 'package:squadquest/controllers/profile.dart';
 final RegExp otpCodeRegExp = RegExp(r'^\d{6}$');
 
 class VerifyScreen extends ConsumerStatefulWidget {
-  const VerifyScreen({super.key});
+  final String? redirect;
+
+  const VerifyScreen({super.key, this.redirect});
 
   @override
   ConsumerState<VerifyScreen> createState() => _VerifyScreenState();
@@ -61,7 +63,13 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
 
     if (!context.mounted) return;
 
-    context.go(profile == null ? '/profile' : '/');
+    if (profile == null) {
+      context.goNamed('profile',
+          queryParameters:
+              widget.redirect == null ? {} : {'redirect': widget.redirect});
+    } else {
+      context.go(widget.redirect ?? '/');
+    }
   }
 
   @override

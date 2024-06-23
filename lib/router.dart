@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/screens/splash.dart';
 import 'package:squadquest/screens/login.dart';
 import 'package:squadquest/screens/verify.dart';
@@ -19,6 +20,19 @@ final routerProvider = Provider((ref) {
   return GoRouter(
     initialLocation: '/splash',
     navigatorKey: navigatorKey,
+    redirect: (BuildContext context, GoRouterState state) {
+      final session = ref.read(authControllerProvider);
+      if (session == null &&
+          state.topRoute?.name != 'login' &&
+          state.topRoute?.name != 'verify' &&
+          state.topRoute?.name != 'splash') {
+        return state.namedLocation('login', queryParameters: {
+          'redirect': state.uri.toString(),
+        });
+      } else {
+        return null;
+      }
+    },
     routes: [
       GoRoute(
         name:
@@ -29,17 +43,20 @@ final routerProvider = Provider((ref) {
       GoRoute(
         name: 'login',
         path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) =>
+            LoginScreen(redirect: state.uri.queryParameters['redirect']),
       ),
       GoRoute(
         name: 'verify',
         path: '/verify',
-        builder: (context, state) => const VerifyScreen(),
+        builder: (context, state) =>
+            VerifyScreen(redirect: state.uri.queryParameters['redirect']),
       ),
       GoRoute(
         name: 'profile',
         path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
+        builder: (context, state) =>
+            ProfileScreen(redirect: state.uri.queryParameters['redirect']),
       ),
       GoRoute(
         name: 'home',
