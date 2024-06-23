@@ -58,8 +58,11 @@ jobs:
         with:
           path: build/web
 
-      - name: Build for Android
+      - name: Build APK for Android
         run: fvm flutter build apk
+
+      - name: Build App Bundle for Android
+        run: fvm flutter build appbundle
 
       - name: Upload APK to release
         uses: alexellis/upload-assets@0.4.0
