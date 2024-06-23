@@ -7,7 +7,9 @@ import 'package:squadquest/common.dart';
 import 'package:squadquest/controllers/auth.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  final String? redirect;
+
+  const LoginScreen({super.key, this.redirect});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -55,7 +57,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!context.mounted) return;
 
-    context.push('/verify').then((_) {
+    context
+        .pushNamed('verify',
+            queryParameters:
+                widget.redirect == null ? {} : {'redirect': widget.redirect})
+        .then((_) {
       setState(() {
         submitted = false;
       });
