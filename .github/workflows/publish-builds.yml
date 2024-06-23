@@ -18,11 +18,16 @@ jobs:
 
       - name: Place tag in environment
         run: |
-          echo "SOURCE_TAG=${GITHUB_REF:10}" >> $GITHUB_ENV
+          SOURCE_TAG="${GITHUB_REF:10}"
+          echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
+          echo "BUILD_NAME=${SOURCE_TAG#v}" >> $GITHUB_ENV
+
+          BUILD_NUMBER="$(git ls-remote origin | grep 'refs/tags/v' | wc -l | bc)"
+          echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
 
       - name: Write tag version to pubspec.yaml
         run: |
-          sed -i "s/^version:.*/version: ${SOURCE_TAG#v}/" pubspec.yaml
+          sed -i "s/^version:.*/version: ${BUILD_NAME}+${BUILD_NUMBER}/" pubspec.yaml
 
       - name: Set up Java
         uses: actions/setup-java@v4
