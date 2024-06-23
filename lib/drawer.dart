@@ -84,7 +84,9 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
     return NavigationDrawer(
       selectedIndex: null,
       onDestinationSelected: (int newSelection) async {
-        final menuItem = _menuItems[newSelection];
+        final menuItem = _menuItems
+            .where((menuItem) => !menuItem.developerMode || developerMode)
+            .toList()[newSelection];
 
         Navigator.pop(context);
 
