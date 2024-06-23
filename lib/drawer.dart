@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/router.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/settings.dart';
@@ -80,13 +81,20 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
     final developerMode = ref.watch(developerModeProvider);
+    final effectiveMenuItems = _menuItems
+        .where((menuItem) => !menuItem.developerMode || developerMode)
+        .toList();
+
+    // get current screen name
+    final router = ref.watch(routerProvider);
+    final currentScreenName =
+        router.routerDelegate.currentConfiguration.last.route.name;
 
     return NavigationDrawer(
-      selectedIndex: null,
+      selectedIndex: effectiveMenuItems
+          .indexWhere((item) => item.route == currentScreenName),
       onDestinationSelected: (int newSelection) async {
-        final menuItem = _menuItems
-            .where((menuItem) => !menuItem.developerMode || developerMode)
-            .toList()[newSelection];
+        final menuItem = effectiveMenuItems[newSelection];
 
         Navigator.pop(context);
 
