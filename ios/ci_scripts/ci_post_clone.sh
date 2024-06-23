@@ -12,6 +12,7 @@ echo "${GOOGLE_SERVICES_BASE64}" | base64 -d >./ios/Runner/GoogleService-Info.pl
 
 # Write version from tag
 if [ -n "${CI_TAG}" ]; then
+    echo "Setting version to ${CI_TAG#v}"
     sed -i '' "s/^version:.*/version: ${CI_TAG#v}/" pubspec.yaml
 fi
 
