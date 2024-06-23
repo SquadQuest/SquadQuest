@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 final appThemeLight = ThemeData(
+  useMaterial3: true,
   brightness: Brightness.light,
   colorScheme: ColorScheme.fromSeed(
     seedColor: Colors.orange.shade200,
@@ -9,6 +10,7 @@ final appThemeLight = ThemeData(
 );
 
 final appThemeDark = ThemeData(
+  useMaterial3: true,
   brightness: Brightness.dark,
   colorScheme: ColorScheme.fromSeed(
     seedColor: Colors.orange,
