@@ -37,40 +37,46 @@ class AppScaffold extends StatelessWidget {
       body: Consumer(
           child: body,
           builder: (_, ref, child) {
+            // update bottom padding after each rebuild...
+            SchedulerBinding.instance
+                .addPostFrameCallback((_) => _updateBottomPadding(ref));
+
+            // calculate body padding with bodyPadding + measured bottom sheet height
             final padding = EdgeInsets.only(
                 bottom: showLocationSharingSheet
                     ? ref.watch(_bottomPaddingProvider) ?? 0
                     : 0);
-            return Padding(
-                padding:
-                    bodyPadding == null ? padding : padding.add(bodyPadding!),
-                child: child!);
+            return Stack(children: [
+              Padding(
+                  padding:
+                      bodyPadding == null ? padding : padding.add(bodyPadding!),
+                  child: child!),
+              ...[
+                if (showLocationSharingSheet)
+                  Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child:
+                          NotificationListener<SizeChangedLayoutNotification>(
+                              onNotification:
+                                  (SizeChangedLayoutNotification notification) {
+                                // ... and after each resize
+                                SchedulerBinding.instance.addPostFrameCallback(
+                                    (_) => _updateBottomPadding(ref));
+                                return true;
+                              },
+                              child: SizeChangedLayoutNotifier(
+                                  child: LocationSharingSheet(
+                                      key: _bottomSheetKey))))
+              ]
+            ]);
           }),
       appBar: AppBar(
         title: Text(title),
         actions: actions,
       ),
       drawer: showDrawer ? const AppDrawer() : null,
-      bottomSheet: showLocationSharingSheet
-          ? Consumer(builder: (_, ref, __) {
-              return NotificationListener<SizeChangedLayoutNotification>(
-                  onNotification: (SizeChangedLayoutNotification notification) {
-                    SchedulerBinding.instance.addPostFrameCallback((_) {
-                      final bottomSheetBox = _bottomSheetKey.currentContext
-                          ?.findRenderObject() as RenderBox?;
-
-                      ref.read(_bottomPaddingProvider.notifier).state =
-                          bottomSheetBox != null && bottomSheetBox.hasSize
-                              ? bottomSheetBox.size.height
-                              : null;
-                    });
-
-                    return true;
-                  },
-                  child: SizeChangedLayoutNotifier(
-                      child: LocationSharingSheet(key: _bottomSheetKey)));
-            })
-          : null,
       floatingActionButton: floatingActionButton == null
           ? null
           : Consumer(
@@ -84,5 +90,15 @@ class AppScaffold extends StatelessWidget {
               }),
       bottomNavigationBar: bottomNavigationBar,
     ));
+  }
+
+  void _updateBottomPadding(WidgetRef ref) {
+    final bottomSheetBox =
+        _bottomSheetKey.currentContext?.findRenderObject() as RenderBox?;
+
+    ref.read(_bottomPaddingProvider.notifier).state =
+        bottomSheetBox != null && bottomSheetBox.hasSize
+            ? bottomSheetBox.size.height
+            : null;
   }
 }
