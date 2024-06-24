@@ -126,12 +126,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           ));
         }
         break;
-      case Menu.edit:
-        logger.i('Edit event');
-        break;
-      case Menu.cancel:
-        logger.i('Cancel event');
-        break;
+      // case Menu.edit:
+      //   logger.i('Edit event');
+      //   break;
+      // case Menu.cancel:
+      //   logger.i('Cancel event');
+      //   break;
     }
   }
 
@@ -193,23 +193,23 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   title: Text('Get link'),
                 ),
               ),
-              if (eventAsync.value?.createdById == session?.user.id) ...[
-                const PopupMenuDivider(),
-                const PopupMenuItem<Menu>(
-                  value: Menu.edit,
-                  child: ListTile(
-                    leading: Icon(Icons.delete_outline),
-                    title: Text('Edit event'),
-                  ),
-                ),
-                const PopupMenuItem<Menu>(
-                  value: Menu.cancel,
-                  child: ListTile(
-                    leading: Icon(Icons.cancel),
-                    title: Text('Cancel event'),
-                  ),
-                ),
-              ]
+              // if (eventAsync.value?.createdById == session?.user.id) ...[
+              //   const PopupMenuDivider(),
+              //   const PopupMenuItem<Menu>(
+              //     value: Menu.edit,
+              //     child: ListTile(
+              //       leading: Icon(Icons.delete_outline),
+              //       title: Text('Edit event'),
+              //     ),
+              //   ),
+              //   const PopupMenuItem<Menu>(
+              //     value: Menu.cancel,
+              //     child: ListTile(
+              //       leading: Icon(Icons.cancel),
+              //       title: Text('Cancel event'),
+              //     ),
+              //   ),
+              // ]
             ],
           ),
         ],
