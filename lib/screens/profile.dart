@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   final String? redirect;
@@ -92,6 +93,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return AppScaffold(
       title: profile != null ? 'Update your profile' : 'Set up your profile',
       showDrawer: profile != null,
+      bodyPadding: const EdgeInsets.only(bottom: 16),
       body: AutofillGroup(
         child: Form(
           key: _formKey,
@@ -148,7 +150,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 18),
                       ),
-                    )
+                    ),
+              const Spacer(),
+              ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  onPressed: () {
+                    launchUrl(Uri.parse(
+                        'https://squadquest.app/request-deletion.html'));
+                  },
+                  child: const Text('Delete my account',
+                      style: TextStyle(color: Colors.white)))
             ],
           ),
         ),
