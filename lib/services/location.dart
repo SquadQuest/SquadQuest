@@ -97,29 +97,33 @@ class LocationService {
     _startingTracking = true;
     ref.read(locationSharingProvider.notifier).state = null;
 
-    // start tracking location
-    logger.d('LocationService.startTracking');
-    if (!_serviceEnabled) {
-      _serviceEnabled = await _location.requestService();
+    try {
+      // start tracking location
+      logger.d('LocationService.startTracking');
       if (!_serviceEnabled) {
-        return;
+        _serviceEnabled = await _location.requestService();
+        if (!_serviceEnabled) {
+          return;
+        }
       }
-    }
 
-    if (_permissionGranted == PermissionStatus.denied) {
-      _permissionGranted = await _location.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
-        return;
+      if (_permissionGranted == PermissionStatus.denied) {
+        _permissionGranted = await _location.requestPermission();
+        if (_permissionGranted != PermissionStatus.granted) {
+          return;
+        }
       }
+
+      // this call can only be made after permission is granted
+      _location.changeSettings(
+          interval: 5000,
+          distanceFilter:
+              5); // sample location every 5 seconds if distance is at least 5 meters
+
+      _backgroundEnabled = await _location.enableBackgroundMode(enable: true);
+    } catch (error) {
+      loggerWithStack.e(error);
     }
-
-    // this call can only be made after permission is granted
-    _location.changeSettings(
-        interval: 5000,
-        distanceFilter:
-            5); // sample location every 5 seconds if distance is at least 5 meters
-
-    _backgroundEnabled = await _location.enableBackgroundMode(enable: true);
 
     _streamSubscription =
         _location.onLocationChanged.listen(_onLocationChanged);
@@ -132,8 +136,9 @@ class LocationService {
     });
 
     _startingTracking = false;
-    tracking = true;
-    ref.read(locationSharingProvider.notifier).state = true;
+    tracking =
+        _serviceEnabled && _permissionGranted == PermissionStatus.granted;
+    ref.read(locationSharingProvider.notifier).state = tracking;
 
     // force an initial location fetch but don't wait for it
     _location.getLocation().then((initialLocation) {
@@ -162,7 +167,11 @@ class LocationService {
 
     if (tracking) {
       await _streamSubscription?.cancel();
-      await _location.enableBackgroundMode(enable: false);
+      try {
+        await _location.enableBackgroundMode(enable: false);
+      } catch (error) {
+        loggerWithStack.e(error);
+      }
       tracking = false;
       ref.read(locationSharingProvider.notifier).state = false;
     }

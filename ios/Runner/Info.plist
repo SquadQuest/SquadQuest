@@ -32,8 +32,10 @@
 	<true/>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Shares your location with friends during an event</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Shares your location with friends during an event</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Shows your location on the map</string>
+	<string>Shares your location with friends during an event</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
