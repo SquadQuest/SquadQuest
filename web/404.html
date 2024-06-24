@@ -4,7 +4,7 @@
 <head>
     <title>SquadQuest</title>
     <script>
-        sessionStorage.setItem('redirectPath', location.pathname);
+        sessionStorage.setItem('redirectPath', `${location.pathname}${location.search}`);
         location.replace(`${location.protocol}//${location.host}`);
     </script>
 </head>
