@@ -126,12 +126,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           ));
         }
         break;
-      // case Menu.edit:
-      //   logger.i('Edit event');
-      //   break;
-      // case Menu.cancel:
-      //   logger.i('Cancel event');
-      //   break;
+      case Menu.edit:
+        logger.i('Edit event');
+        break;
+      case Menu.cancel:
+        logger.i('Cancel event');
+        break;
     }
   }
 
