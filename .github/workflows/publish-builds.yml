@@ -67,6 +67,9 @@ jobs:
         with:
           path: build/web
 
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
       - name: Build APK for Android
         run: fvm flutter build apk
 
@@ -84,10 +87,3 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           asset_paths: '["build/app/outputs/flutter-apk/SquadQuest.apk", "build/app/outputs/bundle/release/SquadQuest.aab"]'
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
