@@ -13,6 +13,7 @@ import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/user.dart';
 import 'package:squadquest/components/friends_list.dart';
 import 'package:squadquest/components/event_map.dart';
 import 'package:squadquest/services/location.dart';
@@ -46,8 +47,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   List<InstanceMember>? rsvps;
   ScaffoldFeatureController? _rsvpSnackbar;
 
-  void _sendInvitations(BuildContext context) async {
-    final inviteUserIds = await _showInvitationDialog();
+  void _sendInvitations(
+      BuildContext context, List<InstanceMember> excludeRsvps) async {
+    final inviteUserIds = await _showInvitationDialog(excludeRsvps);
 
     if (inviteUserIds == null || inviteUserIds.length == 0) {
       return;
@@ -65,12 +67,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     ));
   }
 
-  Future<dynamic> _showInvitationDialog() async {
+  Future<dynamic> _showInvitationDialog(
+      List<InstanceMember> excludeRsvps) async {
     return showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        builder: (BuildContext context) => const FriendsList(
-            title: 'Find friends to invite', status: FriendStatus.accepted));
+        builder: (BuildContext context) => FriendsList(
+            title: 'Find friends to invite',
+            status: FriendStatus.accepted,
+            excludeUsers: excludeRsvps
+                .map((rsvp) => rsvp.memberId)
+                .cast<UserID>()
+                .toList()));
   }
 
   Future<void> _saveRsvp(InstanceMemberStatus? status) async {
@@ -214,7 +222,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           ),
         ],
         floatingActionButton: FloatingActionButton(
-          onPressed: () => _sendInvitations(context),
+          onPressed: () =>
+              _sendInvitations(context, eventRsvpsAsync.value ?? []),
           child: const Icon(Icons.mail),
         ),
         bodyPadding: const EdgeInsets.all(16),
