@@ -121,12 +121,6 @@ class LocationService {
 
     _backgroundEnabled = await _location.enableBackgroundMode(enable: true);
 
-    _lastLocation = await _location.getLocation();
-
-    if (_lastLocation != null) {
-      _streamController.add(_lastLocation!);
-    }
-
     _streamSubscription =
         _location.onLocationChanged.listen(_onLocationChanged);
 
@@ -140,6 +134,12 @@ class LocationService {
     _startingTracking = false;
     tracking = true;
     ref.read(locationSharingProvider.notifier).state = true;
+
+    // force an initial location fetch but don't wait for it
+    _location.getLocation().then((initialLocation) {
+      logger.d(
+          'LocationService.startTracking -> initial location fetched: $initialLocation');
+    });
 
     logger.d('LocationService.startTracking -> finished');
   }
