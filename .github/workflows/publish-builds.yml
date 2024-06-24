@@ -58,13 +58,12 @@ jobs:
         run: fvm flutter build web --dart-define=PRODUCTION_LOGGING=true
         # run: fvm flutter build web --profile --source-maps --dart-define=Dart2jsOptimization=O0 --dart-define=PRODUCTION_LOGGING=true
 
-      - name: Upload web artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          path: build/web
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SQUADQUEST_D8665 }}
+          channelId: live
+          projectId: squadquest-d8665
 
       - name: Build APK for Android
         run: fvm flutter build apk
