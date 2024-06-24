@@ -9,8 +9,13 @@ import 'package:squadquest/models/user.dart';
 class FriendsList extends ConsumerStatefulWidget {
   final String title;
   final FriendStatus? status;
+  final List<UserID> excludeUsers;
 
-  const FriendsList({super.key, this.title = 'Find friends', this.status});
+  const FriendsList(
+      {super.key,
+      this.title = 'Find friends',
+      this.status,
+      this.excludeUsers = const <UserID>[]});
 
   @override
   ConsumerState<FriendsList> createState() => _FriendsListState();
@@ -68,10 +73,14 @@ class _FriendsListState extends ConsumerState<FriendsList> {
                           }
 
                           final otherProfile =
-                              friend.getOtherProfile(session.user.id);
+                              friend.getOtherProfile(session.user.id)!;
+
+                          if (widget.excludeUsers.contains(otherProfile.id)) {
+                            return false;
+                          }
 
                           return _searchQuery.isEmpty ||
-                              otherProfile!.fullName
+                              otherProfile.fullName
                                   .toLowerCase()
                                   .contains(_searchQuery);
                         }).map((friend) {

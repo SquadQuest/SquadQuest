@@ -38,7 +38,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             .buffer
             .asUint8List());
 
-    final symbol = await controller!.addSymbol(const SymbolOptions(
+    await controller!.addSymbol(const SymbolOptions(
         geometry: LatLng(39.9550, -75.1605),
         iconImage: 'person-marker',
         iconSize: kIsWeb ? 0.25 : 0.75,
