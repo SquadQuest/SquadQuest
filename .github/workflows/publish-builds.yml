@@ -58,10 +58,6 @@ jobs:
         run: fvm flutter build web --dart-define=PRODUCTION_LOGGING=true
         # run: fvm flutter build web --profile --source-maps --dart-define=Dart2jsOptimization=O0 --dart-define=PRODUCTION_LOGGING=true
 
-      - name: Create 404.html
-        run: |
-          cp build/web/index.html build/web/404.html
-
       - name: Upload web artifact
         uses: actions/upload-pages-artifact@v3
         with:
