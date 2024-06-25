@@ -11,11 +11,10 @@ echo "${FLUTTER_ENV_BASE64}" | base64 -d >./.env
 echo "${GOOGLE_SERVICES_BASE64}" | base64 -d >./ios/Runner/GoogleService-Info.plist
 
 # Write version from tag
-# - Disabled for now because new version numbers trigger app reviews for TestFlight
-# if [ -n "${CI_TAG}" ]; then
-#     echo "Setting version to ${CI_TAG#v}"
-#     sed -i '' "s/^version:.*/version: ${CI_TAG#v}/" pubspec.yaml
-# fi
+if [ -n "${CI_TAG}" ]; then
+    echo "Setting version to ${CI_TAG#v}"
+    sed -i '' "s/^version:.*/version: ${CI_TAG#v}/" pubspec.yaml
+fi
 
 # Install Flutter using fvm
 curl -fsSL https://fvm.app/install.sh | bash
