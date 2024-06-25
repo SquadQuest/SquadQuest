@@ -119,6 +119,9 @@ class Instance {
       'title': title,
       'visibility': visibility.name,
       'location_description': locationDescription,
+      'rally_point': rallyPoint == null
+          ? null
+          : 'POINT(${rallyPoint!.lon} ${rallyPoint!.lat})'
     };
 
     if (id != null) {

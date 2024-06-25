@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/components/pickers/location.dart';
 
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
@@ -41,6 +42,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
   final _titleController = TextEditingController();
   final _locationDescriptionController = TextEditingController();
   final _topicProvider = StateProvider<Topic?>((ref) => null);
+  final _locationProvider = StateProvider<Geographic?>((ref) => null);
   final _startTimeMinProvider =
       StateProvider<TimeOfDay?>((ref) => _plusMinutes(TimeOfDay.now(), 60));
   final _startTimeMaxProvider =
@@ -66,6 +68,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
     final TimeOfDay? startTimeMin = ref.read(_startTimeMinProvider);
     final TimeOfDay? startTimeMax = ref.read(_startTimeMaxProvider);
     final InstanceVisibility? visibility = ref.read(_visibilityProvider);
+    final Geographic? rallyPoint = ref.read(_locationProvider);
 
     // Apply validation rules
     if (startDate == null) {
@@ -120,7 +123,8 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
           startTimeMin: startDateTimeMin,
           startTimeMax: startDateTimeMax,
           visibility: visibility,
-          locationDescription: _locationDescriptionController.text.trim());
+          locationDescription: _locationDescriptionController.text.trim(),
+          rallyPoint: rallyPoint);
 
       final Instance savedInstance =
           await instancesController.save(draftInstance);
@@ -173,7 +177,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
               TextFormField(
                 autofocus: true,
                 readOnly: submitted,
-                textInputAction: TextInputAction.next,
+                textInputAction: TextInputAction.done,
                 decoration: const InputDecoration(
                   // prefixIcon: Icon(Icons.flag),
                   labelText: 'Title for event',
@@ -189,9 +193,13 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
               const SizedBox(
                 height: 24,
               ),
+              FormTopicPicker(valueProvider: _topicProvider),
+              const SizedBox(
+                height: 24,
+              ),
               TextFormField(
                 readOnly: submitted,
-                textInputAction: TextInputAction.next,
+                textInputAction: TextInputAction.done,
                 decoration: const InputDecoration(
                   // prefixIcon: Icon(Icons.pin_drop),
                   labelText: 'Description of location',
@@ -207,7 +215,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
               const SizedBox(
                 height: 24,
               ),
-              FormTopicPicker(valueProvider: _topicProvider),
+              FormLocationPicker(valueProvider: _locationProvider),
               const SizedBox(
                 height: 24,
               ),
