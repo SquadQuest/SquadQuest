@@ -15,7 +15,7 @@ import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';
 import 'package:squadquest/components/friends_list.dart';
-import 'package:squadquest/components/event_map.dart';
+import 'package:squadquest/components/event_live_map.dart';
 import 'package:squadquest/services/location.dart';
 
 final _statusGroupOrder = {
@@ -26,7 +26,7 @@ final _statusGroupOrder = {
   InstanceMemberStatus.invited: 4,
 };
 
-enum Menu { map, getLink, edit, cancel }
+enum Menu { showLiveMap, getLink, edit, cancel }
 
 final eventDetailsProvider = FutureProvider.autoDispose
     .family<Instance, InstanceID>((ref, instanceId) async {
@@ -121,8 +121,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
   void _onMenuSelect(Menu item) async {
     switch (item) {
-      case Menu.map:
-        _showMap();
+      case Menu.showLiveMap:
+        _showLiveMap();
         break;
       case Menu.getLink:
         await Clipboard.setData(ClipboardData(
@@ -143,12 +143,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     }
   }
 
-  Future<dynamic> _showMap() async {
+  Future<dynamic> _showLiveMap() async {
     return showModalBottomSheet(
         context: context,
         isScrollControlled: true,
         builder: (BuildContext context) =>
-            EventMap(eventId: widget.instanceId));
+            EventLiveMap(eventId: widget.instanceId));
   }
 
   @override
@@ -188,7 +188,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             onSelected: _onMenuSelect,
             itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
               const PopupMenuItem<Menu>(
-                value: Menu.map,
+                value: Menu.showLiveMap,
                 child: ListTile(
                   leading: Icon(Icons.map),
                   title: Text('Open live map'),

@@ -14,17 +14,18 @@ import 'package:squadquest/models/location_point.dart';
 import 'package:squadquest/models/map_segment.dart';
 import 'package:squadquest/models/user.dart';
 
-class EventMap extends ConsumerStatefulWidget {
+class EventLiveMap extends ConsumerStatefulWidget {
   final String title;
   final InstanceID eventId;
 
-  const EventMap({super.key, this.title = 'Live map', required this.eventId});
+  const EventLiveMap(
+      {super.key, this.title = 'Live map', required this.eventId});
 
   @override
-  ConsumerState<EventMap> createState() => _EventMapState();
+  ConsumerState<EventLiveMap> createState() => _EventLiveMapState();
 }
 
-class _EventMapState extends ConsumerState<EventMap> {
+class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   MapLibreMapController? controller;
   final Map<UserID, List<Line>> trailsLinesByUser = {};
   final Map<UserID, Symbol> symbolsByUser = {};
@@ -77,12 +78,12 @@ class _EventMapState extends ConsumerState<EventMap> {
   }
 
   void _onMapCreated(MapLibreMapController controller) {
-    logger.d('MapScreen._onMapCreated');
+    logger.d('EventLiveMap._onMapCreated');
     this.controller = controller;
   }
 
   void _onStyleLoadedCallback() async {
-    logger.d('MapScreen._onStyleLoadedCallback');
+    logger.d('EventLiveMap._onStyleLoadedCallback');
 
     // configure symbols
     await controller!.setSymbolIconAllowOverlap(true);
