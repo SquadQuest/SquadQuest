@@ -17,9 +17,13 @@ import 'package:squadquest/models/user.dart';
 class EventLiveMap extends ConsumerStatefulWidget {
   final String title;
   final InstanceID eventId;
+  final LatLng? rallyPoint;
 
   const EventLiveMap(
-      {super.key, this.title = 'Live map', required this.eventId});
+      {super.key,
+      this.title = 'Live map',
+      required this.eventId,
+      this.rallyPoint});
 
   @override
   ConsumerState<EventLiveMap> createState() => _EventLiveMapState();
@@ -93,6 +97,20 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
         (await rootBundle.load('assets/symbols/person-marker.png'))
             .buffer
             .asUint8List());
+    await controller!.addImage(
+        'flag-marker',
+        (await rootBundle.load('assets/symbols/flag-marker.png'))
+            .buffer
+            .asUint8List());
+
+    // add rally point
+    if (widget.rallyPoint != null) {
+      await controller!.addSymbol(SymbolOptions(
+          geometry: widget.rallyPoint,
+          iconImage: 'flag-marker',
+          iconSize: kIsWeb ? 0.05 : 0.2, // TODO: test web scale
+          iconAnchor: 'bottom-left'));
+    }
 
     // load trails
     await _loadTrails();

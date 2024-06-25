@@ -182,11 +182,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   Future<dynamic> _showLiveMap() async {
+    final eventAsync = ref.watch(eventDetailsProvider(widget.instanceId));
+
+    if (eventAsync.value == null) {
+      return;
+    }
+
     return showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        builder: (BuildContext context) =>
-            EventLiveMap(eventId: widget.instanceId));
+        builder: (BuildContext context) => EventLiveMap(
+            eventId: widget.instanceId,
+            rallyPoint: eventAsync.value!.rallyPointLatLng));
   }
 
   @override
@@ -225,9 +232,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             icon: const Icon(Icons.more_vert),
             onSelected: _onMenuSelect,
             itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
-              const PopupMenuItem<Menu>(
+              PopupMenuItem<Menu>(
                 value: Menu.showLiveMap,
-                child: ListTile(
+                enabled: eventAsync.value != null && !eventAsync.isLoading,
+                child: const ListTile(
                   leading: Icon(Icons.map),
                   title: Text('Open live map'),
                 ),
