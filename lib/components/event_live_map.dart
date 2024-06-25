@@ -14,17 +14,22 @@ import 'package:squadquest/models/location_point.dart';
 import 'package:squadquest/models/map_segment.dart';
 import 'package:squadquest/models/user.dart';
 
-class EventMap extends ConsumerStatefulWidget {
+class EventLiveMap extends ConsumerStatefulWidget {
   final String title;
   final InstanceID eventId;
+  final LatLng? rallyPoint;
 
-  const EventMap({super.key, this.title = 'Live map', required this.eventId});
+  const EventLiveMap(
+      {super.key,
+      this.title = 'Live map',
+      required this.eventId,
+      this.rallyPoint});
 
   @override
-  ConsumerState<EventMap> createState() => _EventMapState();
+  ConsumerState<EventLiveMap> createState() => _EventLiveMapState();
 }
 
-class _EventMapState extends ConsumerState<EventMap> {
+class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   MapLibreMapController? controller;
   final Map<UserID, List<Line>> trailsLinesByUser = {};
   final Map<UserID, Symbol> symbolsByUser = {};
@@ -44,40 +49,45 @@ class _EventMapState extends ConsumerState<EventMap> {
 
     return SizedBox(
         height: MediaQuery.of(context).size.height * .75,
-        child: Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Column(children: [
-              Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Expanded(
-                  child: MapLibreMap(
-                onMapCreated: _onMapCreated,
-                onStyleLoadedCallback: _onStyleLoadedCallback,
-                styleString:
-                    'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
-                myLocationEnabled: true,
-                myLocationRenderMode: MyLocationRenderMode.compass,
-                myLocationTrackingMode: MyLocationTrackingMode.tracking,
-                initialCameraPosition: const CameraPosition(
-                  target: LatLng(39.9550, -75.1605),
-                  zoom: 11.75,
-                ),
-                gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-                  Factory<OneSequenceGestureRecognizer>(
-                    () => EagerGestureRecognizer(),
-                  ),
-                },
-              ))
-            ])));
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            child: Text(
+              widget.title,
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Expanded(
+              child: MapLibreMap(
+            onMapCreated: _onMapCreated,
+            onStyleLoadedCallback: _onStyleLoadedCallback,
+            styleString:
+                'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+            myLocationEnabled: true,
+            myLocationRenderMode: MyLocationRenderMode.compass,
+            myLocationTrackingMode: MyLocationTrackingMode.tracking,
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(39.9550, -75.1605),
+              zoom: 11.75,
+            ),
+            gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+              Factory<OneSequenceGestureRecognizer>(
+                () => EagerGestureRecognizer(),
+              ),
+            },
+          ))
+        ]));
   }
 
   void _onMapCreated(MapLibreMapController controller) {
-    logger.d('MapScreen._onMapCreated');
+    logger.d('EventLiveMap._onMapCreated');
     this.controller = controller;
   }
 
   void _onStyleLoadedCallback() async {
-    logger.d('MapScreen._onStyleLoadedCallback');
+    logger.d('EventLiveMap._onStyleLoadedCallback');
 
     // configure symbols
     await controller!.setSymbolIconAllowOverlap(true);
@@ -87,6 +97,20 @@ class _EventMapState extends ConsumerState<EventMap> {
         (await rootBundle.load('assets/symbols/person-marker.png'))
             .buffer
             .asUint8List());
+    await controller!.addImage(
+        'flag-marker',
+        (await rootBundle.load('assets/symbols/flag-marker.png'))
+            .buffer
+            .asUint8List());
+
+    // add rally point
+    if (widget.rallyPoint != null) {
+      await controller!.addSymbol(SymbolOptions(
+          geometry: widget.rallyPoint,
+          iconImage: 'flag-marker',
+          iconSize: kIsWeb ? 0.25 : 0.5,
+          iconAnchor: 'bottom-left'));
+    }
 
     // load trails
     await _loadTrails();
@@ -210,12 +234,12 @@ class _EventMapState extends ConsumerState<EventMap> {
           geometry: LatLng(
               userPoints.first.location.lat, userPoints.first.location.lon),
           iconImage: 'person-marker',
-          iconSize: kIsWeb ? 0.25 : 0.75,
+          iconSize: kIsWeb ? 0.4 : 0.9,
           iconAnchor: 'bottom',
           textField: userProfiles[userId]!.fullName,
           textColor: '#ffffff',
           textAnchor: 'top-left',
-          textSize: 8);
+          textSize: 14);
 
       if (symbolsByUser.containsKey(userId)) {
         await controller!.updateSymbol(symbolsByUser[userId]!, symbolOptions);

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:geobase/geobase.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
+
 import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/topic.dart';
 
@@ -36,6 +39,7 @@ class Instance {
     required this.title,
     required this.visibility,
     required this.locationDescription,
+    this.rallyPoint,
   })  : assert(
             (id != null &&
                     createdAt != null &&
@@ -61,6 +65,10 @@ class Instance {
   final String title;
   final InstanceVisibility visibility;
   final String locationDescription;
+  final Geographic? rallyPoint;
+
+  LatLng? get rallyPointLatLng =>
+      rallyPoint == null ? null : LatLng(rallyPoint!.lat, rallyPoint!.lon);
 
   factory Instance.fromMap(Map<String, dynamic> map) {
     final createdByModel = map['created_by'] is UserProfile
@@ -75,23 +83,32 @@ class Instance {
             ? Topic.fromMap(map['topic'])
             : null;
 
+    final [longitude, latitude] = map['rally_point_text'] == null
+        ? [null, null]
+        : map['rally_point_text']
+            .substring(6, map['rally_point_text'].length - 1)
+            .split(' ');
+
     return Instance(
-      id: map['id'] as InstanceID,
-      createdAt: DateTime.parse(map['created_at']).toLocal(),
-      createdBy: createdByModel,
-      createdById: createdByModel == null
-          ? map['created_by'] as UserID
-          : createdByModel.id,
-      startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
-      startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
-      topic: topicModel,
-      topicId: topicModel == null ? map['topic'] as TopicID : topicModel.id,
-      title: map['title'] as String,
-      visibility: InstanceVisibility.values.firstWhere(
-        (e) => e.name == map['visibility'],
-      ),
-      locationDescription: map['location_description'] as String,
-    );
+        id: map['id'] as InstanceID,
+        createdAt: DateTime.parse(map['created_at']).toLocal(),
+        createdBy: createdByModel,
+        createdById: createdByModel == null
+            ? map['created_by'] as UserID
+            : createdByModel.id,
+        startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
+        startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
+        topic: topicModel,
+        topicId: topicModel == null ? map['topic'] as TopicID : topicModel.id,
+        title: map['title'] as String,
+        visibility: InstanceVisibility.values.firstWhere(
+          (e) => e.name == map['visibility'],
+        ),
+        locationDescription: map['location_description'] as String,
+        rallyPoint: map['rally_point_text'] == null
+            ? null
+            : Geographic(
+                lon: double.parse(longitude), lat: double.parse(latitude)));
   }
 
   Map<String, dynamic> toMap() {

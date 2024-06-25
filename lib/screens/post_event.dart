@@ -123,7 +123,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
           locationDescription: _locationDescriptionController.text.trim());
 
       final Instance savedInstance =
-          await instancesController.createInstance(draftInstance);
+          await instancesController.save(draftInstance);
 
       log('Saved instance: $savedInstance');
 

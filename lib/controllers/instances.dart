@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
@@ -51,7 +52,36 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     state = await AsyncValue.guard(fetch);
   }
 
-  Future<Instance> createInstance(Instance instance) async {
+  Future<Instance> getById(InstanceID id) async {
+    final List<Instance>? loadedInstances =
+        state.hasValue ? state.asData!.value : null;
+
+    // try to get the instance from the controller's loaded list first
+    final Instance? loadedInstance = loadedInstances
+        ?.cast<Instance?>()
+        .firstWhere((instance) => instance!.id == id, orElse: () => null);
+
+    if (loadedInstance != null) {
+      return loadedInstance;
+    }
+
+    // fall back on querying Superbase
+    final supabase = ref.read(supabaseClientProvider);
+
+    try {
+      final data = await supabase
+          .from('instances')
+          .select(_defaultSelect)
+          .eq('id', id)
+          .single();
+
+      return Instance.fromMap(data);
+    } catch (error) {
+      throw 'Could not load instance with ID $id';
+    }
+  }
+
+  Future<Instance> save(Instance instance) async {
     assert(instance.id == null, 'Cannot create an instance with an ID');
 
     final supabase = ref.read(supabaseClientProvider);
@@ -89,32 +119,30 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     return insertedInstance;
   }
 
-  Future<Instance> getById(InstanceID id) async {
-    final List<Instance>? loadedInstances =
-        state.hasValue ? state.asData!.value : null;
-
-    // try to get the instance from the controller's loaded list first
-    final Instance? loadedInstance = loadedInstances
-        ?.cast<Instance?>()
-        .firstWhere((instance) => instance!.id == id, orElse: () => null);
-
-    if (loadedInstance != null) {
-      return loadedInstance;
-    }
-
-    // fall back on querying Superbase
-    final supabase = ref.read(supabaseClientProvider);
+  Future<Instance> patch(InstanceID id, Map<String, dynamic> patchData) async {
+    logger.i({'instance:patch': patchData});
 
     try {
-      final data = await supabase
+      final updatedData = await ref
+          .read(supabaseClientProvider)
           .from('instances')
-          .select(_defaultSelect)
+          .update(patchData)
           .eq('id', id)
+          .select(_defaultSelect)
           .single();
 
-      return Instance.fromMap(data);
+      final updatedInstance = Instance.fromMap(updatedData);
+
+      // update loaded instances with newly created one
+      if (state.hasValue && state.value != null) {
+        state = AsyncValue.data(updateListWithRecord<Instance>(state.value!,
+            (existing) => existing.id == updatedInstance.id, updatedInstance));
+      }
+
+      return updatedInstance;
     } catch (error) {
-      throw 'Could not load instance with ID $id';
+      loggerWithStack.e({'error patching instance': error});
+      rethrow;
     }
   }
 }
