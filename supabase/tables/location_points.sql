@@ -5,7 +5,7 @@ create table public.location_points (
   event uuid not null,
   timestamp timestamp with time zone not null,
   location geography not null,
-  location_text text null,
+  location_text text GENERATED ALWAYS AS (ST_AsText(location)) STORED,
   constraint location_points_pkey primary key (id),
   constraint public_location_points_created_by_fkey foreign key (created_by) references profiles (id) on delete cascade,
   constraint public_location_points_event_fkey foreign key (event) references instances (id) on update cascade
