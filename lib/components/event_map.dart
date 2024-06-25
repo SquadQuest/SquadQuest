@@ -44,31 +44,36 @@ class _EventMapState extends ConsumerState<EventMap> {
 
     return SizedBox(
         height: MediaQuery.of(context).size.height * .75,
-        child: Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Column(children: [
-              Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Expanded(
-                  child: MapLibreMap(
-                onMapCreated: _onMapCreated,
-                onStyleLoadedCallback: _onStyleLoadedCallback,
-                styleString:
-                    'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
-                myLocationEnabled: true,
-                myLocationRenderMode: MyLocationRenderMode.compass,
-                myLocationTrackingMode: MyLocationTrackingMode.tracking,
-                initialCameraPosition: const CameraPosition(
-                  target: LatLng(39.9550, -75.1605),
-                  zoom: 11.75,
-                ),
-                gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-                  Factory<OneSequenceGestureRecognizer>(
-                    () => EagerGestureRecognizer(),
-                  ),
-                },
-              ))
-            ])));
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            child: Text(
+              widget.title,
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Expanded(
+              child: MapLibreMap(
+            onMapCreated: _onMapCreated,
+            onStyleLoadedCallback: _onStyleLoadedCallback,
+            styleString:
+                'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+            myLocationEnabled: true,
+            myLocationRenderMode: MyLocationRenderMode.compass,
+            myLocationTrackingMode: MyLocationTrackingMode.tracking,
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(39.9550, -75.1605),
+              zoom: 11.75,
+            ),
+            gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+              Factory<OneSequenceGestureRecognizer>(
+                () => EagerGestureRecognizer(),
+              ),
+            },
+          ))
+        ]));
   }
 
   void _onMapCreated(MapLibreMapController controller) {
