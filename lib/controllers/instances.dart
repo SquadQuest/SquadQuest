@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
@@ -116,5 +117,32 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
         .save(insertedInstance.id!, InstanceMemberStatus.yes);
 
     return insertedInstance;
+  }
+
+  Future<Instance> patch(InstanceID id, Map<String, dynamic> patchData) async {
+    logger.i({'instance:patch': patchData});
+
+    try {
+      final updatedData = await ref
+          .read(supabaseClientProvider)
+          .from('instances')
+          .update(patchData)
+          .eq('id', id)
+          .select(_defaultSelect)
+          .single();
+
+      final updatedInstance = Instance.fromMap(updatedData);
+
+      // update loaded instances with newly created one
+      if (state.hasValue && state.value != null) {
+        state = AsyncValue.data(updateListWithRecord<Instance>(state.value!,
+            (existing) => existing.id == updatedInstance.id, updatedInstance));
+      }
+
+      return updatedInstance;
+    } catch (error) {
+      loggerWithStack.e({'error patching instance': error});
+      rethrow;
+    }
   }
 }

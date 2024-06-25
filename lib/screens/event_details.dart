@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:squadquest/app_scaffold.dart';
 
 import 'package:squadquest/logger.dart';
+import 'package:squadquest/services/location.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
@@ -16,7 +17,7 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';
 import 'package:squadquest/components/friends_list.dart';
 import 'package:squadquest/components/event_live_map.dart';
-import 'package:squadquest/services/location.dart';
+import 'package:squadquest/components/event_rally_map.dart';
 
 final _statusGroupOrder = {
   InstanceMemberStatus.omw: 0,
@@ -26,7 +27,7 @@ final _statusGroupOrder = {
   InstanceMemberStatus.invited: 4,
 };
 
-enum Menu { showLiveMap, getLink, edit, cancel }
+enum Menu { showSetRallyPointMap, showLiveMap, getLink, edit, cancel }
 
 final eventDetailsProvider = FutureProvider.autoDispose
     .family<Instance, InstanceID>((ref, instanceId) async {
@@ -121,6 +122,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
   void _onMenuSelect(Menu item) async {
     switch (item) {
+      case Menu.showSetRallyPointMap:
+        _showRallyPointMap();
+        break;
       case Menu.showLiveMap:
         _showLiveMap();
         break;
@@ -140,6 +144,40 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       case Menu.cancel:
         logger.i('Cancel event');
         break;
+    }
+  }
+
+  Future<dynamic> _showRallyPointMap() async {
+    final eventAsync = ref.watch(eventDetailsProvider(widget.instanceId));
+
+    if (eventAsync.value == null) {
+      return;
+    }
+
+    final updatedRallyPoint = await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (BuildContext context) => EventRallyMap(
+            eventId: widget.instanceId,
+            initialRallyPoint: eventAsync.value!.rallyPointLatLng));
+
+    if (updatedRallyPoint == null) {
+      return;
+    }
+
+    logger.d({'updatedRallyPoint': updatedRallyPoint});
+
+    await ref.read(instancesProvider.notifier).patch(widget.instanceId, {
+      'rally_point':
+          'POINT(${updatedRallyPoint.longitude} ${updatedRallyPoint.latitude})',
+    });
+
+    ref.invalidate(eventDetailsProvider(widget.instanceId));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Rally point updated!'),
+      ));
     }
   }
 
@@ -201,23 +239,31 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   title: Text('Get link'),
                 ),
               ),
-              // if (eventAsync.value?.createdById == session?.user.id) ...[
-              //   const PopupMenuDivider(),
-              //   const PopupMenuItem<Menu>(
-              //     value: Menu.edit,
-              //     child: ListTile(
-              //       leading: Icon(Icons.delete_outline),
-              //       title: Text('Edit event'),
-              //     ),
-              //   ),
-              //   const PopupMenuItem<Menu>(
-              //     value: Menu.cancel,
-              //     child: ListTile(
-              //       leading: Icon(Icons.cancel),
-              //       title: Text('Cancel event'),
-              //     ),
-              //   ),
-              // ]
+              if (eventAsync.value?.createdById == session?.user.id) ...[
+                const PopupMenuDivider(),
+                PopupMenuItem<Menu>(
+                  value: Menu.showSetRallyPointMap,
+                  enabled: eventAsync.value != null && !eventAsync.isLoading,
+                  child: const ListTile(
+                    leading: Icon(Icons.pin_drop_outlined),
+                    title: Text('Set rally point'),
+                  ),
+                ),
+                // const PopupMenuItem<Menu>(
+                //   value: Menu.edit,
+                //   child: ListTile(
+                //     leading: Icon(Icons.delete_outline),
+                //     title: Text('Edit event'),
+                //   ),
+                // ),
+                // const PopupMenuItem<Menu>(
+                //   value: Menu.cancel,
+                //   child: ListTile(
+                //     leading: Icon(Icons.cancel),
+                //     title: Text('Cancel event'),
+                //   ),
+                // ),
+              ]
             ],
           ),
         ],
