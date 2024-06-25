@@ -1,4 +1,4 @@
-import 'package:geobase/geobase.dart';
+import 'package:geobase/coordinates.dart';
 
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';

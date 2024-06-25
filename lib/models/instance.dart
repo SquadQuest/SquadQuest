@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:geobase/geobase.dart';
+import 'package:geobase/coordinates.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:squadquest/models/user.dart';
@@ -119,6 +119,9 @@ class Instance {
       'title': title,
       'visibility': visibility.name,
       'location_description': locationDescription,
+      'rally_point': rallyPoint == null
+          ? null
+          : 'POINT(${rallyPoint!.lon} ${rallyPoint!.lat})'
     };
 
     if (id != null) {
