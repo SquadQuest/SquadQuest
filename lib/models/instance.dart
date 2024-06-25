@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:geobase/geobase.dart';
+import 'package:geobase/coordinates.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:squadquest/models/user.dart';
