@@ -5,22 +5,20 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geobase/coordinates.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/controllers/auth.dart';
-import 'package:squadquest/models/instance.dart';
 
 class EventRallyMap extends ConsumerStatefulWidget {
   final String title;
-  final InstanceID eventId;
   final LatLng mapCenter;
-  final LatLng? initialRallyPoint;
+  final Geographic? initialRallyPoint;
 
   const EventRallyMap(
       {super.key,
       this.title = 'Set rally point',
-      required this.eventId,
       this.mapCenter = const LatLng(39.9550, -75.1605),
       this.initialRallyPoint});
 
@@ -36,7 +34,9 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
   @override
   void initState() {
     super.initState();
-    rallyPoint = widget.initialRallyPoint ?? widget.mapCenter;
+    rallyPoint = widget.initialRallyPoint == null
+        ? widget.mapCenter
+        : LatLng(widget.initialRallyPoint!.lat, widget.initialRallyPoint!.lon);
   }
 
   @override
@@ -57,7 +57,8 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                 child: IconButton(
                     icon: const Icon(Icons.check), // Your desired icon
                     onPressed: () {
-                      Navigator.of(context).pop(rallyPoint);
+                      Navigator.of(context).pop(Geographic(
+                          lat: rallyPoint.latitude, lon: rallyPoint.longitude));
                     })),
             Positioned(
                 left: 12,

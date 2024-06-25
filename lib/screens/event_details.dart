@@ -157,9 +157,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     final updatedRallyPoint = await showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        builder: (BuildContext context) => EventRallyMap(
-            eventId: widget.instanceId,
-            initialRallyPoint: eventAsync.value!.rallyPointLatLng));
+        builder: (BuildContext context) =>
+            EventRallyMap(initialRallyPoint: eventAsync.value!.rallyPoint));
 
     if (updatedRallyPoint == null) {
       return;
