@@ -8,7 +8,7 @@ create table public.location_points (
   location_text text GENERATED ALWAYS AS (ST_AsText(location)) STORED,
   constraint location_points_pkey primary key (id),
   constraint public_location_points_created_by_fkey foreign key (created_by) references profiles (id) on delete cascade,
-  constraint public_location_points_event_fkey foreign key (event) references instances (id) on update cascade
+  constraint public_location_points_event_fkey foreign key (event) references instances (id) on update cascade on delete cascade
 );
 
 -- delete data older than 3 days every hour
