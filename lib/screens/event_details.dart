@@ -167,8 +167,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     logger.d({'updatedRallyPoint': updatedRallyPoint});
 
     await ref.read(instancesProvider.notifier).patch(widget.instanceId, {
-      'rally_point':
-          'POINT(${updatedRallyPoint.longitude} ${updatedRallyPoint.latitude})',
+      'rally_point': 'POINT(${updatedRallyPoint.lon} ${updatedRallyPoint.lat})',
     });
 
     ref.invalidate(eventDetailsProvider(widget.instanceId));
