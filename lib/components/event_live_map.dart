@@ -108,7 +108,7 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
       await controller!.addSymbol(SymbolOptions(
           geometry: widget.rallyPoint,
           iconImage: 'flag-marker',
-          iconSize: kIsWeb ? 0.25 : 0.2,
+          iconSize: kIsWeb ? 0.25 : 0.5,
           iconAnchor: 'bottom-left'));
     }
 
@@ -234,12 +234,12 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
           geometry: LatLng(
               userPoints.first.location.lat, userPoints.first.location.lon),
           iconImage: 'person-marker',
-          iconSize: kIsWeb ? 0.4 : 0.75,
+          iconSize: kIsWeb ? 0.4 : 0.9,
           iconAnchor: 'bottom',
           textField: userProfiles[userId]!.fullName,
           textColor: '#ffffff',
           textAnchor: 'top-left',
-          textSize: 12);
+          textSize: 14);
 
       if (symbolsByUser.containsKey(userId)) {
         await controller!.updateSymbol(symbolsByUser[userId]!, symbolOptions);

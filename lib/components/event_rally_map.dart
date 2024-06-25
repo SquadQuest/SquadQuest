@@ -116,7 +116,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
     dragSymbol = await controller!.addSymbol(SymbolOptions(
         geometry: rallyPoint,
         iconImage: 'drag-marker',
-        iconSize: kIsWeb ? 0.5 : 0.5,
+        iconSize: kIsWeb ? 0.5 : 1,
         iconAnchor: 'top',
         draggable: true));
 
