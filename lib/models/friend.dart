@@ -89,7 +89,7 @@ class Friend {
     }
 
     if (actionedAt != null) {
-      data['actioned_at'] = id!;
+      data['actioned_at'] = actionedAt!.toUtc().toIso8601String();
     }
 
     return data;
