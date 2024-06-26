@@ -1,6 +1,6 @@
 # Privacy Policy for SquadQuest
 
-Effective Date: 2024-06-16
+Effective Date: 2024-06-26
 
 The SquadQuest maintainers ("we," "us," or "our") are committed to protecting the privacy of our users. This Privacy Policy explains how we collect, use, and safeguard the personal information you provide when using our mobile application, SquadQuest (the "App").
 
