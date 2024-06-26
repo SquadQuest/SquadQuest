@@ -10,6 +10,8 @@ The SquadQuest maintainers ("we," "us," or "our") are committed to protecting th
 
 2. Usage Information: We may collect information about how you use the App, such as the features you access and the actions you take within the App. This information is used to improve our services and to provide a better user experience.
 
+3. Location Information: If you indicate that you are on your way to an event and choose to approve access to location information, your live location and recent location history will be transmitted to our servers and shared with other users who both have a mutually-approved friend connection with and are permitted to access the same event. Location data is retained on our servers for between one and two hours and then permenantly deleted.
+
 ## 2. How We Use Your Information
 
 1. Service Operation: We use the personal information you provide solely for the purpose of operating and maintaining the App, providing customer support, and communicating with you about the App and our services.
@@ -22,7 +24,7 @@ The SquadQuest maintainers ("we," "us," or "our") are committed to protecting th
 
 ## 4. Your Choices
 
-1. You may update, correct, or delete your personal information within the App's settings or by contacting us directly. Please note that some information may remain in our records after deletion for legal and operational purposes.
+1. You may update, correct, or delete your personal information by visiting the Profile screen within the app. Please note that some information may remain in our records after deletion for legal and operational purposes.
 
 ## 5. Changes to This Privacy Policy
 
