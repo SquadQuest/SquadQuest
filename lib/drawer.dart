@@ -37,6 +37,11 @@ final _menu = [
     route: 'friends',
   ),
   _MenuItem(
+    icon: Icons.checklist,
+    label: 'Topics',
+    route: 'topics',
+  ),
+  _MenuItem(
     icon: Icons.person,
     label: 'Profile',
     route: 'profile',

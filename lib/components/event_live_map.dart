@@ -156,10 +156,10 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
         .fetchProfiles(pointsByUser.keys.toSet());
 
     // render each user's symbol and trail
-    double minLatitude = 90;
-    double maxLatitude = -90;
-    double minLongitude = 180;
-    double maxLongitude = -180;
+    double minLatitude = widget.rallyPoint?.latitude ?? 90;
+    double maxLatitude = widget.rallyPoint?.latitude ?? -90;
+    double minLongitude = widget.rallyPoint?.longitude ?? 180;
+    double maxLongitude = widget.rallyPoint?.longitude ?? -180;
 
     for (final UserID userId in pointsByUser.keys) {
       final List<LocationPoint> userPoints = pointsByUser[userId]!;
@@ -266,14 +266,16 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
       }
     }
 
-    // move camera to new bounds
-    await controller!.animateCamera(CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-            northeast: LatLng(maxLatitude, maxLongitude),
-            southwest: LatLng(minLatitude, minLongitude)),
-        left: 50,
-        right: 50,
-        top: 50,
-        bottom: 50));
+    // move camera to new bounds unless they're still the defaults
+    if (minLatitude != 90 && minLongitude != 180) {
+      await controller!.animateCamera(CameraUpdate.newLatLngBounds(
+          LatLngBounds(
+              northeast: LatLng(maxLatitude, maxLongitude),
+              southwest: LatLng(minLatitude, minLongitude)),
+          left: 50,
+          right: 50,
+          top: 50,
+          bottom: 50));
+    }
   }
 }
