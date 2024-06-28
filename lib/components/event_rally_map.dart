@@ -11,6 +11,8 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/controllers/auth.dart';
 
+enum Menu { revertRallyPoint, clearRallyPoint }
+
 class EventRallyMap extends ConsumerStatefulWidget {
   final String title;
   final LatLng mapCenter;
@@ -53,20 +55,43 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Stack(alignment: Alignment.center, children: [
             Positioned(
-                right: 12,
+                left: 12,
                 child: IconButton(
-                    icon: const Icon(Icons.check), // Your desired icon
+                    icon: const Icon(Icons.arrow_back), // Your desired icon
                     onPressed: () {
                       Navigator.of(context).pop(Geographic(
                           lat: rallyPoint.latitude, lon: rallyPoint.longitude));
                     })),
             Positioned(
-                left: 12,
-                child: IconButton(
-                    icon: const Icon(Icons.close), // Your desired icon
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    })),
+                right: 12,
+                child: PopupMenuButton<Menu>(
+                    icon: const Icon(Icons.more_vert),
+                    offset: const Offset(0, 50),
+                    // onSelected: _onMenuSelect,
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<Menu>>[
+                          PopupMenuItem<Menu>(
+                            value: Menu.revertRallyPoint,
+                            child: const ListTile(
+                              leading: Icon(Icons.undo),
+                              title: Text('Revert rally point'),
+                            ),
+                            onTap: () {
+                              Navigator.of(context)
+                                  .pop(widget.initialRallyPoint);
+                            },
+                          ),
+                          PopupMenuItem<Menu>(
+                            value: Menu.clearRallyPoint,
+                            child: const ListTile(
+                              leading: Icon(Icons.delete),
+                              title: Text('Clear rally point'),
+                            ),
+                            onTap: () {
+                              Navigator.of(context).pop(null);
+                            },
+                          ),
+                        ])),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
               child: Text(

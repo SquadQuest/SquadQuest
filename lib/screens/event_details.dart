@@ -160,21 +160,20 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         builder: (BuildContext context) =>
             EventRallyMap(initialRallyPoint: eventAsync.value!.rallyPoint));
 
-    if (updatedRallyPoint == null) {
-      return;
-    }
-
     logger.d({'updatedRallyPoint': updatedRallyPoint});
 
     await ref.read(instancesProvider.notifier).patch(widget.instanceId, {
-      'rally_point': 'POINT(${updatedRallyPoint.lon} ${updatedRallyPoint.lat})',
+      'rally_point': updatedRallyPoint == null
+          ? null
+          : 'POINT(${updatedRallyPoint.lon} ${updatedRallyPoint.lat})',
     });
 
     ref.invalidate(eventDetailsProvider(widget.instanceId));
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Rally point updated!'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Rally point ${updatedRallyPoint == null ? 'cleared' : 'updated'}!'),
       ));
     }
   }
@@ -228,6 +227,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         actions: [
           PopupMenuButton<Menu>(
             icon: const Icon(Icons.more_vert),
+            offset: const Offset(0, 50),
             onSelected: _onMenuSelect,
             itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
               PopupMenuItem<Menu>(
@@ -250,9 +250,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 PopupMenuItem<Menu>(
                   value: Menu.showSetRallyPointMap,
                   enabled: eventAsync.value != null && !eventAsync.isLoading,
-                  child: const ListTile(
-                    leading: Icon(Icons.pin_drop_outlined),
-                    title: Text('Set rally point'),
+                  child: ListTile(
+                    leading: const Icon(Icons.pin_drop_outlined),
+                    title: eventAsync.value == null ||
+                            eventAsync.value!.rallyPoint == null
+                        ? const Text('Set rally point')
+                        : const Text('Update rally point'),
                   ),
                 ),
                 // const PopupMenuItem<Menu>(

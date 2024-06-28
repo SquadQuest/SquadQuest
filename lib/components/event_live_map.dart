@@ -14,6 +14,10 @@ import 'package:squadquest/models/location_point.dart';
 import 'package:squadquest/models/map_segment.dart';
 import 'package:squadquest/models/user.dart';
 
+enum Menu { keepRallyPointInView }
+
+final keepRallyPointInViewProvider = StateProvider<bool>((ref) => true);
+
 class EventLiveMap extends ConsumerStatefulWidget {
   final String title;
   final InstanceID eventId;
@@ -30,9 +34,13 @@ class EventLiveMap extends ConsumerStatefulWidget {
 }
 
 class _EventLiveMapState extends ConsumerState<EventLiveMap> {
+  static const minSinglePointBounds = .005;
+  static const minMultiPointBounds = .001;
+
   MapLibreMapController? controller;
   final Map<UserID, List<Line>> trailsLinesByUser = {};
   final Map<UserID, Symbol> symbolsByUser = {};
+  List<LocationPoint>? lastPoints;
 
   @override
   void initState() {
@@ -42,6 +50,7 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(authControllerProvider);
+    final keepRallyPointInView = ref.watch(keepRallyPointInViewProvider);
 
     if (session == null) {
       return const Center(child: CircularProgressIndicator());
@@ -51,14 +60,42 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
         height: MediaQuery.of(context).size.height * .75,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            child: Text(
-              widget.title,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
+          Stack(alignment: Alignment.center, children: [
+            Positioned(
+                left: 12,
+                child: IconButton(
+                    icon: const Icon(Icons.arrow_back), // Your desired icon
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    })),
+            Positioned(
+              right: 12,
+              child: PopupMenuButton<Menu>(
+                  icon: const Icon(Icons.more_vert),
+                  offset: const Offset(0, 50),
+                  // onSelected: _onMenuSelect,
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
+                        CheckedPopupMenuItem<Menu>(
+                          value: Menu.keepRallyPointInView,
+                          checked: keepRallyPointInView,
+                          child: const Text('Keep rally point in view'),
+                          onTap: () {
+                            ref
+                                .read(keepRallyPointInViewProvider.notifier)
+                                .state = !keepRallyPointInView;
+                            _renderTrails();
+                          },
+                        ),
+                      ]),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+              child: Text(
+                widget.title,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+          ]),
           Expanded(
               child: MapLibreMap(
             onMapCreated: _onMapCreated,
@@ -132,12 +169,22 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
         });
   }
 
-  Future<void> _renderTrails(List<LocationPoint> points) async {
-    logger.d({'rendering trails': points.length});
+  Future<void> _renderTrails([List<LocationPoint>? points]) async {
+    final keepRallyPointInView = ref.read(keepRallyPointInViewProvider);
+
+    // render previous points or skip if not available
+    if (points == null) {
+      if (lastPoints == null) {
+        return;
+      } else {
+        points = lastPoints;
+      }
+    }
+    lastPoints = points;
 
     // group points by user
     final Map<UserID, List<LocationPoint>> pointsByUser = {};
-    for (final point in points) {
+    for (final point in points!) {
       if (!pointsByUser.containsKey(point.createdBy)) {
         pointsByUser[point.createdBy] = [];
       }
@@ -156,10 +203,14 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
         .fetchProfiles(pointsByUser.keys.toSet());
 
     // render each user's symbol and trail
-    double minLatitude = widget.rallyPoint?.latitude ?? 90;
-    double maxLatitude = widget.rallyPoint?.latitude ?? -90;
-    double minLongitude = widget.rallyPoint?.longitude ?? 180;
-    double maxLongitude = widget.rallyPoint?.longitude ?? -180;
+    double minLatitude =
+        (keepRallyPointInView ? widget.rallyPoint?.latitude : null) ?? 90;
+    double maxLatitude =
+        (keepRallyPointInView ? widget.rallyPoint?.latitude : null) ?? -90;
+    double minLongitude =
+        (keepRallyPointInView ? widget.rallyPoint?.longitude : null) ?? 180;
+    double maxLongitude =
+        (keepRallyPointInView ? widget.rallyPoint?.longitude : null) ?? -180;
 
     for (final UserID userId in pointsByUser.keys) {
       final List<LocationPoint> userPoints = pointsByUser[userId]!;
@@ -266,7 +317,29 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
       }
     }
 
+    // apply minimum bounds
+    if (minLatitude == maxLatitude && minLongitude == maxLongitude) {
+      // zoom out more from single-point bounds
+      minLatitude -= minSinglePointBounds;
+      maxLatitude += minSinglePointBounds;
+      minLongitude -= minSinglePointBounds;
+      maxLongitude += minSinglePointBounds;
+    } else {
+      final diffLatitude = maxLatitude - minLatitude;
+      final diffLongitude = maxLongitude - minLongitude;
+
+      if (diffLatitude < minMultiPointBounds &&
+          diffLongitude < minMultiPointBounds) {
+        // zoom out more from small bounds
+        minLatitude -= minMultiPointBounds - diffLatitude;
+        maxLatitude += minMultiPointBounds - diffLatitude;
+        minLongitude -= minMultiPointBounds - diffLongitude;
+        maxLongitude += minMultiPointBounds - diffLongitude;
+      }
+    }
+
     // move camera to new bounds unless they're still the defaults
+    // final currentBounds = await controller!.getVisibleRegion();
     if (minLatitude != 90 && minLongitude != 180) {
       await controller!.animateCamera(CameraUpdate.newLatLngBounds(
           LatLngBounds(
