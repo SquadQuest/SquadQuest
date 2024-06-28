@@ -30,6 +30,9 @@ class EventLiveMap extends ConsumerStatefulWidget {
 }
 
 class _EventLiveMapState extends ConsumerState<EventLiveMap> {
+  static const minSinglePointBounds = .005;
+  static const minMultiPointBounds = .001;
+
   MapLibreMapController? controller;
   final Map<UserID, List<Line>> trailsLinesByUser = {};
   final Map<UserID, Symbol> symbolsByUser = {};
@@ -266,7 +269,29 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
       }
     }
 
+    // apply minimum bounds
+    if (minLatitude == maxLatitude && minLongitude == maxLongitude) {
+      // zoom out more from single-point bounds
+      minLatitude -= minSinglePointBounds;
+      maxLatitude += minSinglePointBounds;
+      minLongitude -= minSinglePointBounds;
+      maxLongitude += minSinglePointBounds;
+    } else {
+      final diffLatitude = maxLatitude - minLatitude;
+      final diffLongitude = maxLongitude - minLongitude;
+
+      if (diffLatitude < minMultiPointBounds &&
+          diffLongitude < minMultiPointBounds) {
+        // zoom out more from small bounds
+        minLatitude -= minMultiPointBounds - diffLatitude;
+        maxLatitude += minMultiPointBounds - diffLatitude;
+        minLongitude -= minMultiPointBounds - diffLongitude;
+        maxLongitude += minMultiPointBounds - diffLongitude;
+      }
+    }
+
     // move camera to new bounds unless they're still the defaults
+    // final currentBounds = await controller!.getVisibleRegion();
     if (minLatitude != 90 && minLongitude != 180) {
       await controller!.animateCamera(CameraUpdate.newLatLngBounds(
           LatLngBounds(
