@@ -228,6 +228,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         actions: [
           PopupMenuButton<Menu>(
             icon: const Icon(Icons.more_vert),
+            offset: const Offset(0, 50),
             onSelected: _onMenuSelect,
             itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
               PopupMenuItem<Menu>(
