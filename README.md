@@ -1,6 +1,12 @@
 # SquadQuest
 
-SquadQuest is a completely free and open-source app that helps people plan events and meet up in real time.
+SquadQuest is the painless way to rally your friends in the moment and do stuff together IRL.
+
+SquadQuest *is not* a social network. Social networks help you build shallow connections with people you don't really know. You will not see people on SquadQuest that you don't already know and they won't see you. SquadQuest is designed to help you spend more time out in the real world with people you know.
+
+SquadQuest *is not* a startup. The need to monetize your data or engagement to return investment to VCs is why nothing like SquadQuest exists already. SquadQuest couldn't do it's job as well as it possibly could if those concerns had to take precedence. We're building SquadQuest because we want it to exist and we want it to be as useful as possible. SquadQuest is built by its users, *for* its users. At some point we will likely accept donations to support operating costs, but for now the focus is on keeping operating costs as low as possible.
+
+*Who is Jarvus Innovations?* Jarvus is the open-source civic technology consultancy that SquadQuest's original author helps run. SquadQuest is published under Jarvus' developer accounts in the Google and Apple app stores because it's a pain to set those up without a business entity and Jarvus already had them. Eventually SquadQuest will be transfered to its own developer accounts or those of a nonprofit custodian.
 
 ## Help beta test SquadQuest
 
