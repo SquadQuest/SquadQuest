@@ -46,6 +46,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   ScaffoldFeatureController? _rsvpSnackbar;
   MapLibreMapController? _mapController;
   Symbol? _rallyPointSymbol;
+  late Timer _refreshEventPointsTimer;
 
   void _sendInvitations(
       BuildContext context, List<InstanceMember> excludeRsvps) async {
@@ -233,6 +234,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
       await _mapController!.animateCamera(CameraUpdate.newLatLng(latLng));
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // listen for location updates
+    _refreshEventPointsTimer = Timer.periodic(const Duration(seconds: 60),
+        (Timer t) => ref.invalidate(eventPointsProvider(widget.instanceId)));
+  }
+
+  @override
+  void dispose() {
+    _refreshEventPointsTimer?.cancel();
+    super.dispose();
   }
 
   @override
