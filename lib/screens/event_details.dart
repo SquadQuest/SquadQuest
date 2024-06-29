@@ -157,6 +157,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     final updatedRallyPoint = await showModalBottomSheet(
         context: context,
         isScrollControlled: true,
+        enableDrag: false,
         builder: (BuildContext context) =>
             EventRallyMap(initialRallyPoint: eventAsync.value!.rallyPoint));
 
@@ -188,6 +189,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     return showModalBottomSheet(
         context: context,
         isScrollControlled: true,
+        enableDrag: false,
         builder: (BuildContext context) => EventLiveMap(
             eventId: widget.instanceId,
             rallyPoint: eventAsync.value!.rallyPointLatLng));

@@ -81,6 +81,7 @@ class _FormLocationPickerState extends ConsumerState<FormLocationPicker> {
             Geographic? newValue = await showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
+                enableDrag: false,
                 builder: (BuildContext context) =>
                     EventRallyMap(initialRallyPoint: value));
 
