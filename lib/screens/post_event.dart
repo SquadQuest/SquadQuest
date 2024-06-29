@@ -158,7 +158,7 @@ class _PostEventScreenState extends ConsumerState<PostEventScreen> {
   void initState() {
     super.initState();
 
-    startDate = DateTime.now().add(const Duration(days: 1));
+    startDate = DateTime.now();
   }
 
   @override

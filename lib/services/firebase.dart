@@ -106,6 +106,18 @@ class FirebaseMessagingService {
       }
     });
 
+    // save FCM token on refresh
+    messaging.onTokenRefresh.listen((token) async {
+      this.token = token;
+
+      final profile = ref.read(profileProvider);
+      if (profile.value != null) {
+        await ref.read(profileProvider.notifier).patch({
+          'fcm_token': token,
+        });
+      }
+    });
+
     // listen for foreground and background messages
     FirebaseMessaging.onMessage.listen((message) => _onMessage(message));
 

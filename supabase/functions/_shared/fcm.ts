@@ -89,7 +89,11 @@ async function postMessage(
   if (response.status < 200 || 299 < response.status) {
     const message = responseData?.error?.message ??
       `status=${response.status}, response=${JSON.stringify(responseData)}`;
-    throw `Failed to send push notification: ${message}`;
+    console.error(
+      `${response.status}: Failed to send push notification to token ${
+        token?.substr(0, 6)
+      }...: ${message}`,
+    );
   }
 
   return responseData;

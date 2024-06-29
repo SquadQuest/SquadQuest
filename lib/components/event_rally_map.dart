@@ -113,11 +113,6 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
               target: LatLng(39.9550, -75.1605),
               zoom: 11.75,
             ),
-            gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-              Factory<OneSequenceGestureRecognizer>(
-                () => EagerGestureRecognizer(),
-              ),
-            },
           ))
         ]));
   }

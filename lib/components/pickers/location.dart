@@ -1,4 +1,3 @@
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geobase/coordinates.dart';
@@ -81,6 +80,7 @@ class _FormLocationPickerState extends ConsumerState<FormLocationPicker> {
             Geographic? newValue = await showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
+                enableDrag: false,
                 builder: (BuildContext context) =>
                     EventRallyMap(initialRallyPoint: value));
 

@@ -76,3 +76,13 @@ INSERT
 create policy "Authenticated users can update their own instances" on "public"."instances" as PERMISSIVE for
 UPDATE
   to authenticated using (created_by = auth.uid()) with check (created_by = auth.uid());
+
+CREATE TRIGGER instance_rallypoint_change BEFORE
+UPDATE
+  OF rally_point_text ON instances FOR EACH ROW execute function "supabase_functions"."http_request"(
+    'http://functions:9000/update-rally-point',
+    'POST',
+    '{"Content-Type":"application/json"}',
+    '{}',
+    '1000'
+  );

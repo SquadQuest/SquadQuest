@@ -10,6 +10,7 @@ import 'package:squadquest/controllers/topics.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/models/event_points.dart';
 
 final eventDateFormat = DateFormat('E, MMM d');
 final eventTimeFormat = DateFormat('h:mm a');
@@ -18,15 +19,31 @@ final instancesProvider =
     AsyncNotifierProvider<InstancesController, List<Instance>>(
         InstancesController.new);
 
+final eventDetailsProvider = FutureProvider.autoDispose
+    .family<Instance, InstanceID>((ref, instanceId) async {
+  final instancesController = ref.read(instancesProvider.notifier);
+  return instancesController.getById(instanceId);
+});
+
+final eventPointsProvider = FutureProvider.autoDispose
+    .family<EventPoints?, InstanceID>((ref, instanceId) async {
+  logger.d('eventPointsProvider initializing for $instanceId');
+  final supabase = ref.read(supabaseClientProvider);
+  final eventPoints = await supabase
+      .from('instance_points')
+      .select()
+      .eq('id', instanceId)
+      .maybeSingle();
+
+  return eventPoints == null ? null : EventPoints.fromMap(eventPoints);
+  ;
+});
+
 class InstancesController extends AsyncNotifier<List<Instance>> {
   static const _defaultSelect = '*, topic(*), created_by(*)';
 
   @override
   Future<List<Instance>> build() async {
-    return fetch();
-  }
-
-  Future<List<Instance>> fetch() async {
     final supabase = ref.read(supabaseClientProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
     final topicsCache = ref.read(topicsCacheProvider.notifier);
@@ -41,11 +58,41 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
       populatedData = await topicsCache
           .populateData(data, [(idKey: 'topic', modelKey: 'topic')]);
 
+      // convert to model instances
+      final instances = populatedData.map(Instance.fromMap).toList();
+
       // convert to model instances and update state
-      state = AsyncValue.data(populatedData.map(Instance.fromMap).toList());
+      state = AsyncValue.data(instances);
+
+      // invalidate event details providers
+      for (final instance in instances) {
+        final instanceProvider = eventDetailsProvider(instance.id!);
+        if (ref.exists(instanceProvider)) {
+          ref.invalidate(instanceProvider);
+        }
+      }
     });
 
     return future;
+  }
+
+  Future<List<Instance>> fetch() async {
+    final supabase = ref.read(supabaseClientProvider);
+
+    final instances = await supabase
+        .from('instances')
+        .select(_defaultSelect)
+        .withConverter((data) => data.map(Instance.fromMap).toList());
+
+    // populate profile and topic caches
+    for (final instance in instances) {
+      ref
+          .read(profilesCacheProvider.notifier)
+          .cacheProfiles([instance.createdBy!]);
+      ref.read(topicsCacheProvider.notifier).cacheTopics([instance.topic!]);
+    }
+
+    return instances;
   }
 
   Future<void> refresh() async {
