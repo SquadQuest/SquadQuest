@@ -158,6 +158,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         context: context,
         isScrollControlled: true,
         enableDrag: false,
+        isDismissible: false,
         builder: (BuildContext context) =>
             EventRallyMap(initialRallyPoint: eventAsync.value!.rallyPoint));
 
