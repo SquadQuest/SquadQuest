@@ -48,6 +48,9 @@ class MyApp extends ConsumerWidget {
           });
 
           switch (message.data['notificationType']) {
+            case 'rally-point-updated':
+              goToNotificationRoute(ref, 'event-details',
+                  pathParameters: {'id': data['event']['id'] as String});
             case 'rsvp':
               goToNotificationRoute(ref, 'event-details',
                   pathParameters: {'id': data['event']['id'] as String});
