@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -359,6 +360,15 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                               child: AspectRatio(
                                   aspectRatio: 1,
                                   child: MapLibreMap(
+                                    styleString:
+                                        'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+
+                                    // listeners
+                                    onMapCreated: _onMapCreated,
+                                    onStyleLoadedCallback: () =>
+                                        _onMapStyleLoaded(event),
+
+                                    // disable all interaction
                                     dragEnabled: false,
                                     compassEnabled: false,
                                     zoomGesturesEnabled: false,
@@ -366,11 +376,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                     tiltGesturesEnabled: false,
                                     scrollGesturesEnabled: false,
                                     doubleClickZoomEnabled: false,
-                                    onMapCreated: _onMapCreated,
-                                    onStyleLoadedCallback: () =>
-                                        _onMapStyleLoaded(event),
-                                    styleString:
-                                        'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+
+                                    // hide attribution in mini view
+                                    attributionButtonPosition:
+                                        AttributionButtonPosition.bottomRight,
+                                    attributionButtonMargins:
+                                        const Point(-100, -100),
+
+                                    // set initial camera position to rally point
                                     initialCameraPosition: CameraPosition(
                                       target: LatLng(event.rallyPoint!.lat,
                                           event.rallyPoint!.lon),
