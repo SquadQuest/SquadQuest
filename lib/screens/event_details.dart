@@ -367,6 +367,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                     onMapCreated: _onMapCreated,
                                     onStyleLoadedCallback: () =>
                                         _onMapStyleLoaded(event),
+                                    onMapClick: (_, __) => _showLiveMap(),
 
                                     // disable all interaction
                                     dragEnabled: false,
