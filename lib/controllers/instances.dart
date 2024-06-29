@@ -20,7 +20,6 @@ final instancesProvider =
 
 final eventDetailsProvider = FutureProvider.autoDispose
     .family<Instance, InstanceID>((ref, instanceId) async {
-  logger.d('eventDetailsProvider initializing for $instanceId');
   final instancesController = ref.read(instancesProvider.notifier);
   return instancesController.getById(instanceId);
 });
