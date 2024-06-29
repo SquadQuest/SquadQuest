@@ -1,7 +1,6 @@
 import {
   createClient,
   SupabaseClient,
-  User,
 } from "https://esm.sh/@supabase/supabase-js";
 
 import { HttpError } from "./http.ts";
