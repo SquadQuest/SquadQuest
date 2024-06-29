@@ -10,6 +10,7 @@ import 'package:squadquest/controllers/topics.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/models/event_points.dart';
 
 final eventDateFormat = DateFormat('E, MMM d');
 final eventTimeFormat = DateFormat('h:mm a');
@@ -22,6 +23,20 @@ final eventDetailsProvider = FutureProvider.autoDispose
     .family<Instance, InstanceID>((ref, instanceId) async {
   final instancesController = ref.read(instancesProvider.notifier);
   return instancesController.getById(instanceId);
+});
+
+final eventPointsProvider = FutureProvider.autoDispose
+    .family<EventPoints?, InstanceID>((ref, instanceId) async {
+  logger.d('eventPointsProvider initializing for $instanceId');
+  final supabase = ref.read(supabaseClientProvider);
+  final eventPoints = await supabase
+      .from('instance_points')
+      .select()
+      .eq('id', instanceId)
+      .maybeSingle();
+
+  return eventPoints == null ? null : EventPoints.fromMap(eventPoints);
+  ;
 });
 
 class InstancesController extends AsyncNotifier<List<Instance>> {

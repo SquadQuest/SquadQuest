@@ -74,7 +74,16 @@ SELECT
         rally_point :: geometry
       )
     )
-  ) AS centroid_with_rally_point
+  ) AS centroid_with_rally_point,
+  ST_AsText(ST_Envelope(ST_Union(location :: geometry))) AS box,
+  ST_AsText(
+    ST_Envelope(
+      ST_Union(
+        ST_Union(location :: geometry),
+        rally_point :: geometry
+      )
+    )
+  ) AS box_with_rally_point
 FROM
   instances
   LEFT JOIN latest_event_user_points AS points ON (points.event = instances.id)
