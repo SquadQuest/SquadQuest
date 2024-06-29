@@ -23,10 +23,6 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
 
   @override
   Future<List<Instance>> build() async {
-    return fetch();
-  }
-
-  Future<List<Instance>> fetch() async {
     final supabase = ref.read(supabaseClientProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
     final topicsCache = ref.read(topicsCacheProvider.notifier);
@@ -46,6 +42,25 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     });
 
     return future;
+  }
+
+  Future<List<Instance>> fetch() async {
+    final supabase = ref.read(supabaseClientProvider);
+
+    final instances = await supabase
+        .from('instances')
+        .select(_defaultSelect)
+        .withConverter((data) => data.map(Instance.fromMap).toList());
+
+    // populate profile and topic caches
+    for (final instance in instances) {
+      ref
+          .read(profilesCacheProvider.notifier)
+          .cacheProfiles([instance.createdBy!]);
+      ref.read(topicsCacheProvider.notifier).cacheTopics([instance.topic!]);
+    }
+
+    return instances;
   }
 
   Future<void> refresh() async {
