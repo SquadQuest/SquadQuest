@@ -97,10 +97,6 @@ class _TopicsScreenState extends ConsumerState<TopicsScreen> {
 
   void _onTopicCheckboxChanged(
       MyTopicMembership topicMembership, bool? value) async {
-    logger.d({
-      '_onTopicCheckboxChanged': 'topic: $topicMembership.topic, value: $value}'
-    });
-
     // mark as pending
     setState(() {
       pendingChanges[topicMembership.topic.id!] = value == true;

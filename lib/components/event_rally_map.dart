@@ -118,13 +118,10 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
   }
 
   void _onMapCreated(MapLibreMapController controller) {
-    logger.d('EventRallyMap._onMapCreated');
     this.controller = controller;
   }
 
   void _onStyleLoadedCallback() async {
-    logger.d('EventRallyMap._onStyleLoadedCallback');
-
     // configure symbols
     await controller!.setSymbolIconAllowOverlap(true);
     await controller!.setSymbolTextAllowOverlap(true);

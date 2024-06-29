@@ -114,13 +114,10 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   }
 
   void _onMapCreated(MapLibreMapController controller) {
-    logger.d('EventLiveMap._onMapCreated');
     this.controller = controller;
   }
 
   void _onStyleLoadedCallback() async {
-    logger.d('EventLiveMap._onStyleLoadedCallback');
-
     // configure symbols
     await controller!.setSymbolIconAllowOverlap(true);
     await controller!.setSymbolTextAllowOverlap(true);
@@ -186,11 +183,6 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
 
       pointsByUser[point.createdBy]!.add(point);
     }
-
-    logger.d({
-      'pointsByUser': pointsByUser
-          .map((userId, userPoints) => MapEntry(userId, userPoints.length))
-    });
 
     // load user profiles
     final userProfiles = await ref

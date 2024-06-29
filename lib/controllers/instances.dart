@@ -27,7 +27,6 @@ final eventDetailsProvider = FutureProvider.autoDispose
 
 final eventPointsProvider = FutureProvider.autoDispose
     .family<EventPoints?, InstanceID>((ref, instanceId) async {
-  logger.d('eventPointsProvider initializing for $instanceId');
   final supabase = ref.read(supabaseClientProvider);
   final eventPoints = await supabase
       .from('instance_points')

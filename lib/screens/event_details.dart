@@ -162,8 +162,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         builder: (BuildContext context) =>
             EventRallyMap(initialRallyPoint: eventAsync.value!.rallyPoint));
 
-    logger.d({'updatedRallyPoint': updatedRallyPoint});
-
     await ref.read(instancesProvider.notifier).patch(widget.instanceId, {
       'rally_point': updatedRallyPoint == null
           ? null
