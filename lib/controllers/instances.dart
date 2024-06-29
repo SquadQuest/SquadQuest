@@ -18,6 +18,13 @@ final instancesProvider =
     AsyncNotifierProvider<InstancesController, List<Instance>>(
         InstancesController.new);
 
+final eventDetailsProvider = FutureProvider.autoDispose
+    .family<Instance, InstanceID>((ref, instanceId) async {
+  logger.d('eventDetailsProvider initializing for $instanceId');
+  final instancesController = ref.read(instancesProvider.notifier);
+  return instancesController.getById(instanceId);
+});
+
 class InstancesController extends AsyncNotifier<List<Instance>> {
   static const _defaultSelect = '*, topic(*), created_by(*)';
 
@@ -37,8 +44,19 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
       populatedData = await topicsCache
           .populateData(data, [(idKey: 'topic', modelKey: 'topic')]);
 
+      // convert to model instances
+      final instances = populatedData.map(Instance.fromMap).toList();
+
       // convert to model instances and update state
-      state = AsyncValue.data(populatedData.map(Instance.fromMap).toList());
+      state = AsyncValue.data(instances);
+
+      // invalidate event details providers
+      for (final instance in instances) {
+        final instanceProvider = eventDetailsProvider(instance.id!);
+        if (ref.exists(instanceProvider)) {
+          ref.invalidate(instanceProvider);
+        }
+      }
     });
 
     return future;
