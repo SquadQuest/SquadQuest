@@ -30,7 +30,7 @@ final _statusGroupOrder = {
   InstanceMemberStatus.invited: 4,
 };
 
-enum Menu { showSetRallyPointMap, showLiveMap, getLink, edit, cancel }
+enum Menu { showSetRallyPointMap, showLiveMap, getLink, edit, cancel, uncancel }
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
   final InstanceID instanceId;
@@ -120,7 +120,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     });
   }
 
-  Future<void> _cancelEvent() async {
+  Future<void> _cancelEvent([bool canceled = true]) async {
     final eventAsync = ref.watch(eventDetailsProvider(widget.instanceId));
 
     if (eventAsync.value == null) {
@@ -130,9 +130,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     final confirmed = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
-              title: const Text('Cancel event?'),
-              content: const Text(
-                  'Are you sure you want to cancel this event? Guests will be alerted.'),
+              title: Text('${canceled ? 'Cancel' : 'Uncancel'} event?'),
+              content: Text(
+                  'Are you sure you want to ${canceled ? 'cancel' : 'uncancel'} this event? Guests will be alerted.'),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -151,12 +151,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
     await ref
         .read(instancesProvider.notifier)
-        .patch(widget.instanceId, {'status': 'canceled'});
+        .patch(widget.instanceId, {'status': canceled ? 'canceled' : 'live'});
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content:
-            Text('Your event has been canceled and guests will be alerted'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Your event has been ${canceled ? 'canceled' : 'uncanceled'} and guests will be alerted'),
       ));
     }
   }
@@ -186,6 +186,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         break;
       case Menu.cancel:
         await _cancelEvent();
+        break;
+      case Menu.uncancel:
+        await _cancelEvent(false);
         break;
     }
   }
@@ -363,8 +366,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   enabled: eventAsync.value != null && !eventAsync.isLoading,
                   child: ListTile(
                     leading: const Icon(Icons.pin_drop_outlined),
-                    title: eventAsync.value == null ||
-                            eventAsync.value!.rallyPoint == null
+                    title: eventAsync.value?.rallyPoint == null
                         ? const Text('Set rally point')
                         : const Text('Update rally point'),
                   ),
@@ -376,11 +378,15 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     title: Text('Edit event'),
                   ),
                 ),
-                const PopupMenuItem<Menu>(
-                  value: Menu.cancel,
+                PopupMenuItem<Menu>(
+                  value: eventAsync.value?.status == InstanceStatus.canceled
+                      ? Menu.uncancel
+                      : Menu.cancel,
                   child: ListTile(
-                    leading: Icon(Icons.cancel),
-                    title: Text('Cancel event'),
+                    leading: const Icon(Icons.cancel),
+                    title: eventAsync.value?.status == InstanceStatus.canceled
+                        ? const Text('Uncancel event')
+                        : const Text('Cancel event'),
                   ),
                 ),
               ]

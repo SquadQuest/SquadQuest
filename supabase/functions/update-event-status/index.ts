@@ -34,8 +34,8 @@ serve(async (request) => {
     );
   }
 
-  // skip if event hasn't been set to canceled
-  if (event.status != "canceled") {
+  // skip if event hasn't been set to canceled / uncanceled
+  if (event.status != "canceled" && oldEvent.status != "canceled") {
     return new Response(
       JSON.stringify({ success: true, event }),
       {
@@ -65,13 +65,17 @@ serve(async (request) => {
     }
 
     await postMessage({
-      notificationType: "event-canceled",
+      notificationType: event.status == "canceled"
+        ? "event-canceled"
+        : "event-uncanceled",
       token: profile.fcm_token,
       title: event.title,
-      body: `Event canceled`,
+      body: event.status == "canceled" ? "Event canceled" : "Event uncanceled",
       url: `https://squadquest.app/#/events/${event.id}`,
       payload: { event },
-      collapseKey: "event-canceled",
+      collapseKey: event.status == "canceled"
+        ? "event-canceled"
+        : "event-uncanceled",
     });
   }
 
