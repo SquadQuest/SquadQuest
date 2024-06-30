@@ -30,14 +30,14 @@ TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
   }
 }
 
-class PostEventScreen extends ConsumerStatefulWidget {
-  const PostEventScreen({super.key});
+class EventEditScreen extends ConsumerStatefulWidget {
+  const EventEditScreen({super.key});
 
   @override
-  ConsumerState<PostEventScreen> createState() => _PostEventScreenState();
+  ConsumerState<EventEditScreen> createState() => _EventEditScreenState();
 }
 
-class _PostEventScreenState extends ConsumerState<PostEventScreen> {
+class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _locationDescriptionController = TextEditingController();
