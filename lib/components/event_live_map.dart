@@ -113,11 +113,19 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
         ]));
   }
 
+  @override
+  void dispose() {
+    controller = null;
+    super.dispose();
+  }
+
   void _onMapCreated(MapLibreMapController controller) {
     this.controller = controller;
   }
 
   void _onStyleLoadedCallback() async {
+    if (controller == null) return;
+
     // configure symbols
     await controller!.setSymbolIconAllowOverlap(true);
     await controller!.setSymbolTextAllowOverlap(true);
@@ -188,6 +196,9 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
     final userProfiles = await ref
         .read(profilesCacheProvider.notifier)
         .fetchProfiles(pointsByUser.keys.toSet());
+
+    // abort if controller disposed
+    if (controller == null) return;
 
     // render each user's symbol and trail
     double minLatitude =
