@@ -139,7 +139,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         }
         break;
       case Menu.edit:
-        logger.i('Edit event');
+        context.pushNamed('event-edit', pathParameters: {
+          'id': widget.instanceId,
+        });
         break;
       case Menu.cancel:
         logger.i('Cancel event');

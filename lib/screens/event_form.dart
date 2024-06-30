@@ -31,13 +31,16 @@ TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
 }
 
 class EventEditScreen extends ConsumerStatefulWidget {
-  const EventEditScreen({super.key});
+  final InstanceID? instanceId;
+
+  const EventEditScreen({super.key, this.instanceId});
 
   @override
   ConsumerState<EventEditScreen> createState() => _EventEditScreenState();
 }
 
 class _EventEditScreenState extends ConsumerState<EventEditScreen> {
+  late AsyncValue<Instance?> _editingInstance;
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _locationDescriptionController = TextEditingController();
@@ -159,6 +162,32 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     super.initState();
 
     startDate = DateTime.now();
+
+    if (widget.instanceId == null) {
+      _editingInstance = const AsyncValue.data(null);
+    } else {
+      _editingInstance = const AsyncValue.loading();
+      final instancesController = ref.read(instancesProvider.notifier);
+      AsyncValue.guard(() => instancesController.getById(widget.instanceId!))
+          .then((instanceAsync) {
+        // pre-populate form controllers
+        final instance = instanceAsync.value!;
+        _titleController.text = instance.title;
+        _locationDescriptionController.text = instance.locationDescription;
+        ref.read(_topicProvider.notifier).state = instance.topic;
+        ref.read(_locationProvider.notifier).state = instance.rallyPoint;
+        ref.read(_startTimeMinProvider.notifier).state =
+            TimeOfDay.fromDateTime(instance.startTimeMin);
+        ref.read(_startTimeMaxProvider.notifier).state =
+            TimeOfDay.fromDateTime(instance.startTimeMax);
+        ref.read(_visibilityProvider.notifier).state = instance.visibility;
+
+        // apply AsyncValue to state
+        setState(() {
+          _editingInstance = instanceAsync;
+        });
+      });
+    }
   }
 
   @override
@@ -168,103 +197,109 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       showDrawer: false,
       showLocationSharingSheet: false,
       bodyPadding: const EdgeInsets.all(16),
-      body: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                autofocus: true,
-                readOnly: submitted,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  // prefixIcon: Icon(Icons.flag),
-                  labelText: 'Title for event',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter event title';
-                  }
-                  return null;
-                },
-                controller: _titleController,
-              ),
-              const SizedBox(
-                height: 24,
-              ),
-              FormTopicPicker(valueProvider: _topicProvider),
-              const SizedBox(
-                height: 24,
-              ),
-              TextFormField(
-                readOnly: submitted,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  // prefixIcon: Icon(Icons.pin_drop),
-                  labelText: 'Description of location',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter location descrption';
-                  }
-                  return null;
-                },
-                controller: _locationDescriptionController,
-              ),
-              const SizedBox(
-                height: 24,
-              ),
-              FormLocationPicker(valueProvider: _locationProvider),
-              const SizedBox(
-                height: 24,
-              ),
-              FormDatePicker(
-                  labelText: 'Date to meet up on',
-                  initialValue: startDate,
-                  onChanged: (DateTime date) {
-                    setState(() {
-                      startDate = date;
-                    });
-                  }),
-              const SizedBox(height: 16),
-              FormTimePicker(
-                  labelText: 'Earliest time to meet up at',
-                  valueProvider: _startTimeMinProvider,
-                  onChanged: (TimeOfDay time) {
-                    if (!startTimeMaxSet) {
-                      ref.read(_startTimeMaxProvider.notifier).state =
-                          _plusMinutes(time, 15);
-                    }
-                  }),
-              const SizedBox(height: 16),
-              FormTimePicker(
-                  labelText: 'Latest time to meet up by',
-                  valueProvider: _startTimeMaxProvider,
-                  onChanged: (TimeOfDay time) {
-                    setState(() {
-                      startTimeMaxSet = true;
-                    });
-                  }),
-              const SizedBox(height: 16),
-              FormVisibilityPicker(
-                  labelText: 'Visibility of this posting',
-                  valueProvider: _visibilityProvider),
-              const SizedBox(height: 16),
-              submitted
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: submitted ? null : () => _submitEvent(context),
-                      child: const Text(
-                        'Post',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
+      body: _editingInstance.when(
+          error: (error, __) =>
+              Center(child: Text('Error loading event: $error')),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          data: (Instance? instance) => SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        autofocus: instance == null,
+                        readOnly: submitted,
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          // prefixIcon: Icon(Icons.flag),
+                          labelText: 'Title for event',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter event title';
+                          }
+                          return null;
+                        },
+                        controller: _titleController,
                       ),
-                    )
-            ],
-          ),
-        ),
-      ),
+                      const SizedBox(
+                        height: 24,
+                      ),
+                      FormTopicPicker(valueProvider: _topicProvider),
+                      const SizedBox(
+                        height: 24,
+                      ),
+                      TextFormField(
+                        readOnly: submitted,
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          // prefixIcon: Icon(Icons.pin_drop),
+                          labelText: 'Description of location',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter location descrption';
+                          }
+                          return null;
+                        },
+                        controller: _locationDescriptionController,
+                      ),
+                      const SizedBox(
+                        height: 24,
+                      ),
+                      FormLocationPicker(valueProvider: _locationProvider),
+                      const SizedBox(
+                        height: 24,
+                      ),
+                      FormDatePicker(
+                          labelText: 'Date to meet up on',
+                          initialValue: startDate,
+                          onChanged: (DateTime date) {
+                            setState(() {
+                              startDate = date;
+                            });
+                          }),
+                      const SizedBox(height: 16),
+                      FormTimePicker(
+                          labelText: 'Earliest time to meet up at',
+                          valueProvider: _startTimeMinProvider,
+                          onChanged: (TimeOfDay time) {
+                            if (!startTimeMaxSet) {
+                              ref.read(_startTimeMaxProvider.notifier).state =
+                                  _plusMinutes(time, 15);
+                            }
+                          }),
+                      const SizedBox(height: 16),
+                      FormTimePicker(
+                          labelText: 'Latest time to meet up by',
+                          valueProvider: _startTimeMaxProvider,
+                          onChanged: (TimeOfDay time) {
+                            setState(() {
+                              startTimeMaxSet = true;
+                            });
+                          }),
+                      const SizedBox(height: 16),
+                      FormVisibilityPicker(
+                          labelText: 'Visibility of this posting',
+                          valueProvider: _visibilityProvider),
+                      const SizedBox(height: 16),
+                      submitted
+                          ? const Center(child: CircularProgressIndicator())
+                          : ElevatedButton(
+                              onPressed: submitted
+                                  ? null
+                                  : () => _submitEvent(context),
+                              child: const Text(
+                                'Post',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18),
+                              ),
+                            )
+                    ],
+                  ),
+                ),
+              )),
     );
   }
 }

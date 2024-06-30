@@ -81,6 +81,12 @@ final routerProvider = Provider((ref) {
             EventDetailsScreen(instanceId: state.pathParameters['id']!),
       ),
       GoRoute(
+        name: 'event-edit',
+        path: '/events/:id/edit',
+        builder: (context, GoRouterState state) =>
+            EventEditScreen(instanceId: state.pathParameters['id']!),
+      ),
+      GoRoute(
         name: 'friends',
         path: '/friends',
         builder: (context, state) => const FriendsScreen(),
