@@ -125,7 +125,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           id: _editingInstance.value?.id,
           createdAt: _editingInstance.value?.createdAt,
           createdBy: _editingInstance.value?.createdBy,
-          updatedAt: _editingInstance.value == null ? null : DateTime.now(),
           title: _titleController.text.trim(),
           topic: ref.read(_topicProvider),
           startTimeMin: startDateTimeMin,

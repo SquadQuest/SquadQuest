@@ -102,3 +102,7 @@ execute function "supabase_functions"."http_request" (
   '{}',
   '1000'
 );
+
+CREATE TRIGGER instance_updated_timestamp BEFORE
+UPDATE ON instances FOR EACH ROW
+EXECUTE PROCEDURE set_updated_timestamp ();
