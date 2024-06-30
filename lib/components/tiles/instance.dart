@@ -9,11 +9,22 @@ class InstanceTile extends ListTile {
 
   InstanceTile({super.key, super.onTap, required this.instance, this.rsvp})
       : super(
-          leading: visibilityIcons[instance.visibility],
-          title: Text(instance.title),
+          leading: statusIcons[instance.status] ??
+              visibilityIcons[instance.visibility],
+          title: Text(
+            instance.title,
+            style: TextStyle(
+              decoration: instance.status == InstanceStatus.canceled
+                  ? TextDecoration.lineThrough
+                  : null,
+            ),
+          ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (instance.status == InstanceStatus.canceled) ...[
+                const Text('Status: CANCELED')
+              ],
               Text('Location: ${instance.locationDescription}'),
               Text('Topic: ${instance.topic?.name}'),
               Text(

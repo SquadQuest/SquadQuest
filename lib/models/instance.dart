@@ -10,12 +10,18 @@ typedef InstanceMemberID = String;
 
 enum InstanceVisibility { private, friends, public }
 
+enum InstanceStatus { draft, live, canceled }
+
 enum InstanceMemberStatus { invited, no, maybe, yes, omw }
 
 Map<InstanceVisibility, Icon> visibilityIcons = {
   InstanceVisibility.private: const Icon(Icons.lock),
   InstanceVisibility.friends: const Icon(Icons.people),
   InstanceVisibility.public: const Icon(Icons.public),
+};
+
+Map<InstanceStatus, Icon> statusIcons = {
+  InstanceStatus.canceled: const Icon(Icons.cancel_outlined),
 };
 
 Map<InstanceMemberStatus, Icon> rsvpIcons = {
@@ -33,6 +39,7 @@ class Instance {
     this.createdBy,
     this.createdById,
     this.updatedAt,
+    this.status = InstanceStatus.live,
     required this.startTimeMin,
     required this.startTimeMax,
     this.topic,
@@ -60,6 +67,7 @@ class Instance {
   final UserProfile? createdBy;
   final UserID? createdById;
   final DateTime? updatedAt;
+  final InstanceStatus status;
   final DateTime startTimeMin;
   final DateTime startTimeMax;
   final Topic? topic;
@@ -101,6 +109,9 @@ class Instance {
         updatedAt: map['updated_at'] == null
             ? null
             : DateTime.parse(map['updated_at']).toLocal(),
+        status: InstanceStatus.values.firstWhere(
+          (e) => e.name == map['status'],
+        ),
         startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
         startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
         topic: topicModel,
@@ -118,6 +129,7 @@ class Instance {
 
   Map<String, dynamic> toMap() {
     final data = {
+      'status': status.name,
       'start_time_min': startTimeMin.toUtc().toIso8601String(),
       'start_time_max': startTimeMax.toUtc().toIso8601String(),
       'topic': topic?.id ?? topicId,

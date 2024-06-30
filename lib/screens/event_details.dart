@@ -330,6 +330,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           loading: () => '',
           error: (_, __) => 'Error loading event details',
         ),
+        titleStyle: eventAsync.valueOrNull?.status == InstanceStatus.canceled
+            ? const TextStyle(
+                decoration: TextDecoration.lineThrough,
+              )
+            : null,
         actions: [
           PopupMenuButton<Menu>(
             icon: const Icon(Icons.more_vert),
@@ -400,6 +405,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                             child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  if (event.status ==
+                                      InstanceStatus.canceled) ...[
+                                    const Text('Status: CANCELED')
+                                  ],
                                   Text(
                                       'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
                                   Text(
