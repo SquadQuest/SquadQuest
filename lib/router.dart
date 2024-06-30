@@ -54,7 +54,7 @@ final routerProvider = Provider((ref) {
             VerifyScreen(redirect: state.uri.queryParameters['redirect']),
       ),
       GoRoute(
-        name: 'profile',
+        name: 'profile-edit',
         path: '/profile',
         builder: (context, state) =>
             ProfileFormScreen(redirect: state.uri.queryParameters['redirect']),

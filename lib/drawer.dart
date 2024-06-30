@@ -44,7 +44,7 @@ final _menu = [
   _MenuItem(
     icon: Icons.person,
     label: 'Profile',
-    route: 'profile',
+    route: 'profile-edit',
   ),
   _MenuItem(
     icon: Icons.settings,
