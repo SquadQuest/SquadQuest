@@ -120,6 +120,47 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     });
   }
 
+  Future<void> _cancelEvent() async {
+    final eventAsync = ref.watch(eventDetailsProvider(widget.instanceId));
+
+    if (eventAsync.value == null) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+              title: const Text('Cancel event?'),
+              content: const Text(
+                  'Are you sure you want to cancel this event? Guests will be alerted.'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('No'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Yes'),
+                ),
+              ],
+            ));
+
+    if (confirmed != true) {
+      return;
+    }
+
+    await ref
+        .read(instancesProvider.notifier)
+        .patch(widget.instanceId, {'status': 'canceled'});
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content:
+            Text('Your event has been canceled and guests will be alerted'),
+      ));
+    }
+  }
+
   void _onMenuSelect(Menu item) async {
     switch (item) {
       case Menu.showSetRallyPointMap:
@@ -144,7 +185,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         });
         break;
       case Menu.cancel:
-        logger.i('Cancel event');
+        await _cancelEvent();
         break;
     }
   }
