@@ -140,7 +140,6 @@ services:
       GOTRUE_SMS_TWILIO_VERIFY_ACCOUNT_SID: ${TWILIO_VERIFY_ACCOUNT_SID}
       GOTRUE_SMS_TWILIO_VERIFY_AUTH_TOKEN: ${TWILIO_VERIFY_AUTH_TOKEN}
       GOTRUE_SMS_TWILIO_VERIFY_MESSAGE_SERVICE_SID: ${TWILIO_VERIFY_MESSAGE_SERVICE_SID}
-
       # Uncomment to enable custom access token hook. You'll need to create a public.custom_access_token_hook function and grant necessary permissions.
       # See: https://supabase.com/docs/guides/auth/auth-hooks#hook-custom-access-token for details
       # GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_ENABLED="true"
@@ -306,6 +305,8 @@ services:
     depends_on:
       analytics:
         condition: service_healthy
+    ports:
+      - 0.0.0.0:9229:9229/tcp
     environment:
       JWT_SECRET: ${JWT_SECRET}
       SUPABASE_URL: http://kong:8000
@@ -319,6 +320,7 @@ services:
     command:
       - start
       - --verbose
+      # - --inspect-wait=0.0.0.0:9229
       - --main-service
       - /home/deno/functions/main
 
