@@ -13,6 +13,7 @@ import 'package:squadquest/components/pickers/time.dart';
 import 'package:squadquest/components/pickers/visibility.dart';
 import 'package:squadquest/components/pickers/topic.dart';
 import 'package:squadquest/controllers/instances.dart';
+import 'package:squadquest/router.dart';
 
 TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
   if (minutes == 0) {
@@ -121,6 +122,10 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       final instancesController = ref.read(instancesProvider.notifier);
 
       final Instance draftInstance = Instance(
+          id: _editingInstance.value?.id,
+          createdAt: _editingInstance.value?.createdAt,
+          createdBy: _editingInstance.value?.createdBy,
+          updatedAt: _editingInstance.value == null ? null : DateTime.now(),
           title: _titleController.text.trim(),
           topic: ref.read(_topicProvider),
           startTimeMin: startDateTimeMin,
@@ -140,8 +145,20 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         content: Text('Event posted!'),
       ));
 
-      context.pushReplacementNamed('event-details',
-          pathParameters: {'id': savedInstance.id!});
+      final router = ref.read(routerProvider);
+      final routeMatches = router.routerDelegate.currentConfiguration.matches;
+      final previousRoute = routeMatches.length > 1
+          ? routeMatches[routeMatches.length - 2]
+          : null;
+
+      // if previous screen is details for this event, just pop it back
+      if (previousRoute != null &&
+          previousRoute.matchedLocation == '/events/${savedInstance.id}') {
+        context.pop();
+      } else {
+        context.pushReplacementNamed('event-details',
+            pathParameters: {'id': savedInstance.id!});
+      }
     } catch (error) {
       log('Error saving instance : $error');
 
@@ -170,20 +187,21 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       final instancesController = ref.read(instancesProvider.notifier);
       AsyncValue.guard(() => instancesController.getById(widget.instanceId!))
           .then((instanceAsync) {
-        // pre-populate form controllers
-        final instance = instanceAsync.value!;
-        _titleController.text = instance.title;
-        _locationDescriptionController.text = instance.locationDescription;
-        ref.read(_topicProvider.notifier).state = instance.topic;
-        ref.read(_locationProvider.notifier).state = instance.rallyPoint;
-        ref.read(_startTimeMinProvider.notifier).state =
-            TimeOfDay.fromDateTime(instance.startTimeMin);
-        ref.read(_startTimeMaxProvider.notifier).state =
-            TimeOfDay.fromDateTime(instance.startTimeMax);
-        ref.read(_visibilityProvider.notifier).state = instance.visibility;
-
-        // apply AsyncValue to state
         setState(() {
+          // pre-populate form controllers
+          final instance = instanceAsync.value!;
+          _titleController.text = instance.title;
+          _locationDescriptionController.text = instance.locationDescription;
+          ref.read(_topicProvider.notifier).state = instance.topic;
+          ref.read(_locationProvider.notifier).state = instance.rallyPoint;
+          startDate = instance.startTimeMin;
+          ref.read(_startTimeMinProvider.notifier).state =
+              TimeOfDay.fromDateTime(instance.startTimeMin);
+          ref.read(_startTimeMaxProvider.notifier).state =
+              TimeOfDay.fromDateTime(instance.startTimeMax);
+          ref.read(_visibilityProvider.notifier).state = instance.visibility;
+
+          // apply AsyncValue to state
           _editingInstance = instanceAsync;
         });
       });
@@ -193,13 +211,17 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Post an event',
+      title: _editingInstance.when(
+        data: (Instance? instance) =>
+            instance == null ? 'Post an event' : 'Edit event',
+        loading: () => '',
+        error: (_, __) => 'Error loading event',
+      ),
       showDrawer: false,
       showLocationSharingSheet: false,
       bodyPadding: const EdgeInsets.all(16),
       body: _editingInstance.when(
-          error: (error, __) =>
-              Center(child: Text('Error loading event: $error')),
+          error: (error, __) => Center(child: Text(error.toString())),
           loading: () => const Center(child: CircularProgressIndicator()),
           data: (Instance? instance) => SingleChildScrollView(
                 child: Form(
@@ -255,6 +277,10 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                       FormDatePicker(
                           labelText: 'Date to meet up on',
                           initialValue: startDate,
+                          firstDate: instance == null ||
+                                  instance.startTimeMax.isAfter(DateTime.now())
+                              ? null
+                              : instance.startTimeMin,
                           onChanged: (DateTime date) {
                             setState(() {
                               startDate = date;
@@ -290,8 +316,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                               onPressed: submitted
                                   ? null
                                   : () => _submitEvent(context),
-                              child: const Text(
-                                'Post',
+                              child: Text(
+                                instance == null ? 'Post' : 'Save Changes',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 18),
                               ),

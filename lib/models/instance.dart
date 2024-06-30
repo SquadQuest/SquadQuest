@@ -32,6 +32,7 @@ class Instance {
     this.createdAt,
     this.createdBy,
     this.createdById,
+    this.updatedAt,
     required this.startTimeMin,
     required this.startTimeMax,
     this.topic,
@@ -58,6 +59,7 @@ class Instance {
   final DateTime? createdAt;
   final UserProfile? createdBy;
   final UserID? createdById;
+  final DateTime? updatedAt;
   final DateTime startTimeMin;
   final DateTime startTimeMax;
   final Topic? topic;
@@ -96,6 +98,9 @@ class Instance {
         createdById: createdByModel == null
             ? map['created_by'] as UserID
             : createdByModel.id,
+        updatedAt: map['updated_at'] == null
+            ? null
+            : DateTime.parse(map['updated_at']).toLocal(),
         startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
         startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
         topic: topicModel,
@@ -126,6 +131,10 @@ class Instance {
 
     if (id != null) {
       data['id'] = id!;
+    }
+
+    if (updatedAt != null) {
+      data['updated_at'] = updatedAt!.toUtc().toIso8601String();
     }
 
     return data;
