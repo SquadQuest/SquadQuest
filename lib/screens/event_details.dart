@@ -383,11 +383,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                           const Positioned(
                                               top: 0,
                                               right: 0,
-                                              child: Icon(
+                                              child: IgnorePointer(
+                                                  child: Icon(
                                                 Icons.zoom_in,
                                                 // color: Colors.red,
                                                 size: 32,
-                                              )),
+                                              ))),
                                           eventPointsAsync.when(
                                             data: (eventPoints) =>
                                                 eventPoints == null ||
@@ -397,20 +398,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                         bottom: 0,
                                                         left: 0,
                                                         right: 0,
-                                                        child: Container(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    0.5),
-                                                            child: Text(
-                                                              '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
-                                                              style:
-                                                                  const TextStyle(
+                                                        child: IgnorePointer(
+                                                            child: Container(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        0.5),
+                                                                child: Text(
+                                                                  '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
+                                                                  style: const TextStyle(
                                                                       fontSize:
                                                                           12),
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                            ))),
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
+                                                                )))),
                                             loading: () =>
                                                 const SizedBox.shrink(),
                                             error: (_, __) =>
