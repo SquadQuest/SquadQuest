@@ -1,10 +1,13 @@
 create type public.instance_visibility as enum ('private', 'friends', 'public');
 
+create type public.instance_status as enum ('draft', 'live', 'canceled');
+
 create table public.instances (
   id uuid not null default gen_random_uuid (),
   created_at timestamp with time zone not null default now(),
   created_by uuid not null default uid (),
   updated_at timestamp with time zone null,
+  status public.instance_status not null default 'live' :: instance_status,
   start_time_min timestamp with time zone null,
   start_time_max timestamp with time zone null,
   topic uuid null,
@@ -18,14 +21,22 @@ create table public.instances (
   constraint instances_created_by_fkey foreign key (created_by) references profiles (id)
 );
 
+create policy "Creators can always read their own events" on "public"."instances" as PERMISSIVE for
+SELECT
+  to authenticated using (created_by = auth.uid());
+
 create policy "Everyone can read public instances" on "public"."instances" as PERMISSIVE for
 SELECT
-  to authenticated using (visibility = 'public');
+  to authenticated using (
+    visibility = 'public'
+    AND status IN ('live', 'canceled')
+  );
 
 create policy "Creator & friends & members can read friends instances" on "public"."instances" as PERMISSIVE for
 SELECT
   to authenticated using (
     visibility = 'friends'
+    AND status IN ('live', 'canceled')
     AND (
       created_by = auth.uid()
       OR id IN (
@@ -54,6 +65,7 @@ create policy "Creator & members can read private instances" on "public"."instan
 SELECT
   to authenticated using (
     visibility = 'private'
+    AND status IN ('live', 'canceled')
     AND (
       created_by = auth.uid()
       OR id IN (
