@@ -6,7 +6,7 @@ import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/screens/splash.dart';
 import 'package:squadquest/screens/login.dart';
 import 'package:squadquest/screens/verify.dart';
-import 'package:squadquest/screens/profile.dart';
+import 'package:squadquest/screens/profile_form.dart';
 import 'package:squadquest/screens/home.dart';
 import 'package:squadquest/screens/settings.dart';
 import 'package:squadquest/screens/event_form.dart';
@@ -57,7 +57,7 @@ final routerProvider = Provider((ref) {
         name: 'profile',
         path: '/profile',
         builder: (context, state) =>
-            ProfileScreen(redirect: state.uri.queryParameters['redirect']),
+            ProfileFormScreen(redirect: state.uri.queryParameters['redirect']),
       ),
       GoRoute(
         name: 'home',

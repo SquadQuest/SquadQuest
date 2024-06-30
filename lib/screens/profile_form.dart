@@ -7,16 +7,16 @@ import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ProfileScreen extends ConsumerStatefulWidget {
+class ProfileFormScreen extends ConsumerStatefulWidget {
   final String? redirect;
 
-  const ProfileScreen({super.key, this.redirect});
+  const ProfileFormScreen({super.key, this.redirect});
 
   @override
-  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileFormScreen> createState() => _ProfileFormScreenState();
 }
 
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
