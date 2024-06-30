@@ -9,6 +9,7 @@ final _bottomPaddingProvider = StateProvider<double?>((ref) => null);
 
 class AppScaffold extends StatelessWidget {
   final String title;
+  final TextStyle? titleStyle;
   final Widget body;
   final EdgeInsetsGeometry? bodyPadding;
   final bool showDrawer;
@@ -20,6 +21,7 @@ class AppScaffold extends StatelessWidget {
   AppScaffold(
       {super.key,
       required this.title,
+      this.titleStyle,
       required this.body,
       this.bodyPadding,
       this.showDrawer = true,
@@ -73,7 +75,7 @@ class AppScaffold extends StatelessWidget {
             ]);
           }),
       appBar: AppBar(
-        title: Text(title),
+        title: Text(title, style: titleStyle),
         actions: actions,
       ),
       drawer: showDrawer ? const AppDrawer() : null,

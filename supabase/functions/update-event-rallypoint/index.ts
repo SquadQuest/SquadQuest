@@ -37,14 +37,14 @@ serve(async (request) => {
   // connect to Supabase
   const serviceRoleSupabase = getServiceRoleSupabaseClient();
 
-  // get RSVPs to all yes/maybe RSVPs but creator
+  // get RSVPs to all maybe/yes/omw RSVPs but creator
   const { data: rsvps, error: rsvpsError } = await serviceRoleSupabase.from(
     "instance_members",
   )
     .select("*, member(*)")
     .eq("instance", event.id)
     .neq("member", event.created_by)
-    .in("status", ["yes", "omw"]);
+    .in("status", ["maybe", "yes", "omw"]);
   if (rsvpsError) throw rsvpsError;
 
   // send notification to all queued recipients
@@ -64,7 +64,7 @@ serve(async (request) => {
     });
   }
 
-  // return new friend request
+  // return event
   return new Response(
     JSON.stringify({ success: true, event }),
     {

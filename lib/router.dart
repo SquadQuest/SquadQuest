@@ -9,7 +9,7 @@ import 'package:squadquest/screens/verify.dart';
 import 'package:squadquest/screens/profile.dart';
 import 'package:squadquest/screens/home.dart';
 import 'package:squadquest/screens/settings.dart';
-import 'package:squadquest/screens/post_event.dart';
+import 'package:squadquest/screens/event_form.dart';
 import 'package:squadquest/screens/event_details.dart';
 import 'package:squadquest/screens/friends.dart';
 import 'package:squadquest/screens/map.dart';
@@ -72,13 +72,19 @@ final routerProvider = Provider((ref) {
       GoRoute(
         name: 'post-event',
         path: '/post-event',
-        builder: (context, state) => const PostEventScreen(),
+        builder: (context, state) => const EventEditScreen(),
       ),
       GoRoute(
         name: 'event-details',
         path: '/events/:id',
         builder: (context, GoRouterState state) =>
             EventDetailsScreen(instanceId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        name: 'event-edit',
+        path: '/events/:id/edit',
+        builder: (context, GoRouterState state) =>
+            EventEditScreen(instanceId: state.pathParameters['id']!),
       ),
       GoRoute(
         name: 'friends',
