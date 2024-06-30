@@ -4,6 +4,7 @@ create table public.instances (
   id uuid not null default gen_random_uuid (),
   created_at timestamp with time zone not null default now(),
   created_by uuid not null default uid (),
+  updated_at timestamp with time zone null,
   start_time_min timestamp with time zone null,
   start_time_max timestamp with time zone null,
   topic uuid null,
@@ -77,9 +78,10 @@ create policy "Authenticated users can update their own instances" on "public"."
 UPDATE
   to authenticated using (created_by = auth.uid()) with check (created_by = auth.uid());
 
-CREATE TRIGGER instance_rallypoint_change BEFORE
+CREATE TRIGGER instance_rallypoint_change
+AFTER
 UPDATE
-  OF rally_point_text ON instances FOR EACH ROW execute function "supabase_functions"."http_request"(
+  OF rally_point ON instances FOR EACH ROW execute function "supabase_functions"."http_request"(
     'http://functions:9000/update-rally-point',
     'POST',
     '{"Content-Type":"application/json"}',
