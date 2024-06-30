@@ -20,7 +20,19 @@ type WebhookPayload = {
 serve(async (request) => {
   // process request
   assertPost(request);
-  const { record: event }: WebhookPayload = await request.json();
+  const { record: event, old_record: oldEvent }: WebhookPayload = await request
+    .json();
+
+  // skip rest of function if rally point hasn't been modified
+  if (!oldEvent || event.rally_point == oldEvent.rally_point) {
+    return new Response(
+      JSON.stringify({ success: true, event }),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 304,
+      },
+    );
+  }
 
   // connect to Supabase
   const serviceRoleSupabase = getServiceRoleSupabaseClient();
