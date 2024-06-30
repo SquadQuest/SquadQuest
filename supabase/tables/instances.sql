@@ -96,7 +96,7 @@ CREATE TRIGGER instance_rallypoint_change
 AFTER
 UPDATE OF rally_point ON instances FOR EACH ROW
 execute function "supabase_functions"."http_request" (
-  'http://functions:9000/update-rally-point',
+  'http://functions:9000/update-event-rallypoint',
   'POST',
   '{"Content-Type":"application/json"}',
   '{}',
