@@ -245,7 +245,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
   @override
   void dispose() {
-    _refreshEventPointsTimer?.cancel();
+    _refreshEventPointsTimer.cancel();
     super.dispose();
   }
 
@@ -321,20 +321,20 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         : const Text('Update rally point'),
                   ),
                 ),
-                // const PopupMenuItem<Menu>(
-                //   value: Menu.edit,
-                //   child: ListTile(
-                //     leading: Icon(Icons.delete_outline),
-                //     title: Text('Edit event'),
-                //   ),
-                // ),
-                // const PopupMenuItem<Menu>(
-                //   value: Menu.cancel,
-                //   child: ListTile(
-                //     leading: Icon(Icons.cancel),
-                //     title: Text('Cancel event'),
-                //   ),
-                // ),
+                const PopupMenuItem<Menu>(
+                  value: Menu.edit,
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline),
+                    title: Text('Edit event'),
+                  ),
+                ),
+                const PopupMenuItem<Menu>(
+                  value: Menu.cancel,
+                  child: ListTile(
+                    leading: Icon(Icons.cancel),
+                    title: Text('Cancel event'),
+                  ),
+                ),
               ]
             ],
           ),

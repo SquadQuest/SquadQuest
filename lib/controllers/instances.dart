@@ -35,7 +35,6 @@ final eventPointsProvider = FutureProvider.autoDispose
       .maybeSingle();
 
   return eventPoints == null ? null : EventPoints.fromMap(eventPoints);
-  ;
 });
 
 class InstancesController extends AsyncNotifier<List<Instance>> {
