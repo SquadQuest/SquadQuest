@@ -2,15 +2,19 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:squadquest/models/topic_member.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:squadquest/logger.dart';
+import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
+import 'package:squadquest/services/topics_cache.dart';
+import 'package:squadquest/controllers/topic_memberships.dart';
 import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/models/topic_member.dart';
 import 'package:squadquest/components/tiles/instance.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -25,8 +29,9 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   AsyncValue<UserProfile> profileAsync = const AsyncValue.loading();
   AsyncValue<List<InstanceMember>> rsvpsAsync = const AsyncValue.loading();
-  AsyncValue<List<TopicMember>> topicMembershipsAsync =
+  AsyncValue<List<MyTopicMembership>> myTopicMembershipsAsync =
       const AsyncValue.loading();
+  final Map<TopicID, bool> pendingChanges = {};
 
   @override
   void initState() {
@@ -52,24 +57,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         .order('start_time_max', referencedTable: 'instance', ascending: false)
         .withConverter((data) => data.map(InstanceMember.fromMap).toList())
         .then((rsvps) async {
-          await Future.delayed(const Duration(seconds: 1));
           setState(() {
             rsvpsAsync = AsyncValue.data(rsvps);
           });
         });
 
     // load topics
-    supabase
-        .from('topic_members')
-        .select('*, topic(*)')
-        .eq('member', widget.userId)
-        // .order('name', referencedTable: 'topic', ascending: true) // why this no work? sorting locally below
-        .withConverter((data) => data.map(TopicMember.fromMap).toList())
-        .then((topicMemberships) async {
-      await Future.delayed(const Duration(seconds: 1));
-      topicMemberships.sort((a, b) => a.topic!.name.compareTo(b.topic!.name));
+    supabase.functions.invoke('get-friend-profile',
+        method: HttpMethod.get,
+        queryParameters: {'user_id': widget.userId}).then((response) async {
+      final topicsCache = ref.read(topicsCacheProvider.notifier);
+      final topicMembershipsData =
+          response.data['topic_subscriptions'].cast<Map<String, dynamic>>();
+      final populatedData = await topicsCache.populateData(
+          topicMembershipsData, [(idKey: 'topic', modelKey: 'topic')]);
+      populatedData.sort((a, b) => a['topic'].name.compareTo(b['topic'].name));
+
       setState(() {
-        topicMembershipsAsync = AsyncValue.data(topicMemberships);
+        myTopicMembershipsAsync = AsyncValue.data(
+            populatedData.map(MyTopicMembership.fromMap).toList());
+      });
+    }).onError((FunctionException error, stackTrace) {
+      setState(() {
+        myTopicMembershipsAsync = AsyncValue.error(
+            Exception(error.details
+                .toString()
+                .replaceAll(RegExp(r'^[a-z\-]+: '), '')),
+            stackTrace);
       });
     });
   }
@@ -146,20 +160,62 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     delegate: _SectionHeaderDelegate('Subscribed topics'),
                     pinned: true,
                   ),
-                  topicMembershipsAsync.when(
+                  myTopicMembershipsAsync.when(
                       loading: () => const SliverToBoxAdapter(
                           child: Center(child: CircularProgressIndicator())),
                       error: (error, _) =>
                           SliverToBoxAdapter(child: Text(error.toString())),
                       data: (topicMemberships) => SliverList.list(
                             children: topicMemberships
-                                .map((topicMembership) => ListTile(
-                                    title: Text(topicMembership.topic!.name)))
+                                .map((topicMembership) => CheckboxListTile(
+                                        title: Text(topicMembership.topic.name),
+                                        enabled: !pendingChanges.containsKey(
+                                            topicMembership.topic.id),
+                                        value: pendingChanges[
+                                                topicMembership.topic.id] ??
+                                            topicMembership.subscribed,
+                                        onChanged: (newValue) =>
+                                            _onTopicCheckboxChanged(
+                                                topicMembership, newValue))
+                                    // ListTile(
+                                    //                 title: Text(topicMembership.topic!.name))
+                                    )
                                 .toList(),
                           )),
                 ],
               )),
     );
+  }
+
+  void _onTopicCheckboxChanged(
+      MyTopicMembership topicMembership, bool? value) async {
+    // mark as pending
+    setState(() {
+      pendingChanges[topicMembership.topic.id!] = value == true;
+    });
+
+    // write to database
+    try {
+      final updatedTopicMembership = await ref
+          .read(topicMembershipsProvider.notifier)
+          .saveSubscribed(topicMembership, value == true);
+
+      // update loaded memberships with created/updated one
+      if (myTopicMembershipsAsync.value != null) {
+        myTopicMembershipsAsync = AsyncValue.data(
+            updateListWithRecord<MyTopicMembership>(
+                myTopicMembershipsAsync.value!,
+                (existing) => existing.topic == topicMembership.topic,
+                updatedTopicMembership));
+      }
+    } catch (error) {
+      loggerWithStack.e(error);
+    }
+
+    // unmark as pending
+    setState(() {
+      pendingChanges.remove(topicMembership.topic.id);
+    });
   }
 }
 
