@@ -27,7 +27,6 @@ final eventDetailsProvider = FutureProvider.autoDispose
 
 final eventPointsProvider = FutureProvider.autoDispose
     .family<EventPoints?, InstanceID>((ref, instanceId) async {
-  logger.d('eventPointsProvider initializing for $instanceId');
   final supabase = ref.read(supabaseClientProvider);
   final eventPoints = await supabase
       .from('instance_points')
@@ -36,7 +35,6 @@ final eventPointsProvider = FutureProvider.autoDispose
       .maybeSingle();
 
   return eventPoints == null ? null : EventPoints.fromMap(eventPoints);
-  ;
 });
 
 class InstancesController extends AsyncNotifier<List<Instance>> {
@@ -129,8 +127,6 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
   }
 
   Future<Instance> save(Instance instance) async {
-    assert(instance.id == null, 'Cannot create an instance with an ID');
-
     final supabase = ref.read(supabaseClientProvider);
 
     final Map instanceData = instance.toMap();
@@ -144,26 +140,26 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     }
 
     // create event instance
-    final insertedData = await supabase
+    final savedData = await supabase
         .from('instances')
-        .insert(instanceData)
+        .upsert(instanceData)
         .select(_defaultSelect)
         .single();
 
-    final insertedInstance = Instance.fromMap(insertedData);
+    final savedInstance = Instance.fromMap(savedData);
 
     // update loaded instances with newly created one
     if (state.hasValue && state.value != null) {
       state = AsyncValue.data(updateListWithRecord<Instance>(state.value!,
-          (existing) => existing.id == insertedInstance.id, insertedInstance));
+          (existing) => existing.id == savedInstance.id, savedInstance));
     }
 
     // create rsvp
     await ref
         .read(rsvpsProvider.notifier)
-        .save(insertedInstance.id!, InstanceMemberStatus.yes);
+        .save(savedInstance.id!, InstanceMemberStatus.yes);
 
-    return insertedInstance;
+    return savedInstance;
   }
 
   Future<Instance> patch(InstanceID id, Map<String, dynamic> patchData) async {

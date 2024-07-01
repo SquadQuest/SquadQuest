@@ -19,6 +19,8 @@ class UserProfile {
 
   String get fullName => '$firstName $lastName';
   String? get phoneFormatted => phone == null ? null : formatPhone(phone!);
+  Uri? get phoneUri =>
+      phone == null ? null : Uri(scheme: 'tel', path: phoneFormatted);
 
   factory UserProfile.fromMap(Map<String, dynamic> map) {
     return UserProfile(

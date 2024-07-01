@@ -91,6 +91,16 @@ class FirebaseMessagingService {
       logger.e('Error getting FCM token', error: error);
     }
 
+    // save token initially if profile loaded
+    final profile = ref.read(profileProvider);
+    if (profile.value != null &&
+        token != null &&
+        token != profile.value!.fcmToken) {
+      await ref.read(profileProvider.notifier).patch({
+        'fcm_token': token,
+      });
+    }
+
     // save FCM token to profile—main forced the service to initialize before the app is run so profile will never be set already
     ref.listen(profileProvider, (previous, profile) async {
       logger.i({

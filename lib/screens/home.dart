@@ -78,7 +78,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               orElse: () => null)
                           : null,
                       onTap: () {
-                        context.push('/events/${instance.id}');
+                        context.pushNamed('event-details', pathParameters: {
+                          'id': instance.id!,
+                        });
                       });
                 },
                 itemComparator: (instance1, instance2) {

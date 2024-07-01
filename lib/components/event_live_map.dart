@@ -1,11 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
-import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
@@ -113,13 +111,18 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
         ]));
   }
 
+  @override
+  void dispose() {
+    controller = null;
+    super.dispose();
+  }
+
   void _onMapCreated(MapLibreMapController controller) {
-    logger.d('EventLiveMap._onMapCreated');
     this.controller = controller;
   }
 
   void _onStyleLoadedCallback() async {
-    logger.d('EventLiveMap._onStyleLoadedCallback');
+    if (controller == null) return;
 
     // configure symbols
     await controller!.setSymbolIconAllowOverlap(true);
@@ -187,15 +190,13 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
       pointsByUser[point.createdBy]!.add(point);
     }
 
-    logger.d({
-      'pointsByUser': pointsByUser
-          .map((userId, userPoints) => MapEntry(userId, userPoints.length))
-    });
-
     // load user profiles
     final userProfiles = await ref
         .read(profilesCacheProvider.notifier)
         .fetchProfiles(pointsByUser.keys.toSet());
+
+    // abort if controller disposed
+    if (controller == null) return;
 
     // render each user's symbol and trail
     double minLatitude =

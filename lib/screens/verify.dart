@@ -65,7 +65,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
     if (!context.mounted) return;
 
     if (profile == null) {
-      context.goNamed('profile',
+      context.goNamed('profile-edit',
           queryParameters:
               widget.redirect == null ? {} : {'redirect': widget.redirect});
     } else {

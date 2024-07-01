@@ -64,7 +64,7 @@ class MyTopicMembership {
 
   final Topic topic;
   final bool subscribed;
-  final int events;
+  final int? events;
 
   factory MyTopicMembership.fromMap(Map<String, dynamic> map) {
     final topicModel = map['topic'] is Topic

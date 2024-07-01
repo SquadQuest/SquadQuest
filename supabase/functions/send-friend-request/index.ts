@@ -32,14 +32,14 @@ serve(async (request) => {
   }
 
   // get requestee user
-  const { data: requesteeUser, error: requesteeError } =
-    await serviceRoleSupabase.from(
-      "profiles",
-    )
-      .select("*")
-      .eq("phone", phone)
-      .maybeSingle();
-  if (requesteeError) throw requesteeError;
+  const { data: requesteeUser } = await serviceRoleSupabase.from(
+    "profiles",
+  )
+    .select("*")
+    .eq("phone", phone)
+    .maybeSingle()
+    .throwOnError();
+
   if (!requesteeUser) {
     throw new HttpError(
       "No profile found matching that phone number, ask them to sign up first",
@@ -58,14 +58,14 @@ serve(async (request) => {
   }
 
   // check that no link exists already in either direction
-  const { count: existingFriendsCount, error: existingFriendsError } =
-    await serviceRoleSupabase.from(
-      "friends",
-    )
-      .select("*", { count: "exact", head: true })
-      .in("requester", [currentUser.id, requesteeUser.id])
-      .in("requestee", [currentUser.id, requesteeUser.id]);
-  if (existingFriendsError) throw existingFriendsError;
+  const { count: existingFriendsCount } = await serviceRoleSupabase.from(
+    "friends",
+  )
+    .select("*", { count: "exact", head: true })
+    .in("requester", [currentUser.id, requesteeUser.id])
+    .in("requestee", [currentUser.id, requesteeUser.id])
+    .throwOnError();
+
   if (existingFriendsCount! > 0) {
     throw new HttpError(
       "A matching friend connection already exists for that phone number",
@@ -75,16 +75,15 @@ serve(async (request) => {
   }
 
   // insert friend request
-  const { data: newFriendRequest, error: insertError } =
-    await serviceRoleSupabase.from("friends")
-      .insert({
-        requester: currentUser.id,
-        requestee: requesteeUser.id,
-        status: "requested",
-      })
-      .select("*, requester(*), requestee(*)")
-      .single();
-  if (insertError) throw insertError;
+  const { data: newFriendRequest } = await serviceRoleSupabase.from("friends")
+    .insert({
+      requester: currentUser.id,
+      requestee: requesteeUser.id,
+      status: "requested",
+    })
+    .select("*, requester(*), requestee(*)")
+    .single()
+    .throwOnError();
 
   // scrub profile data
   const fcmToken = newFriendRequest.requestee.fcm_token;

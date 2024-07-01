@@ -1,173 +1,251 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:squadquest/app_scaffold.dart';
-import 'package:squadquest/controllers/auth.dart';
-import 'package:squadquest/controllers/profile.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ProfileScreen extends ConsumerStatefulWidget {
-  final String? redirect;
+import 'package:squadquest/logger.dart';
+import 'package:squadquest/common.dart';
+import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/services/profiles_cache.dart';
+import 'package:squadquest/services/topics_cache.dart';
+import 'package:squadquest/controllers/topic_memberships.dart';
+import 'package:squadquest/models/user.dart';
+import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/models/topic_member.dart';
+import 'package:squadquest/components/tiles/instance.dart';
 
-  const ProfileScreen({super.key, this.redirect});
+class ProfileScreen extends ConsumerStatefulWidget {
+  final UserID userId;
+
+  const ProfileScreen({super.key, required this.userId});
 
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-
-  bool submitted = false;
-
-  void _submitProfile(BuildContext context) async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      submitted = true;
-    });
-
-    try {
-      final session = ref.read(authControllerProvider);
-      final profileController = ref.read(profileProvider.notifier);
-
-      final savedProfile = await profileController.patch({
-        'id': session!.user.id,
-        'first_name': _firstNameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
-        'phone': session.user.phone!,
-      });
-
-      await ref.read(authControllerProvider.notifier).updateUserAttributes({
-        'first_name': savedProfile.firstName,
-        'last_name': savedProfile.lastName,
-        'profile_initialized': true,
-      });
-    } catch (error) {
-      setState(() {
-        submitted = false;
-      });
-
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Failed to update profile:\n\n$error'),
-      ));
-
-      return;
-    }
-
-    if (!context.mounted) return;
-
-    context.go(widget.redirect ?? '/');
-  }
+  AsyncValue<UserProfile> profileAsync = const AsyncValue.loading();
+  AsyncValue<List<InstanceMember>> rsvpsAsync = const AsyncValue.loading();
+  AsyncValue<List<MyTopicMembership>> myTopicMembershipsAsync =
+      const AsyncValue.loading();
+  final Map<TopicID, bool> pendingChanges = {};
 
   @override
   void initState() {
     super.initState();
 
-    final profile = ref.read(profileProvider);
+    final supabase = ref.read(supabaseClientProvider);
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
 
-    if (profile.hasValue && profile.value != null) {
-      _firstNameController.text = profile.value!.firstName;
-      _lastNameController.text = profile.value!.lastName;
-    }
+    // load profile
+    profilesCache.getById(widget.userId).then((profile) {
+      setState(() {
+        profileAsync = AsyncValue.data(profile);
+      });
+    });
+
+    // load RSVPs
+    supabase
+        .from('instance_members')
+        .select('*, instance!inner(*)')
+        .eq('member', widget.userId)
+        .inFilter('status', ['maybe', 'yes', 'omw'])
+        .gt('instance.start_time_max', DateTime.now())
+        .order('start_time_max', referencedTable: 'instance', ascending: false)
+        .withConverter((data) => data.map(InstanceMember.fromMap).toList())
+        .then((rsvps) async {
+          setState(() {
+            rsvpsAsync = AsyncValue.data(rsvps);
+          });
+        });
+
+    // load topics
+    supabase.functions.invoke('get-friend-profile',
+        method: HttpMethod.get,
+        queryParameters: {'user_id': widget.userId}).then((response) async {
+      final topicsCache = ref.read(topicsCacheProvider.notifier);
+      final topicMembershipsData =
+          response.data['topic_subscriptions'].cast<Map<String, dynamic>>();
+      final populatedData = await topicsCache.populateData(
+          topicMembershipsData, [(idKey: 'topic', modelKey: 'topic')]);
+      populatedData.sort((a, b) => a['topic'].name.compareTo(b['topic'].name));
+
+      setState(() {
+        myTopicMembershipsAsync = AsyncValue.data(
+            populatedData.map(MyTopicMembership.fromMap).toList());
+      });
+    }).onError((FunctionException error, stackTrace) {
+      setState(() {
+        myTopicMembershipsAsync = AsyncValue.error(
+            Exception(error.details
+                .toString()
+                .replaceAll(RegExp(r'^[a-z\-]+: '), '')),
+            stackTrace);
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(profileProvider).value;
-
-    ref.listen(profileProvider, (previous, next) {
-      if (next.hasValue && next.value != null) {
-        _firstNameController.text = next.value!.firstName;
-        _lastNameController.text = next.value!.lastName;
-      }
-    });
-
     return AppScaffold(
-      title: profile != null ? 'Update your profile' : 'Set up your profile',
-      showDrawer: profile != null,
-      bodyPadding: const EdgeInsets.only(bottom: 16),
-      body: AutofillGroup(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              if (profile == null)
-                const Text(
-                  'Welcome to SquadQuest!\n\nPlease set up your profile to get started:',
-                  textAlign: TextAlign.center,
-                ),
-              const SizedBox(height: 16),
-              TextFormField(
-                readOnly: submitted,
-                autofillHints: const [AutofillHints.givenName],
-                keyboardType: TextInputType.name,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.person),
-                  labelText: 'First name',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your first name';
-                  }
-                  return null;
-                },
-                controller: _firstNameController,
-              ),
-              TextFormField(
-                readOnly: submitted,
-                autofillHints: const [AutofillHints.familyName],
-                keyboardType: TextInputType.name,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.person),
-                  labelText: 'Last name',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your last name';
-                  }
-                  return null;
-                },
-                controller: _lastNameController,
-              ),
-              const SizedBox(height: 32),
-              submitted
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed:
-                          submitted ? null : () => _submitProfile(context),
-                      child: const Text(
-                        'Save profile',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                    ),
-              if (profile != null) ...[
-                const Spacer(),
-                ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                    onPressed: () {
-                      launchUrl(Uri.parse(
-                          'https://squadquest.app/request-deletion.html'));
-                    },
-                    child: const Text('Delete my account',
-                        style: TextStyle(color: Colors.white)))
-              ]
-            ],
-          ),
-        ),
+      showDrawer: !context.canPop(),
+      title: profileAsync.when(
+        data: (UserProfile profile) => profile.fullName,
+        loading: () => '',
+        error: (_, __) => 'Error loading profile',
       ),
+      bodyPadding: const EdgeInsets.all(16),
+      body: profileAsync.when(
+          error: (error, __) => Center(child: Text(error.toString())),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          data: (UserProfile profile) => CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                      child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Expanded(
+                            flex: 2,
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  RichText(
+                                      text: TextSpan(children: [
+                                    const TextSpan(text: 'Phone: '),
+                                    TextSpan(
+                                      text: profile.phoneFormatted,
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                      recognizer: TapGestureRecognizer()
+                                        ..onTap =
+                                            () => launchUrl(profile.phoneUri!),
+                                    )
+                                  ])),
+                                ])),
+                        // if (event.rallyPoint != null)
+                        const Expanded(
+                            flex: 1,
+                            child: AspectRatio(
+                                aspectRatio: 1,
+                                child: ColoredBox(color: Colors.blue)))
+                      ])),
+                  SliverPersistentHeader(
+                    delegate: _SectionHeaderDelegate('I\'m going to'),
+                    pinned: true,
+                  ),
+                  rsvpsAsync.when(
+                      loading: () => const SliverToBoxAdapter(
+                          child: Center(child: CircularProgressIndicator())),
+                      error: (error, _) =>
+                          SliverToBoxAdapter(child: Text(error.toString())),
+                      data: (rsvps) => SliverList.list(
+                            children: rsvps
+                                .map((rsvp) => InstanceTile(
+                                    instance: rsvp.instance!,
+                                    rsvp: rsvp,
+                                    onTap: () {
+                                      context.pushNamed('event-details',
+                                          pathParameters: {
+                                            'id': rsvp.instance!.id!,
+                                          });
+                                    }))
+                                .toList(),
+                          )),
+                  SliverPersistentHeader(
+                    delegate: _SectionHeaderDelegate('Subscribed topics'),
+                    pinned: true,
+                  ),
+                  myTopicMembershipsAsync.when(
+                      loading: () => const SliverToBoxAdapter(
+                          child: Center(child: CircularProgressIndicator())),
+                      error: (error, _) =>
+                          SliverToBoxAdapter(child: Text(error.toString())),
+                      data: (topicMemberships) => SliverList.list(
+                            children: topicMemberships
+                                .map((topicMembership) => CheckboxListTile(
+                                        title: Text(topicMembership.topic.name),
+                                        enabled: !pendingChanges.containsKey(
+                                            topicMembership.topic.id),
+                                        value: pendingChanges[
+                                                topicMembership.topic.id] ??
+                                            topicMembership.subscribed,
+                                        onChanged: (newValue) =>
+                                            _onTopicCheckboxChanged(
+                                                topicMembership, newValue))
+                                    // ListTile(
+                                    //                 title: Text(topicMembership.topic!.name))
+                                    )
+                                .toList(),
+                          )),
+                ],
+              )),
     );
   }
+
+  void _onTopicCheckboxChanged(
+      MyTopicMembership topicMembership, bool? value) async {
+    // mark as pending
+    setState(() {
+      pendingChanges[topicMembership.topic.id!] = value == true;
+    });
+
+    // write to database
+    try {
+      final updatedTopicMembership = await ref
+          .read(topicMembershipsProvider.notifier)
+          .saveSubscribed(topicMembership, value == true);
+
+      // update loaded memberships with created/updated one
+      if (myTopicMembershipsAsync.value != null) {
+        myTopicMembershipsAsync = AsyncValue.data(
+            updateListWithRecord<MyTopicMembership>(
+                myTopicMembershipsAsync.value!,
+                (existing) => existing.topic == topicMembership.topic,
+                updatedTopicMembership));
+      }
+    } catch (error) {
+      loggerWithStack.e(error);
+    }
+
+    // unmark as pending
+    setState(() {
+      pendingChanges.remove(topicMembership.topic.id);
+    });
+  }
+}
+
+class _SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final String title;
+  final double height = 50;
+
+  _SectionHeaderDelegate(this.title);
+
+  @override
+  Widget build(context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      alignment: Alignment.center,
+      decoration:
+          BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor),
+      child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 18),
+          )),
+    );
+  }
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) => false;
 }

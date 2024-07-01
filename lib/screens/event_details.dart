@@ -30,7 +30,7 @@ final _statusGroupOrder = {
   InstanceMemberStatus.invited: 4,
 };
 
-enum Menu { showSetRallyPointMap, showLiveMap, getLink, edit, cancel }
+enum Menu { showSetRallyPointMap, showLiveMap, getLink, edit, cancel, uncancel }
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
   final InstanceID instanceId;
@@ -120,6 +120,47 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     });
   }
 
+  Future<void> _cancelEvent([bool canceled = true]) async {
+    final eventAsync = ref.watch(eventDetailsProvider(widget.instanceId));
+
+    if (eventAsync.value == null) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+              title: Text('${canceled ? 'Cancel' : 'Uncancel'} event?'),
+              content: Text(
+                  'Are you sure you want to ${canceled ? 'cancel' : 'uncancel'} this event? Guests will be alerted.'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('No'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Yes'),
+                ),
+              ],
+            ));
+
+    if (confirmed != true) {
+      return;
+    }
+
+    await ref
+        .read(instancesProvider.notifier)
+        .patch(widget.instanceId, {'status': canceled ? 'canceled' : 'live'});
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Your event has been ${canceled ? 'canceled' : 'uncanceled'} and guests will be alerted'),
+      ));
+    }
+  }
+
   void _onMenuSelect(Menu item) async {
     switch (item) {
       case Menu.showSetRallyPointMap:
@@ -139,10 +180,15 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         }
         break;
       case Menu.edit:
-        logger.i('Edit event');
+        context.pushNamed('event-edit', pathParameters: {
+          'id': widget.instanceId,
+        });
         break;
       case Menu.cancel:
-        logger.i('Cancel event');
+        await _cancelEvent();
+        break;
+      case Menu.uncancel:
+        await _cancelEvent(false);
         break;
     }
   }
@@ -161,8 +207,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         isDismissible: false,
         builder: (BuildContext context) =>
             EventRallyMap(initialRallyPoint: eventAsync.value!.rallyPoint));
-
-    logger.d({'updatedRallyPoint': updatedRallyPoint});
 
     await ref.read(instancesProvider.notifier).patch(widget.instanceId, {
       'rally_point': updatedRallyPoint == null
@@ -247,7 +291,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
   @override
   void dispose() {
-    _refreshEventPointsTimer?.cancel();
+    _refreshEventPointsTimer.cancel();
     super.dispose();
   }
 
@@ -289,6 +333,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           loading: () => '',
           error: (_, __) => 'Error loading event details',
         ),
+        titleStyle: eventAsync.valueOrNull?.status == InstanceStatus.canceled
+            ? const TextStyle(
+                decoration: TextDecoration.lineThrough,
+              )
+            : null,
         actions: [
           PopupMenuButton<Menu>(
             icon: const Icon(Icons.more_vert),
@@ -317,26 +366,29 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   enabled: eventAsync.value != null && !eventAsync.isLoading,
                   child: ListTile(
                     leading: const Icon(Icons.pin_drop_outlined),
-                    title: eventAsync.value == null ||
-                            eventAsync.value!.rallyPoint == null
+                    title: eventAsync.value?.rallyPoint == null
                         ? const Text('Set rally point')
                         : const Text('Update rally point'),
                   ),
                 ),
-                // const PopupMenuItem<Menu>(
-                //   value: Menu.edit,
-                //   child: ListTile(
-                //     leading: Icon(Icons.delete_outline),
-                //     title: Text('Edit event'),
-                //   ),
-                // ),
-                // const PopupMenuItem<Menu>(
-                //   value: Menu.cancel,
-                //   child: ListTile(
-                //     leading: Icon(Icons.cancel),
-                //     title: Text('Cancel event'),
-                //   ),
-                // ),
+                const PopupMenuItem<Menu>(
+                  value: Menu.edit,
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline),
+                    title: Text('Edit event'),
+                  ),
+                ),
+                PopupMenuItem<Menu>(
+                  value: eventAsync.value?.status == InstanceStatus.canceled
+                      ? Menu.uncancel
+                      : Menu.cancel,
+                  child: ListTile(
+                    leading: const Icon(Icons.cancel),
+                    title: eventAsync.value?.status == InstanceStatus.canceled
+                        ? const Text('Uncancel event')
+                        : const Text('Cancel event'),
+                  ),
+                ),
               ]
             ],
           ),
@@ -353,107 +405,119 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             data: (event) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(children: [
-                        Expanded(
-                            flex: 2,
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                      'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
-                                  Text(
-                                      'Date: ${eventDateFormat.format(event.startTimeMin)}'),
-                                  Text('Topic: ${event.topic?.name}'),
-                                  Text(
-                                      'Posted by: ${event.createdBy?.fullName}'),
-                                  Text('Visibility: ${event.visibility.name}'),
-                                  Text(
-                                      'Location: ${event.locationDescription}'),
-                                ])),
-                        if (event.rallyPoint != null)
-                          Expanded(
-                              flex: 1,
-                              child: AspectRatio(
-                                  aspectRatio: 1,
-                                  child: Consumer(
-                                      builder: (_, ref, child) {
-                                        final eventPointsAsync = ref.watch(
-                                            eventPointsProvider(
-                                                widget.instanceId));
-                                        return Stack(children: [
-                                          child!,
-                                          const Positioned(
-                                              top: 0,
-                                              right: 0,
-                                              child: Icon(
-                                                Icons.zoom_in,
-                                                // color: Colors.red,
-                                                size: 32,
-                                              )),
-                                          eventPointsAsync.when(
-                                            data: (eventPoints) =>
-                                                eventPoints == null ||
+                      Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                                flex: 2,
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (event.status ==
+                                          InstanceStatus.canceled)
+                                        const Text('Status: CANCELED'),
+                                      Text(
+                                          'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
+                                      Text(
+                                          'Date: ${eventDateFormat.format(event.startTimeMin)}'),
+                                      Text('Topic: ${event.topic?.name}'),
+                                      Text(
+                                          'Posted by: ${event.createdBy?.fullName}'),
+                                      Text(
+                                          'Visibility: ${event.visibility.name}'),
+                                      Text(
+                                          'Location: ${event.locationDescription}'),
+                                    ])),
+                            if (event.rallyPoint != null)
+                              Expanded(
+                                  flex: 1,
+                                  child: AspectRatio(
+                                      aspectRatio: 1,
+                                      child: Consumer(
+                                          builder: (_, ref, child) {
+                                            final eventPointsAsync = ref.watch(
+                                                eventPointsProvider(
+                                                    widget.instanceId));
+                                            return Stack(children: [
+                                              child!,
+                                              const Positioned(
+                                                  top: 0,
+                                                  right: 0,
+                                                  child: IgnorePointer(
+                                                      child: Icon(
+                                                    Icons.zoom_in,
+                                                    // color: Colors.red,
+                                                    size: 32,
+                                                  ))),
+                                              eventPointsAsync.when(
+                                                data: (eventPoints) => eventPoints ==
+                                                            null ||
                                                         eventPoints.users == 0
                                                     ? const SizedBox.shrink()
                                                     : Positioned(
                                                         bottom: 0,
                                                         left: 0,
                                                         right: 0,
-                                                        child: Container(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    0.5),
-                                                            child: Text(
-                                                              '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
-                                                              style:
-                                                                  const TextStyle(
+                                                        child: IgnorePointer(
+                                                            child: Container(
+                                                                color: Colors
+                                                                    .black
+                                                                    .withOpacity(
+                                                                        0.5),
+                                                                child: Text(
+                                                                  '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
+                                                                  style: const TextStyle(
                                                                       fontSize:
                                                                           12),
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                            ))),
-                                            loading: () =>
-                                                const SizedBox.shrink(),
-                                            error: (_, __) =>
-                                                const SizedBox.shrink(),
-                                          )
-                                        ]);
-                                      },
-                                      child: MapLibreMap(
-                                        styleString:
-                                            'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
+                                                                )))),
+                                                loading: () =>
+                                                    const SizedBox.shrink(),
+                                                error: (_, __) =>
+                                                    const SizedBox.shrink(),
+                                              )
+                                            ]);
+                                          },
+                                          child: MapLibreMap(
+                                            styleString:
+                                                'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
 
-                                        // listeners
-                                        onMapCreated: _onMapCreated,
-                                        onStyleLoadedCallback: () =>
-                                            _onMapStyleLoaded(event),
-                                        onMapClick: (_, __) => _showLiveMap(),
+                                            // listeners
+                                            onMapCreated: _onMapCreated,
+                                            onStyleLoadedCallback: () =>
+                                                _onMapStyleLoaded(event),
+                                            onMapClick: (_, __) =>
+                                                _showLiveMap(),
 
-                                        // disable all interaction
-                                        dragEnabled: false,
-                                        compassEnabled: false,
-                                        zoomGesturesEnabled: false,
-                                        rotateGesturesEnabled: false,
-                                        tiltGesturesEnabled: false,
-                                        scrollGesturesEnabled: false,
-                                        doubleClickZoomEnabled: false,
+                                            // disable all interaction
+                                            dragEnabled: false,
+                                            compassEnabled: false,
+                                            zoomGesturesEnabled: false,
+                                            rotateGesturesEnabled: false,
+                                            tiltGesturesEnabled: false,
+                                            scrollGesturesEnabled: false,
+                                            doubleClickZoomEnabled: false,
 
-                                        // hide attribution in mini view
-                                        attributionButtonPosition:
-                                            AttributionButtonPosition
-                                                .bottomRight,
-                                        attributionButtonMargins:
-                                            const Point(-100, -100),
+                                            // hide attribution in mini view
+                                            attributionButtonPosition:
+                                                AttributionButtonPosition
+                                                    .bottomRight,
+                                            attributionButtonMargins:
+                                                const Point(-100, -100),
 
-                                        // set initial camera position to rally point
-                                        initialCameraPosition: CameraPosition(
-                                          target: LatLng(event.rallyPoint!.lat,
-                                              event.rallyPoint!.lon),
-                                          zoom: 11.75,
-                                        ),
-                                      ))))
-                      ]),
+                                            // set initial camera position to rally point
+                                            initialCameraPosition:
+                                                CameraPosition(
+                                              target: LatLng(
+                                                  event.rallyPoint!.lat,
+                                                  event.rallyPoint!.lon),
+                                              zoom: 11.75,
+                                            ),
+                                          ))))
+                          ]),
                       Expanded(
                           child: eventRsvpsAsync.when(
                               loading: () => const Center(

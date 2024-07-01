@@ -51,6 +51,10 @@ function assertMethod(request: Request, method: string) {
   }
 }
 
+function assertGet(request: Request) {
+  assertMethod(request, "GET");
+}
+
 function assertPost(request: Request) {
   assertMethod(request, "POST");
 }
@@ -63,6 +67,33 @@ function assertJson(request: Request) {
       415,
     );
   }
+}
+
+function getRequiredQueryParameters(
+  request: Request,
+  parameters: Array<string>,
+) {
+  let queryParams;
+
+  try {
+    queryParams = new URL(request.url).searchParams;
+  } catch (error) {
+    throw new HttpError(
+      `Failed to parse query parameters: ${error?.message ?? error}`,
+      400,
+    );
+  }
+
+  for (const parameter of parameters) {
+    if (!queryParams.has(parameter)) {
+      throw new HttpError(
+        `Required parameter missing from query: ${parameter}`,
+        400,
+      );
+    }
+  }
+
+  return Object.fromEntries(queryParams);
 }
 
 async function getRequiredJsonParameters(
@@ -125,11 +156,13 @@ function debugResponse(message: string, data?: object) {
 
 export {
   assert,
+  assertGet,
   assertJson,
   assertMethod,
   assertPost,
   debugResponse,
   getRequiredJsonParameters,
+  getRequiredQueryParameters,
   HttpError,
   serve,
 };

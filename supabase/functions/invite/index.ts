@@ -37,14 +37,15 @@ serve(async (request) => {
   );
 
   // get event
-  const { data: event, error: eventError } = await serviceRoleSupabase
+  const { data: event } = await serviceRoleSupabase
     .from(
       "instances",
     )
     .select()
     .eq("id", instanceId)
-    .maybeSingle();
-  if (eventError) throw eventError;
+    .maybeSingle()
+    .throwOnError();
+
   assert(
     event != null,
     "No event found matching that instance_id",
@@ -53,33 +54,32 @@ serve(async (request) => {
   );
 
   // get any existing RSVPs
-  const { data: existingRsvp, error: existingRsvpError } =
-    await serviceRoleSupabase.from(
-      "instance_members",
-    )
-      .select("member")
-      .eq("instance", instanceId)
-      .in("member", inviteUserIds);
-  if (existingRsvpError) throw existingRsvpError;
+  const { data: existingRsvp } = await serviceRoleSupabase.from(
+    "instance_members",
+  )
+    .select("member")
+    .eq("instance", instanceId)
+    .in("member", inviteUserIds)
+    .throwOnError();
 
   const existingRsvpUserIds = new Set(
-    existingRsvp.map((rsvp) => rsvp.member),
+    existingRsvp!.map((rsvp) => rsvp.member),
   );
 
   // TODO: check that user has permission to invite to this event
 
   // get list of user's friends
-  const { data: friends, error: friendsError } = await serviceRoleSupabase
+  const { data: friends } = await serviceRoleSupabase
     .from(
       "friends",
     )
     .select("requester, requestee")
     .eq("status", "accepted")
-    .or(`requester.eq."${currentUser!.id}", requestee.eq."${currentUser!.id}"`);
-  if (friendsError) throw friendsError;
+    .or(`requester.eq."${currentUser!.id}", requestee.eq."${currentUser!.id}"`)
+    .throwOnError();
 
   const friendUserIds = new Set(
-    friends.map((friend) =>
+    friends!.map((friend) =>
       friend.requester == currentUser!.id ? friend.requestee : friend.requester
     ),
   );
@@ -109,16 +109,15 @@ serve(async (request) => {
   }
 
   // insert invitations
-  const { data: insertedInvitations, error: insertedInvitationsError } =
-    await serviceRoleSupabase.from(
-      "instance_members",
-    )
-      .insert(invitations)
-      .select("*, created_by(*), member(*)");
-  if (insertedInvitationsError) throw insertedInvitationsError;
+  const { data: insertedInvitations } = await serviceRoleSupabase.from(
+    "instance_members",
+  )
+    .insert(invitations)
+    .select("*, created_by(*), member(*)")
+    .throwOnError();
 
   // send notifications to recipients
-  for (const insertedInvitation of insertedInvitations) {
+  for (const insertedInvitation of insertedInvitations!) {
     // scrub profile data
     const fcmToken = insertedInvitation.member.fcm_token;
     insertedInvitation.created_by = scrubProfile(insertedInvitation.created_by);
@@ -136,7 +135,7 @@ serve(async (request) => {
           payload: { invitation: insertedInvitation },
           collapseKey: "invitation",
         });
-      } catch (error) {
+      } catch (_error) {
         // continue with next invitee
       }
     }
@@ -144,10 +143,10 @@ serve(async (request) => {
 
   // return new invitations
   return new Response(
-    insertedInvitations.length ? JSON.stringify(insertedInvitations) : null,
+    insertedInvitations!.length ? JSON.stringify(insertedInvitations) : null,
     {
       headers: { "Content-Type": "application/json" },
-      status: insertedInvitations.length ? 200 : 204,
+      status: insertedInvitations!.length ? 200 : 204,
     },
   );
 });

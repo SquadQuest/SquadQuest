@@ -20,5 +20,6 @@
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
   "java.import.gradle.enabled": false,
-  "java.autobuild.enabled": false
+  "java.autobuild.enabled": false,
+  "Prettier-SQL.SQLFlavourOverride": "postgresql"
 }

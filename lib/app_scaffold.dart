@@ -9,6 +9,7 @@ final _bottomPaddingProvider = StateProvider<double?>((ref) => null);
 
 class AppScaffold extends StatelessWidget {
   final String title;
+  final TextStyle? titleStyle;
   final Widget body;
   final EdgeInsetsGeometry? bodyPadding;
   final bool showDrawer;
@@ -20,6 +21,7 @@ class AppScaffold extends StatelessWidget {
   AppScaffold(
       {super.key,
       required this.title,
+      this.titleStyle,
       required this.body,
       this.bodyPadding,
       this.showDrawer = true,
@@ -51,29 +53,25 @@ class AppScaffold extends StatelessWidget {
                   padding:
                       bodyPadding == null ? padding : padding.add(bodyPadding!),
                   child: child!),
-              ...[
-                if (showLocationSharingSheet)
-                  Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child:
-                          NotificationListener<SizeChangedLayoutNotification>(
-                              onNotification:
-                                  (SizeChangedLayoutNotification notification) {
-                                // ... and after each resize
-                                SchedulerBinding.instance.addPostFrameCallback(
-                                    (_) => _updateBottomPadding(ref));
-                                return true;
-                              },
-                              child: SizeChangedLayoutNotifier(
-                                  child: LocationSharingSheet(
-                                      key: _bottomSheetKey))))
-              ]
+              if (showLocationSharingSheet)
+                Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: NotificationListener<SizeChangedLayoutNotification>(
+                        onNotification:
+                            (SizeChangedLayoutNotification notification) {
+                          // ... and after each resize
+                          SchedulerBinding.instance.addPostFrameCallback(
+                              (_) => _updateBottomPadding(ref));
+                          return true;
+                        },
+                        child: SizeChangedLayoutNotifier(
+                            child: LocationSharingSheet(key: _bottomSheetKey))))
             ]);
           }),
       appBar: AppBar(
-        title: Text(title),
+        title: Text(title, style: titleStyle),
         actions: actions,
       ),
       drawer: showDrawer ? const AppDrawer() : null,

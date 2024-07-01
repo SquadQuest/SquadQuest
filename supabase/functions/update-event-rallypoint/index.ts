@@ -20,23 +20,35 @@ type WebhookPayload = {
 serve(async (request) => {
   // process request
   assertPost(request);
-  const { record: event }: WebhookPayload = await request.json();
+  const { record: event, old_record: oldEvent }: WebhookPayload = await request
+    .json();
+
+  // skip rest of function if rally point hasn't been modified
+  if (!oldEvent || event.rally_point == oldEvent.rally_point) {
+    return new Response(
+      JSON.stringify({ success: true, event }),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 304,
+      },
+    );
+  }
 
   // connect to Supabase
   const serviceRoleSupabase = getServiceRoleSupabaseClient();
 
-  // get RSVPs to all yes/maybe RSVPs but creator
-  const { data: rsvps, error: rsvpsError } = await serviceRoleSupabase.from(
+  // get RSVPs to all maybe/yes/omw RSVPs but creator
+  const { data: rsvps } = await serviceRoleSupabase.from(
     "instance_members",
   )
     .select("*, member(*)")
     .eq("instance", event.id)
     .neq("member", event.created_by)
-    .in("status", ["yes", "omw"]);
-  if (rsvpsError) throw rsvpsError;
+    .in("status", ["maybe", "yes", "omw"])
+    .throwOnError();
 
   // send notification to all queued recipients
-  for (const { member: profile } of rsvps) {
+  for (const { member: profile } of rsvps!) {
     if (!profile.fcm_token) {
       continue;
     }
@@ -52,7 +64,7 @@ serve(async (request) => {
     });
   }
 
-  // return new friend request
+  // return event
   return new Response(
     JSON.stringify({ success: true, event }),
     {
