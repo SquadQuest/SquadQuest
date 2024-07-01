@@ -76,15 +76,9 @@ serve(async (request) => {
     .from(
       "topic_members",
     )
-    .select("*, topic(id, name)")
+    .select("topic")
     .eq("member", userId)
-    .order("name", { referencedTable: "topic" })
     .throwOnError();
-
-  // sort topics alphabetically because remote order doesn't work for some reason
-  friendTopicSubscriptions!.sort((a, b) =>
-    a.topic.name.localeCompare(b.topic.name)
-  );
 
   // get current users overlapping topic subscriptions
   const { data: overlappingTopicSubscriptions } = await serviceRoleSupabase
@@ -106,7 +100,7 @@ serve(async (request) => {
     friendTopicSubscription,
   ) => ({
     topic: friendTopicSubscription.topic,
-    subscribed: mySubscriptions.has(friendTopicSubscription.topic.id),
+    subscribed: mySubscriptions.has(friendTopicSubscription.topic),
   }));
 
   // return new friend request
