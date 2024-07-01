@@ -12,6 +12,22 @@ create policy "Authenticated users can select their own topic memberships" on "p
 SELECT
     to authenticated using (member = auth.uid ());
 
+create policy "Authenticated users can read friends' topic memberships" on "public"."topic_members" as PERMISSIVE for
+SELECT
+    to authenticated using (
+        EXISTS (
+            SELECT
+            FROM
+                friends
+            WHERE
+                friends.status = 'accepted'
+                AND (
+                    auth.uid () in (requester, requestee)
+                    AND topic_members.member in (requester, requestee)
+                )
+        )
+    );
+
 create policy "Authenticated users can insert their own topic memberships" on "public"."topic_members" as PERMISSIVE for INSERT to authenticated
 with
     check (member = auth.uid ());

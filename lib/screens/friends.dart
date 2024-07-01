@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,6 +83,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 itemBuilder: (context, friend) {
                   final friendProfile = friend.getOtherProfile(session.user.id);
                   return ListTile(
+                      onTap: friend.status == FriendStatus.accepted ||
+                              (friend.status == FriendStatus.requested &&
+                                  friend.requestee!.id == session.user.id)
+                          ? () {
+                              context.pushNamed('profile-view',
+                                  pathParameters: {'id': friendProfile!.id});
+                            }
+                          : null,
                       leading: friendStatusIcons[friend.status],
                       title: Text(friendProfile!.fullName),
                       subtitle: switch (friend.status) {
