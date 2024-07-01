@@ -411,10 +411,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                             child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (event.status ==
-                                      InstanceStatus.canceled) ...[
-                                    const Text('Status: CANCELED')
-                                  ],
+                                  if (event.status == InstanceStatus.canceled)
+                                    const Text('Status: CANCELED'),
                                   Text(
                                       'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
                                   Text(
