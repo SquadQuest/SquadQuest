@@ -49,17 +49,17 @@ serve(async (request) => {
   const serviceRoleSupabase = getServiceRoleSupabaseClient();
 
   // get RSVPs to all maybe/yes/omw RSVPs but creator
-  const { data: rsvps, error: rsvpsError } = await serviceRoleSupabase.from(
+  const { data: rsvps } = await serviceRoleSupabase.from(
     "instance_members",
   )
     .select("*, member(*)")
     .eq("instance", event.id)
     .neq("member", event.created_by)
-    .in("status", ["maybe", "yes", "omw"]);
-  if (rsvpsError) throw rsvpsError;
+    .in("status", ["maybe", "yes", "omw"])
+    .throwOnError();
 
   // send notification to all queued recipients
-  for (const { member: profile } of rsvps) {
+  for (const { member: profile } of rsvps!) {
     if (!profile.fcm_token) {
       continue;
     }
