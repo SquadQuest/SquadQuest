@@ -83,7 +83,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
           // send user to profile screen if profile is not set
           if (profile.value == null) {
-            context.goNamed('profile');
+            context.goNamed('profile-edit');
             return;
           }
 

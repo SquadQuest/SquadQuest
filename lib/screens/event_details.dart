@@ -405,51 +405,54 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             data: (event) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(children: [
-                        Expanded(
-                            flex: 2,
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (event.status ==
-                                      InstanceStatus.canceled) ...[
-                                    const Text('Status: CANCELED')
-                                  ],
-                                  Text(
-                                      'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
-                                  Text(
-                                      'Date: ${eventDateFormat.format(event.startTimeMin)}'),
-                                  Text('Topic: ${event.topic?.name}'),
-                                  Text(
-                                      'Posted by: ${event.createdBy?.fullName}'),
-                                  Text('Visibility: ${event.visibility.name}'),
-                                  Text(
-                                      'Location: ${event.locationDescription}'),
-                                ])),
-                        if (event.rallyPoint != null)
-                          Expanded(
-                              flex: 1,
-                              child: AspectRatio(
-                                  aspectRatio: 1,
-                                  child: Consumer(
-                                      builder: (_, ref, child) {
-                                        final eventPointsAsync = ref.watch(
-                                            eventPointsProvider(
-                                                widget.instanceId));
-                                        return Stack(children: [
-                                          child!,
-                                          const Positioned(
-                                              top: 0,
-                                              right: 0,
-                                              child: IgnorePointer(
-                                                  child: Icon(
-                                                Icons.zoom_in,
-                                                // color: Colors.red,
-                                                size: 32,
-                                              ))),
-                                          eventPointsAsync.when(
-                                            data: (eventPoints) =>
-                                                eventPoints == null ||
+                      Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                                flex: 2,
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (event.status ==
+                                          InstanceStatus.canceled)
+                                        const Text('Status: CANCELED'),
+                                      Text(
+                                          'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
+                                      Text(
+                                          'Date: ${eventDateFormat.format(event.startTimeMin)}'),
+                                      Text('Topic: ${event.topic?.name}'),
+                                      Text(
+                                          'Posted by: ${event.createdBy?.fullName}'),
+                                      Text(
+                                          'Visibility: ${event.visibility.name}'),
+                                      Text(
+                                          'Location: ${event.locationDescription}'),
+                                    ])),
+                            if (event.rallyPoint != null)
+                              Expanded(
+                                  flex: 1,
+                                  child: AspectRatio(
+                                      aspectRatio: 1,
+                                      child: Consumer(
+                                          builder: (_, ref, child) {
+                                            final eventPointsAsync = ref.watch(
+                                                eventPointsProvider(
+                                                    widget.instanceId));
+                                            return Stack(children: [
+                                              child!,
+                                              const Positioned(
+                                                  top: 0,
+                                                  right: 0,
+                                                  child: IgnorePointer(
+                                                      child: Icon(
+                                                    Icons.zoom_in,
+                                                    // color: Colors.red,
+                                                    size: 32,
+                                                  ))),
+                                              eventPointsAsync.when(
+                                                data: (eventPoints) => eventPoints ==
+                                                            null ||
                                                         eventPoints.users == 0
                                                     ? const SizedBox.shrink()
                                                     : Positioned(
@@ -471,47 +474,50 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                       TextAlign
                                                                           .center,
                                                                 )))),
-                                            loading: () =>
-                                                const SizedBox.shrink(),
-                                            error: (_, __) =>
-                                                const SizedBox.shrink(),
-                                          )
-                                        ]);
-                                      },
-                                      child: MapLibreMap(
-                                        styleString:
-                                            'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+                                                loading: () =>
+                                                    const SizedBox.shrink(),
+                                                error: (_, __) =>
+                                                    const SizedBox.shrink(),
+                                              )
+                                            ]);
+                                          },
+                                          child: MapLibreMap(
+                                            styleString:
+                                                'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
 
-                                        // listeners
-                                        onMapCreated: _onMapCreated,
-                                        onStyleLoadedCallback: () =>
-                                            _onMapStyleLoaded(event),
-                                        onMapClick: (_, __) => _showLiveMap(),
+                                            // listeners
+                                            onMapCreated: _onMapCreated,
+                                            onStyleLoadedCallback: () =>
+                                                _onMapStyleLoaded(event),
+                                            onMapClick: (_, __) =>
+                                                _showLiveMap(),
 
-                                        // disable all interaction
-                                        dragEnabled: false,
-                                        compassEnabled: false,
-                                        zoomGesturesEnabled: false,
-                                        rotateGesturesEnabled: false,
-                                        tiltGesturesEnabled: false,
-                                        scrollGesturesEnabled: false,
-                                        doubleClickZoomEnabled: false,
+                                            // disable all interaction
+                                            dragEnabled: false,
+                                            compassEnabled: false,
+                                            zoomGesturesEnabled: false,
+                                            rotateGesturesEnabled: false,
+                                            tiltGesturesEnabled: false,
+                                            scrollGesturesEnabled: false,
+                                            doubleClickZoomEnabled: false,
 
-                                        // hide attribution in mini view
-                                        attributionButtonPosition:
-                                            AttributionButtonPosition
-                                                .bottomRight,
-                                        attributionButtonMargins:
-                                            const Point(-100, -100),
+                                            // hide attribution in mini view
+                                            attributionButtonPosition:
+                                                AttributionButtonPosition
+                                                    .bottomRight,
+                                            attributionButtonMargins:
+                                                const Point(-100, -100),
 
-                                        // set initial camera position to rally point
-                                        initialCameraPosition: CameraPosition(
-                                          target: LatLng(event.rallyPoint!.lat,
-                                              event.rallyPoint!.lon),
-                                          zoom: 11.75,
-                                        ),
-                                      ))))
-                      ]),
+                                            // set initial camera position to rally point
+                                            initialCameraPosition:
+                                                CameraPosition(
+                                              target: LatLng(
+                                                  event.rallyPoint!.lat,
+                                                  event.rallyPoint!.lon),
+                                              zoom: 11.75,
+                                            ),
+                                          ))))
+                          ]),
                       Expanded(
                           child: eventRsvpsAsync.when(
                               loading: () => const Center(

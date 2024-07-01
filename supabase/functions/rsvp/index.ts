@@ -38,14 +38,15 @@ serve(async (request) => {
   }
 
   // get event
-  const { data: event, error: eventError } = await serviceRoleSupabase
+  const { data: event } = await serviceRoleSupabase
     .from(
       "instances",
     )
     .select()
     .eq("id", instanceId)
-    .maybeSingle();
-  if (eventError) throw eventError;
+    .maybeSingle()
+    .throwOnError();
+
   if (!event) {
     throw new HttpError(
       "No event found matching that instance_id",
@@ -55,15 +56,14 @@ serve(async (request) => {
   }
 
   // get any existing RSVP/invite
-  const { data: existingRsvp, error: existingRsvpError } =
-    await serviceRoleSupabase.from(
-      "instance_members",
-    )
-      .select()
-      .eq("instance", instanceId)
-      .eq("member", currentUser.id)
-      .maybeSingle();
-  if (existingRsvpError) throw existingRsvpError;
+  const { data: existingRsvp } = await serviceRoleSupabase.from(
+    "instance_members",
+  )
+    .select()
+    .eq("instance", instanceId)
+    .eq("member", currentUser.id)
+    .maybeSingle()
+    .throwOnError();
 
   // verify user has access to event
   switch (event.visibility) {
@@ -83,14 +83,13 @@ serve(async (request) => {
       }
 
       // friends can too
-      const { count: friendshipCount, error: friendshipError } =
-        await serviceRoleSupabase.from(
-          "friends",
-        )
-          .select("*", { count: "exact", head: true })
-          .in("requester", [currentUser.id, event.created_by])
-          .in("requestee", [currentUser.id, event.created_by]);
-      if (friendshipError) throw friendshipError;
+      const { count: friendshipCount } = await serviceRoleSupabase.from(
+        "friends",
+      )
+        .select("*", { count: "exact", head: true })
+        .in("requester", [currentUser.id, event.created_by])
+        .in("requestee", [currentUser.id, event.created_by])
+        .throwOnError();
 
       assert(
         friendshipCount! > 0,
@@ -123,15 +122,14 @@ serve(async (request) => {
     existingRsvp.created_by == currentUser.id
   ) {
     // delete RSVP if user created it and they're removing their RSVP
-    const { data: deletedRsvp, error: deletedRsvpError } =
-      await serviceRoleSupabase.from(
-        "instance_members",
-      )
-        .delete()
-        .eq("id", existingRsvp.id)
-        .select(defaultSelect)
-        .single();
-    if (deletedRsvpError) throw deletedRsvpError;
+    const { data: deletedRsvp } = await serviceRoleSupabase.from(
+      "instance_members",
+    )
+      .delete()
+      .eq("id", existingRsvp.id)
+      .select(defaultSelect)
+      .single()
+      .throwOnError();
 
     deletedRsvp.status = null;
     rsvp = deletedRsvp;
@@ -139,15 +137,14 @@ serve(async (request) => {
     notificationBody = `RSVP removed for ${userFullName}`;
   } else if (existingRsvp) {
     // update existing RSVP
-    const { data: updatedRsvp, error: updatedRsvpError } =
-      await serviceRoleSupabase.from(
-        "instance_members",
-      )
-        .update({ status: status ?? "invited" })
-        .eq("id", existingRsvp.id)
-        .select(defaultSelect)
-        .single();
-    if (updatedRsvpError) throw updatedRsvpError;
+    const { data: updatedRsvp } = await serviceRoleSupabase.from(
+      "instance_members",
+    )
+      .update({ status: status ?? "invited" })
+      .eq("id", existingRsvp.id)
+      .select(defaultSelect)
+      .single()
+      .throwOnError();
 
     rsvp = updatedRsvp;
 
@@ -156,19 +153,18 @@ serve(async (request) => {
       : `RSVP ${status} (from ${existingRsvp.status}) for ${userFullName}`;
   } else if (status) {
     // insert new RSVP
-    const { data: insertedRsvp, error: insertedRsvpError } =
-      await serviceRoleSupabase.from(
-        "instance_members",
-      )
-        .insert({
-          created_by: currentUser.id, // must supply because we're running as service role
-          instance: instanceId,
-          member: currentUser.id,
-          status: status,
-        })
-        .select(defaultSelect)
-        .single();
-    if (insertedRsvpError) throw insertedRsvpError;
+    const { data: insertedRsvp } = await serviceRoleSupabase.from(
+      "instance_members",
+    )
+      .insert({
+        created_by: currentUser.id, // must supply because we're running as service role
+        instance: instanceId,
+        member: currentUser.id,
+        status: status,
+      })
+      .select(defaultSelect)
+      .single()
+      .throwOnError();
 
     rsvp = insertedRsvp;
 
@@ -193,7 +189,7 @@ serve(async (request) => {
 
     // send to other guests who are RSVP'd for OMWs
     if (status == "omw") {
-      const { data: rsvps, error: rsvpsError } = await serviceRoleSupabase
+      const { data: rsvps } = await serviceRoleSupabase
         .from(
           "instance_members",
         )
@@ -201,10 +197,10 @@ serve(async (request) => {
         .eq("instance", instanceId)
         .in("status", ["maybe", "yes", "omw"])
         .neq("member", currentUser.id)
-        .neq("member", event.created_by);
-      if (rsvpsError) throw rsvpsError;
+        .neq("member", event.created_by)
+        .throwOnError();
 
-      for (const rsvp of rsvps) {
+      for (const rsvp of rsvps!) {
         profilesToNotify.push(rsvp.member);
       }
     }

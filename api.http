@@ -68,3 +68,10 @@ Authorization: Bearer {{token}}
             "body": "Hello World!"
         }
     }
+
+
+### Get friend profile
+
+GET {{baseUrl}}/get-friend-profile
+    ?user_id={{userId}}
+Authorization: Bearer {{token}}

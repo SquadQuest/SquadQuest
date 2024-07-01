@@ -44,14 +44,15 @@ serve(async (request) => {
   }
 
   // get friend
-  const { data: friend, error: friendError } = await serviceRoleSupabase
+  const { data: friend } = await serviceRoleSupabase
     .from(
       "friends",
     )
     .select("*")
     .eq("id", friendId)
-    .maybeSingle();
-  if (friendError) throw friendError;
+    .maybeSingle()
+    .throwOnError();
+
   if (!friend) {
     throw new HttpError(
       "No friend request found matching that id",
@@ -70,16 +71,17 @@ serve(async (request) => {
   }
 
   // update friend request
-  const { data: updatedFriendRequest, error: updateError } =
-    await serviceRoleSupabase.from("friends")
-      .update({
-        status: action,
-        actioned_at: new Date(),
-      })
-      .eq("id", friend.id)
-      .select("*, requester(*), requestee(*)")
-      .single();
-  if (updateError) throw updateError;
+  const { data: updatedFriendRequest } = await serviceRoleSupabase.from(
+    "friends",
+  )
+    .update({
+      status: action,
+      actioned_at: new Date(),
+    })
+    .eq("id", friend.id)
+    .select("*, requester(*), requestee(*)")
+    .single()
+    .throwOnError();
 
   // scrub profile data
   const fcmToken = updatedFriendRequest.requester.fcm_token;

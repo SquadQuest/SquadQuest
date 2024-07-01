@@ -92,4 +92,12 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
 
     return result;
   }
+
+  Future<UserProfile> getById(UserID userId) async {
+    if (!state.containsKey(userId)) {
+      await fetchProfiles({userId});
+    }
+
+    return state[userId]!;
+  }
 }

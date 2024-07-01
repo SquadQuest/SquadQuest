@@ -110,7 +110,7 @@
             "restart": true,
             "timeout": 1000000,
             "sourceMapPathOverrides": {
-                "/home/deno/functions/*": "${workspaceFolder}/supabase/functions/*",
+                "file:///home/deno/functions/*": "${workspaceFolder}/supabase/functions/*",
             }
         },
     ]

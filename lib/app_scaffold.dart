@@ -53,25 +53,21 @@ class AppScaffold extends StatelessWidget {
                   padding:
                       bodyPadding == null ? padding : padding.add(bodyPadding!),
                   child: child!),
-              ...[
-                if (showLocationSharingSheet)
-                  Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child:
-                          NotificationListener<SizeChangedLayoutNotification>(
-                              onNotification:
-                                  (SizeChangedLayoutNotification notification) {
-                                // ... and after each resize
-                                SchedulerBinding.instance.addPostFrameCallback(
-                                    (_) => _updateBottomPadding(ref));
-                                return true;
-                              },
-                              child: SizeChangedLayoutNotifier(
-                                  child: LocationSharingSheet(
-                                      key: _bottomSheetKey))))
-              ]
+              if (showLocationSharingSheet)
+                Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: NotificationListener<SizeChangedLayoutNotification>(
+                        onNotification:
+                            (SizeChangedLayoutNotification notification) {
+                          // ... and after each resize
+                          SchedulerBinding.instance.addPostFrameCallback(
+                              (_) => _updateBottomPadding(ref));
+                          return true;
+                        },
+                        child: SizeChangedLayoutNotifier(
+                            child: LocationSharingSheet(key: _bottomSheetKey))))
             ]);
           }),
       appBar: AppBar(

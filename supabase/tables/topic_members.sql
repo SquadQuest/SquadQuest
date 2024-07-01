@@ -16,6 +16,11 @@ create policy "Authenticated users can insert their own topic memberships" on "p
 with
     check (member = auth.uid ());
 
+create policy "Authenticated users can update their own topic memberships" on "public"."topic_members" as PERMISSIVE for
+UPDATE to authenticated using (member = auth.uid ())
+with
+    check (member = auth.uid ());
+
 create policy "Authenticated users can delete their own topic memberships" on "public"."topic_members" as PERMISSIVE for DELETE to authenticated using (member = auth.uid ());
 
 CREATE VIEW

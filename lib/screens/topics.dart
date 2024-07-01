@@ -74,7 +74,8 @@ class _TopicsScreenState extends ConsumerState<TopicsScreen> {
                           topicMembership.subscribed,
                       onChanged: (newValue) =>
                           _onTopicCheckboxChanged(topicMembership, newValue),
-                      subtitle: topicMembership.events > 0
+                      subtitle: topicMembership.events != null &&
+                              topicMembership.events! > 0
                           ? Text('${topicMembership.events} events')
                           : null,
                     );
@@ -83,8 +84,11 @@ class _TopicsScreenState extends ConsumerState<TopicsScreen> {
                       topicMembership1.events == topicMembership2.events
                           ? topicMembership1.topic.name
                               .compareTo(topicMembership2.topic.name)
-                          : topicMembership2.events
-                              .compareTo(topicMembership1.events),
+                          : topicMembership1.events == null ||
+                                  topicMembership2.events == null
+                              ? 0
+                              : topicMembership2.events!
+                                  .compareTo(topicMembership1.events!),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
