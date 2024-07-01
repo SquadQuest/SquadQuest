@@ -143,19 +143,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           child: Center(child: CircularProgressIndicator())),
                       error: (error, _) =>
                           SliverToBoxAdapter(child: Text(error.toString())),
-                      data: (rsvps) => SliverList.list(
-                            children: rsvps
-                                .map((rsvp) => InstanceTile(
-                                    instance: rsvp.instance!,
-                                    rsvp: rsvp,
-                                    onTap: () {
-                                      context.pushNamed('event-details',
-                                          pathParameters: {
-                                            'id': rsvp.instance!.id!,
-                                          });
-                                    }))
-                                .toList(),
-                          )),
+                      data: (rsvps) => rsvps.isEmpty
+                          ? const SliverToBoxAdapter(
+                              child: Padding(
+                              padding: EdgeInsets.all(32),
+                              child: Text(
+                                'No upcoming events',
+                                style: TextStyle(
+                                    fontSize: 14, fontStyle: FontStyle.italic),
+                                textAlign: TextAlign.center,
+                              ),
+                            ))
+                          : SliverList.list(
+                              children: rsvps
+                                  .map((rsvp) => InstanceTile(
+                                      instance: rsvp.instance!,
+                                      rsvp: rsvp,
+                                      onTap: () {
+                                        context.pushNamed('event-details',
+                                            pathParameters: {
+                                              'id': rsvp.instance!.id!,
+                                            });
+                                      }))
+                                  .toList(),
+                            )),
                   SliverPersistentHeader(
                     delegate: _SectionHeaderDelegate('Subscribed topics'),
                     pinned: true,
@@ -165,23 +176,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           child: Center(child: CircularProgressIndicator())),
                       error: (error, _) =>
                           SliverToBoxAdapter(child: Text(error.toString())),
-                      data: (topicMemberships) => SliverList.list(
-                            children: topicMemberships
-                                .map((topicMembership) => CheckboxListTile(
-                                        title: Text(topicMembership.topic.name),
-                                        enabled: !pendingChanges.containsKey(
-                                            topicMembership.topic.id),
-                                        value: pendingChanges[
-                                                topicMembership.topic.id] ??
-                                            topicMembership.subscribed,
-                                        onChanged: (newValue) =>
-                                            _onTopicCheckboxChanged(
-                                                topicMembership, newValue))
-                                    // ListTile(
-                                    //                 title: Text(topicMembership.topic!.name))
-                                    )
-                                .toList(),
-                          )),
+                      data: (topicMemberships) => topicMemberships.isEmpty
+                          ? const SliverToBoxAdapter(
+                              child: Padding(
+                              padding: EdgeInsets.all(32),
+                              child: Text(
+                                'No topics subscribed to',
+                                style: TextStyle(
+                                    fontSize: 14, fontStyle: FontStyle.italic),
+                                textAlign: TextAlign.center,
+                              ),
+                            ))
+                          : SliverList.list(
+                              children: topicMemberships
+                                  .map((topicMembership) => CheckboxListTile(
+                                          title:
+                                              Text(topicMembership.topic.name),
+                                          enabled: !pendingChanges.containsKey(
+                                              topicMembership.topic.id),
+                                          value: pendingChanges[
+                                                  topicMembership.topic.id] ??
+                                              topicMembership.subscribed,
+                                          onChanged: (newValue) =>
+                                              _onTopicCheckboxChanged(
+                                                  topicMembership, newValue))
+                                      // ListTile(
+                                      //                 title: Text(topicMembership.topic!.name))
+                                      )
+                                  .toList(),
+                            )),
                 ],
               )),
     );
