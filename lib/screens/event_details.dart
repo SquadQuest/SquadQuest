@@ -574,8 +574,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                   )),
                                       itemBuilder: (context, rsvp) {
                                         return ListTile(
-                                            leading: rsvpIcons[rsvp.status],
-                                            title: Text(rsvp.member!.fullName));
+                                            leading: rsvp.member!.photo != null
+                                                ? CircleAvatar(
+                                                    backgroundImage:
+                                                        NetworkImage(rsvp
+                                                            .member!.photo
+                                                            .toString()),
+                                                  )
+                                                : const CircleAvatar(
+                                                    child: Icon(Icons.person),
+                                                  ),
+                                            title: Text(rsvp.member!.fullName),
+                                            trailing: rsvpIcons[rsvp.status]);
                                       },
                                     ))),
                     ])),

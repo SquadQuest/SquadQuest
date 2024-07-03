@@ -91,8 +91,15 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                                   pathParameters: {'id': friendProfile!.id});
                             }
                           : null,
-                      leading: friendStatusIcons[friend.status],
-                      title: Text(friendProfile!.fullName),
+                      leading: friendProfile!.photo != null
+                          ? CircleAvatar(
+                              backgroundImage:
+                                  NetworkImage(friendProfile.photo.toString()),
+                            )
+                          : const CircleAvatar(
+                              child: Icon(Icons.person),
+                            ),
+                      title: Text(friendProfile.fullName),
                       subtitle: switch (friend.status) {
                         FriendStatus.requested => switch (
                               friend.requester!.id == session.user.id) {
@@ -111,7 +118,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                               onPressed: () =>
                                   _respondFriendRequest(context, friend),
                             )
-                          : null);
+                          : friendStatusIcons[friend.status]);
                 },
                 itemComparator: (friend1, friend2) =>
                     friend2.createdAt!.compareTo(friend1.createdAt!),

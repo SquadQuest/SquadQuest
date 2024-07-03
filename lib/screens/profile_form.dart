@@ -1,11 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:squadquest/components/pickers/photo.dart';
 
 class ProfileFormScreen extends ConsumerStatefulWidget {
   final String? redirect;
@@ -20,6 +25,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _photoProvider = StateProvider<Uri?>((ref) => null);
 
   bool submitted = false;
 
@@ -34,13 +40,48 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
 
     try {
       final session = ref.read(authControllerProvider);
+      final supabase = ref.read(supabaseClientProvider);
       final profileController = ref.read(profileProvider.notifier);
 
+      // upload photo
+      final photo = ref.read(_photoProvider);
+
+      String? photoUrl;
+      if (photo != null) {
+        if (photo.isScheme('blob') || photo.isScheme('file')) {
+          if (photo.isScheme('file')) {
+            await supabase.storage.from('avatars').upload(
+                session!.user.id, File(photo.toFilePath()),
+                fileOptions: const FileOptions(upsert: true));
+          } else {
+            final response = await http.get(photo);
+            await supabase.storage.from('avatars').uploadBinary(
+                session!.user.id, response.bodyBytes,
+                fileOptions: FileOptions(
+                    upsert: true,
+                    contentType: response.headers['content-type']));
+          }
+          photoUrl = supabase.storage.from('avatars').getPublicUrl(
+                session.user.id,
+                transform: const TransformOptions(
+                  width: 512,
+                  height: 512,
+                ),
+              );
+          // append cache buster to force refresh
+          photoUrl = '$photoUrl&v=${DateTime.now().millisecondsSinceEpoch}';
+        } else {
+          photoUrl = photo.toString();
+        }
+      }
+
+      // save profile
       final savedProfile = await profileController.patch({
         'id': session!.user.id,
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         'phone': session.user.phone!,
+        'photo': photoUrl,
       });
 
       await ref.read(authControllerProvider.notifier).updateUserAttributes({
@@ -74,8 +115,11 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     final profile = ref.read(profileProvider);
 
     if (profile.hasValue && profile.value != null) {
-      _firstNameController.text = profile.value!.firstName;
-      _lastNameController.text = profile.value!.lastName;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _firstNameController.text = profile.value!.firstName;
+        _lastNameController.text = profile.value!.lastName;
+        ref.read(_photoProvider.notifier).state = profile.value!.photo;
+      });
     }
   }
 
@@ -87,6 +131,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       if (next.hasValue && next.value != null) {
         _firstNameController.text = next.value!.firstName;
         _lastNameController.text = next.value!.lastName;
+        ref.read(_photoProvider.notifier).state = next.value!.photo;
       }
     });
 
@@ -139,6 +184,9 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                 },
                 controller: _lastNameController,
               ),
+              const SizedBox(height: 32),
+              FormPhotoPicker(
+                  labelText: 'Profile photo', valueProvider: _photoProvider),
               const SizedBox(height: 32),
               submitted
                   ? const CircularProgressIndicator()

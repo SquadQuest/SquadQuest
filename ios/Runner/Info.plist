@@ -36,6 +36,8 @@
 	<string>Shares your location with friends during an event</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Shares your location with friends during an event</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Select photos to upload for your profile and events</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
