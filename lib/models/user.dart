@@ -9,6 +9,7 @@ class UserProfile {
     required this.lastName,
     required this.phone,
     required this.fcmToken,
+    required this.photo,
   });
 
   final UserID id;
@@ -16,6 +17,7 @@ class UserProfile {
   final String lastName;
   final String? phone;
   final String? fcmToken;
+  final Uri? photo;
 
   String get fullName => '$firstName $lastName';
   String? get phoneFormatted => phone == null ? null : formatPhone(phone!);
@@ -29,6 +31,7 @@ class UserProfile {
       lastName: map['last_name'] as String,
       phone: map['phone'],
       fcmToken: map['fcm_token'],
+      photo: map['photo'] == null ? null : Uri.parse(map['photo']),
     );
   }
 
@@ -39,6 +42,7 @@ class UserProfile {
       'last_name': lastName,
       'phone': phone,
       'fcm_token': fcmToken,
+      'photo': photo?.toString(),
     };
   }
 
