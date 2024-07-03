@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geobase/coordinates.dart';
 import 'package:open_location_code/open_location_code.dart';
+
 import 'package:squadquest/components/event_rally_map.dart';
 
 export 'package:geobase/coordinates.dart' show Geographic;
@@ -65,7 +66,7 @@ class _FormLocationPickerState extends ConsumerState<FormLocationPicker> {
             Text(
               value != null
                   ? PlusCode.encode(
-                      const LatLng(51.3701125, -10.202665625),
+                      LatLng(value.lat, value.lon),
                     ).toString()
                   : 'Tap edit to set (optional)',
               style: value != null
