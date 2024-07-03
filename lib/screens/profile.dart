@@ -127,12 +127,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     )
                                   ])),
                                 ])),
-                        // if (event.rallyPoint != null)
-                        const Expanded(
-                            flex: 1,
-                            child: AspectRatio(
-                                aspectRatio: 1,
-                                child: ColoredBox(color: Colors.blue)))
+                        if (profile.photo != null) ...[
+                          Expanded(
+                              flex: 1,
+                              child: AspectRatio(
+                                  aspectRatio: 1,
+                                  child: CircleAvatar(
+                                    backgroundImage:
+                                        NetworkImage(profile.photo.toString()),
+                                  )))
+                        ]
                       ])),
                   SliverPersistentHeader(
                     delegate: _SectionHeaderDelegate('I\'m going to'),
