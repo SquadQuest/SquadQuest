@@ -317,7 +317,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                   : () => _submitEvent(context),
                               child: Text(
                                 instance == null ? 'Post' : 'Save Changes',
-                                style: TextStyle(
+                                style: const TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 18),
                               ),
                             )

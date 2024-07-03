@@ -5,6 +5,7 @@ create table
     last_name text not null,
     phone text not null,
     fcm_token text null,
+    photo text null,
     constraint profiles_pkey primary key (id),
     constraint profiles_id_fkey foreign key (id) references users (id)
   );

@@ -118,7 +118,12 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                 accountName: Text(profile!.fullName),
                 accountEmail: profile.phone == null
                     ? null
-                    : Text(profile.phoneFormatted!)),
+                    : Text(profile.phoneFormatted!),
+                currentAccountPicture: profile.photo == null
+                    ? null
+                    : CircleAvatar(
+                        backgroundImage: NetworkImage(profile.photo.toString()),
+                      )),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const SizedBox.shrink()),
         ..._menu
