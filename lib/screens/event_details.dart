@@ -61,10 +61,12 @@ final _rsvpsFriendsProvider = FutureProvider.autoDispose
             (friend.requesteeId == session.user.id &&
                 friend.requesterId == rsvp.memberId)));
 
-    final mutuals = await Future.wait(rsvp.member!.mutuals!.map((userId) async {
-      final profile = await profilesCache.getById(userId);
-      return profile;
-    }));
+    final mutuals = rsvp.member!.mutuals == null
+        ? null
+        : await Future.wait(rsvp.member!.mutuals!.map((userId) async {
+            final profile = await profilesCache.getById(userId);
+            return profile;
+          }));
 
     return (rsvp: rsvp, friendship: friendship, mutuals: mutuals);
   }).toList());
