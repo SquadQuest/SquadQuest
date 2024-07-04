@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:squadquest/logger.dart';
 
 class FormPhotoPicker extends ConsumerStatefulWidget {
   final String labelText;

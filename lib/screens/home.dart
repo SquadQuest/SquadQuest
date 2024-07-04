@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grouped_list/grouped_list.dart';
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
@@ -73,9 +74,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   return InstanceTile(
                       instance: instance,
                       rsvp: rsvpsList.hasValue
-                          ? rsvpsList.value!.cast<InstanceMember?>().firstWhere(
-                              (rsvp) => rsvp!.instanceId == instance.id,
-                              orElse: () => null)
+                          ? rsvpsList.value!
+                              .cast<InstanceMember?>()
+                              .firstWhereOrNull(
+                                  (rsvp) => rsvp!.instanceId == instance.id)
                           : null,
                       onTap: () {
                         context.pushNamed('event-details', pathParameters: {

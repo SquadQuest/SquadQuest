@@ -27,8 +27,7 @@ class InstanceTile extends ListTile {
               ],
               Text('Location: ${instance.locationDescription}'),
               Text('Topic: ${instance.topic?.name}'),
-              Text(
-                  'Posted by: ${instance.createdBy?.firstName} ${instance.createdBy?.lastName}'),
+              Text('Posted by: ${instance.createdBy?.displayName}'),
               Text('Date: ${eventDateFormat.format(instance.startTimeMin)}'),
               Text(
                   'Starting between: ${eventTimeFormat.format(instance.startTimeMin)}–${eventTimeFormat.format(instance.startTimeMax)}'),

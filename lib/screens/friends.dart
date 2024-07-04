@@ -99,7 +99,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                           : const CircleAvatar(
                               child: Icon(Icons.person),
                             ),
-                      title: Text(friendProfile.fullName),
+                      title: Text(friendProfile.displayName),
                       subtitle: switch (friend.status) {
                         FriendStatus.requested => switch (
                               friend.requester!.id == session.user.id) {

@@ -103,7 +103,7 @@ serve(async (request) => {
     subscribed: mySubscriptions.has(friendTopicSubscription.topic),
   }));
 
-  // return new friend request
+  // return friend profile
   return new Response(
     JSON.stringify({
       profile: scrubProfile(friendProfile),

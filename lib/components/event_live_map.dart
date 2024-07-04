@@ -283,7 +283,7 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
           iconImage: 'person-marker',
           iconSize: kIsWeb ? 0.4 : 0.9,
           iconAnchor: 'bottom',
-          textField: userProfiles[userId]!.fullName,
+          textField: userProfiles[userId]!.displayName,
           textColor: '#ffffff',
           textAnchor: 'top-left',
           textSize: 14);
