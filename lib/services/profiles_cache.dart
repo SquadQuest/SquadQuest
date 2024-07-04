@@ -20,22 +20,12 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
   ProfilesCache build() {
     final supabase = ref.read(supabaseClientProvider);
 
-    // load full profiles of friends first
-    supabase
-        .from('friends')
-        .select('requester(*),requestee(*)')
-        .then((friendsData) async {
-      for (final friendData in friendsData) {
-        final UserID requesterId = friendData['requester']['id'];
-        final UserID requesteeId = friendData['requestee']['id'];
-
-        if (!state.containsKey(requesterId)) {
-          state[requesterId] = UserProfile.fromMap(friendData['requester']);
-        }
-
-        if (!state.containsKey(requesteeId)) {
-          state[requesteeId] = UserProfile.fromMap(friendData['requestee']);
-        }
+    // load profiles of friends network first
+    supabase.functions
+        .invoke('get-friends-network', method: HttpMethod.get)
+        .then((response) async {
+      for (final profile in response.data) {
+        state[profile['id']] = UserProfile.fromMap(profile);
       }
 
       // load own profile if needed

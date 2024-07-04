@@ -3,14 +3,14 @@ import 'package:squadquest/common.dart';
 typedef UserID = String;
 
 class UserProfile {
-  UserProfile({
-    required this.id,
-    required this.firstName,
-    required this.lastName,
-    required this.phone,
-    required this.fcmToken,
-    required this.photo,
-  });
+  UserProfile(
+      {required this.id,
+      required this.firstName,
+      required this.lastName,
+      required this.phone,
+      required this.fcmToken,
+      required this.photo,
+      this.mutuals});
 
   final UserID id;
   final String firstName;
@@ -18,6 +18,7 @@ class UserProfile {
   final String? phone;
   final String? fcmToken;
   final Uri? photo;
+  final List<UserID>? mutuals;
 
   String get fullName => '$firstName $lastName';
   String get displayName => lastName == null ? firstName : fullName;
@@ -33,6 +34,8 @@ class UserProfile {
       phone: map['phone'],
       fcmToken: map['fcm_token'],
       photo: map['photo'] == null ? null : Uri.parse(map['photo']),
+      mutuals:
+          map['mutuals'] == null ? null : List<UserID>.from(map['mutuals']),
     );
   }
 

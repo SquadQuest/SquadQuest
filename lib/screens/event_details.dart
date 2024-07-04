@@ -12,6 +12,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/services/location.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
@@ -34,7 +35,11 @@ final _statusGroupOrder = {
 
 enum Menu { showSetRallyPointMap, showLiveMap, getLink, edit, cancel, uncancel }
 
-typedef RsvpFriend = ({InstanceMember rsvp, Friend? friendship});
+typedef RsvpFriend = ({
+  InstanceMember rsvp,
+  Friend? friendship,
+  List<UserProfile>? mutuals
+});
 
 final _rsvpsFriendsProvider = FutureProvider.autoDispose
     .family<List<RsvpFriend>, InstanceID>((ref, instanceId) async {
@@ -46,8 +51,9 @@ final _rsvpsFriendsProvider = FutureProvider.autoDispose
 
   final eventRsvps = await ref.watch(rsvpsPerEventProvider(instanceId).future);
   final friendsList = await ref.watch(friendsProvider.future);
+  final profilesCache = ref.read(profilesCacheProvider.notifier);
 
-  return eventRsvps.map((rsvp) {
+  return Future.wait(eventRsvps.map((rsvp) async {
     final Friend? friendship = friendsList.firstWhereOrNull((friend) =>
         friend.status == FriendStatus.accepted &&
         ((friend.requesterId == session.user.id &&
@@ -55,8 +61,13 @@ final _rsvpsFriendsProvider = FutureProvider.autoDispose
             (friend.requesteeId == session.user.id &&
                 friend.requesterId == rsvp.memberId)));
 
-    return (rsvp: rsvp, friendship: friendship);
-  }).toList();
+    final mutuals = await Future.wait(rsvp.member!.mutuals!.map((userId) async {
+      final profile = await profilesCache.getById(userId);
+      return profile;
+    }));
+
+    return (rsvp: rsvp, friendship: friendship, mutuals: mutuals);
+  }).toList());
 });
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
@@ -654,6 +665,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                           ? theme.disabledColor
                                                           : null,
                                                 )),
+                                            subtitle: rsvpFriend.mutuals ==
+                                                        null ||
+                                                    rsvpFriend.friendship !=
+                                                        null
+                                                ? null
+                                                : Text(
+                                                    // ignore: prefer_interpolation_to_compose_strings
+                                                    'Friend of ${rsvpFriend.mutuals!.map((profile) => profile.displayName).join(', ')}',
+                                                    style: TextStyle(
+                                                      color: rsvpFriend
+                                                                  .friendship ==
+                                                              null
+                                                          ? theme.disabledColor
+                                                          : null,
+                                                    )),
                                             trailing: rsvpIcons[
                                                 rsvpFriend.rsvp.status]);
                                       },
