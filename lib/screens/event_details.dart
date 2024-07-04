@@ -10,11 +10,13 @@ import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:squadquest/logger.dart';
+import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/location.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
+import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';
@@ -31,6 +33,31 @@ final _statusGroupOrder = {
 };
 
 enum Menu { showSetRallyPointMap, showLiveMap, getLink, edit, cancel, uncancel }
+
+typedef RsvpFriend = ({InstanceMember rsvp, Friend? friendship});
+
+final _rsvpsFriendsProvider = FutureProvider.autoDispose
+    .family<List<RsvpFriend>, InstanceID>((ref, instanceId) async {
+  final session = ref.watch(authControllerProvider);
+
+  if (session == null) {
+    return [];
+  }
+
+  final eventRsvps = await ref.watch(rsvpsPerEventProvider(instanceId).future);
+  final friendsList = await ref.watch(friendsProvider.future);
+
+  return eventRsvps.map((rsvp) {
+    final Friend? friendship = friendsList.firstWhereOrNull((friend) =>
+        friend.status == FriendStatus.accepted &&
+        ((friend.requesterId == session.user.id &&
+                friend.requesteeId == rsvp.memberId) ||
+            (friend.requesteeId == session.user.id &&
+                friend.requesterId == rsvp.memberId)));
+
+    return (rsvp: rsvp, friendship: friendship);
+  }).toList();
+});
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
   final InstanceID instanceId;
@@ -297,9 +324,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final session = ref.watch(authControllerProvider);
     final eventAsync = ref.watch(eventDetailsProvider(widget.instanceId));
     final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(widget.instanceId));
+    final rsvpsFriendsAsync =
+        ref.watch(_rsvpsFriendsProvider(widget.instanceId));
 
     // refresh map when event changes
     ref.listen(eventDetailsProvider(widget.instanceId), (_, event) async {
@@ -313,9 +344,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     if (eventRsvpsAsync.hasValue &&
         eventRsvpsAsync.value != null &&
         session != null) {
-      final myRsvp = eventRsvpsAsync.value!.cast<InstanceMember?>().firstWhere(
-          (rsvp) => rsvp?.memberId == session.user.id,
-          orElse: () => null);
+      final myRsvp = eventRsvpsAsync.value!
+          .cast<InstanceMember?>()
+          .firstWhereOrNull((rsvp) => rsvp?.memberId == session.user.id);
 
       for (int buttonIndex = 0;
           buttonIndex < myRsvpSelection.length;
@@ -519,11 +550,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                           ))))
                           ]),
                       Expanded(
-                          child: eventRsvpsAsync.when(
+                          child: rsvpsFriendsAsync.when(
                               loading: () => const Center(
                                   child: CircularProgressIndicator()),
                               error: (error, _) => Text('Error: $error'),
-                              data: (eventRsvps) => eventRsvps.isEmpty
+                              data: (rsvpsFriends) => rsvpsFriends.isEmpty
                                   ? const Padding(
                                       padding: EdgeInsets.all(32),
                                       child: Text(
@@ -532,15 +563,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                       ),
                                     )
                                   : GroupedListView(
-                                      elements: eventRsvps,
+                                      elements: rsvpsFriends,
                                       physics:
                                           const AlwaysScrollableScrollPhysics(),
                                       useStickyGroupSeparators: true,
                                       stickyHeaderBackgroundColor:
-                                          Theme.of(context)
-                                              .scaffoldBackgroundColor,
-                                      groupBy: (InstanceMember rsvp) =>
-                                          rsvp.status,
+                                          theme.scaffoldBackgroundColor,
+                                      groupBy: (RsvpFriend rsvpFriend) =>
+                                          rsvpFriend.rsvp.status,
                                       groupComparator: (group1, group2) {
                                         return _statusGroupOrder[group1]!
                                             .compareTo(
@@ -572,20 +602,63 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                     style: const TextStyle(
                                                         fontSize: 18),
                                                   )),
-                                      itemBuilder: (context, rsvp) {
+                                      itemBuilder: (context, rsvpFriend) {
                                         return ListTile(
-                                            leading: rsvp.member!.photo != null
+                                            onTap: rsvpFriend.friendship != null
+                                                ? () {
+                                                    context.pushNamed(
+                                                        'profile-view',
+                                                        pathParameters: {
+                                                          'id': rsvpFriend
+                                                              .rsvp.memberId!
+                                                        });
+                                                  }
+                                                : null,
+                                            leading: rsvpFriend.friendship ==
+                                                    null
                                                 ? CircleAvatar(
-                                                    backgroundImage:
-                                                        NetworkImage(rsvp
-                                                            .member!.photo
-                                                            .toString()),
+                                                    backgroundColor: theme
+                                                        .colorScheme
+                                                        .primaryContainer
+                                                        .withAlpha(100),
+                                                    child: Icon(
+                                                      Icons.person_outline,
+                                                      color: theme
+                                                          .iconTheme.color!
+                                                          .withAlpha(100),
+                                                    ),
                                                   )
-                                                : const CircleAvatar(
-                                                    child: Icon(Icons.person),
-                                                  ),
-                                            title: Text(rsvp.member!.fullName),
-                                            trailing: rsvpIcons[rsvp.status]);
+                                                : rsvpFriend.rsvp.member!
+                                                            .photo ==
+                                                        null
+                                                    ? const CircleAvatar(
+                                                        child:
+                                                            Icon(Icons.person),
+                                                      )
+                                                    : CircleAvatar(
+                                                        backgroundImage:
+                                                            NetworkImage(
+                                                                rsvpFriend
+                                                                    .rsvp
+                                                                    .member!
+                                                                    .photo
+                                                                    .toString()),
+                                                      ),
+                                            title: Text(
+                                                rsvpFriend.friendship == null
+                                                    ? rsvpFriend
+                                                        .rsvp.member!.firstName
+                                                    : rsvpFriend
+                                                        .rsvp.member!.fullName,
+                                                style: TextStyle(
+                                                  color:
+                                                      rsvpFriend.friendship ==
+                                                              null
+                                                          ? theme.disabledColor
+                                                          : null,
+                                                )),
+                                            trailing: rsvpIcons[
+                                                rsvpFriend.rsvp.status]);
                                       },
                                     ))),
                     ])),
