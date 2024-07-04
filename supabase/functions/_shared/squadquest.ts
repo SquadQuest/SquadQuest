@@ -3,6 +3,7 @@ function scrubProfile(userProfile: { [key: string]: string | number }) {
     id: userProfile?.id,
     first_name: userProfile?.first_name,
     last_name: userProfile?.last_name,
+    photo: userProfile?.photo,
   };
 }
 
