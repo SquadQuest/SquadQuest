@@ -37,7 +37,11 @@ serve(async (request) => {
       "friends",
     )
     .select("requester, requestee")
-    .eq("status", "accepted")
+    .or(
+      `status.eq."accepted",and(status.eq."requested", requestee.eq."${
+        currentUser!.id
+      }")`,
+    )
     .or(`requester.eq."${currentUser!.id}", requestee.eq."${currentUser!.id}"`)
     .throwOnError();
 
