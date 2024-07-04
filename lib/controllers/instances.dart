@@ -49,15 +49,15 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     // subscribe to changes
     supabase.from('instances').stream(primaryKey: ['id']).listen((data) async {
       // populate created_by field with profile data
-      var populatedData = await profilesCache
+      await profilesCache
           .populateData(data, [(idKey: 'created_by', modelKey: 'created_by')]);
 
       // populate topic field with topic data
-      populatedData = await topicsCache
+      await topicsCache
           .populateData(data, [(idKey: 'topic', modelKey: 'topic')]);
 
       // convert to model instances
-      final instances = populatedData.map(Instance.fromMap).toList();
+      final instances = data.map(Instance.fromMap).toList();
 
       // convert to model instances and update state
       state = AsyncValue.data(instances);

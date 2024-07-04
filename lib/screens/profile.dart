@@ -39,6 +39,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final supabase = ref.read(supabaseClientProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
+    final topicsCache = ref.read(topicsCacheProvider.notifier);
 
     // load profile
     profilesCache.getById(widget.userId).then((profile) {
@@ -55,10 +56,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         .inFilter('status', ['maybe', 'yes', 'omw'])
         .gt('instance.start_time_max', DateTime.now())
         .order('start_time_max', referencedTable: 'instance', ascending: false)
-        .withConverter((data) => data.map(InstanceMember.fromMap).toList())
-        .then((rsvps) async {
+        // .withConverter((data) => data.map((instanceData) {InstanceMember.fromMap).toList())
+        .then((rsvpsData) async {
+          final instancesData = rsvpsData
+              .map((rsvpData) => rsvpData['instance'])
+              .cast<Map<String, dynamic>>()
+              .toList();
+
+          // populate created_by field with profile data
+          await profilesCache.populateData(
+              instancesData, [(idKey: 'created_by', modelKey: 'created_by')]);
+
+          // populate topic field with topic data
+          await topicsCache.populateData(
+              instancesData, [(idKey: 'topic', modelKey: 'topic')]);
+
           setState(() {
-            rsvpsAsync = AsyncValue.data(rsvps);
+            rsvpsAsync =
+                AsyncValue.data(rsvpsData.map(InstanceMember.fromMap).toList());
           });
         });
 
@@ -66,7 +81,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     supabase.functions.invoke('get-friend-profile',
         method: HttpMethod.get,
         queryParameters: {'user_id': widget.userId}).then((response) async {
-      final topicsCache = ref.read(topicsCacheProvider.notifier);
       final topicMembershipsData =
           response.data['topic_subscriptions'].cast<Map<String, dynamic>>();
       final populatedData = await topicsCache.populateData(
