@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/models/user.dart';
 
@@ -10,8 +13,43 @@ final profilesCacheProvider =
         ProfilesCacheService.new);
 
 class ProfilesCacheService extends Notifier<ProfilesCache> {
+  final Completer<void> _initializedCompleter = Completer();
+  Future get initialized => _initializedCompleter.future;
+
   @override
   ProfilesCache build() {
+    final supabase = ref.read(supabaseClientProvider);
+
+    // load full profiles of friends first
+    supabase
+        .from('friends')
+        .select('requester(*),requestee(*)')
+        .then((friendsData) async {
+      for (final friendData in friendsData) {
+        final UserID requesterId = friendData['requester']['id'];
+        final UserID requesteeId = friendData['requestee']['id'];
+
+        if (!state.containsKey(requesterId)) {
+          state[requesterId] = UserProfile.fromMap(friendData['requester']);
+        }
+
+        if (!state.containsKey(requesteeId)) {
+          state[requesteeId] = UserProfile.fromMap(friendData['requestee']);
+        }
+      }
+
+      // load own profile if needed
+      final myUserId = supabase.auth.currentUser?.id;
+      if (myUserId != null && !state.containsKey(myUserId)) {
+        final myProfile = await ref.read(profileProvider.future);
+
+        if (myProfile != null) {
+          state[myUserId] = myProfile;
+        }
+      }
+      _initializedCompleter.complete();
+    });
+
     return {};
   }
 
@@ -24,6 +62,9 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
   Future<List<Map<String, dynamic>>> populateData(
       List<Map<String, dynamic>> data,
       List<({String idKey, String modelKey})> fields) async {
+    // wait until cache is initialized with detailed friends data
+    await initialized;
+
     // build set of missing IDs
     final Set<UserID> missingIds = {};
     for (final item in data) {
@@ -43,7 +84,7 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
     if (missingIds.isNotEmpty) {
       final supabase = ref.read(supabaseClientProvider);
       await supabase
-          .from('profiles')
+          .from('profiles_anonymous')
           .select('*')
           .inFilter('id', missingIds.toList())
           .withConverter((data) => data.map(UserProfile.fromMap).toList())
@@ -69,6 +110,9 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
   }
 
   Future<Map<UserID, UserProfile>> fetchProfiles(Set<UserID> userIds) async {
+    // wait until cache is initialized with detailed friends data
+    await initialized;
+
     final result = <UserID, UserProfile>{};
     final missingIds = userIds.where((userId) => !state.containsKey(userId));
 
@@ -76,7 +120,7 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
     if (missingIds.isNotEmpty) {
       final profiles = await ref
           .read(supabaseClientProvider)
-          .from('profiles')
+          .from('profiles_anonymous')
           .select('*')
           .inFilter('id', missingIds.toList())
           .withConverter((data) => data.map(UserProfile.fromMap).toList());

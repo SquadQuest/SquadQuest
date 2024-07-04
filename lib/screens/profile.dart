@@ -121,26 +121,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                        Expanded(
-                            flex: 2,
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  RichText(
-                                      text: TextSpan(children: [
-                                    const TextSpan(text: 'Phone: '),
-                                    TextSpan(
-                                      text: profile.phoneFormatted,
-                                      style: const TextStyle(
-                                        color: Colors.blue,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                      recognizer: TapGestureRecognizer()
-                                        ..onTap =
-                                            () => launchUrl(profile.phoneUri!),
-                                    )
-                                  ])),
-                                ])),
+                        if (profile.phone != null) ...[
+                          Expanded(
+                              flex: 2,
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    RichText(
+                                        text: TextSpan(children: [
+                                      const TextSpan(text: 'Phone: '),
+                                      TextSpan(
+                                        text: profile.phoneFormatted,
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () =>
+                                              launchUrl(profile.phoneUri!),
+                                      )
+                                    ])),
+                                  ]))
+                        ],
                         if (profile.photo != null) ...[
                           Expanded(
                               flex: 1,
