@@ -56,18 +56,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         .inFilter('status', ['maybe', 'yes', 'omw'])
         .gt('instance.start_time_max', DateTime.now())
         .order('start_time_max', referencedTable: 'instance', ascending: false)
-        // .withConverter((data) => data.map((instanceData) {InstanceMember.fromMap).toList())
         .then((rsvpsData) async {
           final instancesData = rsvpsData
               .map((rsvpData) => rsvpData['instance'])
               .cast<Map<String, dynamic>>()
               .toList();
 
-          // populate created_by field with profile data
+          // populate profile data
           await profilesCache.populateData(
               instancesData, [(idKey: 'created_by', modelKey: 'created_by')]);
 
-          // populate topic field with topic data
+          // populate topic data
           await topicsCache.populateData(
               instancesData, [(idKey: 'topic', modelKey: 'topic')]);
 

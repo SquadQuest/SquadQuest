@@ -61,6 +61,9 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
       for (final field in fields) {
         if (item[field.modelKey] is UserProfile) {
           continue;
+        } else if (item[field.idKey] is Map &&
+            item[field.idKey]['id'] != null) {
+          item[field.idKey] = item[field.idKey]['id'];
         }
 
         final UserID userId = item[field.idKey];

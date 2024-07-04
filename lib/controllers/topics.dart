@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/topics_cache.dart';
 import 'package:squadquest/models/topic.dart';
@@ -8,8 +9,6 @@ final topicsProvider =
     AsyncNotifierProvider<TopicsController, List<Topic>>(TopicsController.new);
 
 class TopicsController extends AsyncNotifier<List<Topic>> {
-  static const _defaultSelect = '*';
-
   @override
   Future<List<Topic>> build() async {
     return fetch();
@@ -19,11 +18,10 @@ class TopicsController extends AsyncNotifier<List<Topic>> {
     final supabase = ref.read(supabaseClientProvider);
     final topicsCache = ref.read(topicsCacheProvider.notifier);
 
-    final topics = await supabase
-        .from('topics')
-        .select(_defaultSelect)
-        .order('name', ascending: true)
-        .withConverter((data) => data.map(Topic.fromMap).toList());
+    final data =
+        await supabase.from('topics').select().order('name', ascending: true);
+
+    final topics = await hydrate(data);
 
     // add loaded topics to topics cache
     topicsCache.cacheTopics(topics);
@@ -36,26 +34,28 @@ class TopicsController extends AsyncNotifier<List<Topic>> {
     state = await AsyncValue.guard(fetch);
   }
 
-  Future<Topic> createTopic(Topic topic) async {
-    assert(topic.id == null, 'Cannot create a topic with an ID');
+  Future<List<Topic>> hydrate(List<Map<String, dynamic>> data) async {
+    return data.map(Topic.fromMap).toList();
+  }
 
-    final List<Topic>? loadedTopics =
-        state.hasValue ? state.asData!.value : null;
+  Future<Topic> save(Topic topic) async {
+    assert(topic.id == null, 'Cannot create a topic with an ID');
 
     final supabase = ref.read(supabaseClientProvider);
 
     final Map topicData = topic.toMap();
 
-    final insertedData =
-        await supabase.from('topics').insert(topicData).select(_defaultSelect);
+    final savedData =
+        await supabase.from('topics').insert(topicData).select().single();
 
-    final insertedTopic = Topic.fromMap(insertedData.first);
+    final savedTopic = (await hydrate([savedData])).first;
 
     // update loaded topics with newly created one
-    if (loadedTopics != null) {
-      state = AsyncValue.data([...loadedTopics, insertedTopic]);
+    if (state.hasValue && state.value != null) {
+      state = AsyncValue.data(updateListWithRecord<Topic>(state.value!,
+          (existing) => existing.id == savedTopic.id, savedTopic));
     }
 
-    return insertedTopic;
+    return savedTopic;
   }
 }

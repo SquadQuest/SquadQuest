@@ -20,7 +20,6 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   @override
   Future<List<InstanceMember>> build() async {
     final supabase = ref.read(supabaseClientProvider);
-    final profilesCache = ref.read(profilesCacheProvider.notifier);
 
     // subscribe to changes
     supabase
@@ -28,13 +27,20 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
         .stream(primaryKey: ['id'])
         .eq('member', supabase.auth.currentUser!.id)
         .listen((data) async {
-          final populatedData = await profilesCache
-              .populateData(data, [(idKey: 'member', modelKey: 'member')]);
-          state = AsyncValue.data(
-              populatedData.map(InstanceMember.fromMap).toList());
+          state = AsyncValue.data(await hydrate(data));
         });
 
     return future;
+  }
+
+  Future<List<InstanceMember>> hydrate(List<Map<String, dynamic>> data) async {
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
+
+    // populate profile data
+    await profilesCache
+        .populateData(data, [(idKey: 'member', modelKey: 'member')]);
+
+    return data.map(InstanceMember.fromMap).toList();
   }
 
   Future<InstanceMember?> save(
@@ -47,7 +53,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
 
       final instanceMember = response.data['status'] == null
           ? null
-          : InstanceMember.fromMap(response.data);
+          : (await hydrate([response.data])).first;
 
       // update loaded rsvps with created/updated one
       if (state.hasValue && state.value != null) {
@@ -73,8 +79,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
       final response = await supabase.functions.invoke('invite',
           body: {'instance_id': instanceId, 'users': userIds});
 
-      return List<InstanceMember>.from(response.data
-          .map((invitationData) => InstanceMember.fromMap(invitationData)));
+      return hydrate(response.data);
     } on FunctionException catch (error) {
       throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
     }
@@ -109,11 +114,9 @@ class InstanceRsvpsController
   }
 
   void _onData(List<Map<String, dynamic>> data) async {
-    final profilesCache = ref.read(profilesCacheProvider.notifier);
+    final rsvpsController = ref.read(rsvpsProvider.notifier);
 
-    final populatedData = await profilesCache
-        .populateData(data, [(idKey: 'member', modelKey: 'member')]);
-    state = AsyncValue.data(populatedData.map(InstanceMember.fromMap).toList());
+    state = AsyncValue.data(await rsvpsController.hydrate(data));
   }
 
   Future<InstanceMember?> save(InstanceMemberStatus? status) async {

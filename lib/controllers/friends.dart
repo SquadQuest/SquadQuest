@@ -9,20 +9,13 @@ final friendsProvider = AsyncNotifierProvider<FriendsController, List<Friend>>(
     FriendsController.new);
 
 class FriendsController extends AsyncNotifier<List<Friend>> {
-  static const _defaultSelect = '*, requester(*), requestee(*)';
-
   @override
   Future<List<Friend>> build() async {
     final supabase = ref.read(supabaseClientProvider);
-    final profilesCache = ref.read(profilesCacheProvider.notifier);
 
     // subscribe to changes
     supabase.from('friends').stream(primaryKey: ['id']).listen((data) async {
-      final populatedData = await profilesCache.populateData(data, [
-        (idKey: 'requester', modelKey: 'requester'),
-        (idKey: 'requestee', modelKey: 'requestee')
-      ]);
-      state = AsyncValue.data(populatedData.map(Friend.fromMap).toList());
+      state = AsyncValue.data(await hydrate(data));
     });
 
     return future;
@@ -31,14 +24,25 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
   Future<List<Friend>> fetch() async {
     final supabase = ref.read(supabaseClientProvider);
 
-    return supabase
-        .from('friends')
-        .select(_defaultSelect)
-        .withConverter((data) => data.map(Friend.fromMap).toList());
+    final data = await supabase.from('friends').select();
+
+    return hydrate(data);
   }
 
   Future<void> refresh() async {
     state = await AsyncValue.guard(fetch);
+  }
+
+  Future<List<Friend>> hydrate(List<Map<String, dynamic>> data) async {
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
+
+    // populate profile data
+    await profilesCache.populateData(data, [
+      (idKey: 'requester', modelKey: 'requester'),
+      (idKey: 'requestee', modelKey: 'requestee')
+    ]);
+
+    return data.map(Friend.fromMap).toList();
   }
 
   Future<Friend> sendFriendRequest(String phone) async {
@@ -48,7 +52,7 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
       final response = await supabase.functions
           .invoke('send-friend-request', body: {'phone': phone});
 
-      final insertedFriend = Friend.fromMap(response.data);
+      final insertedFriend = (await hydrate([response.data])).first;
 
       // update loaded friends with newly created one
       if (state.hasValue && state.value != null) {
@@ -77,7 +81,7 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
       final response = await supabase.functions.invoke('action-friend-request',
           body: {'friend_id': friend.id, 'action': action.name});
 
-      final insertedFriend = Friend.fromMap(response.data);
+      final insertedFriend = (await hydrate([response.data])).first;
 
       // update loaded friends with created/updated one
       if (state.hasValue && state.value != null) {
