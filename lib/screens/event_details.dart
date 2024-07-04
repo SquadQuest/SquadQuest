@@ -53,7 +53,8 @@ final _rsvpsFriendsProvider = FutureProvider.autoDispose
   final friendsList = await ref.watch(friendsProvider.future);
   final profilesCache = ref.read(profilesCacheProvider.notifier);
 
-  return Future.wait(eventRsvps.map((rsvp) async {
+  // generate list of rsvp members with friendship status and mutual friends
+  final rsvpFriends = await Future.wait(eventRsvps.map((rsvp) async {
     final Friend? friendship = friendsList.firstWhereOrNull((friend) =>
         friend.status == FriendStatus.accepted &&
         ((friend.requesterId == session.user.id &&
@@ -70,6 +71,13 @@ final _rsvpsFriendsProvider = FutureProvider.autoDispose
 
     return (rsvp: rsvp, friendship: friendship, mutuals: mutuals);
   }).toList());
+
+  // filter out non-friend members who haven't responded to their invitation
+  return rsvpFriends
+      .where((rsvpMember) =>
+          rsvpMember.rsvp.status != InstanceMemberStatus.invited ||
+          rsvpMember.friendship != null)
+      .toList();
 });
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
