@@ -104,7 +104,7 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     // try to get the instance from the controller's loaded list first
     final Instance? loadedInstance = loadedInstances
         ?.cast<Instance?>()
-        .firstWhere((instance) => instance!.id == id, orElse: () => null);
+        .firstWhereOrNull((instance) => instance!.id == id);
 
     if (loadedInstance != null) {
       return loadedInstance;
