@@ -107,7 +107,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return AppScaffold(
       showDrawer: !context.canPop(),
       title: profileAsync.when(
-        data: (UserProfile profile) => profile.fullName,
+        data: (UserProfile profile) => profile.displayName,
         loading: () => '',
         error: (_, __) => 'Error loading profile',
       ),

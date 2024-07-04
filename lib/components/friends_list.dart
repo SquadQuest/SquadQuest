@@ -80,7 +80,7 @@ class _FriendsListState extends ConsumerState<FriendsList> {
                           }
 
                           return _searchQuery.isEmpty ||
-                              otherProfile.fullName
+                              otherProfile.displayName
                                   .toLowerCase()
                                   .contains(_searchQuery);
                         }).map((friend) {
@@ -88,7 +88,7 @@ class _FriendsListState extends ConsumerState<FriendsList> {
                               friend.getOtherProfile(session.user.id);
 
                           return CheckboxListTile(
-                            title: Text(otherProfile!.fullName),
+                            title: Text(otherProfile!.displayName),
                             value: _selectedUsers.contains(otherProfile.id),
                             onChanged: (bool? value) {
                               setState(() {

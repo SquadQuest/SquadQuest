@@ -454,7 +454,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                           'Date: ${eventDateFormat.format(event.startTimeMin)}'),
                                       Text('Topic: ${event.topic?.name}'),
                                       Text(
-                                          'Posted by: ${event.createdBy?.fullName}'),
+                                          'Posted by: ${event.createdBy?.displayName}'),
                                       Text(
                                           'Visibility: ${event.visibility.name}'),
                                       Text(
@@ -645,11 +645,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                     .toString()),
                                                       ),
                                             title: Text(
-                                                rsvpFriend.friendship == null
-                                                    ? rsvpFriend
-                                                        .rsvp.member!.firstName
-                                                    : rsvpFriend
-                                                        .rsvp.member!.fullName,
+                                                rsvpFriend
+                                                    .rsvp.member!.displayName,
                                                 style: TextStyle(
                                                   color:
                                                       rsvpFriend.friendship ==

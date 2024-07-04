@@ -86,7 +86,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
 
       await ref.read(authControllerProvider.notifier).updateUserAttributes({
         'first_name': savedProfile.firstName,
-        'last_name': savedProfile.lastName,
+        'last_name': savedProfile.lastName!,
         'profile_initialized': true,
       });
     } catch (error) {
@@ -117,7 +117,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     if (profile.hasValue && profile.value != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _firstNameController.text = profile.value!.firstName;
-        _lastNameController.text = profile.value!.lastName;
+        _lastNameController.text = profile.value!.lastName!;
         ref.read(_photoProvider.notifier).state = profile.value!.photo;
       });
     }
@@ -130,7 +130,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     ref.listen(profileProvider, (previous, next) {
       if (next.hasValue && next.value != null) {
         _firstNameController.text = next.value!.firstName;
-        _lastNameController.text = next.value!.lastName;
+        _lastNameController.text = next.value!.lastName!;
         ref.read(_photoProvider.notifier).state = next.value!.photo;
       }
     });
