@@ -75,3 +75,8 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/get-friend-profile
     ?user_id={{userId}}
 Authorization: Bearer {{token}}
+
+### Get friend network
+
+GET {{baseUrl}}/get-friends-network
+Authorization: Bearer {{token}}
