@@ -18,20 +18,24 @@ class TopicMembershipsController
 
   Future<List<MyTopicMembership>> fetch() async {
     final supabase = ref.read(supabaseClientProvider);
-    final topicsCache = ref.read(topicsCacheProvider.notifier);
 
-    // subscribe to changes
     final data = await supabase.from('my_topic_memberships').select('*');
 
-    // populate topic field with topic data
-    final populatedData = await topicsCache
-        .populateData(data, [(idKey: 'topic', modelKey: 'topic')]);
-
-    return populatedData.map(MyTopicMembership.fromMap).toList();
+    return hydrate(data);
   }
 
   Future<void> refresh() async {
     state = await AsyncValue.guard(fetch);
+  }
+
+  Future<List<MyTopicMembership>> hydrate(
+      List<Map<String, dynamic>> data) async {
+    final topicsCache = ref.read(topicsCacheProvider.notifier);
+
+    // populate topic data
+    await topicsCache.populateData(data, [(idKey: 'topic', modelKey: 'topic')]);
+
+    return data.map(MyTopicMembership.fromMap).toList();
   }
 
   Future<MyTopicMembership> saveSubscribed(

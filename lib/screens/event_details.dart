@@ -13,7 +13,7 @@ import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/profiles_cache.dart';
-import 'package:squadquest/services/location.dart';
+import 'package:squadquest/controllers/location.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
@@ -139,11 +139,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     logger.i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
 
     // start or stop tracking
-    final locationService = ref.read(locationServiceProvider);
+    final locationController = ref.read(locationControllerProvider);
     if (status == InstanceMemberStatus.omw) {
-      await locationService.startTracking(widget.instanceId);
+      await locationController.startTracking(widget.instanceId);
     } else {
-      await locationService.stopTracking(widget.instanceId);
+      await locationController.stopTracking(widget.instanceId);
     }
 
     if (_rsvpSnackbar != null) {
@@ -624,8 +624,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                         fontSize: 18),
                                                   )),
                                       itemBuilder: (context, rsvpFriend) {
+                                        final isFriendOrSelf =
+                                            rsvpFriend.rsvp.memberId! ==
+                                                    session!.user.id ||
+                                                rsvpFriend.friendship != null;
                                         return ListTile(
-                                            onTap: rsvpFriend.friendship != null
+                                            onTap: isFriendOrSelf
                                                 ? () {
                                                     context.pushNamed(
                                                         'profile-view',
@@ -635,8 +639,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                         });
                                                   }
                                                 : null,
-                                            leading: rsvpFriend.friendship ==
-                                                    null
+                                            leading: !isFriendOrSelf
                                                 ? CircleAvatar(
                                                     backgroundColor: theme
                                                         .colorScheme
@@ -669,24 +672,19 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                 rsvpFriend
                                                     .rsvp.member!.displayName,
                                                 style: TextStyle(
-                                                  color:
-                                                      rsvpFriend.friendship ==
-                                                              null
-                                                          ? theme.disabledColor
-                                                          : null,
+                                                  color: isFriendOrSelf
+                                                      ? null
+                                                      : theme.disabledColor,
                                                 )),
                                             subtitle: rsvpFriend.mutuals ==
                                                         null ||
-                                                    rsvpFriend.friendship !=
-                                                        null
+                                                    isFriendOrSelf
                                                 ? null
                                                 : Text(
                                                     // ignore: prefer_interpolation_to_compose_strings
                                                     'Friend of ${rsvpFriend.mutuals!.map((profile) => profile.displayName).join(', ')}',
                                                     style: TextStyle(
-                                                      color: rsvpFriend
-                                                                  .friendship ==
-                                                              null
+                                                      color: isFriendOrSelf
                                                           ? theme.disabledColor
                                                           : null,
                                                     )),

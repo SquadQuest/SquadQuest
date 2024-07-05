@@ -37,7 +37,11 @@ serve(async (request) => {
       "friends",
     )
     .select("requester, requestee")
-    .eq("status", "accepted")
+    .or(
+      `status.eq."accepted",and(status.eq."requested", requestee.eq."${
+        currentUser!.id
+      }")`,
+    )
     .or(`requester.eq."${currentUser!.id}", requestee.eq."${currentUser!.id}"`)
     .throwOnError();
 
@@ -63,6 +67,7 @@ serve(async (request) => {
     Object.assign(network.get(profile.id)!, {
       first_name: profile.first_name,
       last_name: profile.last_name,
+      phone: profile.phone,
       photo: profile.photo,
     });
   }

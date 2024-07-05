@@ -27,6 +27,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final developerMode = ref.watch(developerModeProvider);
+    final locationSharingEnabled = ref.watch(locationSharingEnabledProvider);
     final fcmToken = ref.watch(firebaseMessagingTokenProvider);
 
     return AppScaffold(
@@ -65,6 +66,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 developerMode ?? false;
           },
           secondary: const Icon(Icons.developer_mode),
+        ),
+        CheckboxListTile(
+          title: const Text('Location sharing'),
+          value: locationSharingEnabled ?? false,
+          onChanged: (bool? locationSharingEnabled) {
+            ref.read(locationSharingEnabledProvider.notifier).state =
+                locationSharingEnabled;
+          },
+          secondary: const Icon(Icons.pin_drop),
         ),
         if (developerMode) ...[
           const Spacer(),

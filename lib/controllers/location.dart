@@ -1,26 +1,31 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:location/location.dart';
 
 import 'package:squadquest/logger.dart';
+import 'package:squadquest/router.dart';
 import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/models/instance.dart';
 
-final locationServiceProvider = Provider<LocationService>((ref) {
-  return LocationService(ref);
+final locationControllerProvider = Provider<LocationController>((ref) {
+  return LocationController(ref);
 });
 
 final locationStreamProvider = StreamProvider<LocationData>((ref) {
-  final locationService = ref.watch(locationServiceProvider);
-  return locationService.stream;
+  final locationController = ref.watch(locationControllerProvider);
+  return locationController.stream;
 });
 
 final locationSharingProvider = StateProvider<bool?>((ref) {
   return false;
 });
 
-class LocationService {
+class LocationController {
   final Ref ref;
 
   bool _initialized = false;
@@ -40,7 +45,7 @@ class LocationService {
   final _streamController = StreamController<LocationData>.broadcast();
   Stream<LocationData> get stream => _streamController.stream;
 
-  LocationService(this.ref) {
+  LocationController(this.ref) {
     _init();
   }
 
@@ -58,7 +63,7 @@ class LocationService {
     _permissionGranted = await _location.hasPermission();
 
     logger.d({
-      'LocationService._init': {
+      'LocationController._init': {
         'serviceEnabled': _serviceEnabled,
         'permissionGranted': _permissionGranted,
       }
@@ -78,6 +83,20 @@ class LocationService {
   }
 
   Future<void> startTracking([InstanceID? instanceId]) async {
+    // check setting and initialize if needed
+    final locationSharingEnabled = ref.read(locationSharingEnabledProvider);
+
+    if (locationSharingEnabled == false) {
+      return;
+    } else if (locationSharingEnabled == null) {
+      final promptResponse = await _showPrompt(navigatorKey.currentContext!);
+      ref.read(locationSharingEnabledProvider.notifier).state = promptResponse;
+
+      if (promptResponse != true) {
+        return;
+      }
+    }
+
     // register instanceId
     if (instanceId != null) {
       _trackingInstanceIds.add(instanceId);
@@ -99,7 +118,7 @@ class LocationService {
 
     try {
       // start tracking location
-      logger.d('LocationService.startTracking');
+      logger.d('LocationController.startTracking');
       if (!_serviceEnabled) {
         _serviceEnabled = await _location.requestService();
         if (!_serviceEnabled) {
@@ -143,10 +162,10 @@ class LocationService {
     // force an initial location fetch but don't wait for it
     _location.getLocation().then((initialLocation) {
       logger.d(
-          'LocationService.startTracking -> initial location fetched: $initialLocation');
+          'LocationController.startTracking -> initial location fetched: $initialLocation');
     });
 
-    logger.d('LocationService.startTracking -> finished');
+    logger.d('LocationController.startTracking -> finished');
   }
 
   Future<void> stopTracking([InstanceID? instanceId]) async {
@@ -163,7 +182,7 @@ class LocationService {
     }
 
     // stop tracking location
-    logger.d('LocationService.stopTracking');
+    logger.d('LocationController.stopTracking');
 
     if (tracking) {
       await _streamSubscription?.cancel();
@@ -176,7 +195,7 @@ class LocationService {
       ref.read(locationSharingProvider.notifier).state = false;
     }
 
-    logger.d('LocationService.stopTracking -> finished');
+    logger.d('LocationController.stopTracking -> finished');
   }
 
   void _onLocationChanged(LocationData currentLocation) async {
@@ -208,5 +227,53 @@ class LocationService {
 
     // broadcast on stream
     _streamController.add(currentLocation);
+  }
+
+  Future<bool?> _showPrompt(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Location permissions'),
+          scrollable: true,
+          content: Text('Do you want to share your location?\n\n'
+              'Sharing your location will enable other people going to this event'
+              ' to see where you are on the map. This can be useful to coordinate'
+              ' finding each other and you\'ll be able to stop sharing your location'
+              ' at any time.\n\n'
+              'For best results, allow the app to "Always" access your location so'
+              ' this function works even when the app is in the background.'
+              ' ${!kIsWeb && Platform.isIOS ? 'Since you\'re on an Apple device, you will need to go into the app\'s settings manully to enable this.' : ''}\n\n'
+              'Your location data will only be shared with other people going to the event'
+              ' and be stored on SquadQuest\'s servers for up to an hour before being'
+              ' permeantly deleted.\n\n'
+              'A clear banner will be displayed as long as your location is being collected'
+              ' and SquadQuest will NEVER collect your location data outside of being on'
+              ' your way to an event.\n\n'
+              'If you decline, you won\'t be asked again but can go into the app\'s'
+              ' settings at any time to change your mind.'),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
+              child: const Text('No'),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
+              child: const Text('Yes'),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

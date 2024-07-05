@@ -38,26 +38,14 @@ final eventPointsProvider = FutureProvider.autoDispose
 });
 
 class InstancesController extends AsyncNotifier<List<Instance>> {
-  static const _defaultSelect = '*, topic(*), created_by(*)';
-
   @override
   Future<List<Instance>> build() async {
     final supabase = ref.read(supabaseClientProvider);
-    final profilesCache = ref.read(profilesCacheProvider.notifier);
-    final topicsCache = ref.read(topicsCacheProvider.notifier);
 
     // subscribe to changes
     supabase.from('instances').stream(primaryKey: ['id']).listen((data) async {
-      // populate created_by field with profile data
-      await profilesCache
-          .populateData(data, [(idKey: 'created_by', modelKey: 'created_by')]);
-
-      // populate topic field with topic data
-      await topicsCache
-          .populateData(data, [(idKey: 'topic', modelKey: 'topic')]);
-
       // convert to model instances
-      final instances = data.map(Instance.fromMap).toList();
+      final instances = await hydrate(data);
 
       // convert to model instances and update state
       state = AsyncValue.data(instances);
@@ -77,24 +65,27 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
   Future<List<Instance>> fetch() async {
     final supabase = ref.read(supabaseClientProvider);
 
-    final instances = await supabase
-        .from('instances')
-        .select(_defaultSelect)
-        .withConverter((data) => data.map(Instance.fromMap).toList());
+    final data = await supabase.from('instances').select();
 
-    // populate profile and topic caches
-    for (final instance in instances) {
-      ref
-          .read(profilesCacheProvider.notifier)
-          .cacheProfiles([instance.createdBy!]);
-      ref.read(topicsCacheProvider.notifier).cacheTopics([instance.topic!]);
-    }
-
-    return instances;
+    return hydrate(data);
   }
 
   Future<void> refresh() async {
     state = await AsyncValue.guard(fetch);
+  }
+
+  Future<List<Instance>> hydrate(List<Map<String, dynamic>> data) async {
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
+    final topicsCache = ref.read(topicsCacheProvider.notifier);
+
+    // populate profile data
+    await profilesCache
+        .populateData(data, [(idKey: 'created_by', modelKey: 'created_by')]);
+
+    // populate topic data
+    await topicsCache.populateData(data, [(idKey: 'topic', modelKey: 'topic')]);
+
+    return data.map(Instance.fromMap).toList();
   }
 
   Future<Instance> getById(InstanceID id) async {
@@ -114,13 +105,10 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     final supabase = ref.read(supabaseClientProvider);
 
     try {
-      final data = await supabase
-          .from('instances')
-          .select(_defaultSelect)
-          .eq('id', id)
-          .single();
+      final data =
+          await supabase.from('instances').select().eq('id', id).single();
 
-      return Instance.fromMap(data);
+      return (await hydrate([data])).first;
     } catch (error) {
       throw 'Could not load instance with ID $id';
     }
@@ -134,19 +122,16 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     // if topic is blank but the instance had a topic model, it's a phantom we need to upsert first
     if (instanceData['topic'] == null && instance.topic != null) {
       final Topic insertedTopic =
-          await ref.read(topicsProvider.notifier).createTopic(instance.topic!);
+          await ref.read(topicsProvider.notifier).save(instance.topic!);
 
       instanceData['topic'] = insertedTopic.id;
     }
 
     // create event instance
-    final savedData = await supabase
-        .from('instances')
-        .upsert(instanceData)
-        .select(_defaultSelect)
-        .single();
+    final savedData =
+        await supabase.from('instances').upsert(instanceData).select().single();
 
-    final savedInstance = Instance.fromMap(savedData);
+    final savedInstance = (await hydrate([savedData])).first;
 
     // update loaded instances with newly created one
     if (state.hasValue && state.value != null) {
@@ -171,10 +156,10 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
           .from('instances')
           .update(patchData)
           .eq('id', id)
-          .select(_defaultSelect)
+          .select()
           .single();
 
-      final updatedInstance = Instance.fromMap(updatedData);
+      final updatedInstance = (await hydrate([updatedData])).first;
 
       // update loaded instances with newly created one
       if (state.hasValue && state.value != null) {
