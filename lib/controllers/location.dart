@@ -7,20 +7,20 @@ import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/models/instance.dart';
 
-final locationServiceProvider = Provider<LocationService>((ref) {
-  return LocationService(ref);
+final locationControllerProvider = Provider<LocationController>((ref) {
+  return LocationController(ref);
 });
 
 final locationStreamProvider = StreamProvider<LocationData>((ref) {
-  final locationService = ref.watch(locationServiceProvider);
-  return locationService.stream;
+  final locationController = ref.watch(locationControllerProvider);
+  return locationController.stream;
 });
 
 final locationSharingProvider = StateProvider<bool?>((ref) {
   return false;
 });
 
-class LocationService {
+class LocationController {
   final Ref ref;
 
   bool _initialized = false;
@@ -40,7 +40,7 @@ class LocationService {
   final _streamController = StreamController<LocationData>.broadcast();
   Stream<LocationData> get stream => _streamController.stream;
 
-  LocationService(this.ref) {
+  LocationController(this.ref) {
     _init();
   }
 
@@ -58,7 +58,7 @@ class LocationService {
     _permissionGranted = await _location.hasPermission();
 
     logger.d({
-      'LocationService._init': {
+      'LocationController._init': {
         'serviceEnabled': _serviceEnabled,
         'permissionGranted': _permissionGranted,
       }
@@ -99,7 +99,7 @@ class LocationService {
 
     try {
       // start tracking location
-      logger.d('LocationService.startTracking');
+      logger.d('LocationController.startTracking');
       if (!_serviceEnabled) {
         _serviceEnabled = await _location.requestService();
         if (!_serviceEnabled) {
@@ -143,10 +143,10 @@ class LocationService {
     // force an initial location fetch but don't wait for it
     _location.getLocation().then((initialLocation) {
       logger.d(
-          'LocationService.startTracking -> initial location fetched: $initialLocation');
+          'LocationController.startTracking -> initial location fetched: $initialLocation');
     });
 
-    logger.d('LocationService.startTracking -> finished');
+    logger.d('LocationController.startTracking -> finished');
   }
 
   Future<void> stopTracking([InstanceID? instanceId]) async {
@@ -163,7 +163,7 @@ class LocationService {
     }
 
     // stop tracking location
-    logger.d('LocationService.stopTracking');
+    logger.d('LocationController.stopTracking');
 
     if (tracking) {
       await _streamSubscription?.cancel();
@@ -176,7 +176,7 @@ class LocationService {
       ref.read(locationSharingProvider.notifier).state = false;
     }
 
-    logger.d('LocationService.stopTracking -> finished');
+    logger.d('LocationController.stopTracking -> finished');
   }
 
   void _onLocationChanged(LocationData currentLocation) async {

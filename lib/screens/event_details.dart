@@ -13,7 +13,7 @@ import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/profiles_cache.dart';
-import 'package:squadquest/services/location.dart';
+import 'package:squadquest/controllers/location.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
@@ -139,11 +139,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     logger.i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
 
     // start or stop tracking
-    final locationService = ref.read(locationServiceProvider);
+    final locationController = ref.read(locationControllerProvider);
     if (status == InstanceMemberStatus.omw) {
-      await locationService.startTracking(widget.instanceId);
+      await locationController.startTracking(widget.instanceId);
     } else {
-      await locationService.stopTracking(widget.instanceId);
+      await locationController.stopTracking(widget.instanceId);
     }
 
     if (_rsvpSnackbar != null) {

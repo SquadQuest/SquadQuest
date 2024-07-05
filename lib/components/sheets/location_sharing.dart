@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/theme.dart';
-import 'package:squadquest/services/location.dart';
+import 'package:squadquest/controllers/location.dart';
 
 class LocationSharingSheet extends ConsumerWidget {
   const LocationSharingSheet({super.key});
@@ -40,7 +40,7 @@ class LocationSharingSheet extends ConsumerWidget {
                 locationSharing == true
                     ? ElevatedButton(
                         onPressed: () {
-                          ref.read(locationServiceProvider).stopTracking();
+                          ref.read(locationControllerProvider).stopTracking();
                         },
                         child: const Text('Stop'),
                       )
