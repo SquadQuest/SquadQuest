@@ -25,6 +25,14 @@ final developerModeProvider = StateProvider<bool>((ref) {
   return developerMode == 'true';
 });
 
+final locationSharingEnabledProvider = StateProvider<bool?>((ref) {
+  final prefs = ref.read(sharedPreferencesProvider);
+  final locationSharingEnabled = prefs.getString('locationSharingEnabled');
+  return locationSharingEnabled == null
+      ? null
+      : locationSharingEnabled == 'true';
+});
+
 class SettingsController {
   final Ref ref;
 
@@ -44,6 +52,12 @@ class SettingsController {
     ref.listen(developerModeProvider, (_, developerMode) {
       log('SettingsController.developerMode=$developerMode');
       prefs.setString('developerMode', developerMode.toString());
+    });
+
+    ref.listen(locationSharingEnabledProvider, (_, locationSharingEnabled) {
+      log('SettingsController.locationSharingEnabled=$locationSharingEnabled');
+      prefs.setString(
+          'locationSharingEnabled', locationSharingEnabled.toString());
     });
   }
 }
