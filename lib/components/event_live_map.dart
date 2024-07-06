@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -36,6 +38,7 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   static const minMultiPointBounds = .001;
 
   MapLibreMapController? controller;
+  StreamSubscription? subscription;
   final Map<UserID, List<Line>> trailsLinesByUser = {};
   final Map<UserID, Symbol> symbolsByUser = {};
   List<LocationPoint>? lastPoints;
@@ -114,6 +117,11 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   @override
   void dispose() {
     controller = null;
+
+    if (subscription != null) {
+      subscription!.cancel();
+    }
+
     super.dispose();
   }
 
@@ -154,7 +162,8 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   Future<void> _loadTrails() async {
     final supabase = ref.read(supabaseClientProvider);
 
-    supabase
+    // subscribe to changes
+    subscription = supabase
         .from('location_points')
         .stream(primaryKey: ['id'])
         .eq('event', widget.eventId)
