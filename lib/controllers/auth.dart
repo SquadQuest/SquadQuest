@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/services/supabase.dart';
@@ -35,8 +36,18 @@ class AuthController extends Notifier<Session?> {
     }
   }
 
+  bool _isTestPhone(String phone) {
+    final String? testNumber = dotenv.maybeGet('TEST_PHONE');
+    return testNumber != null && phone == testNumber;
+  }
+
   Future<void> signInWithOtp({required String phone}) async {
     _verifyingPhone = phone;
+
+    if (_isTestPhone(phone)) {
+      log('Test phone number detected, skipping OTP SMS');
+      return;
+    }
 
     final supabase = ref.read(supabaseClientProvider);
 
@@ -46,11 +57,21 @@ class AuthController extends Notifier<Session?> {
   Future<void> verifyOTP({required String token}) async {
     final supabase = ref.read(supabaseClientProvider);
 
-    final AuthResponse response = await supabase.auth.verifyOTP(
-      type: OtpType.sms,
-      phone: _verifyingPhone,
-      token: token,
-    );
+    AuthResponse response;
+
+    if (_isTestPhone(_verifyingPhone!)) {
+      log('Test phone number detected, using password auth');
+      response = await supabase.auth.signInWithPassword(
+        phone: _verifyingPhone,
+        password: token,
+      );
+    } else {
+      response = await supabase.auth.verifyOTP(
+        type: OtpType.sms,
+        phone: _verifyingPhone,
+        token: token,
+      );
+    }
 
     state = response.session;
 

@@ -5,7 +5,7 @@ values
         'avatars',
         'avatars',
         true,
-        ARRAY['image/jpeg', 'image/png']
+        ARRAY['image/jpeg', 'image/png', 'image/webp']
     );
 
 create policy "Authenticated users can select profile photos" ON storage.objects as PERMISSIVE for
