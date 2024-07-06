@@ -89,7 +89,7 @@ class LocationController {
     if (locationSharingEnabled == false) {
       return;
     } else if (locationSharingEnabled == null) {
-      final promptResponse = await _showPrompt(navigatorKey.currentContext!);
+      final promptResponse = await _showPrompt();
       ref.read(locationSharingEnabledProvider.notifier).state = promptResponse;
 
       if (promptResponse != true) {
@@ -229,9 +229,9 @@ class LocationController {
     _streamController.add(currentLocation);
   }
 
-  Future<bool?> _showPrompt(BuildContext context) {
+  Future<bool?> _showPrompt() {
     return showDialog<bool>(
-      context: context,
+      context: navigatorKey.currentContext!,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Location permissions'),
