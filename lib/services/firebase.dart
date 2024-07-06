@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/firebase_options.dart';
@@ -63,6 +64,9 @@ class FirebaseMessagingService {
   late final FirebaseMessaging messaging;
   NotificationSettings? settings;
   String? token;
+
+  String? _writtenToken;
+  late final PackageInfo _platformInfo;
   final _streamController = StreamController<FirebaseStreamRecord>.broadcast();
   Stream<FirebaseStreamRecord> get stream => _streamController.stream;
 
@@ -73,6 +77,10 @@ class FirebaseMessagingService {
   void _init() async {
     logger.t('FirebaseMessagingService._init');
 
+    // load package version/build information
+    _platformInfo = await PackageInfo.fromPlatform();
+
+    // obtain FCM instance
     messaging = FirebaseMessaging.instance;
 
     // request permissions
@@ -85,47 +93,24 @@ class FirebaseMessagingService {
     // get FCM device token
     try {
       token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
-      logger.i('Got FCM token: $token');
       ref.read(firebaseMessagingTokenProvider.notifier).state = token;
     } catch (error) {
       logger.e('Error getting FCM token', error: error);
     }
 
     // save token initially if profile loaded
-    final profile = ref.read(profileProvider);
-    if (profile.value != null &&
-        token != null &&
-        token != profile.value!.fcmToken) {
-      await ref.read(profileProvider.notifier).patch({
-        'fcm_token': token,
-      });
-    }
+    await _writeToken();
 
     // save FCM token to profile—main forced the service to initialize before the app is run so profile will never be set already
     ref.listen(profileProvider, (previous, profile) async {
-      logger.i({
-        'profile:previous': previous?.value,
-        'profile:next----': profile.value
-      });
-      if (profile.value != null &&
-          token != null &&
-          profile.value!.fcmToken != token) {
-        await ref.read(profileProvider.notifier).patch({
-          'fcm_token': token,
-        });
-      }
+      if (profile.isLoading) return;
+      await _writeToken();
     });
 
     // save FCM token on refresh
     messaging.onTokenRefresh.listen((token) async {
       this.token = token;
-
-      final profile = ref.read(profileProvider);
-      if (profile.value != null) {
-        await ref.read(profileProvider.notifier).patch({
-          'fcm_token': token,
-        });
-      }
+      await _writeToken();
     });
 
     // listen for foreground and background messages
@@ -145,6 +130,24 @@ class FirebaseMessagingService {
       // set a global handler on window instead of listening to messages to ensure there is only ever a single handler across hot reloads
       setWebHandler('onWebNotificationOpened', _onWebNotificationOpened);
     }
+  }
+
+  Future<void> _writeToken() async {
+    final profile = ref.read(profileProvider);
+
+    // skip if token or profile is null or if this token has already been written
+    if (token == null || profile.value == null || token == _writtenToken) {
+      return;
+    }
+
+    logger.i('Writing FCM token to profile: $token');
+    _writtenToken = token;
+
+    await ref.read(profileProvider.notifier).patch({
+      'fcm_token': token,
+      'fcm_token_updated_at': DateTime.now().toUtc().toIso8601String(),
+      'fcm_token_app_build': int.parse(_platformInfo.buildNumber),
+    });
   }
 
   void _onMessage(RemoteMessage message) {
