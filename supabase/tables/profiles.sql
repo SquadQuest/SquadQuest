@@ -6,6 +6,8 @@ create table
     phone text not null,
     fcm_token text null,
     photo text null,
+    fcm_token_updated_at timestamp with time zone null,
+    fcm_token_app_build integer null,
     constraint profiles_pkey primary key (id),
     constraint profiles_id_fkey foreign key (id) references users (id)
   );

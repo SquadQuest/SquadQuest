@@ -21,6 +21,7 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   MapLibreMapController? controller;
+  StreamSubscription? subscription;
   final List<Line> trackLines = [];
   Line? traceLine;
   Circle? traceCircle;
@@ -54,7 +55,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Future<void> _loadTracks() async {
     final supabase = ref.read(supabaseClientProvider);
 
-    supabase
+    subscription = supabase
         .from('location_points')
         .stream(primaryKey: ['id'])
         .eq('created_by', supabase.auth.currentUser!.id)
@@ -197,5 +198,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    controller = null;
+
+    if (subscription != null) {
+      subscription!.cancel();
+    }
+
+    super.dispose();
   }
 }
