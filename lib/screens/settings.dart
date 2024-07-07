@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/controllers/app_versions.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/firebase.dart';
 import 'package:web_browser_detect/web_browser_detect.dart';
@@ -28,12 +29,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = ref.watch(themeModeProvider);
     final developerMode = ref.watch(developerModeProvider);
     final locationSharingEnabled = ref.watch(locationSharingEnabledProvider);
-    final fcmToken = ref.watch(firebaseMessagingTokenProvider);
+    final packageInfo = ref.watch(currentAppPackageProvider);
+
+    final fcmToken =
+        developerMode ? ref.watch(firebaseMessagingTokenProvider) : null;
 
     return AppScaffold(
       title: 'Settings',
       bodyPadding: const EdgeInsets.all(16),
-      body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         ListTile(
           title: const Text('Theme Mode'),
           trailing: DropdownButton<ThemeMode>(
@@ -76,8 +80,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           },
           secondary: const Icon(Icons.pin_drop),
         ),
+        const Spacer(),
         if (developerMode) ...[
-          const Spacer(),
           if (browser != null) ...[
             Text('Browser name: ${browser!.browser}'),
             Text('Browser version ${browser!.version}'),
@@ -92,7 +96,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     .requestPermissions();
               },
               child: const Text('Request notification permission'))
-        ]
+        ],
+        Text(
+            'App version: ${packageInfo!.value?.version}+${packageInfo!.value?.buildNumber}',
+            textAlign: TextAlign.center),
       ]),
     );
   }
