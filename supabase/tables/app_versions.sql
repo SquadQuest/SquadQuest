@@ -8,3 +8,7 @@ create table
         news text null,
         constraint app_versions_pkey primary key (build)
     );
+
+create policy "Anyone can read all app versions" on "public"."app_versions" as PERMISSIVE for
+SELECT
+    to public using (true);
