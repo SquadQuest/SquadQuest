@@ -61,7 +61,13 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
     }
 
     final appVersions = await future;
-    final latestBuild = appVersions.isNotEmpty ? appVersions.first.build : null;
+
+    // skip if no version data available
+    if (appVersions.isEmpty) {
+      return;
+    }
+
+    final latestBuild = appVersions.first.build;
 
     final prefs = ref.read(sharedPreferencesProvider);
     final updateAppBuildDismissed = prefs.getInt('updateAppBuildDismissed');
@@ -69,9 +75,7 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
         prefs.getInt('appUpdatedChangesDismissed') ?? 1;
 
     // show update dialog if current version isn't the newest
-    if (latestBuild != null &&
-        latestBuild != updateAppBuildDismissed &&
-        currentBuild < latestBuild) {
+    if (latestBuild != updateAppBuildDismissed && currentBuild < latestBuild) {
       // show update dialog
       final result = await showDialog<bool>(
         context: navigatorKey.currentContext!,
@@ -121,22 +125,24 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
       {required int fromBuild,
       required int toBuild,
       required _AppUpdateDialogType type}) async {
-    final fromVersion = state.value!
+    final appVersions = await future;
+
+    final fromVersion = appVersions
         .firstWhere((version) => version.build == fromBuild,
-            orElse: () => state.value!.last)
+            orElse: () => appVersions.last)
         .version;
-    final toVersion = state.value!
+    final toVersion = appVersions
         .firstWhere((version) => version.build == toBuild,
-            orElse: () => state.value!.first)
+            orElse: () => appVersions.first)
         .version;
 
-    final versionsWithNotices = state.value!.where((version) {
+    final versionsWithNotices = appVersions.where((version) {
       if (version.notices == null) return false;
       if (version.build > toBuild) return false;
       return version.build > fromBuild;
     }).toList();
 
-    final versionsWithNews = state.value!.where((version) {
+    final versionsWithNews = appVersions.where((version) {
       if (version.news == null) return false;
       if (version.build > toBuild) return false;
       return version.build > fromBuild;
