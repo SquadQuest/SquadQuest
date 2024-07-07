@@ -114,6 +114,18 @@ execute function "supabase_functions"."http_request" (
   '1000'
 );
 
+CREATE TRIGGER instance_topic_set
+AFTER INSERT
+OR
+UPDATE OF topic ON instances FOR EACH ROW
+execute function "supabase_functions"."http_request" (
+  'http://functions:9000/set-event-topic',
+  'POST',
+  '{"Content-Type":"application/json"}',
+  '{}',
+  '1000'
+);
+
 CREATE TRIGGER instance_updated_timestamp BEFORE
 UPDATE ON instances FOR EACH ROW
 EXECUTE PROCEDURE set_updated_timestamp ();

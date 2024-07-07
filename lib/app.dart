@@ -48,6 +48,7 @@ class MyApp extends ConsumerWidget {
           });
 
           switch (message.data['notificationType']) {
+            case 'event-posted':
             case 'event-canceled':
             case 'event-uncanceled':
             case 'rally-point-updated':
