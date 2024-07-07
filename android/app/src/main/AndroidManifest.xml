@@ -32,6 +32,15 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="http" android:host="squadquest.app" />
                 <data android:scheme="https" />
+                <data android:path="/" />
+                <data android:path="/login" />
+                <data android:path="/profile" />
+                <data android:path="/settings" />
+                <data android:path="/post-event" />
+                <data android:path="/friends" />
+                <data android:path="/topics" />
+                <data android:pathPrefix="/profiles/" />
+                <data android:pathPrefix="/events/" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
