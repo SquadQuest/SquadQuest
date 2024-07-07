@@ -11,6 +11,8 @@ import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/models/app_version.dart';
 
+enum _AppUpdateDialogType { update, changes }
+
 final currentAppPackageProvider = FutureProvider<PackageInfo>((ref) {
   return PackageInfo.fromPlatform();
 });
@@ -26,18 +28,21 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
   }
 
   Future<List<AppVersion>> fetch() async {
-    final supabase = ref.read(supabaseClientProvider);
     final packageInfo = await ref.read(currentAppPackageProvider.future);
+    final currentBuild = int.parse(packageInfo.buildNumber);
 
+    final prefs = ref.read(sharedPreferencesProvider);
+    final appUpdatedChangesDismissed =
+        prefs.getInt('appUpdatedChangesDismissed');
+
+    final supabase = ref.read(supabaseClientProvider);
     final data = await supabase
         .from('app_versions')
         .select()
-        .gte('build', packageInfo.buildNumber)
+        .gte('build', appUpdatedChangesDismissed ?? currentBuild)
         .order('build', ascending: false);
 
-    final appVersions = await hydrate(data);
-
-    return appVersions;
+    return await hydrate(data);
   }
 
   Future<void> refresh() async {
@@ -49,73 +54,102 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
     return data.map(AppVersion.fromMap).toList();
   }
 
-  Future<bool> isUpdateAvailable() async {
-    // wait for versions to be loaded
-    await future;
-
-    // get current version
-    final packageInfo = await ref.read(currentAppPackageProvider.future);
-
-    return state.value!.first.build > int.parse(packageInfo.buildNumber);
-  }
-
   Future<void> showUpdateAlertIfAvailable() async {
-    // check if user has already dismissed this update
-    final latestBuild = state.value!.first.build;
-    final prefs = ref.read(sharedPreferencesProvider);
-    if (prefs.getInt('updateAppBuildDismissed') == latestBuild) {
-      return;
-    }
-
-    // dismiss if no update is available
-    if (!await isUpdateAvailable()) {
-      return;
-    }
-
-    // show update dialog
-    final result = await showDialog<bool>(
-      context: navigatorKey.currentContext!,
-      barrierDismissible: false,
-      builder: await _buildDialog(),
-    );
-
-    // dismiss if user dismissed
-    if (result == null) {
-      prefs.setInt('updateAppBuildDismissed', latestBuild);
-      return;
-    }
-
-    // launch update URL
-    if (kIsWeb) {
-      launchUrl(Uri.parse('javascript:location.reload()'));
-    } else if (Platform.isIOS) {
-      launchUrl(
-          Uri.parse('https://apps.apple.com/us/app/squadquest/id6504465196'));
-    } else if (Platform.isAndroid) {
-      launchUrl(Uri.parse(
-          'https://play.google.com/store/apps/details?id=app.squadquest'));
-    }
-  }
-
-  Future<Widget Function(BuildContext)> _buildDialog() async {
     final packageInfo = await ref.read(currentAppPackageProvider.future);
     final currentBuild = int.parse(packageInfo.buildNumber);
-    final versionsWithNotices = state.value!
-        .where((version) =>
-            version.build != currentBuild && version.notices != null)
-        .toList();
-    final versionsWithNews = state.value!
-        .where(
-            (version) => version.build != currentBuild && version.news != null)
-        .toList();
+
+    await future;
+    final latestBuild = state.value!.first.build;
+
+    final prefs = ref.read(sharedPreferencesProvider);
+    final updateAppBuildDismissed = prefs.getInt('updateAppBuildDismissed');
+    final appUpdatedChangesDismissed =
+        prefs.getInt('appUpdatedChangesDismissed') ?? 1;
+
+    // show update dialog if current version isn't the newest
+    if (latestBuild != updateAppBuildDismissed && currentBuild < latestBuild) {
+      // show update dialog
+      final result = await showDialog<bool>(
+        context: navigatorKey.currentContext!,
+        barrierDismissible: false,
+        builder: await _buildDialog(
+            fromBuild: currentBuild,
+            toBuild: latestBuild,
+            type: _AppUpdateDialogType.update),
+      );
+
+      // dismiss if user dismissed
+      if (result == null) {
+        prefs.setInt('updateAppBuildDismissed', latestBuild);
+        return;
+      }
+
+      // launch update URL
+      if (kIsWeb) {
+        launchUrl(Uri.parse('javascript:location.reload()'));
+      } else if (Platform.isIOS) {
+        launchUrl(
+            Uri.parse('https://apps.apple.com/us/app/squadquest/id6504465196'));
+      } else if (Platform.isAndroid) {
+        launchUrl(Uri.parse(
+            'https://play.google.com/store/apps/details?id=app.squadquest'));
+      }
+      return;
+    }
+
+    // show changes dialog when a new version launches for the first time
+    if (appUpdatedChangesDismissed < currentBuild) {
+      // show changes dialog
+      await showDialog<bool>(
+        context: navigatorKey.currentContext!,
+        barrierDismissible: false,
+        builder: await _buildDialog(
+            fromBuild: appUpdatedChangesDismissed,
+            toBuild: currentBuild,
+            type: _AppUpdateDialogType.changes),
+      );
+
+      prefs.setInt('appUpdatedChangesDismissed', currentBuild);
+    }
+  }
+
+  Future<Widget Function(BuildContext)> _buildDialog(
+      {required int fromBuild,
+      required int toBuild,
+      required _AppUpdateDialogType type}) async {
+    final fromVersion = state.value!
+        .firstWhere((version) => version.build == fromBuild)
+        .version;
+    final toVersion =
+        state.value!.firstWhere((version) => version.build == toBuild).version;
+
+    final versionsWithNotices = state.value!.where((version) {
+      if (version.notices == null) return false;
+      if (version.build > toBuild) return false;
+      return version.build > fromBuild;
+    }).toList();
+
+    final versionsWithNews = state.value!.where((version) {
+      if (version.news == null) return false;
+      if (version.build > toBuild) return false;
+      return version.build > fromBuild;
+    }).toList();
 
     return (BuildContext context) => AlertDialog(
-          title: const Text('New version available'),
+          title: Text(switch (type) {
+            _AppUpdateDialogType.update => 'New version available',
+            _AppUpdateDialogType.changes => 'Welcome to v$toVersion'
+          }),
           scrollable: true,
           content: Column(
             children: [
               Text(
-                  'You currently have v$currentBuild installed and v${state.value!.first.version} is available.',
+                  switch (type) {
+                    _AppUpdateDialogType.update =>
+                      'You currently have v$fromVersion installed and v$toVersion is available',
+                    _AppUpdateDialogType.changes =>
+                      'You have just updated from v$fromVersion to v$toVersion'
+                  },
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               ...versionsWithNotices.map((version) => ListTile(
                     trailing: const Icon(Icons.warning),
@@ -138,15 +172,17 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
-              style: TextButton.styleFrom(
-                textStyle: Theme.of(context).textTheme.labelLarge,
+            if (type == _AppUpdateDialogType.update) ...[
+              TextButton(
+                style: TextButton.styleFrom(
+                  textStyle: Theme.of(context).textTheme.labelLarge,
+                ),
+                child: const Text('Update'),
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
               ),
-              child: const Text('Update'),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-            ),
+            ]
           ],
         );
   }
