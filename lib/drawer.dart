@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:squadquest/logger.dart';
 
 import 'package:squadquest/router.dart';
 import 'package:squadquest/controllers/auth.dart';
@@ -12,17 +13,19 @@ class _MenuItem {
 
   final IconData icon;
   final String label;
-  final String route;
-  final Future<void> Function(WidgetRef ref)? afterNavigate;
+  final String? route;
+  final Future<void> Function(BuildContext context, WidgetRef ref)? handler;
   final bool developerMode;
 
   _MenuItem({
     required this.icon,
     required this.label,
-    required this.route,
-    this.afterNavigate,
+    this.route,
+    this.handler,
     this.developerMode = false,
-  });
+  })  : assert(route != null || handler != null, 'route or handler required'),
+        assert(route == null || handler == null,
+            'route and handler are mutually exclusive');
 }
 
 final _menu = [
@@ -61,11 +64,16 @@ final _menu = [
   _MenuItem(
     icon: Icons.logout,
     label: 'Sign out',
-    route: 'login',
-    afterNavigate: (ref) async {
-      await ref.read(authControllerProvider.notifier).signOut();
+    handler: (context, ref) async {
+      final authController = ref.read(authControllerProvider.notifier);
+
+      context.goNamed('login');
+
+      // wait for transition to complete before signing out so that previous screens don't try to update with new state
+      await ModalRoute.of(context)!.completed;
+      await authController.signOut();
     },
-  ),
+  )
 ];
 
 final _menuItems = _menu.whereType<_MenuItem>().toList();
@@ -103,10 +111,10 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
 
         Navigator.pop(context);
 
-        context.goNamed(menuItem.route);
-
-        if (menuItem.afterNavigate != null) {
-          await menuItem.afterNavigate!(ref);
+        if (menuItem.handler != null) {
+          await menuItem.handler!(context, ref);
+        } else {
+          context.goNamed(menuItem.route!);
         }
       },
       children: <Widget>[
