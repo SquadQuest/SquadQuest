@@ -135,7 +135,8 @@ serve(async (request) => {
           payload: { invitation: insertedInvitation },
           collapseKey: "invitation",
         });
-      } catch (_error) {
+      } catch (error) {
+        console.error(error);
         // continue with next invitee
       }
     }

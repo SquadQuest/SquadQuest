@@ -90,16 +90,20 @@ serve(async (request) => {
 
   // send notification to sender (if accepted)
   if (fcmToken && action == "accepted") {
-    await postMessage({
-      notificationType: "friend-request-accepted",
-      token: fcmToken,
-      title: "Friend request accepted!",
-      body:
-        `${updatedFriendRequest.requestee.first_name} ${updatedFriendRequest.requestee.last_name} is now your friend`,
-      url: `https://squadquest.app/#/friends`,
-      payload: { friendship: updatedFriendRequest },
-      collapseKey: "friend-request-accepted",
-    });
+    try {
+      await postMessage({
+        notificationType: "friend-request-accepted",
+        token: fcmToken,
+        title: "Friend request accepted!",
+        body:
+          `${updatedFriendRequest.requestee.first_name} ${updatedFriendRequest.requestee.last_name} is now your friend`,
+        url: `https://squadquest.app/friends`,
+        payload: { friendship: updatedFriendRequest },
+        collapseKey: "friend-request-accepted",
+      });
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   // return new friend request
