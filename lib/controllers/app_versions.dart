@@ -28,18 +28,15 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
   }
 
   Future<List<AppVersion>> fetch() async {
-    final packageInfo = await ref.read(currentAppPackageProvider.future);
-    final currentBuild = int.parse(packageInfo.buildNumber);
-
     final prefs = ref.read(sharedPreferencesProvider);
     final appUpdatedChangesDismissed =
-        prefs.getInt('appUpdatedChangesDismissed');
+        prefs.getInt('appUpdatedChangesDismissed') ?? 1;
 
     final supabase = ref.read(supabaseClientProvider);
     final data = await supabase
         .from('app_versions')
         .select()
-        .gte('build', appUpdatedChangesDismissed ?? currentBuild)
+        .gte('build', appUpdatedChangesDismissed)
         .order('build', ascending: false);
 
     return await hydrate(data);
@@ -58,8 +55,13 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
     final packageInfo = await ref.read(currentAppPackageProvider.future);
     final currentBuild = int.parse(packageInfo.buildNumber);
 
-    await future;
-    final latestBuild = state.value!.first.build;
+    // skip for development builds
+    if (currentBuild == 1) {
+      return;
+    }
+
+    final appVersions = await future;
+    final latestBuild = appVersions.isNotEmpty ? appVersions.first.build : null;
 
     final prefs = ref.read(sharedPreferencesProvider);
     final updateAppBuildDismissed = prefs.getInt('updateAppBuildDismissed');
@@ -67,7 +69,9 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
         prefs.getInt('appUpdatedChangesDismissed') ?? 1;
 
     // show update dialog if current version isn't the newest
-    if (latestBuild != updateAppBuildDismissed && currentBuild < latestBuild) {
+    if (latestBuild != null &&
+        latestBuild != updateAppBuildDismissed &&
+        currentBuild < latestBuild) {
       // show update dialog
       final result = await showDialog<bool>(
         context: navigatorKey.currentContext!,
@@ -118,10 +122,13 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
       required int toBuild,
       required _AppUpdateDialogType type}) async {
     final fromVersion = state.value!
-        .firstWhere((version) => version.build == fromBuild)
+        .firstWhere((version) => version.build == fromBuild,
+            orElse: () => state.value!.last)
         .version;
-    final toVersion =
-        state.value!.firstWhere((version) => version.build == toBuild).version;
+    final toVersion = state.value!
+        .firstWhere((version) => version.build == toBuild,
+            orElse: () => state.value!.first)
+        .version;
 
     final versionsWithNotices = state.value!.where((version) {
       if (version.notices == null) return false;
