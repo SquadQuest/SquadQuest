@@ -318,7 +318,7 @@ services:
     command:
       - start
       - --verbose
-      # - --inspect-wait=0.0.0.0:9229
+      # - --inspect=0.0.0.0:9229
       - --main-service
       - /home/deno/functions/main
 
