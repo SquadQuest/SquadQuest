@@ -11,3 +11,15 @@ final loggerWithStack =
 
 final logger =
     Logger(printer: PrettyPrinter(methodCount: 0), filter: _logFilter);
+
+DateTime? _lastTimedLog;
+void loggerTimed(String message) {
+  final now = DateTime.now();
+  if (_lastTimedLog != null) {
+    final diff = now.difference(_lastTimedLog!);
+    logger.t('$message: $diff');
+  } else {
+    logger.t(message);
+  }
+  _lastTimedLog = now;
+}
