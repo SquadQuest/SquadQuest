@@ -58,7 +58,7 @@ serve(async (request) => {
       token: profile.fcm_token,
       title: event.title,
       body: `Rally point ${event.rally_point ? "updated" : "cleared"}`,
-      url: `https://squadquest.app/#/events/${event.id}`,
+      url: `https://squadquest.app/events/${event.id}`,
       payload: { event },
       collapseKey: "rally-point-updated",
     });

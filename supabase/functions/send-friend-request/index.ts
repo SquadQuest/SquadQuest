@@ -92,16 +92,20 @@ serve(async (request) => {
 
   // send notification to recipient
   if (fcmToken) {
-    await postMessage({
-      notificationType: "friend-request-received",
-      token: fcmToken,
-      title: "New friend request!",
-      body:
-        `${newFriendRequest.requester.first_name} ${newFriendRequest.requester.last_name} wants to be your friend`,
-      url: `https://squadquest.app/#/friends`,
-      payload: { friendship: newFriendRequest },
-      collapseKey: "friend-request-received",
-    });
+    try {
+      await postMessage({
+        notificationType: "friend-request-received",
+        token: fcmToken,
+        title: "New friend request!",
+        body:
+          `${newFriendRequest.requester.first_name} ${newFriendRequest.requester.last_name} wants to be your friend`,
+        url: `https://squadquest.app/friends`,
+        payload: { friendship: newFriendRequest },
+        collapseKey: "friend-request-received",
+      });
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   // return new friend request

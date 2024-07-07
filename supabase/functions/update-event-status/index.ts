@@ -64,19 +64,25 @@ serve(async (request) => {
       continue;
     }
 
-    await postMessage({
-      notificationType: event.status == "canceled"
-        ? "event-canceled"
-        : "event-uncanceled",
-      token: profile.fcm_token,
-      title: event.title,
-      body: event.status == "canceled" ? "Event canceled" : "Event uncanceled",
-      url: `https://squadquest.app/#/events/${event.id}`,
-      payload: { event },
-      collapseKey: event.status == "canceled"
-        ? "event-canceled"
-        : "event-uncanceled",
-    });
+    try {
+      await postMessage({
+        notificationType: event.status == "canceled"
+          ? "event-canceled"
+          : "event-uncanceled",
+        token: profile.fcm_token,
+        title: event.title,
+        body: event.status == "canceled"
+          ? "Event canceled"
+          : "Event uncanceled",
+        url: `https://squadquest.app/events/${event.id}`,
+        payload: { event },
+        collapseKey: event.status == "canceled"
+          ? "event-canceled"
+          : "event-uncanceled",
+      });
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   // return event

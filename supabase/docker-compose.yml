@@ -317,8 +317,8 @@ services:
       - ./functions:/home/deno/functions:Z
     command:
       - start
-      - --verbose
-      # - --inspect-wait=0.0.0.0:9229
+      # - --verbose
+      # - --inspect=0.0.0.0:9229
       - --main-service
       - /home/deno/functions/main
 

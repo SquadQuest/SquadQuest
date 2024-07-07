@@ -211,15 +211,19 @@ serve(async (request) => {
         continue;
       }
 
-      await postMessage({
-        notificationType: "rsvp",
-        token: profile.fcm_token,
-        title: event.title,
-        body: notificationBody,
-        url: `https://squadquest.app/events/${event.id}`,
-        payload: { event, rsvp },
-        collapseKey: "rsvp",
-      });
+      try {
+        await postMessage({
+          notificationType: "rsvp",
+          token: profile.fcm_token,
+          title: event.title,
+          body: notificationBody,
+          url: `https://squadquest.app/events/${event.id}`,
+          payload: { event, rsvp },
+          collapseKey: "rsvp",
+        });
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 
