@@ -22,7 +22,7 @@ jobs:
           echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
           echo "BUILD_NAME=${SOURCE_TAG#v}" >> $GITHUB_ENV
 
-          BUILD_NUMBER="$(git ls-remote origin | grep 'refs/tags/v' | wc -l | bc)"
+          BUILD_NUMBER="$(git ls-remote origin | grep -c 'refs/tags/v')"
           echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
 
       - name: Write tag version to pubspec.yaml
