@@ -5,6 +5,7 @@ import 'package:grouped_list/grouped_list.dart';
 
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/topic_subscriptions.dart';
@@ -21,12 +22,14 @@ enum _InstanceGroup {
 final _filteredEventsProvider =
     FutureProvider<({List<Instance> events, List<TopicID> topics})>(
         (ref) async {
+  final session = ref.read(authControllerProvider);
   final events = await ref.watch(instancesProvider.future);
   final topics = await ref.watch(topicSubscriptionsProvider.future);
 
   return (
     events: events
         .where((event) =>
+            event.createdById == session?.user?.id ||
             event.visibility != InstanceVisibility.public ||
             topics.contains(event.topicId))
         .toList(),
