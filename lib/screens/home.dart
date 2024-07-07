@@ -71,6 +71,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
                   ),
                 )
+              ] else if (data.events.isEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Text(
+                    'There are no events yet that you\'ve been invited to, have been shared by friends, or are public and match your subscribed topics.\n\n'
+                    'Subscribe to more topics, add some friends, or start planning your own event!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+                  ),
+                )
               ],
               Expanded(
                 child: RefreshIndicator(
