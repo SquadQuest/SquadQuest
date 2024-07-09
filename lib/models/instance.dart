@@ -33,22 +33,25 @@ Map<InstanceMemberStatus, Icon> rsvpIcons = {
 };
 
 class Instance {
-  Instance({
-    this.id,
-    this.createdAt,
-    this.createdBy,
-    this.createdById,
-    this.updatedAt,
-    this.status = InstanceStatus.live,
-    required this.startTimeMin,
-    required this.startTimeMax,
-    this.topic,
-    this.topicId,
-    required this.title,
-    required this.visibility,
-    required this.locationDescription,
-    this.rallyPoint,
-  })  : assert(
+  Instance(
+      {this.id,
+      this.createdAt,
+      this.createdBy,
+      this.createdById,
+      this.updatedAt,
+      this.status = InstanceStatus.live,
+      required this.startTimeMin,
+      required this.startTimeMax,
+      this.topic,
+      this.topicId,
+      required this.title,
+      required this.visibility,
+      required this.locationDescription,
+      this.rallyPoint,
+      this.link,
+      this.notes,
+      this.bannerPhoto})
+      : assert(
             (id != null &&
                     createdAt != null &&
                     (createdBy != null || createdById != null)) ||
@@ -76,6 +79,9 @@ class Instance {
   final InstanceVisibility visibility;
   final String locationDescription;
   final Geographic? rallyPoint;
+  final Uri? link;
+  final String? notes;
+  final Uri? bannerPhoto;
 
   LatLng? get rallyPointLatLng =>
       rallyPoint == null ? null : LatLng(rallyPoint!.lat, rallyPoint!.lon);
@@ -100,31 +106,36 @@ class Instance {
             .split(' ');
 
     return Instance(
-        id: map['id'] as InstanceID,
-        createdAt: DateTime.parse(map['created_at']).toLocal(),
-        createdBy: createdByModel,
-        createdById: createdByModel == null
-            ? map['created_by'] as UserID
-            : createdByModel.id,
-        updatedAt: map['updated_at'] == null
-            ? null
-            : DateTime.parse(map['updated_at']).toLocal(),
-        status: InstanceStatus.values.firstWhere(
-          (e) => e.name == map['status'],
-        ),
-        startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
-        startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
-        topic: topicModel,
-        topicId: topicModel == null ? map['topic'] as TopicID : topicModel.id,
-        title: map['title'] as String,
-        visibility: InstanceVisibility.values.firstWhere(
-          (e) => e.name == map['visibility'],
-        ),
-        locationDescription: map['location_description'] as String,
-        rallyPoint: map['rally_point_text'] == null
-            ? null
-            : Geographic(
-                lon: double.parse(longitude), lat: double.parse(latitude)));
+      id: map['id'] as InstanceID,
+      createdAt: DateTime.parse(map['created_at']).toLocal(),
+      createdBy: createdByModel,
+      createdById: createdByModel == null
+          ? map['created_by'] as UserID
+          : createdByModel.id,
+      updatedAt: map['updated_at'] == null
+          ? null
+          : DateTime.parse(map['updated_at']).toLocal(),
+      status: InstanceStatus.values.firstWhere(
+        (e) => e.name == map['status'],
+      ),
+      startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
+      startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
+      topic: topicModel,
+      topicId: topicModel == null ? map['topic'] as TopicID : topicModel.id,
+      title: map['title'] as String,
+      visibility: InstanceVisibility.values.firstWhere(
+        (e) => e.name == map['visibility'],
+      ),
+      locationDescription: map['location_description'] as String,
+      rallyPoint: map['rally_point_text'] == null
+          ? null
+          : Geographic(
+              lon: double.parse(longitude), lat: double.parse(latitude)),
+      link: map['link'] == null ? null : Uri.parse(map['link']),
+      notes: map['notes'],
+      bannerPhoto:
+          map['banner_photo'] == null ? null : Uri.parse(map['banner_photo']),
+    );
   }
 
   Map<String, dynamic> toMap() {
@@ -138,7 +149,10 @@ class Instance {
       'location_description': locationDescription,
       'rally_point': rallyPoint == null
           ? null
-          : 'POINT(${rallyPoint!.lon} ${rallyPoint!.lat})'
+          : 'POINT(${rallyPoint!.lon} ${rallyPoint!.lat})',
+      'link': link?.toString(),
+      'notes': notes,
+      'banner_photo': bannerPhoto?.toString(),
     };
 
     if (id != null) {

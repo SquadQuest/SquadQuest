@@ -17,6 +17,9 @@ create table
     location_description text not null,
     rally_point geography not null,
     rally_point_text text GENERATED ALWAYS AS (ST_AsText (rally_point)) STORED,
+    link text null,
+    notes text null,
+    banner_photo text null,
     constraint instances_pkey primary key (id),
     constraint instances_topic_fkey foreign key (topic) references topics (id),
     constraint instances_created_by_fkey foreign key (created_by) references profiles (id)
