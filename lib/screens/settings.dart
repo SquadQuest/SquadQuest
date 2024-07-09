@@ -98,7 +98,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: const Text('Request notification permission'))
         ],
         Text(
-            'App version: ${packageInfo!.value?.version}+${packageInfo!.value?.buildNumber}',
+            'App version: ${packageInfo.value?.version}+${packageInfo.value?.buildNumber}',
             textAlign: TextAlign.center),
       ]),
     );
