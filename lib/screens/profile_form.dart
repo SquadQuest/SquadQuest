@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:http/http.dart' as http;
 
+import 'package:squadquest/logger.dart';
+import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
@@ -46,32 +47,29 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       // upload photo
       final photo = ref.read(_photoProvider);
 
-      String? photoUrl;
+      Uri? photoUrl;
       if (photo != null) {
-        if (photo.isScheme('blob') || photo.isScheme('file')) {
-          if (photo.isScheme('file')) {
-            await supabase.storage.from('avatars').upload(
-                session!.user.id, File(photo.toFilePath()),
-                fileOptions: const FileOptions(upsert: true));
-          } else {
-            final response = await http.get(photo);
-            await supabase.storage.from('avatars').uploadBinary(
-                session!.user.id, response.bodyBytes,
-                fileOptions: FileOptions(
-                    upsert: true,
-                    contentType: response.headers['content-type']));
-          }
-          photoUrl = supabase.storage.from('avatars').getPublicUrl(
-                session.user.id,
-                transform: const TransformOptions(
-                  width: 512,
-                  height: 512,
-                ),
-              );
-          // append cache buster to force refresh
-          photoUrl = '$photoUrl&v=${DateTime.now().millisecondsSinceEpoch}';
-        } else {
-          photoUrl = photo.toString();
+        try {
+          photoUrl =
+              await uploadPhoto(photo, session!.user.id, supabase, 'avatars',
+                  transform: const TransformOptions(
+                    width: 512,
+                    height: 512,
+                  ));
+        } catch (error) {
+          logger.e(error);
+
+          setState(() {
+            submitted = false;
+          });
+
+          if (!context.mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed to upload profile photo:\n\n$error'),
+          ));
+
+          return;
         }
       }
 
@@ -81,7 +79,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         'phone': session.user.phone!,
-        'photo': photoUrl,
+        'photo': photoUrl.toString(),
       });
 
       await ref.read(authControllerProvider.notifier).updateUserAttributes({

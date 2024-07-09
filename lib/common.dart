@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
 
 String normalizePhone(String phone) {
   // Remove non-digits
@@ -57,6 +61,51 @@ List<T> updateListWithRecord<T>(
   }
 
   return updatedList;
+}
+
+Future<Uri> uploadPhoto(
+    Uri photo, String path, SupabaseClient supabase, String bucketName,
+    {TransformOptions? transform}) async {
+  // already-online URI need to further processing
+  if (photo.isScheme('http') || photo.isScheme('https')) {
+    return photo;
+  }
+
+  if (photo.isScheme('file')) {
+    await supabase.storage.from(bucketName).upload(
+        path, File(photo.toFilePath()),
+        fileOptions: const FileOptions(upsert: true));
+  } else if (photo.isScheme('blob')) {
+    final response = await http.get(photo);
+    await supabase.storage.from(bucketName).uploadBinary(
+        path, response.bodyBytes,
+        fileOptions: FileOptions(
+            upsert: true, contentType: response.headers['content-type']));
+  } else {
+    throw UnimplementedError('Unsupported photo URI: $photo');
+  }
+
+  final photoUrl = supabase.storage.from(bucketName).getPublicUrl(
+        path,
+        transform: transform,
+      );
+
+  // append cache buster to force refresh of new upload
+  return Uri.parse('$photoUrl&v=${DateTime.now().millisecondsSinceEpoch}');
+}
+
+Future<Uri> movePhoto(
+    String from, String to, SupabaseClient supabase, String bucketName,
+    {TransformOptions? transform}) async {
+  await supabase.storage.from(bucketName).move(from, to);
+
+  final photoUrl = supabase.storage.from(bucketName).getPublicUrl(
+        to,
+        transform: transform,
+      );
+
+  // append cache buster to force refresh of new upload
+  return Uri.parse('$photoUrl&v=${DateTime.now().millisecondsSinceEpoch}');
 }
 
 extension IterableExtensions<T> on Iterable<T> {

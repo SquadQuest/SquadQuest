@@ -88,6 +88,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
                 autofocus: true,
                 readOnly: submitted,
                 keyboardType: TextInputType.number,
+                autofillHints: const [AutofillHints.oneTimeCode],
                 textInputAction: TextInputAction.done,
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.pin_outlined),

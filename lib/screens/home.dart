@@ -29,7 +29,7 @@ final _filteredEventsProvider =
   return (
     events: events
         .where((event) =>
-            event.createdById == session?.user?.id ||
+            event.createdById == session?.user.id ||
             event.visibility != InstanceVisibility.public ||
             topics.contains(event.topicId))
         .toList(),

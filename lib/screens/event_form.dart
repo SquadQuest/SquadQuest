@@ -3,9 +3,13 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:squadquest/app_scaffold.dart';
-import 'package:squadquest/components/pickers/location.dart';
 
+import 'package:squadquest/common.dart';
+import 'package:squadquest/router.dart';
+import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/components/pickers/location.dart';
+import 'package:squadquest/components/pickers/photo.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/components/pickers/date.dart';
@@ -13,7 +17,8 @@ import 'package:squadquest/components/pickers/time.dart';
 import 'package:squadquest/components/pickers/visibility.dart';
 import 'package:squadquest/components/pickers/topic.dart';
 import 'package:squadquest/controllers/instances.dart';
-import 'package:squadquest/router.dart';
+
+final _urlRegex = RegExp(r'^https?://', caseSensitive: false);
 
 TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
   if (minutes == 0) {
@@ -53,6 +58,9 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       StateProvider<TimeOfDay?>((ref) => _plusMinutes(TimeOfDay.now(), 75));
   final _visibilityProvider =
       StateProvider<InstanceVisibility?>((ref) => InstanceVisibility.friends);
+  final _notesController = TextEditingController();
+  final _linkController = TextEditingController();
+  final _bannerPhotoProvider = StateProvider<Uri?>((ref) => null);
 
   DateTime? startDate;
   bool startTimeMaxSet = false;
@@ -65,6 +73,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   }
 
   void _submitEvent(BuildContext context) async {
+    // FocusManager.instance.primaryFocus?.unfocus();
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -118,6 +128,34 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       submitted = true;
     });
 
+    // upload photo
+    final supabase = ref.read(supabaseClientProvider);
+    final bannerPhoto = ref.read(_bannerPhotoProvider);
+
+    String? tempBannerPhotoPath;
+
+    if (bannerPhoto != null) {
+      try {
+        tempBannerPhotoPath = '_pending/${supabase.auth.currentUser!.id}';
+        await uploadPhoto(
+            bannerPhoto, tempBannerPhotoPath, supabase, 'event-banners');
+      } catch (error) {
+        log('Error uploading banner photo: $error');
+
+        setState(() {
+          submitted = false;
+        });
+
+        if (!context.mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to upload banner photo:\n\n$error'),
+        ));
+
+        return;
+      }
+    }
+
     try {
       final instancesController = ref.read(instancesProvider.notifier);
 
@@ -131,12 +169,25 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           startTimeMax: startDateTimeMax,
           visibility: visibility,
           locationDescription: _locationDescriptionController.text.trim(),
-          rallyPoint: rallyPoint);
+          rallyPoint: rallyPoint,
+          link: _linkController.text.trim().isNotEmpty
+              ? Uri.parse(_linkController.text.trim())
+              : null,
+          notes: _notesController.text.trim());
 
       final Instance savedInstance =
           await instancesController.save(draftInstance);
 
       log('Saved instance: $savedInstance');
+
+      if (tempBannerPhotoPath != null) {
+        final bannerPhotoUrl = await movePhoto(
+            tempBannerPhotoPath, savedInstance.id!, supabase, 'event-banners',
+            transform: const TransformOptions(width: 1024, height: 1024));
+        await instancesController.patch(
+            savedInstance.id!, {'banner_photo': bannerPhotoUrl.toString()});
+        log('Moved banner photo');
+      }
 
       if (!context.mounted) return;
 
@@ -159,7 +210,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
             pathParameters: {'id': savedInstance.id!});
       }
     } catch (error) {
-      log('Error saving instance : $error');
+      log('Error saving instance: $error');
 
       setState(() {
         submitted = false;
@@ -218,11 +269,11 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       ),
       showDrawer: false,
       showLocationSharingSheet: false,
-      bodyPadding: const EdgeInsets.all(16),
       body: _editingInstance.when(
           error: (error, __) => Center(child: Text(error.toString())),
           loading: () => const Center(child: CircularProgressIndicator()),
           data: (Instance? instance) => SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -308,6 +359,44 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                       FormVisibilityPicker(
                           labelText: 'Visibility of this posting',
                           valueProvider: _visibilityProvider),
+                      const SizedBox(
+                        height: 24,
+                      ),
+                      TextFormField(
+                        readOnly: submitted,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.url],
+                        keyboardType: TextInputType.url,
+                        decoration: const InputDecoration(
+                          labelText: 'Event link (optional)',
+                        ),
+                        controller: _linkController,
+                        validator: (value) {
+                          if (value != null &&
+                              value.isNotEmpty &&
+                              !_urlRegex.hasMatch(value)) {
+                            return 'Link must start with http:// or https://';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(
+                        height: 24,
+                      ),
+                      TextFormField(
+                        readOnly: submitted,
+                        // textInputAction: TextInputAction.done,
+                        keyboardType: TextInputType.multiline,
+                        decoration: const InputDecoration(
+                          labelText: 'Event notes (optional)',
+                        ),
+                        maxLines: 5,
+                        controller: _notesController,
+                      ),
+                      const SizedBox(height: 32),
+                      FormPhotoPicker(
+                          labelText: 'Event banner photo',
+                          valueProvider: _bannerPhotoProvider),
                       const SizedBox(height: 16),
                       submitted
                           ? const Center(child: CircularProgressIndicator())

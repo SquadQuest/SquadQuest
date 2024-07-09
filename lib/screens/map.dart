@@ -183,6 +183,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           title: const Text('Map'),
         ),
         drawer: const AppDrawer(),
+        floatingActionButton: FloatingActionButton(
+          child: const Icon(Icons.map_outlined),
+          onPressed: () async {
+            final box = await controller?.getVisibleRegion();
+            logger.d({'box': box});
+          },
+        ),
         body: MapLibreMap(
           onMapCreated: _onMapCreated,
           onStyleLoadedCallback: _onStyleLoadedCallback,
