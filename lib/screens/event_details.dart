@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +25,7 @@ import 'package:squadquest/models/user.dart';
 import 'package:squadquest/components/friends_list.dart';
 import 'package:squadquest/components/event_live_map.dart';
 import 'package:squadquest/components/event_rally_map.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 final _statusGroupOrder = {
   InstanceMemberStatus.omw: 0,
@@ -499,6 +501,38 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                             'Visibility: ${event.visibility.name}'),
                                                         Text(
                                                             'Location: ${event.locationDescription}'),
+                                                        if (event.link !=
+                                                            null) ...[
+                                                          RichText(
+                                                              text: TextSpan(
+                                                                  children: [
+                                                                const TextSpan(
+                                                                    text:
+                                                                        'Link: '),
+                                                                TextSpan(
+                                                                  text: event
+                                                                      .link
+                                                                      .toString(),
+                                                                  style:
+                                                                      const TextStyle(
+                                                                    color: Colors
+                                                                        .blue,
+                                                                    decoration:
+                                                                        TextDecoration
+                                                                            .underline,
+                                                                  ),
+                                                                  recognizer: TapGestureRecognizer()
+                                                                    ..onTap = () =>
+                                                                        launchUrl(
+                                                                            event.link!),
+                                                                )
+                                                              ]))
+                                                        ],
+                                                        if (event.notes !=
+                                                            null) ...[
+                                                          Text(
+                                                              'Notes: ${event.notes}')
+                                                        ]
                                                       ])),
                                               if (event.rallyPoint != null)
                                                 Expanded(
