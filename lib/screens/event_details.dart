@@ -450,249 +450,293 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               _sendInvitations(context, eventRsvpsAsync.value ?? []),
           child: const Icon(Icons.mail),
         ),
-        bodyPadding: const EdgeInsets.all(16),
         body: eventAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(child: Text(error.toString())),
-            data: (event) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                                flex: 2,
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (event.status ==
-                                          InstanceStatus.canceled)
-                                        const Text('Status: CANCELED'),
-                                      Text(
-                                          'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
-                                      Text(
-                                          'Date: ${eventDateFormat.format(event.startTimeMin)}'),
-                                      Text('Topic: ${event.topic?.name}'),
-                                      Text(
-                                          'Posted by: ${event.createdBy?.displayName}'),
-                                      Text(
-                                          'Visibility: ${event.visibility.name}'),
-                                      Text(
-                                          'Location: ${event.locationDescription}'),
-                                    ])),
-                            if (event.rallyPoint != null)
-                              Expanded(
-                                  flex: 1,
-                                  child: AspectRatio(
-                                      aspectRatio: 1,
-                                      child: Consumer(
-                                          builder: (_, ref, child) {
-                                            final eventPointsAsync = ref.watch(
-                                                eventPointsProvider(
-                                                    widget.instanceId));
-                                            return Stack(children: [
-                                              child!,
-                                              const Positioned(
-                                                  top: 0,
-                                                  right: 0,
-                                                  child: IgnorePointer(
-                                                      child: Icon(
-                                                    Icons.zoom_in,
-                                                    // color: Colors.red,
-                                                    size: 32,
-                                                  ))),
-                                              eventPointsAsync.when(
-                                                data: (eventPoints) => eventPoints ==
-                                                            null ||
-                                                        eventPoints.users == 0
-                                                    ? const SizedBox.shrink()
-                                                    : Positioned(
-                                                        bottom: 0,
-                                                        left: 0,
-                                                        right: 0,
-                                                        child: IgnorePointer(
-                                                            child: Container(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        0.5),
+            data:
+                (event) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (event.bannerPhoto != null) ...[
+                            AspectRatio(
+                                aspectRatio: 16 / 9,
+                                child: Image.network(
+                                    event.bannerPhoto!.toString(),
+                                    fit: BoxFit.cover)),
+                          ],
+                          Expanded(
+                              child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                  flex: 2,
+                                                  child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        if (event.status ==
+                                                            InstanceStatus
+                                                                .canceled)
+                                                          const Text(
+                                                              'Status: CANCELED'),
+                                                        Text(
+                                                            'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
+                                                        Text(
+                                                            'Date: ${eventDateFormat.format(event.startTimeMin)}'),
+                                                        Text(
+                                                            'Topic: ${event.topic?.name}'),
+                                                        Text(
+                                                            'Posted by: ${event.createdBy?.displayName}'),
+                                                        Text(
+                                                            'Visibility: ${event.visibility.name}'),
+                                                        Text(
+                                                            'Location: ${event.locationDescription}'),
+                                                      ])),
+                                              if (event.rallyPoint != null)
+                                                Expanded(
+                                                    flex: 1,
+                                                    child: AspectRatio(
+                                                        aspectRatio: 1,
+                                                        child: Consumer(
+                                                            builder: (_, ref,
+                                                                child) {
+                                                              final eventPointsAsync =
+                                                                  ref.watch(
+                                                                      eventPointsProvider(
+                                                                          widget
+                                                                              .instanceId));
+                                                              return Stack(
+                                                                  children: [
+                                                                    child!,
+                                                                    const Positioned(
+                                                                        top: 0,
+                                                                        right:
+                                                                            0,
+                                                                        child: IgnorePointer(
+                                                                            child: Icon(
+                                                                          Icons
+                                                                              .zoom_in,
+                                                                          // color: Colors.red,
+                                                                          size:
+                                                                              32,
+                                                                        ))),
+                                                                    eventPointsAsync
+                                                                        .when(
+                                                                      data: (eventPoints) => eventPoints == null ||
+                                                                              eventPoints.users ==
+                                                                                  0
+                                                                          ? const SizedBox
+                                                                              .shrink()
+                                                                          : Positioned(
+                                                                              bottom: 0,
+                                                                              left: 0,
+                                                                              right: 0,
+                                                                              child: IgnorePointer(
+                                                                                  child: Container(
+                                                                                      color: Colors.black.withOpacity(0.5),
+                                                                                      child: Text(
+                                                                                        '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
+                                                                                        style: const TextStyle(fontSize: 12),
+                                                                                        textAlign: TextAlign.center,
+                                                                                      )))),
+                                                                      loading: () =>
+                                                                          const SizedBox
+                                                                              .shrink(),
+                                                                      error: (_,
+                                                                              __) =>
+                                                                          const SizedBox
+                                                                              .shrink(),
+                                                                    )
+                                                                  ]);
+                                                            },
+                                                            child: MapLibreMap(
+                                                              styleString:
+                                                                  'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+
+                                                              // listeners
+                                                              onMapCreated:
+                                                                  _onMapCreated,
+                                                              onStyleLoadedCallback:
+                                                                  () =>
+                                                                      _onMapStyleLoaded(
+                                                                          event),
+                                                              onMapClick: (_,
+                                                                      __) =>
+                                                                  _showLiveMap(),
+
+                                                              // disable all interaction
+                                                              dragEnabled:
+                                                                  false,
+                                                              compassEnabled:
+                                                                  false,
+                                                              zoomGesturesEnabled:
+                                                                  false,
+                                                              rotateGesturesEnabled:
+                                                                  false,
+                                                              tiltGesturesEnabled:
+                                                                  false,
+                                                              scrollGesturesEnabled:
+                                                                  false,
+                                                              doubleClickZoomEnabled:
+                                                                  false,
+
+                                                              // hide attribution in mini view
+                                                              attributionButtonPosition:
+                                                                  AttributionButtonPosition
+                                                                      .bottomRight,
+                                                              attributionButtonMargins:
+                                                                  const Point(
+                                                                      -100,
+                                                                      -100),
+
+                                                              // set initial camera position to rally point
+                                                              initialCameraPosition:
+                                                                  CameraPosition(
+                                                                target: LatLng(
+                                                                    event
+                                                                        .rallyPoint!
+                                                                        .lat,
+                                                                    event
+                                                                        .rallyPoint!
+                                                                        .lon),
+                                                                zoom: 11.75,
+                                                              ),
+                                                            ))))
+                                            ]),
+                                        Expanded(
+                                            child: rsvpsFriendsAsync.when(
+                                                loading: () => const Center(
+                                                    child:
+                                                        CircularProgressIndicator()),
+                                                error: (error, _) =>
+                                                    Text('Error: $error'),
+                                                data:
+                                                    (rsvpsFriends) =>
+                                                        rsvpsFriends.isEmpty
+                                                            ? const Padding(
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .all(
+                                                                            32),
                                                                 child: Text(
-                                                                  '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
-                                                                  style: const TextStyle(
+                                                                  'No one has RSVPed to this event yet. Be the first! And then invite your friends with the button below.',
+                                                                  style: TextStyle(
                                                                       fontSize:
-                                                                          12),
-                                                                  textAlign:
-                                                                      TextAlign
-                                                                          .center,
-                                                                )))),
-                                                loading: () =>
-                                                    const SizedBox.shrink(),
-                                                error: (_, __) =>
-                                                    const SizedBox.shrink(),
-                                              )
-                                            ]);
-                                          },
-                                          child: MapLibreMap(
-                                            styleString:
-                                                'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
-
-                                            // listeners
-                                            onMapCreated: _onMapCreated,
-                                            onStyleLoadedCallback: () =>
-                                                _onMapStyleLoaded(event),
-                                            onMapClick: (_, __) =>
-                                                _showLiveMap(),
-
-                                            // disable all interaction
-                                            dragEnabled: false,
-                                            compassEnabled: false,
-                                            zoomGesturesEnabled: false,
-                                            rotateGesturesEnabled: false,
-                                            tiltGesturesEnabled: false,
-                                            scrollGesturesEnabled: false,
-                                            doubleClickZoomEnabled: false,
-
-                                            // hide attribution in mini view
-                                            attributionButtonPosition:
-                                                AttributionButtonPosition
-                                                    .bottomRight,
-                                            attributionButtonMargins:
-                                                const Point(-100, -100),
-
-                                            // set initial camera position to rally point
-                                            initialCameraPosition:
-                                                CameraPosition(
-                                              target: LatLng(
-                                                  event.rallyPoint!.lat,
-                                                  event.rallyPoint!.lon),
-                                              zoom: 11.75,
-                                            ),
-                                          ))))
-                          ]),
-                      Expanded(
-                          child: rsvpsFriendsAsync.when(
-                              loading: () => const Center(
-                                  child: CircularProgressIndicator()),
-                              error: (error, _) => Text('Error: $error'),
-                              data: (rsvpsFriends) => rsvpsFriends.isEmpty
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(32),
-                                      child: Text(
-                                        'No one has RSVPed to this event yet. Be the first! And then invite your friends with the button below.',
-                                        style: TextStyle(fontSize: 20),
-                                      ),
-                                    )
-                                  : GroupedListView(
-                                      elements: rsvpsFriends,
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      useStickyGroupSeparators: true,
-                                      stickyHeaderBackgroundColor:
-                                          theme.scaffoldBackgroundColor,
-                                      groupBy: (RsvpFriend rsvpFriend) =>
-                                          rsvpFriend.rsvp.status,
-                                      groupComparator: (group1, group2) {
-                                        return _statusGroupOrder[group1]!
-                                            .compareTo(
-                                                _statusGroupOrder[group2]!);
-                                      },
-                                      groupSeparatorBuilder:
-                                          (InstanceMemberStatus group) =>
-                                              Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    switch (group) {
-                                                      InstanceMemberStatus
-                                                            .omw =>
-                                                        'OMW!',
-                                                      InstanceMemberStatus
-                                                            .yes =>
-                                                        'Attending',
-                                                      InstanceMemberStatus
-                                                            .maybe =>
-                                                        'Might be attending',
-                                                      InstanceMemberStatus.no =>
-                                                        'Not attending',
-                                                      InstanceMemberStatus
-                                                            .invited =>
-                                                        'Invited',
-                                                    },
-                                                    textAlign: TextAlign.center,
-                                                    style: const TextStyle(
-                                                        fontSize: 18),
-                                                  )),
-                                      itemBuilder: (context, rsvpFriend) {
-                                        final isFriendOrSelf =
-                                            rsvpFriend.rsvp.memberId! ==
-                                                    session!.user.id ||
-                                                rsvpFriend.friendship != null;
-                                        return ListTile(
-                                            onTap: isFriendOrSelf
-                                                ? () {
-                                                    context.pushNamed(
-                                                        'profile-view',
-                                                        pathParameters: {
-                                                          'id': rsvpFriend
-                                                              .rsvp.memberId!
-                                                        });
-                                                  }
-                                                : null,
-                                            leading: !isFriendOrSelf
-                                                ? CircleAvatar(
-                                                    backgroundColor: theme
-                                                        .colorScheme
-                                                        .primaryContainer
-                                                        .withAlpha(100),
-                                                    child: Icon(
-                                                      Icons.person_outline,
-                                                      color: theme
-                                                          .iconTheme.color!
-                                                          .withAlpha(100),
-                                                    ),
-                                                  )
-                                                : rsvpFriend.rsvp.member!
-                                                            .photo ==
-                                                        null
-                                                    ? const CircleAvatar(
-                                                        child:
-                                                            Icon(Icons.person),
-                                                      )
-                                                    : CircleAvatar(
-                                                        backgroundImage:
-                                                            NetworkImage(
-                                                                rsvpFriend
-                                                                    .rsvp
-                                                                    .member!
-                                                                    .photo
-                                                                    .toString()),
-                                                      ),
-                                            title: Text(
-                                                rsvpFriend
-                                                    .rsvp.member!.displayName,
-                                                style: TextStyle(
-                                                  color: isFriendOrSelf
-                                                      ? null
-                                                      : theme.disabledColor,
-                                                )),
-                                            subtitle: rsvpFriend.mutuals ==
-                                                        null ||
-                                                    isFriendOrSelf
-                                                ? null
-                                                : Text(
-                                                    // ignore: prefer_interpolation_to_compose_strings
-                                                    'Friend of ${rsvpFriend.mutuals!.map((profile) => profile.displayName).join(', ')}',
-                                                    style: TextStyle(
-                                                      color: isFriendOrSelf
-                                                          ? theme.disabledColor
-                                                          : null,
-                                                    )),
-                                            trailing: rsvpIcons[
-                                                rsvpFriend.rsvp.status]);
-                                      },
-                                    ))),
-                    ])),
+                                                                          20),
+                                                                ),
+                                                              )
+                                                            : GroupedListView(
+                                                                elements:
+                                                                    rsvpsFriends,
+                                                                physics:
+                                                                    const AlwaysScrollableScrollPhysics(),
+                                                                useStickyGroupSeparators:
+                                                                    true,
+                                                                stickyHeaderBackgroundColor:
+                                                                    theme
+                                                                        .scaffoldBackgroundColor,
+                                                                groupBy: (RsvpFriend
+                                                                        rsvpFriend) =>
+                                                                    rsvpFriend
+                                                                        .rsvp
+                                                                        .status,
+                                                                groupComparator:
+                                                                    (group1,
+                                                                        group2) {
+                                                                  return _statusGroupOrder[
+                                                                          group1]!
+                                                                      .compareTo(
+                                                                          _statusGroupOrder[
+                                                                              group2]!);
+                                                                },
+                                                                groupSeparatorBuilder: (InstanceMemberStatus
+                                                                        group) =>
+                                                                    Padding(
+                                                                        padding: const EdgeInsets
+                                                                            .all(
+                                                                            8.0),
+                                                                        child:
+                                                                            Text(
+                                                                          switch (
+                                                                              group) {
+                                                                            InstanceMemberStatus.omw =>
+                                                                              'OMW!',
+                                                                            InstanceMemberStatus.yes =>
+                                                                              'Attending',
+                                                                            InstanceMemberStatus.maybe =>
+                                                                              'Might be attending',
+                                                                            InstanceMemberStatus.no =>
+                                                                              'Not attending',
+                                                                            InstanceMemberStatus.invited =>
+                                                                              'Invited',
+                                                                          },
+                                                                          textAlign:
+                                                                              TextAlign.center,
+                                                                          style:
+                                                                              const TextStyle(fontSize: 18),
+                                                                        )),
+                                                                itemBuilder:
+                                                                    (context,
+                                                                        rsvpFriend) {
+                                                                  final isFriendOrSelf = rsvpFriend
+                                                                              .rsvp
+                                                                              .memberId! ==
+                                                                          session!
+                                                                              .user
+                                                                              .id ||
+                                                                      rsvpFriend
+                                                                              .friendship !=
+                                                                          null;
+                                                                  return ListTile(
+                                                                      onTap: isFriendOrSelf
+                                                                          ? () {
+                                                                              context.pushNamed('profile-view', pathParameters: {
+                                                                                'id': rsvpFriend.rsvp.memberId!
+                                                                              });
+                                                                            }
+                                                                          : null,
+                                                                      leading: !isFriendOrSelf
+                                                                          ? CircleAvatar(
+                                                                              backgroundColor: theme.colorScheme.primaryContainer.withAlpha(100),
+                                                                              child: Icon(
+                                                                                Icons.person_outline,
+                                                                                color: theme.iconTheme.color!.withAlpha(100),
+                                                                              ),
+                                                                            )
+                                                                          : rsvpFriend.rsvp.member!.photo == null
+                                                                              ? const CircleAvatar(
+                                                                                  child: Icon(Icons.person),
+                                                                                )
+                                                                              : CircleAvatar(
+                                                                                  backgroundImage: NetworkImage(rsvpFriend.rsvp.member!.photo.toString()),
+                                                                                ),
+                                                                      title: Text(rsvpFriend.rsvp.member!.displayName,
+                                                                          style: TextStyle(
+                                                                            color: isFriendOrSelf
+                                                                                ? null
+                                                                                : theme.disabledColor,
+                                                                          )),
+                                                                      subtitle: rsvpFriend.mutuals == null || isFriendOrSelf
+                                                                          ? null
+                                                                          : Text(
+                                                                              // ignore: prefer_interpolation_to_compose_strings
+                                                                              'Friend of ${rsvpFriend.mutuals!.map((profile) => profile.displayName).join(', ')}',
+                                                                              style: TextStyle(
+                                                                                color: isFriendOrSelf ? theme.disabledColor : null,
+                                                                              )),
+                                                                      trailing: rsvpIcons[rsvpFriend.rsvp.status]);
+                                                                },
+                                                              ))),
+                                      ])))
+                        ])),
         bottomNavigationBar: session == null
             ? null
             : Padding(
