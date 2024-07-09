@@ -670,8 +670,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                             : GroupedListView(
                                                                 elements:
                                                                     rsvpsFriends,
-                                                                physics:
-                                                                    const AlwaysScrollableScrollPhysics(),
                                                                 useStickyGroupSeparators:
                                                                     true,
                                                                 stickyHeaderBackgroundColor:
