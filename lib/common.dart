@@ -96,7 +96,13 @@ Future<Uri> uploadPhoto(
 
 Future<Uri> movePhoto(
     String from, String to, SupabaseClient supabase, String bucketName,
-    {TransformOptions? transform}) async {
+    {TransformOptions? transform, bool upsert = false}) async {
+  // delete any existing destination photo first
+  if (upsert) {
+    await supabase.storage.from(bucketName).remove([to]);
+  }
+
+  // move photo
   await supabase.storage.from(bucketName).move(from, to);
 
   final photoUrl = supabase.storage.from(bucketName).getPublicUrl(
