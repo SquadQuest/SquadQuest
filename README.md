@@ -1,6 +1,14 @@
 # SquadQuest
 
-SquadQuest is the painless way to rally your friends in the moment and do stuff together IRL.
+- [What is SquadQuest?](#what-is-squadquest)
+- [Help Test and Design SquadQuest](#help-test-and-design-squadquest)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Roadmap](#roadmap)
+
+## What is SquadQuest?
+
+SquadQuest aims to be the painless way to rally your friends to do stuff together IRL.
 
 SquadQuest *is not* a social network. Social networks help you build shallow connections with people you don't really know. You will not see people on SquadQuest that you don't already know and they won't see you. SquadQuest is designed to help you spend more time out in the real world with people you know.
 
@@ -8,14 +16,39 @@ SquadQuest *is not* a startup. The need to monetize your data or engagement to r
 
 *Who is Jarvus Innovations?* Jarvus is the open-source civic technology consultancy that SquadQuest's original author helps run. SquadQuest is published under Jarvus' developer accounts in the Google and Apple app stores because it's a pain to set those up without a business entity and Jarvus already had them. Eventually SquadQuest will be transfered to its own developer accounts or those of a nonprofit custodian.
 
-## Help beta test SquadQuest
+## Help Test and Design SquadQuest
 
-- Web: <https://squadquest.app>
 - iOS:
   - Current App Store release: <https://apps.apple.com/us/app/squadquest/id6504465196>
   - Latest beta preview release: <https://testflight.apple.com/join/1xppwmKm>
 - Android:
   - Latest beta preview release: <https://github.com/SquadQuest/SquadQuest/releases/latest/download/SquadQuest.apk>
+    - Note: Installing this way requires manual updates to get new versions by coming back here and clicking this link again
+- Web: <https://squadquest.app>
+
+## Features
+
+- Log in with just your phone number
+- Find and post events/gatherings
+- Connect with friends via their phone numbers
+- Build a list of event topics you're interested in subscribing to
+- Get alerted when public or friends-only events are posted that match your interests
+- Post private events and only invite specific people
+- Keep track of who's coming, who's on the fence, and who's on their way in real time
+- Keep track of where your squad is and how they're moving on a live map for each event
+- Keep your squad up-to-date on when and where on the map you're rallying together
+
+## Screenshots
+
+<p float="left">
+  <img src="./screenshots/map-river.png" width="150" alt="Map screen: River event" />
+  <img src="./screenshots/event.png" width="150" alt="Event screen" />
+  <img src="./screenshots/home.png" width="150" alt="Home screen" />
+  <img src="./screenshots/topics.png" width="150" alt="Topics screen" />
+  <img src="./screenshots/profile.png" width="150" alt="Profile screen" />
+</p>
+
+![Map: River event](./screenshots/map-river.PNG)
 
 ## Roadmap
 
