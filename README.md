@@ -48,8 +48,6 @@ SquadQuest *is not* a startup. The need to monetize your data or engagement to r
   <img src="./screenshots/profile.png" width="150" alt="Profile screen" />
 </p>
 
-![Map: River event](./screenshots/map-river.PNG)
-
 ## Roadmap
 
 Some major milestones currently envisioned include:
