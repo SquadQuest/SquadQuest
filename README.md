@@ -1,9 +1,9 @@
 # SquadQuest
 
 - [What is SquadQuest?](#what-is-squadquest)
-- [Help Test and Design SquadQuest](#help-test-and-design-squadquest)
-- [Features](#features)
 - [Screenshots](#screenshots)
+- [Features](#features)
+- [Help Test and Design SquadQuest](#help-test-and-design-squadquest)
 - [Roadmap](#roadmap)
 
 ## What is SquadQuest?
@@ -16,15 +16,15 @@ SquadQuest *is not* a startup. The need to monetize your data or engagement to r
 
 *Who is Jarvus Innovations?* Jarvus is the open-source civic technology consultancy that SquadQuest's original author helps run. SquadQuest is published under Jarvus' developer accounts in the Google and Apple app stores because it's a pain to set those up without a business entity and Jarvus already had them. Eventually SquadQuest will be transfered to its own developer accounts or those of a nonprofit custodian.
 
-## Help Test and Design SquadQuest
+## Screenshots
 
-- iOS:
-  - Current App Store release: <https://apps.apple.com/us/app/squadquest/id6504465196>
-  - Latest beta preview release: <https://testflight.apple.com/join/1xppwmKm>
-- Android:
-  - Latest beta preview release: <https://github.com/SquadQuest/SquadQuest/releases/latest/download/SquadQuest.apk>
-    - Note: Installing this way requires manual updates to get new versions by coming back here and clicking this link again
-- Web: <https://squadquest.app>
+<p float="left">
+  <img src="./screenshots/map-river.png" width="150" alt="Map screen: River event" />
+  <img src="./screenshots/event.png" width="150" alt="Event screen" />
+  <img src="./screenshots/home.png" width="150" alt="Home screen" />
+  <img src="./screenshots/topics.png" width="150" alt="Topics screen" />
+  <img src="./screenshots/profile.png" width="150" alt="Profile screen" />
+</p>
 
 ## Features
 
@@ -38,15 +38,15 @@ SquadQuest *is not* a startup. The need to monetize your data or engagement to r
 - Keep track of where your squad is and how they're moving on a live map for each event
 - Keep your squad up-to-date on when and where on the map you're rallying together
 
-## Screenshots
+## Help Test and Design SquadQuest
 
-<p float="left">
-  <img src="./screenshots/map-river.png" width="150" alt="Map screen: River event" />
-  <img src="./screenshots/event.png" width="150" alt="Event screen" />
-  <img src="./screenshots/home.png" width="150" alt="Home screen" />
-  <img src="./screenshots/topics.png" width="150" alt="Topics screen" />
-  <img src="./screenshots/profile.png" width="150" alt="Profile screen" />
-</p>
+- iOS:
+  - Current App Store release: <https://apps.apple.com/us/app/squadquest/id6504465196>
+  - Latest beta preview release: <https://testflight.apple.com/join/1xppwmKm>
+- Android:
+  - Latest beta preview release: <https://github.com/SquadQuest/SquadQuest/releases/latest/download/SquadQuest.apk>
+    - Note: Installing this way requires manual updates to get new versions by coming back here and clicking this link again
+- Web: <https://squadquest.app>
 
 ## Roadmap
 
