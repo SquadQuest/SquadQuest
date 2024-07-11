@@ -134,7 +134,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
     String? tempBannerPhotoPath;
 
-    if (bannerPhoto != null) {
+    if (bannerPhoto != null && !bannerPhoto.isScheme('https')) {
       try {
         tempBannerPhotoPath = '_pending/${supabase.auth.currentUser!.id}';
         await uploadPhoto(
@@ -183,6 +183,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       if (tempBannerPhotoPath != null) {
         final bannerPhotoUrl = await movePhoto(
             tempBannerPhotoPath, savedInstance.id!, supabase, 'event-banners',
+            upsert: true,
             transform: const TransformOptions(width: 1024, height: 1024));
         await instancesController.patch(
             savedInstance.id!, {'banner_photo': bannerPhotoUrl.toString()});
@@ -250,6 +251,9 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           ref.read(_startTimeMaxProvider.notifier).state =
               TimeOfDay.fromDateTime(instance.startTimeMax);
           ref.read(_visibilityProvider.notifier).state = instance.visibility;
+          _linkController.text = instance.link?.toString() ?? '';
+          _notesController.text = instance.notes?.toString() ?? '';
+          ref.read(_bannerPhotoProvider.notifier).state = instance.bannerPhoto;
 
           // apply AsyncValue to state
           _editingInstance = instanceAsync;

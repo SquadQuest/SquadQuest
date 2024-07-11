@@ -69,3 +69,18 @@ with
             )
         )
     );
+
+create policy "Host can delete event banner photos" ON storage.objects as PERMISSIVE for DELETE to authenticated using (
+    bucket_id = 'event-banners'
+    AND (
+        name = CONCAT('_pending/', auth.uid ()::text)
+        or EXISTS (
+            SELECT
+            FROM
+                instances
+            WHERE
+                instances.id::text = name
+                AND instances.created_by = auth.uid ()
+        )
+    )
+);
