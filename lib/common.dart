@@ -4,16 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 
+/// Remove non-digits from the phone number
 String normalizePhone(String phone) {
   // Remove non-digits
-  phone = phone.replaceAll(RegExp(r'[^\d]'), '');
-
-  // Ensure leading 1
-  if (phone[0] != '1') {
-    phone = '1$phone';
-  }
-
-  return phone;
+  return phone.replaceAll(RegExp(r'[^\d]'), '');
 }
 
 String formatPhone(String phone) {
@@ -26,6 +20,7 @@ String formatPhone(String phone) {
   }
 }
 
+/// Deny any non-digit (and some phone number related) characters from the input
 final phoneInputFilter =
     FilteringTextInputFormatter.deny(RegExp(r'[^+\(\) 0-9\-]'));
 
