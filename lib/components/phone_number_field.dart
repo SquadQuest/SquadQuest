@@ -50,6 +50,8 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
       _selectedPhoneCountry = defaultCountryData;
     }
 
+    _internalController.text = formatPhone(_internalController.text);
+
     _setupControllerListener();
   }
 
