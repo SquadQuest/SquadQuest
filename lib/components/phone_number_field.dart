@@ -8,12 +8,14 @@ class PhoneNumberFormField extends StatefulWidget {
     this.enabled = true,
     this.autofocus = false,
     this.onSubmitted,
+    this.initialPhoneNumber,
     this.phoneNumberController,
     this.onPhoneNumberChanged,
     this.decoration,
     this.countryFieldDecoration,
   });
 
+  final String? initialPhoneNumber;
   final TextEditingController? phoneNumberController;
   final ValueChanged<String>? onPhoneNumberChanged;
   final void Function(String)? onSubmitted;
@@ -41,7 +43,11 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
   void initState() {
     super.initState();
 
-    _internalController = TextEditingController(text: widget.phoneNumberController?.text ?? '');
+    _internalController = TextEditingController(
+      text: widget.phoneNumberController?.text ??
+          widget.initialPhoneNumber ??
+          '',
+    );
 
     if (_internalController.text.isNotEmpty) {
       _selectedPhoneCountry =
@@ -82,9 +88,8 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
 
   @override
   Widget build(BuildContext context) {
-    final decoration = widget.decoration ?? const InputDecoration(prefixIcon: Icon(Icons.phone));
-    final countryDecoration =
-        widget.countryFieldDecoration ?? const InputDecoration(labelText: 'Country Code');
+    final decoration = widget.decoration ?? const InputDecoration(prefixIcon: Icon(Icons.phone), labelText: "Phone Number");
+    final countryDecoration = widget.countryFieldDecoration ?? const InputDecoration(labelText: 'Country Code');
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,23 +128,19 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.done,
             autofillHints: const [AutofillHints.telephoneNumber],
-            onFieldSubmitted:
-                widget.onSubmitted != null ? (value) => widget.onSubmitted!(value) : null,
+            onFieldSubmitted: widget.enabled && widget.onSubmitted != null
+                ? (value) => widget.onSubmitted!(value)
+                : null,
             decoration: decoration,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a phone number';
               }
 
-              final masks = [
-                _selectedPhoneCountry.phoneMask,
-                _selectedPhoneCountry.phoneMaskWithoutCountryCode,
-                ...(_selectedPhoneCountry.altMasks ?? []),
-                ...(_selectedPhoneCountry.altMasksWithoutCountryCodes ?? []),
-              ];
-
-              final maskedOutValue = value.replaceAll(RegExp("[0-9]"), "0");
-              if (!masks.any((mask) => mask?.contains(maskedOutValue) == true)) {
+              if (!isPhoneValid(
+                value,
+                defaultCountryCode: _selectedPhoneCountry.countryCode,
+              )) {
                 return "Please enter a valid phone number";
               }
 
