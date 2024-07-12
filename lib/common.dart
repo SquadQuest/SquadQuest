@@ -27,9 +27,9 @@ String formatPhone(String phone) {
     phoneNumberWithoutCountry,
     allowEndlessPhone: true,
     defaultCountryCode: countryCode.countryCode,
-    invalidPhoneAction: InvalidPhoneAction.ShowPhoneInvalidString,
+    invalidPhoneAction: InvalidPhoneAction.ShowUnformatted,
   )!;
-  // null-safety `!` ensured by the above enum value [InvalidPhoneAction.ShowPhoneInvalidString]
+  // null-safety `!` ensured by the above enum value [InvalidPhoneAction.ShowUnformatted]
 }
 
 /// Deny any non-digit (and some phone number related) characters from the input
