@@ -529,7 +529,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                               ]))
                                                         ],
                                                         if (event.notes !=
-                                                            null) ...[
+                                                                null &&
+                                                            event.notes!
+                                                                .trim()
+                                                                .isNotEmpty) ...[
                                                           Text(
                                                               'Notes: ${event.notes}')
                                                         ]
