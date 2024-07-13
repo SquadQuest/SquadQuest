@@ -53,10 +53,16 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
     }
 
     final mediaQueryData = MediaQuery.of(context);
+    final displayFeaturesHeight = View.of(context)
+        .displayFeatures
+        .map((displayFeature) => displayFeature.bounds.height)
+        .reduce((value, height) => value + height);
 
     return Container(
         height: searchFocus.hasFocus
-            ? mediaQueryData.size.height - mediaQueryData.viewPadding.vertical
+            ? mediaQueryData.size.height -
+                mediaQueryData.viewPadding.vertical -
+                displayFeaturesHeight
             : mediaQueryData.size.height * .80,
         padding: mediaQueryData.viewInsets,
         child:
