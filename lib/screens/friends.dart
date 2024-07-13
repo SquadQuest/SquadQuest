@@ -9,6 +9,7 @@ import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/models/friend.dart';
+import 'package:squadquest/components/phone_number_field.dart';
 
 final _statusGroupOrder = {
   FriendStatus.requested: 0,
@@ -227,26 +228,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                     Text('Send friend request',
                         style: theme.textTheme.titleLarge),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    PhoneNumberFormField(
                       autofocus: true,
-                      autofillHints: const [AutofillHints.telephoneNumber],
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.done,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.phone),
                         labelText: 'Enter your friend\'s phone number',
                       ),
-                      inputFormatters: [phoneInputFilter],
-                      validator: (value) {
-                        if (value == null ||
-                            value.isEmpty ||
-                            normalizePhone(value).length != 11) {
-                          return 'Please enter a valid phone number';
-                        }
-                        return null;
-                      },
-                      controller: phoneController,
-                      onFieldSubmitted: (_) {
+                      phoneNumberController: phoneController,
+                      onSubmitted: (_) {
                         if (!formKey.currentState!.validate()) {
                           return;
                         }

@@ -1,11 +1,14 @@
 import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/components/phone_number_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? redirect;
@@ -18,6 +21,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final _phoneController = TextEditingController();
 
   bool submitted = false;
@@ -39,34 +43,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             phone: phone,
           );
       log('Sent SMS');
-    } catch (error) {
-      log('Error sending SMS: $error');
 
+      if (context.mounted) {
+        context
+            .pushNamed('verify',
+                queryParameters: widget.redirect == null
+                    ? {}
+                    : {'redirect': widget.redirect})
+            .then((_) {});
+      }
+    } catch (error, st) {
+      log('Error sending SMS:', error: error, stackTrace: st);
+      final errorMessage = switch (error) {
+        AuthException(:final message) => message,
+        _ => 'Unexpected error',
+      };
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            'Failed to login, check phone number and try again.\n'
+            'Details: $errorMessage',
+          ),
+        ));
+      }
+    } finally {
       setState(() {
         submitted = false;
       });
-
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            'Failed to login, check phone number and try again:\n\n$error'),
-      ));
-
-      return;
     }
-
-    if (!context.mounted) return;
-
-    context
-        .pushNamed('verify',
-            queryParameters:
-                widget.redirect == null ? {} : {'redirect': widget.redirect})
-        .then((_) {
-      setState(() {
-        submitted = false;
-      });
-    });
   }
 
   @override
@@ -80,27 +85,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
+              PhoneNumberFormField(
                 autofocus: true,
-                readOnly: submitted,
-                autofillHints: const [AutofillHints.telephoneNumber],
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _submitPhone(context),
+                phoneNumberController: _phoneController,
                 decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.phone),
                   labelText: 'Enter your phone number',
                 ),
-                inputFormatters: [phoneInputFilter],
-                validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      normalizePhone(value).length != 11) {
-                    return 'Please enter a valid phone number';
-                  }
-                  return null;
-                },
-                controller: _phoneController,
-                onFieldSubmitted: (_) => _submitPhone(context),
               ),
               const SizedBox(height: 16),
               submitted
