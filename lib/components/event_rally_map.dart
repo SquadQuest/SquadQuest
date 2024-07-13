@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -6,10 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geobase/coordinates.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:squadquest/controllers/auth.dart';
-
-enum Menu { revertRallyPoint, clearRallyPoint, saveRallyPoint }
 
 class EventRallyMap extends ConsumerStatefulWidget {
   final String title;
@@ -30,6 +30,8 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
   MapLibreMapController? controller;
   late LatLng rallyPoint;
   Symbol? dragSymbol;
+  FocusNode searchFocus = FocusNode();
+  List<Symbol> resultSymbols = [];
 
   Geographic get rallyPointGeographic =>
       Geographic(lat: rallyPoint.latitude, lon: rallyPoint.longitude);
@@ -50,28 +52,30 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return SizedBox(
-        height: MediaQuery.of(context).size.height * .75,
+    final mediaQueryData = MediaQuery.of(context);
+
+    return Container(
+        height: searchFocus.hasFocus
+            ? mediaQueryData.size.height - mediaQueryData.viewPadding.vertical
+            : mediaQueryData.size.height * .80,
+        padding: mediaQueryData.viewInsets,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Stack(alignment: Alignment.center, children: [
             Positioned(
                 left: 12,
                 child: IconButton(
-                    icon: const Icon(Icons.arrow_back), // Your desired icon
+                    icon: const Icon(Icons.save),
                     onPressed: () {
                       Navigator.of(context).pop(rallyPointGeographic);
                     })),
             Positioned(
                 right: 12,
-                child: PopupMenuButton<Menu>(
+                child: PopupMenuButton(
                     icon: const Icon(Icons.more_vert),
                     offset: const Offset(0, 50),
-                    // onSelected: _onMenuSelect,
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<Menu>>[
-                          PopupMenuItem<Menu>(
-                            value: Menu.saveRallyPoint,
+                    itemBuilder: (BuildContext context) => [
+                          PopupMenuItem(
                             child: const ListTile(
                               leading: Icon(Icons.save),
                               title: Text('Save rally point'),
@@ -80,8 +84,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                               Navigator.of(context).pop(rallyPointGeographic);
                             },
                           ),
-                          PopupMenuItem<Menu>(
-                            value: Menu.clearRallyPoint,
+                          PopupMenuItem(
                             child: const ListTile(
                               leading: Icon(Icons.delete),
                               title: Text('Clear rally point'),
@@ -90,8 +93,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                               Navigator.of(context).pop(null);
                             },
                           ),
-                          PopupMenuItem<Menu>(
-                            value: Menu.revertRallyPoint,
+                          PopupMenuItem(
                             child: const ListTile(
                               leading: Icon(Icons.undo),
                               title: Text('Cancel change'),
@@ -110,6 +112,14 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
               ),
             ),
           ]),
+          TextField(
+            focusNode: searchFocus,
+            textInputAction: TextInputAction.search,
+            decoration: const InputDecoration(
+              labelText: 'Search locations',
+            ),
+            onSubmitted: _onSearch,
+          ),
           Expanded(
               child: MapLibreMap(
             onMapCreated: _onMapCreated,
@@ -123,7 +133,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
               target: LatLng(39.9550, -75.1605),
               zoom: 11.75,
             ),
-          ))
+          )),
         ]));
   }
 
@@ -132,12 +142,20 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
   }
 
   void _onStyleLoadedCallback() async {
+    controller!.onFeatureDrag.add(_onFeatureDrag);
+    controller!.onSymbolTapped.add(_onSymbolTapped);
+
     // configure symbols
     await controller!.setSymbolIconAllowOverlap(true);
     await controller!.setSymbolTextAllowOverlap(true);
     await controller!.addImage(
         'drag-marker',
         (await rootBundle.load('assets/symbols/drag-marker.png'))
+            .buffer
+            .asUint8List());
+    await controller!.addImage(
+        'select-marker',
+        (await rootBundle.load('assets/symbols/select-marker.png'))
             .buffer
             .asUint8List());
 
@@ -147,11 +165,9 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
         iconSize: kIsWeb ? 0.5 : 1,
         iconAnchor: 'top',
         draggable: true));
-
-    controller!.onFeatureDrag.add(_onDrag);
   }
 
-  _onDrag(dynamic id,
+  _onFeatureDrag(dynamic id,
       {required Point<double> point,
       required LatLng origin,
       required LatLng current,
@@ -162,5 +178,65 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
     }
 
     rallyPoint = dragSymbol!.options.geometry!;
+  }
+
+  _onSymbolTapped(Symbol resultSymbol) async {
+    rallyPoint = resultSymbol.options.geometry!;
+
+    await controller!.removeSymbols(resultSymbols);
+    await controller!.updateSymbol(
+        dragSymbol!, SymbolOptions(geometry: resultSymbol.options.geometry));
+  }
+
+  _onSearch(String search) async {
+    // clear any previous results
+    await controller!.removeSymbols(resultSymbols);
+
+    // nothing to do if search is empty
+    if (search.trim().isEmpty) {
+      return;
+    }
+
+    // get region of current map view to search within
+    final box = await controller?.getVisibleRegion();
+
+    // search OSM data
+    final response = await http.get(Uri(
+        scheme: 'https',
+        host: 'nominatim.openstreetmap.org',
+        path: '/search',
+        queryParameters: {
+          'format': 'json',
+          'q': search.trim(),
+          'viewbox':
+              '${box!.northeast.longitude},${box.northeast.latitude},${box.southwest.longitude},${box.southwest.latitude}',
+          'bounded': '1'
+        }));
+    final responseData = jsonDecode(response.body);
+
+    // render results
+    final List<SymbolOptions> resultSymbolOptions = [];
+    for (final result in responseData) {
+      resultSymbolOptions.add(SymbolOptions(
+          geometry:
+              LatLng(double.parse(result['lat']), double.parse(result['lon'])),
+          iconImage: 'select-marker',
+          iconSize: kIsWeb ? 0.4 : 0.9,
+          iconAnchor: 'bottom',
+          textField: result['name'],
+          textColor: '#ffffff',
+          textAnchor: 'top-middle',
+          textOffset: const Offset(0, 1),
+          textSize: 14));
+    }
+
+    resultSymbols = await controller!.addSymbols(resultSymbolOptions);
+  }
+
+  @override
+  void dispose() {
+    controller?.onFeatureDrag.remove(_onFeatureDrag);
+    controller?.onSymbolTapped.remove(_onSymbolTapped);
+    super.dispose();
   }
 }
