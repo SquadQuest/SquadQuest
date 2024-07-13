@@ -6,10 +6,10 @@ import 'package:grouped_list/grouped_list.dart';
 
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
-import 'package:squadquest/components/phone_number_field.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/models/friend.dart';
+import 'package:squadquest/components/phone_number_field.dart';
 
 final _statusGroupOrder = {
   FriendStatus.requested: 0,

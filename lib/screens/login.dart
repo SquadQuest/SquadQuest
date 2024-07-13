@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../app_scaffold.dart';
-import '../common.dart';
-import '../components/phone_number_field.dart';
-import '../controllers/auth.dart';
-import '../services/supabase.dart';
+import 'package:squadquest/common.dart';
+import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/components/phone_number_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? redirect;
@@ -47,7 +47,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (context.mounted) {
         context
             .pushNamed('verify',
-                queryParameters: widget.redirect == null ? {} : {'redirect': widget.redirect})
+                queryParameters: widget.redirect == null
+                    ? {}
+                    : {'redirect': widget.redirect})
             .then((_) {});
       }
     } catch (error, st) {
@@ -98,7 +100,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: submitted ? null : () => _submitPhone(context),
                       child: const Text(
                         'Send login code via SMS',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                     )
             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
+
 import 'package:squadquest/common.dart';
 
 class PhoneNumberFormField extends StatefulWidget {
@@ -37,21 +38,22 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
   String get completePhoneNumber =>
       '+${_selectedPhoneCountry.internalPhoneCode} ${_internalController.text}';
 
-  static final defaultCountryData = PhoneCodes.getPhoneCountryDataByCountryCode("US")!;
+  static final defaultCountryData =
+      PhoneCodes.getPhoneCountryDataByCountryCode("US")!;
 
   @override
   void initState() {
     super.initState();
 
     _internalController = TextEditingController(
-      text: widget.phoneNumberController?.text ??
-          widget.initialPhoneNumber ??
-          '',
+      text:
+          widget.phoneNumberController?.text ?? widget.initialPhoneNumber ?? '',
     );
 
     if (_internalController.text.isNotEmpty) {
       _selectedPhoneCountry =
-          PhoneCodes.getCountryDataByPhone(_internalController.text) ?? defaultCountryData;
+          PhoneCodes.getCountryDataByPhone(_internalController.text) ??
+              defaultCountryData;
     } else {
       _selectedPhoneCountry = defaultCountryData;
     }
@@ -88,8 +90,11 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
 
   @override
   Widget build(BuildContext context) {
-    final decoration = widget.decoration ?? const InputDecoration(prefixIcon: Icon(Icons.phone), labelText: "Phone Number");
-    final countryDecoration = widget.countryFieldDecoration ?? const InputDecoration(labelText: 'Country Code');
+    final decoration = widget.decoration ??
+        const InputDecoration(
+            prefixIcon: Icon(Icons.phone), labelText: "Phone Number");
+    final countryDecoration = widget.countryFieldDecoration ??
+        const InputDecoration(labelText: 'Country Code');
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
