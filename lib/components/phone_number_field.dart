@@ -96,7 +96,7 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
     final countryDecoration = widget.countryFieldDecoration ??
         const InputDecoration(labelText: 'Country Code');
 
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
@@ -115,43 +115,41 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
           ),
         ),
         const SizedBox.square(dimension: 8),
-        Expanded(
-          child: TextFormField(
-            autofocus: widget.autofocus,
-            readOnly: !widget.enabled,
-            controller: _internalController,
-            onChanged: widget.onPhoneNumberChanged != null
-                ? (value) => widget.onPhoneNumberChanged!(completePhoneNumber)
-                : null,
-            inputFormatters: [
-              phoneInputFilter,
-              PhoneInputFormatter(
-                defaultCountryCode: _selectedPhoneCountry.countryCode,
-                allowEndlessPhone: true,
-              )
-            ],
-            keyboardType: TextInputType.phone,
-            textInputAction: TextInputAction.done,
-            autofillHints: const [AutofillHints.telephoneNumber],
-            onFieldSubmitted: widget.enabled && widget.onSubmitted != null
-                ? (value) => widget.onSubmitted!(value)
-                : null,
-            decoration: decoration,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter a phone number';
-              }
+        TextFormField(
+          autofocus: widget.autofocus,
+          readOnly: !widget.enabled,
+          controller: _internalController,
+          onChanged: widget.onPhoneNumberChanged != null
+              ? (value) => widget.onPhoneNumberChanged!(completePhoneNumber)
+              : null,
+          inputFormatters: [
+            phoneInputFilter,
+            PhoneInputFormatter(
+              defaultCountryCode: _selectedPhoneCountry.countryCode,
+              allowEndlessPhone: true,
+            )
+          ],
+          keyboardType: TextInputType.phone,
+          textInputAction: TextInputAction.done,
+          autofillHints: const [AutofillHints.telephoneNumber],
+          onFieldSubmitted: widget.enabled && widget.onSubmitted != null
+              ? (value) => widget.onSubmitted!(value)
+              : null,
+          decoration: decoration,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter a phone number';
+            }
 
-              if (!isPhoneValid(
-                value,
-                defaultCountryCode: _selectedPhoneCountry.countryCode,
-              )) {
-                return "Please enter a valid phone number";
-              }
+            if (!isPhoneValid(
+              value,
+              defaultCountryCode: _selectedPhoneCountry.countryCode,
+            )) {
+              return "Please enter a valid phone number";
+            }
 
-              return null;
-            },
-          ),
+            return null;
+          },
         ),
       ],
     );
