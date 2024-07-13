@@ -56,7 +56,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
     final displayFeaturesHeight = View.of(context)
         .displayFeatures
         .map((displayFeature) => displayFeature.bounds.height)
-        .reduce((value, height) => value + height);
+        .fold(0.0, (value, height) => value + height);
 
     return Container(
         height: searchFocus.hasFocus
