@@ -9,7 +9,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:squadquest/controllers/auth.dart';
 
-enum Menu { revertRallyPoint, clearRallyPoint }
+enum Menu { revertRallyPoint, clearRallyPoint, saveRallyPoint }
 
 class EventRallyMap extends ConsumerStatefulWidget {
   final String title;
@@ -30,6 +30,9 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
   MapLibreMapController? controller;
   late LatLng rallyPoint;
   Symbol? dragSymbol;
+
+  Geographic get rallyPointGeographic =>
+      Geographic(lat: rallyPoint.latitude, lon: rallyPoint.longitude);
 
   @override
   void initState() {
@@ -57,8 +60,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                 child: IconButton(
                     icon: const Icon(Icons.arrow_back), // Your desired icon
                     onPressed: () {
-                      Navigator.of(context).pop(Geographic(
-                          lat: rallyPoint.latitude, lon: rallyPoint.longitude));
+                      Navigator.of(context).pop(rallyPointGeographic);
                     })),
             Positioned(
                 right: 12,
@@ -69,14 +71,13 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                     itemBuilder: (BuildContext context) =>
                         <PopupMenuEntry<Menu>>[
                           PopupMenuItem<Menu>(
-                            value: Menu.revertRallyPoint,
+                            value: Menu.saveRallyPoint,
                             child: const ListTile(
-                              leading: Icon(Icons.undo),
-                              title: Text('Revert rally point'),
+                              leading: Icon(Icons.save),
+                              title: Text('Save rally point'),
                             ),
                             onTap: () {
-                              Navigator.of(context)
-                                  .pop(widget.initialRallyPoint);
+                              Navigator.of(context).pop(rallyPointGeographic);
                             },
                           ),
                           PopupMenuItem<Menu>(
@@ -87,6 +88,17 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                             ),
                             onTap: () {
                               Navigator.of(context).pop(null);
+                            },
+                          ),
+                          PopupMenuItem<Menu>(
+                            value: Menu.revertRallyPoint,
+                            child: const ListTile(
+                              leading: Icon(Icons.undo),
+                              title: Text('Cancel change'),
+                            ),
+                            onTap: () {
+                              Navigator.of(context)
+                                  .pop(widget.initialRallyPoint);
                             },
                           ),
                         ])),
