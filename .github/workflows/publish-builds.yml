@@ -87,3 +87,47 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           asset_paths: '["build/app/outputs/flutter-apk/SquadQuest.apk", "build/app/outputs/bundle/release/SquadQuest.aab"]'
+
+
+      - name: Insert new row into app_versions
+        env:
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_GITHUB_RELEASE_ACTION_TOKEN: ${{ secrets.SUPABASE_GITHUB_RELEASE_ACTION_TOKEN }}
+          RELEASE_DESCRIPTION: ${{ github.event.release.body }}
+        run: |
+          shopt -s extglob
+          cargo install markdown-extract
+
+          RELEASE_NEWS=$(markdown-extract --no-print-matched-heading "What's New" <(echo "${RELEASE_DESCRIPTION}"))
+          RELEASE_NEWS="${RELEASE_NEWS##+([[:space:]])}"
+          if [[ "${RELEASE_NEWS}" == "Error: No matches." ]]; then
+              RELEASE_NEWS=""
+          fi
+
+          RELEASE_NOTICES=$(markdown-extract --no-print-matched-heading "Notices" <(echo "${RELEASE_DESCRIPTION}"))
+          RELEASE_NOTICES="${RELEASE_NOTICES##+([[:space:]])}"
+          if [[ "${RELEASE_NOTICES}" == "Error: No matches." ]]; then
+              RELEASE_NOTICES=""
+          fi
+
+          REQUEST_BODY=$(
+              jq --null-input \
+                  --arg build "0" \
+                  --arg version "0.0" \
+                  --arg news "$RELEASE_NEWS" \
+                  --arg notices "$RELEASE_NOTICES" \
+                  '{
+                      build: $build,
+                      version: $version,
+                      news: (if $news == "" then null else $news end),
+                      notices: (if $notices == "" then null else $notices end),
+                      availability: ["githubAPK", "web"]
+                  }'
+          )
+
+          curl -X POST 'https://supabase.squadquest.app/rest/v1/app_versions' \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_GITHUB_RELEASE_ACTION_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -H "Prefer: return=minimal" \
+              -d "${REQUEST_BODY}"

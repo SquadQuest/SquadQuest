@@ -15,7 +15,8 @@ create table
         notices text null,
         news text null,
         availability app_version_availability[] null,
-        constraint app_versions_pkey primary key (build)
+        constraint app_versions_pkey primary key (build),
+        constraint app_versions_version_key unique (version)
     );
 
 -- revert to fully public after no clients < 78 are active
@@ -32,3 +33,13 @@ SELECT
         ) >= 78
         OR 'ios' = ANY (availability)
     );
+
+create role "github_release_action";
+
+grant github_release_action to authenticator;
+
+grant authenticated to github_release_action;
+
+create policy "GitHub Release Action can insert app versions" on "public"."app_versions" as PERMISSIVE for INSERT to github_release_action
+with
+    check (true);
