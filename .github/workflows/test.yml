@@ -1,0 +1,26 @@
+name: 'Test Workflow'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: mxschmitt/action-tmate@v3
+      env:
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        SUPABASE_GITHUB_RELEASE_ACTION_TOKEN: ${{ secrets.SUPABASE_GITHUB_RELEASE_ACTION_TOKEN }}
+      RELEASE_DESCRIPTION: |
+          ## Full Changelog
+
+          ### Improvements
+
+          - fix: wait for supabase initialization @themightychris
+
+          ### Technical
+
+          - chore: restore test workflow @themightychris
+          - chore: add debug output to app_versions insert code @themightychris
