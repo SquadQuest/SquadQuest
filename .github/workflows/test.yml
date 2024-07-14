@@ -1,0 +1,41 @@
+name: 'Test Workflow'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: mxschmitt/action-tmate@v3
+      env:
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        SUPABASE_GITHUB_RELEASE_ACTION_TOKEN: ${{ secrets.SUPABASE_GITHUB_RELEASE_ACTION_TOKEN }}
+        RELEASE_DESCRIPTION: |
+            ## What's New
+
+            - Search for rally points by name
+            - International phone number support
+
+            ## Full Changelog
+
+            ### Improvements
+
+            - feat: search for rally point by name @themightychris
+            - feat: validate phone numbers globally [#115] @IguJl15
+            - feat: add redundant save button to rally point menu @themightychris
+            - fix: don't show empty notes field @themightychris
+
+            ### Technical
+
+            - docs: add TOC, feaures, and screenshots to README [#113] @themightychris
+            - docs: remove rogue image markdown @themightychris
+            - docs: rearrange README @themightychris
+            - docs: reformat roadmap in README @themightychris
+            - fix: account for display features on Android @themightychris
+            - fix: handle empty display features list @themightychris
+            - style: pedantically tweak imports @themightychris
+            - fix: split phone field to two lines @themightychris
+
