@@ -112,10 +112,10 @@ jobs:
 
           REQUEST_BODY=$(
               jq --null-input \
-                  --arg build "0" \
-                  --arg version "0.0" \
-                  --arg news "$RELEASE_NEWS" \
-                  --arg notices "$RELEASE_NOTICES" \
+                  --arg build "${BUILD_NUMBER}" \
+                  --arg version "${BUILD_NAME}" \
+                  --arg news "${RELEASE_NEWS}" \
+                  --arg notices "${RELEASE_NOTICES}" \
                   '{
                       build: $build,
                       version: $version,
