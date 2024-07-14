@@ -71,7 +71,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Build APK for Android
-        run: fvm flutter build apk
+        run: fvm flutter build apk --dart-define=PRODUCTION_LOGGING=true
 
       - name: Build App Bundle for Android
         run: fvm flutter build appbundle
