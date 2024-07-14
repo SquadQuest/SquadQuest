@@ -98,16 +98,17 @@ jobs:
           shopt -s extglob
           cargo install markdown-extract
 
-          echo "Parsing release description..."
+          echo "Parsing release description:"
+          echo "${RELEASE_DESCRIPTION}"
 
-          RELEASE_NEWS=$(markdown-extract --no-print-matched-heading "What's New" <(echo "${RELEASE_DESCRIPTION}"))
+          RELEASE_NEWS=$(markdown-extract --no-print-matched-heading "What's New" <(echo "${RELEASE_DESCRIPTION}") || echo '')
           RELEASE_NEWS="${RELEASE_NEWS##+([[:space:]])}"
           if [[ "${RELEASE_NEWS}" == "Error: No matches." ]]; then
               RELEASE_NEWS=""
           fi
           echo -e "News:\n${RELEASE_NEWS}\n"
 
-          RELEASE_NOTICES=$(markdown-extract --no-print-matched-heading "Notices" <(echo "${RELEASE_DESCRIPTION}"))
+          RELEASE_NOTICES=$(markdown-extract --no-print-matched-heading "Notices" <(echo "${RELEASE_DESCRIPTION}") || echo '')
           RELEASE_NOTICES="${RELEASE_NOTICES##+([[:space:]])}"
           if [[ "${RELEASE_NOTICES}" == "Error: No matches." ]]; then
               RELEASE_NOTICES=""
