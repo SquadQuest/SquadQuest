@@ -55,14 +55,14 @@ Some major milestones currently envisioned include:
 ### Upcoming
 
 - **SMS Integration**: Invite friends more easily by sending friend requests or event invitations to people who aren't on SquadQuest yet through SMS
-- **Rally Point Search**: Search for rally points by name and pick from results instead of only being able to drag a pin around
-- **Interest-based Push Notifications**: Get configurable automatic push notification alerts when friends or public organizers post events matching your interests
 - **Calendar Integration**: See the events you're going to right in the mobile calendar you already use
 - **Polling**: Ping friends about potential event to find out what times might work for everyone
 - **Smart Event Suggestions**: Tell SquadQuest what you want to do more of and it'll keep an eye out for times that you and friends with the same interest have room on your calendar
 
 ### Complete
 
+- **Rally Point Search**: Search for rally points by name and pick from results instead of only being able to drag a pin around
+- **Interest-based Push Notifications**: Get configurable automatic push notification alerts when friends or public organizers post events matching your interests
 - **Live Friends Map**: See where friends on their way to or at the same event live on a map with trails that show you which way and how fast they're going
 - **Event Map Pin**: Attach a pinned location on a map to an event
 - **Cancel Events**: Set an event you created to cancelled and alert everyone who RSVPed

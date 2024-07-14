@@ -79,7 +79,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         'phone': session.user.phone!,
-        'photo': photoUrl.toString(),
+        'photo': photoUrl?.toString(),
       });
 
       await ref.read(authControllerProvider.notifier).updateUserAttributes({

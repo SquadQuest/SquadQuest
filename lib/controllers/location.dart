@@ -246,7 +246,7 @@ class LocationController {
               ' ${!kIsWeb && Platform.isIOS ? 'Since you\'re on an Apple device, you will need to go into the app\'s settings manully to enable this.' : ''}\n\n'
               'Your location data will only be shared with other people going to the event'
               ' and be stored on SquadQuest\'s servers for up to an hour before being'
-              ' permeantly deleted.\n\n'
+              ' permanently deleted.\n\n'
               'A clear banner will be displayed as long as your location is being collected'
               ' and SquadQuest will NEVER collect your location data outside of being on'
               ' your way to an event.\n\n'
