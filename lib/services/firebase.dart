@@ -136,7 +136,11 @@ class FirebaseMessagingService {
     final profile = ref.read(profileProvider);
 
     // skip if token or profile is null or if this token has already been written
-    if (token == null || profile.value == null || token == _writtenToken) {
+    if (token == null ||
+        profile.isLoading ||
+        !profile.hasValue ||
+        profile.value == null ||
+        token == _writtenToken) {
       return;
     }
 
