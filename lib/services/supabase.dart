@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 
 export 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -22,8 +23,23 @@ final supabaseAuthStateChangesProvider = StreamProvider<AuthState?>((ref) {
 
 Future<Supabase> buildSupabaseApp() async {
   log('buildSupabaseApp');
+
+  // TODO: eventually delete the legacy key logic
+
+  final supabaseUrl = dotenv.get('SUPABASE_URL');
+  final supabaseAnonKey = dotenv.get('SUPABASE_ANON_KEY');
+  final supabaseAnonKeyLegacy = dotenv.get('SUPABASE_ANON_KEY_LEGACY');
+
+  // execute test API call to determine which key to use
+  final response = await http
+      .get(Uri.parse('$supabaseUrl/rest/v1/test?select=success'), headers: {
+    'apikey': supabaseAnonKey,
+    'Authorization': 'Bearer $supabaseAnonKey'
+  });
+
+  // initialize app with appropriate key
   return Supabase.initialize(
-    url: dotenv.get('SUPABASE_URL'),
-    anonKey: dotenv.get('SUPABASE_ANON_KEY'),
-  );
+      url: supabaseUrl,
+      anonKey:
+          response.statusCode == 401 ? supabaseAnonKeyLegacy : supabaseAnonKey);
 }
