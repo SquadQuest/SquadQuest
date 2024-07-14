@@ -1,11 +1,12 @@
-import 'dart:developer';
+import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-
 export 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:squadquest/logger.dart';
 
 final supabaseAppProvider = Provider<Supabase>((ref) {
   throw UnimplementedError();
@@ -21,8 +22,11 @@ final supabaseAuthStateChangesProvider = StreamProvider<AuthState?>((ref) {
   return supabase.auth.onAuthStateChange;
 });
 
+final Completer _supabaseInitializedCompleter = Completer<void>();
+final supabaseInitialized = _supabaseInitializedCompleter.future;
+
 Future<Supabase> buildSupabaseApp() async {
-  log('buildSupabaseApp');
+  logger.t('buildSupabaseApp');
 
   // TODO: eventually delete the legacy key logic
 
@@ -38,8 +42,17 @@ Future<Supabase> buildSupabaseApp() async {
   });
 
   // initialize app with appropriate key
-  return Supabase.initialize(
+  final supabase = await Supabase.initialize(
       url: supabaseUrl,
       anonKey:
           response.statusCode == 401 ? supabaseAnonKeyLegacy : supabaseAnonKey);
+
+  supabase.client.auth.onAuthStateChange.listen((data) {
+    if (data.event == AuthChangeEvent.initialSession) {
+      logger.t('supabase initialized');
+      _supabaseInitializedCompleter.complete();
+    }
+  });
+
+  return supabase;
 }

@@ -10,6 +10,8 @@ import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
 import 'package:squadquest/models/user.dart';
 
+import 'package:squadquest/services/supabase.dart';
+
 typedef SplashNextScreenRecord = ({
   String name,
   Map<String, String>? pathParameters
@@ -37,6 +39,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   void _continueLoading() async {
+    // wait for initial auth state
+    await supabaseInitialized;
+
     // load all data needed to bootstrap to load in parallel
     late final UserProfile? profile;
 

@@ -98,17 +98,21 @@ jobs:
           shopt -s extglob
           cargo install markdown-extract
 
+          echo "Parsing release description..."
+
           RELEASE_NEWS=$(markdown-extract --no-print-matched-heading "What's New" <(echo "${RELEASE_DESCRIPTION}"))
           RELEASE_NEWS="${RELEASE_NEWS##+([[:space:]])}"
           if [[ "${RELEASE_NEWS}" == "Error: No matches." ]]; then
               RELEASE_NEWS=""
           fi
+          echo -e "News:\n${RELEASE_NEWS}\n"
 
           RELEASE_NOTICES=$(markdown-extract --no-print-matched-heading "Notices" <(echo "${RELEASE_DESCRIPTION}"))
           RELEASE_NOTICES="${RELEASE_NOTICES##+([[:space:]])}"
           if [[ "${RELEASE_NOTICES}" == "Error: No matches." ]]; then
               RELEASE_NOTICES=""
           fi
+          echo -e "Notices:\n${RELEASE_NOTICES}\n"
 
           REQUEST_BODY=$(
               jq --null-input \
@@ -124,10 +128,14 @@ jobs:
                       availability: ["githubAPK", "web"]
                   }'
           )
+          echo "Build request body:"
+          echo "${REQUEST_BODY}" | jq
 
-          curl -X POST 'https://supabase.squadquest.app/rest/v1/app_versions' \
+          echo "Inserting new row into app_versions..."
+          curl --silent \
+              -X POST 'https://supabase.squadquest.app/rest/v1/app_versions' \
               -H "apikey: ${SUPABASE_ANON_KEY}" \
               -H "Authorization: Bearer ${SUPABASE_GITHUB_RELEASE_ACTION_TOKEN}" \
               -H "Content-Type: application/json" \
-              -H "Prefer: return=minimal" \
-              -d "${REQUEST_BODY}"
+              -H "Prefer: return=representation" \
+              -d "${REQUEST_BODY}" | jq
