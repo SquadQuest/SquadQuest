@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:squadquest/common.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:squadquest/router.dart';
@@ -54,6 +55,18 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
   Future<void> showUpdateAlertIfAvailable() async {
     final packageInfo = await ref.read(currentAppPackageProvider.future);
     final currentBuild = int.parse(packageInfo.buildNumber);
+    final AppVersionChannel? currentChannel = switch (packageInfo) {
+      PackageInfo(installerStore: 'com.apple.testflight') =>
+        AppVersionChannel.testflight,
+      PackageInfo(installerStore: 'com.android.shell') ||
+      PackageInfo(installerStore: 'com.google.android.apps.nbu.files') ||
+      PackageInfo(installerStore: 'com.google.android.packageinstaller') =>
+        AppVersionChannel.githubAPK,
+      _ when kIsWeb => AppVersionChannel.web,
+      _ when Platform.isAndroid => AppVersionChannel.android,
+      _ when Platform.isIOS => AppVersionChannel.ios,
+      _ => null
+    };
 
     // skip for development builds
     if (currentBuild == 1) {
@@ -67,7 +80,10 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
       return;
     }
 
-    final latestBuild = appVersions.first.build;
+    final latestBuild = appVersions
+        .firstWhereOrNull(
+            (version) => version.availability.contains(currentChannel))
+        ?.build;
 
     final prefs = ref.read(sharedPreferencesProvider);
     final updateAppBuildDismissed = prefs.getInt('updateAppBuildDismissed');
@@ -75,7 +91,9 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
         prefs.getInt('appUpdatedChangesDismissed') ?? 1;
 
     // show update dialog if current version isn't the newest
-    if (latestBuild != updateAppBuildDismissed && currentBuild < latestBuild) {
+    if (latestBuild != null &&
+        latestBuild != updateAppBuildDismissed &&
+        currentBuild < latestBuild) {
       // show update dialog
       final result = await showDialog<bool>(
         context: navigatorKey.currentContext!,
