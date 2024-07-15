@@ -42,7 +42,6 @@ jobs:
       - name: Rename builds
         run: |
           mv "build/app/outputs/flutter-apk/app-release.apk" "build/app/outputs/flutter-apk/SquadQuest.apk"
-          mv "build/app/outputs/bundle/release/app-release.aab" "build/app/outputs/bundle/release/SquadQuest.aab"
 
       - name: Upload APK to workflow
         uses: actions/upload-artifact@v4
