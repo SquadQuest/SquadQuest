@@ -1,4 +1,4 @@
-name: 'Publish: Flutter Builds'
+name: 'Builds: Publish Release'
 
 on:
   release:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  builds-publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -87,7 +87,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           asset_paths: '["build/app/outputs/flutter-apk/SquadQuest.apk", "build/app/outputs/bundle/release/SquadQuest.aab"]'
-
 
       - name: Insert new row into app_versions
         env:
