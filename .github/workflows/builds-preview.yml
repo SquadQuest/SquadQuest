@@ -20,6 +20,17 @@ jobs:
       - name: Set up Flutter Version Management CLI
         uses: flutter-actions/setup-fvm@v1
 
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/fvm
+            ~/.pub-cache
+            ~/.gradle/caches
+            /usr/local/lib/android/sdk
+          key: cache-${{ hashFiles('.fvmrc', 'pubspec.yaml') }}
+          restore-keys: |
+            cache-
+
       - name: Install Flutter SDK
         run: fvm install
 
