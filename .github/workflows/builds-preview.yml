@@ -1,0 +1,54 @@
+name: 'Builds: Previews'
+
+on:
+  push:
+    branches-ignore: [ 'main' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  builds-preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Flutter Version Management CLI
+        uses: flutter-actions/setup-fvm@v1
+
+      - name: Install Flutter SDK
+        run: fvm install
+
+      - name: Activate Flutter SDK
+        run: fvm use --skip-pub-get
+
+      - name: Get depedencies
+        run: fvm flutter pub get
+
+      - name: Write secret files
+        run: |
+          echo "${{ secrets.FLUTTER_ENV_BASE64 }}" | base64 -d > ./.env
+          echo "${{ secrets.GOOGLE_SERVICES_BASE64 }}" | base64 -d > ./android/app/google-services.json
+          echo "${{ secrets.ANDROID_KEY_PROPERTIES_BASE64 }}" | base64 -d > ./android/key.properties
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ./android/app/keystore.jks
+
+      - name: Build APK for Android
+        run: fvm flutter build apk --dart-define=PRODUCTION_LOGGING=true
+
+      - name: Rename builds
+        run: |
+          mv "build/app/outputs/flutter-apk/app-release.apk" "build/app/outputs/flutter-apk/SquadQuest.apk"
+
+      - name: Upload APK to workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: SquadQuest Android
+          path: build/app/outputs/flutter-apk/SquadQuest.apk

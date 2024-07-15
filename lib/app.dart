@@ -8,7 +8,10 @@ import 'package:squadquest/logger.dart';
 import 'package:squadquest/router.dart';
 import 'package:squadquest/theme.dart';
 import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/services/firebase.dart';
+import 'package:squadquest/services/profiles_cache.dart';
+import 'package:squadquest/models/user.dart';
 import 'package:squadquest/screens/splash.dart';
 
 class MyApp extends ConsumerWidget {
@@ -25,17 +28,29 @@ class MyApp extends ConsumerWidget {
     // (temporarily)? display any push notification in-app
     ref.listen(firebaseMessagingStreamProvider, (previous, record) {
       final (:type, :message) = record.value!;
+      final data =
+          message.data['json'] == null ? {} : jsonDecode(message.data['json']);
 
       switch (type) {
         case 'message-received':
+          switch (message.data['notificationType']) {
+            case 'friend-request-accepted':
+              // load expanded profile data into cache
+              final friendProfile =
+                  UserProfile.fromMap(data['friendship']['requestee']);
+              ref
+                  .read(profilesCacheProvider.notifier)
+                  .cacheProfiles([friendProfile]);
+
+              // force friends list to refresh
+              ref.read(friendsProvider.notifier).refresh();
+          }
           // (temporarily)? display any push notification in-app
           _scaffoldKey.currentState?.showSnackBar(SnackBar(
               content: Text(
                   '${message.notification?.title ?? ''}\n\n${message.notification?.body ?? ''}')));
 
         case 'notification-opened':
-          final data = jsonDecode(message.data['json']);
-
           logger.t({
             'notification-opened': {
               'message-id': message.messageId,
