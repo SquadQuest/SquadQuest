@@ -44,7 +44,6 @@ jobs:
           mv "build/app/outputs/flutter-apk/app-release.apk" "build/app/outputs/flutter-apk/SquadQuest.apk"
 
       - name: Upload APK to workflow
-        uses: actions/upload-artifact@v4
+        uses: nanoufo/action-upload-artifacts-and-release-assets@v2
         with:
-          name: SquadQuest Android
-          path: build/app/outputs/flutter-apk/SquadQuest.apk
+            path: build/app/outputs/flutter-apk/SquadQuest.apk
