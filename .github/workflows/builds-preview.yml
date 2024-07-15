@@ -1,11 +1,11 @@
-name: 'Builds: Publish Release'
+name: 'Builds: Previews'
 
 on:
   push:
     branches-ignore: [ 'main' ]
 
 jobs:
-  builds-publish:
+  builds-preview:
     runs-on: ubuntu-latest
 
     steps:
