@@ -34,19 +34,23 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
     log('ProfileController.fetch: session: ${session == null ? 'no' : 'yes'}');
 
     if (session == null) {
+      logger.t('ProfileController.fetch: no session');
       return null;
     }
 
     state = const AsyncValue.loading();
 
+    logger.t('ProfileController.fetch: loading');
     final profiles = await supabase
         .from('profiles')
         .select(_defaultSelect)
         .eq('id', session.user.id)
         .withConverter((data) => data.map(UserProfile.fromMap).toList());
+    logger.t({'ProfileController.fetch: loaded': profiles});
 
     final profile = profiles.isNotEmpty ? profiles.first : null;
     state = AsyncValue.data(profile);
+    logger.t({'ProfileController.fetch: set state': profile});
 
     return profile;
   }
