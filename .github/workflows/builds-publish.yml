@@ -88,6 +88,13 @@ jobs:
         with:
           asset_paths: '["build/app/outputs/flutter-apk/SquadQuest.apk", "build/app/outputs/bundle/release/SquadQuest.aab"]'
 
+      - name: Upload AAB to Google Play
+        uses: italankin/google-play-aab-uploader@1.3
+        with:
+          package-name: app.squadquest
+          aab-path: build/app/outputs/bundle/release/SquadQuest.aab
+          key-json: '${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}'
+
       - name: Insert new row into app_versions
         env:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
