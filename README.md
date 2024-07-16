@@ -3,7 +3,8 @@
 - [What is SquadQuest?](#what-is-squadquest)
 - [Screenshots](#screenshots)
 - [Features](#features)
-- [Help Test and Design SquadQuest](#help-test-and-design-squadquest)
+- [Install](#install)
+  - [Testing Beta Releases](#testing-beta-releases)
 - [Roadmap](#roadmap)
 
 ## What is SquadQuest?
@@ -38,15 +39,22 @@ SquadQuest *is not* a startup. The need to monetize your data or engagement to r
 - Keep track of where your squad is and how they're moving on a live map for each event
 - Keep your squad up-to-date on when and where on the map you're rallying together
 
-## Help Test and Design SquadQuest
+## Install
 
-- iOS:
-  - Current App Store release: <https://apps.apple.com/us/app/squadquest/id6504465196>
-  - Latest beta preview release: <https://testflight.apple.com/join/1xppwmKm>
-- Android:
-  - Latest beta preview release: <https://github.com/SquadQuest/SquadQuest/releases/latest/download/SquadQuest.apk>
-    - Note: Installing this way requires manual updates to get new versions by coming back here and clicking this link again
-- Web: <https://squadquest.app>
+- [via App Store for Apple mobile devices](https://apps.apple.com/us/app/squadquest/id6504465196)
+- [via Play Store for Android mobile devices](https://play.google.com/store/apps/details?id=app.squadquest)
+- Use SquadQuest in your browser: <https://squadquest.app>
+
+### Testing Beta Releases
+
+- [Install latest Beta release for Apple mobile devices via TestFlight](https://testflight.apple.com/join/1xppwmKm)
+
+    Updating: You'll get alerts from the TestFlight app when new Beta versions are available to install
+
+- [Install latest Beta release for Android mobile devices via APK download](https://github.com/SquadQuest/SquadQuest/releases/latest/download/SquadQuest.apk)
+
+    Updating: Installing this way requires manual updates to get new versions by coming back here and clicking this link again
+
 
 ## Roadmap
 

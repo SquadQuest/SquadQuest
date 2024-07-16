@@ -111,14 +111,21 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
       }
 
       // launch update URL
-      if (kIsWeb) {
-        launchUrl(Uri.parse('javascript:location.reload()'));
-      } else if (Platform.isIOS) {
-        launchUrl(
-            Uri.parse('https://apps.apple.com/us/app/squadquest/id6504465196'));
-      } else if (Platform.isAndroid) {
-        launchUrl(Uri.parse(
-            'https://play.google.com/store/apps/details?id=app.squadquest'));
+      switch (currentChannel) {
+        case AppVersionChannel.ios:
+          launchUrl(Uri.parse(
+              'https://apps.apple.com/us/app/squadquest/id6504465196'));
+          break;
+        case AppVersionChannel.android:
+          launchUrl(Uri.parse(
+              'https://play.google.com/store/apps/details?id=app.squadquest'));
+          break;
+        case AppVersionChannel.githubAPK:
+          launchUrl(Uri.parse(
+              'https://github.com/SquadQuest/SquadQuest/releases/latest/download/SquadQuest.apk'));
+        default:
+          launchUrl(
+              Uri.parse('https://github.com/SquadQuest/SquadQuest#install'));
       }
       return;
     }
