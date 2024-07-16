@@ -29,6 +29,49 @@ jobs:
         run: |
           sed -i "s/^version:.*/version: ${BUILD_NAME}+${BUILD_NUMBER}/" pubspec.yaml
 
+      - name: Parse release notes
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          shopt -s extglob
+          cargo install markdown-extract
+
+          echo "Parsing release body:"
+          echo "${RELEASE_BODY}"
+
+          ## What's New
+          RELEASE_NEWS=$(markdown-extract --no-print-matched-heading "What's New" <(echo "${RELEASE_BODY}") || echo '')
+          RELEASE_NEWS="${RELEASE_NEWS##+([[:space:]])}"
+          if [[ "${RELEASE_NEWS}" == "Error: No matches." ]]; then
+              RELEASE_NEWS=""
+          fi
+
+          echo 'RELEASE_NEWS<<END_OF_RELEASE_MARKDOWN' >> $GITHUB_ENV
+          echo "${RELEASE_NEWS}" >> $GITHUB_ENV
+          echo 'END_OF_RELEASE_MARKDOWN' >> $GITHUB_ENV
+
+          echo -e "News:\n${RELEASE_NEWS}\n"
+
+
+          ## Notices
+          RELEASE_NOTICES=$(markdown-extract --no-print-matched-heading "Notices" <(echo "${RELEASE_BODY}") || echo '')
+          RELEASE_NOTICES="${RELEASE_NOTICES##+([[:space:]])}"
+          if [[ "${RELEASE_NOTICES}" == "Error: No matches." ]]; then
+              RELEASE_NOTICES=""
+          fi
+
+          echo 'RELEASE_NOTICES<<END_OF_RELEASE_MARKDOWN' >> $GITHUB_ENV
+          echo "${RELEASE_NOTICES}" >> $GITHUB_ENV
+          echo 'END_OF_RELEASE_MARKDOWN' >> $GITHUB_ENV
+
+          echo -e "Notices:\n${RELEASE_NOTICES}\n"
+
+
+          ## Write to file for Play Store upload
+          mkdir ~/whatsnew
+          echo "${RELEASE_NEWS}" > ~/whatsnew/whatsnew-en-US
+          echo "Wrote news to ~/whatsnew/whatsnew-en-US"
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -88,39 +131,20 @@ jobs:
         with:
           asset_paths: '["build/app/outputs/flutter-apk/SquadQuest.apk", "build/app/outputs/bundle/release/SquadQuest.aab"]'
 
-      - name: Upload AAB to Google Play
-        uses: italankin/google-play-aab-uploader@1.3
+      - name: Upload to Play Store
+        uses: r0adkll/upload-google-play@v1
         with:
-          package-name: app.squadquest
-          aab-path: build/app/outputs/bundle/release/SquadQuest.aab
-          key-json: '${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}'
+          serviceAccountJsonPlainText: '${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}'
+          packageName: app.squadquest
+          releaseFiles: build/app/outputs/bundle/release/SquadQuest.aab
+          track: beta
+          whatsNewDirectory: ~/whatsnew
 
       - name: Insert new row into app_versions
         env:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_GITHUB_RELEASE_ACTION_TOKEN: ${{ secrets.SUPABASE_GITHUB_RELEASE_ACTION_TOKEN }}
-          RELEASE_DESCRIPTION: ${{ github.event.release.body }}
         run: |
-          shopt -s extglob
-          cargo install markdown-extract
-
-          echo "Parsing release description:"
-          echo "${RELEASE_DESCRIPTION}"
-
-          RELEASE_NEWS=$(markdown-extract --no-print-matched-heading "What's New" <(echo "${RELEASE_DESCRIPTION}") || echo '')
-          RELEASE_NEWS="${RELEASE_NEWS##+([[:space:]])}"
-          if [[ "${RELEASE_NEWS}" == "Error: No matches." ]]; then
-              RELEASE_NEWS=""
-          fi
-          echo -e "News:\n${RELEASE_NEWS}\n"
-
-          RELEASE_NOTICES=$(markdown-extract --no-print-matched-heading "Notices" <(echo "${RELEASE_DESCRIPTION}") || echo '')
-          RELEASE_NOTICES="${RELEASE_NOTICES##+([[:space:]])}"
-          if [[ "${RELEASE_NOTICES}" == "Error: No matches." ]]; then
-              RELEASE_NOTICES=""
-          fi
-          echo -e "Notices:\n${RELEASE_NOTICES}\n"
-
           REQUEST_BODY=$(
               jq --null-input \
                   --arg build "${BUILD_NUMBER}" \
