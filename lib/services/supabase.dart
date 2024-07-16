@@ -48,7 +48,12 @@ Future<Supabase> buildSupabaseApp() async {
           response.statusCode == 401 ? supabaseAnonKeyLegacy : supabaseAnonKey);
 
   supabase.client.auth.onAuthStateChange.listen((data) {
-    logger.t({'supabase.onAuthStateChange': data});
+    logger.t({
+      'supabase.onAuthStateChange': {
+        'event': data.event.toString(),
+        'session': data.session
+      }
+    });
     if (data.event == AuthChangeEvent.initialSession) {
       logger.t('supabase initialized');
       _supabaseInitializedCompleter.complete();
