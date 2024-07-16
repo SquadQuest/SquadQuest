@@ -52,7 +52,8 @@ Future<Supabase> buildSupabaseApp() async {
     logger.t({
       'supabase.onAuthStateChange': {
         'event': data.event.toString(),
-        'session': data.session
+        'session': data.session,
+        'session.user': data.session?.user
       }
     });
     if (data.event == AuthChangeEvent.initialSession) {
