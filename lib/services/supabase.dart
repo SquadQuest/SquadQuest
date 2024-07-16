@@ -47,7 +47,8 @@ Future<Supabase> buildSupabaseApp() async {
       anonKey:
           response.statusCode == 401 ? supabaseAnonKeyLegacy : supabaseAnonKey);
 
-  supabase.client.auth.onAuthStateChange.listen((data) {
+  final authSubscription =
+      supabase.client.auth.onAuthStateChange.listen((data) {
     logger.t({
       'supabase.onAuthStateChange': {
         'event': data.event.toString(),
@@ -58,6 +59,11 @@ Future<Supabase> buildSupabaseApp() async {
       logger.t('supabase initialized');
       _supabaseInitializedCompleter.complete();
     }
+  });
+
+  authSubscription.onError((error, stackTrace) {
+    logger.e({'supabase.authSubscription.onError': error},
+        stackTrace: stackTrace);
   });
 
   return supabase;
