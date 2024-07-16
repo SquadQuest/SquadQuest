@@ -29,18 +29,23 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
   }
 
   Future<List<AppVersion>> fetch() async {
-    final prefs = ref.read(sharedPreferencesProvider);
-    final appUpdatedChangesDismissed =
-        prefs.getInt('appUpdatedChangesDismissed') ?? 1;
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      final appUpdatedChangesDismissed =
+          prefs.getInt('appUpdatedChangesDismissed') ?? 1;
 
-    final supabase = ref.read(supabaseClientProvider);
-    final data = await supabase
-        .from('app_versions')
-        .select()
-        .gte('build', appUpdatedChangesDismissed)
-        .order('build', ascending: false);
+      final supabase = ref.read(supabaseClientProvider);
+      final data = await supabase
+          .from('app_versions')
+          .select()
+          .gte('build', appUpdatedChangesDismissed)
+          .order('build', ascending: false);
 
-    return await hydrate(data);
+      return await hydrate(data);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      return [];
+    }
   }
 
   Future<void> refresh() async {
