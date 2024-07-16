@@ -40,19 +40,25 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
 
     state = const AsyncValue.loading();
 
-    logger.t('ProfileController.fetch: loading');
-    final profiles = await supabase
-        .from('profiles')
-        .select(_defaultSelect)
-        .eq('id', session.user.id)
-        .withConverter((data) => data.map(UserProfile.fromMap).toList());
-    logger.t({'ProfileController.fetch: loaded': profiles});
+    try {
+      logger.t('ProfileController.fetch: loading');
+      final profiles = await supabase
+          .from('profiles')
+          .select(_defaultSelect)
+          .eq('id', session.user.id)
+          .withConverter((data) => data.map(UserProfile.fromMap).toList());
+      logger.t({'ProfileController.fetch: loaded': profiles});
 
-    final profile = profiles.isNotEmpty ? profiles.first : null;
-    state = AsyncValue.data(profile);
-    logger.t({'ProfileController.fetch: set state': profile});
+      final profile = profiles.isNotEmpty ? profiles.first : null;
+      state = AsyncValue.data(profile);
+      logger.t({'ProfileController.fetch: set state': profile});
 
-    return profile;
+      return profile;
+    } catch (error, stackTrace) {
+      logger.e({'ProfileController.fetch': error}, stackTrace: stackTrace);
+      state = AsyncValue.error(error, stackTrace);
+      return null;
+    }
   }
 
   Future<UserProfile> save(UserProfile profile) async {
