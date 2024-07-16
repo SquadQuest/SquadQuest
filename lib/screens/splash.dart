@@ -41,6 +41,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   void _continueLoading() async {
     // wait for initial auth state
     await supabaseInitialized;
+    logger.d('_continueLoading.supabaseInitialized');
 
     // load all data needed to bootstrap to load in parallel
     late final UserProfile? profile;
@@ -49,6 +50,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       ref.read(profileProvider.future).then((result) => profile = result),
       ref.read(appVersionsProvider.future)
     ]);
+    logger.d('_continueLoading.bootstrapped');
 
     logger.t('ready to continue');
 
@@ -59,12 +61,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (timeDiff < _minSplashTime) {
       await Future.delayed(Duration(milliseconds: timeDiff));
     }
+    logger.d('_continueLoading.waited');
 
     // check app version
     await ref.read(appVersionsProvider.notifier).showUpdateAlertIfAvailable();
+    logger.d('_continueLoading.showUpdateAlertIfAvailable');
 
     // request permissions
     await ref.read(firebaseMessagingServiceProvider).requestPermissions();
+    logger.d('_continueLoading.requestPermissions');
 
     // route to initial screen
     final router = ref.read(routerProvider);
