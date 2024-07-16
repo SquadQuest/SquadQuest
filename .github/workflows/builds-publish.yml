@@ -131,7 +131,8 @@ jobs:
         with:
           asset_paths: '["build/app/outputs/flutter-apk/SquadQuest.apk", "build/app/outputs/bundle/release/SquadQuest.aab"]'
 
-      - uses: r0adkll/upload-google-play@v1
+      - name: Upload to Play Store
+        uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: '${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}'
           packageName: app.squadquest
