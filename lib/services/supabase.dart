@@ -34,23 +34,26 @@ Future<Supabase> buildSupabaseApp() async {
   final supabaseUrl = dotenv.get('SUPABASE_URL');
   final supabaseAnonKey = dotenv.get('SUPABASE_ANON_KEY');
   final supabaseAnonKeyLegacy = dotenv.get('SUPABASE_ANON_KEY_LEGACY');
+  Supabase supabase;
 
   // execute test API call to determine which key to use
   final dio = Dio();
-  final response = await dio.get('$supabaseUrl/rest/v1/test?select=success',
-      options: Options(
-        headers: {
+  try {
+    // try new key
+    await dio.get('$supabaseUrl/rest/v1/test?select=success',
+        options: Options(headers: {
           'apikey': supabaseAnonKey,
           'Authorization': 'Bearer $supabaseAnonKey'
-        },
-        validateStatus: (_) => true,
-      ));
+        }));
 
-  // initialize app with appropriate key
-  final supabase = await Supabase.initialize(
-      url: supabaseUrl,
-      anonKey:
-          response.statusCode == 401 ? supabaseAnonKeyLegacy : supabaseAnonKey);
+    // initialize app with new key
+    supabase =
+        await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+  } catch (error) {
+    // fallback to legacy key
+    supabase = await Supabase.initialize(
+        url: supabaseUrl, anonKey: supabaseAnonKeyLegacy);
+  }
 
   final authSubscription =
       supabase.client.auth.onAuthStateChange.listen((data) {
