@@ -35,7 +35,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     super.initState();
 
     _initTime = DateTime.now().millisecondsSinceEpoch;
-    _continueLoading();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _continueLoading());
   }
 
   void _continueLoading() async {
@@ -46,11 +46,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // load all data needed to bootstrap to load in parallel
     late final UserProfile? profile;
 
-    await Future.wait([
-      ref.read(profileProvider.future).then((result) => profile = result),
-      ref.read(appVersionsProvider.future)
-    ]);
-    logger.d('_continueLoading.bootstrapped');
+    try {
+      logger.t('_continueLoading: loading profile and app versions...');
+      await Future.wait([
+        ref.read(profileProvider.future).then((result) => profile = result),
+        ref.read(appVersionsProvider.future)
+      ]);
+    } catch (error, stackTrace) {
+      logger.e({'error bootstrapping': error}, stackTrace: stackTrace);
+    }
 
     logger.t('ready to continue');
 
@@ -64,12 +68,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     logger.d('_continueLoading.waited');
 
     // check app version
-    await ref.read(appVersionsProvider.notifier).showUpdateAlertIfAvailable();
-    logger.d('_continueLoading.showUpdateAlertIfAvailable');
+    try {
+      logger.t('_continueLoading: showing update alert...');
+      await ref.read(appVersionsProvider.notifier).showUpdateAlertIfAvailable();
+    } catch (error, stackTrack) {
+      logger.e({'error showing update alert': error}, stackTrace: stackTrack);
+    }
 
     // request permissions
-    await ref.read(firebaseMessagingServiceProvider).requestPermissions();
-    logger.d('_continueLoading.requestPermissions');
+    try {
+      logger.t('_continueLoading: requesting permissions...');
+      await ref.read(firebaseMessagingServiceProvider).requestPermissions();
+    } catch (error, stackTrace) {
+      logger.e({'error requesting permissions': error}, stackTrace: stackTrace);
+    }
 
     // route to initial screen
     final router = ref.read(routerProvider);

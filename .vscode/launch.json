@@ -14,6 +14,13 @@
             ]
         },
         {
+            "name": "Flutter: Release Mode",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "flutterMode": "release"
+        },
+        {
             "request": "launch",
             "name": "Deno: push-test",
             "type": "node",
