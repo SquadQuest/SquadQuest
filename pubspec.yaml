@@ -55,6 +55,7 @@ dependencies:
   ## Multi Formatter
   flutter_multi_formatter: ^2.12.0
   sentry_flutter: ^8.4.0
+  dio: ^5.5.0+1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
