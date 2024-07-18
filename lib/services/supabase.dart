@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
 export 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dio/dio.dart';
 
 import 'package:squadquest/logger.dart';
 
@@ -36,11 +36,15 @@ Future<Supabase> buildSupabaseApp() async {
   final supabaseAnonKeyLegacy = dotenv.get('SUPABASE_ANON_KEY_LEGACY');
 
   // execute test API call to determine which key to use
-  final response = await http
-      .get(Uri.parse('$supabaseUrl/rest/v1/test?select=success'), headers: {
-    'apikey': supabaseAnonKey,
-    'Authorization': 'Bearer $supabaseAnonKey'
-  });
+  final dio = Dio();
+  final response = await dio.get('$supabaseUrl/rest/v1/test?select=success',
+      options: Options(
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': 'Bearer $supabaseAnonKey'
+        },
+        validateStatus: (_) => true,
+      ));
 
   // initialize app with appropriate key
   final supabase = await Supabase.initialize(
