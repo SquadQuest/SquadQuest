@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/screens/splash.dart';
@@ -22,6 +23,7 @@ final routerProvider = Provider((ref) {
   return GoRouter(
     initialLocation: '/splash',
     navigatorKey: navigatorKey,
+    observers: [SentryNavigatorObserver()],
     redirect: (BuildContext context, GoRouterState state) {
       final session = ref.read(authControllerProvider);
       if (session == null &&
