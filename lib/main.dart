@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:logger/logger.dart';
 
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/supabase.dart';
@@ -38,6 +39,30 @@ void main() async {
   // Initialize any providers that need to be always-on
   container.read(firebaseMessagingServiceProvider);
   container.read(settingsControllerProvider);
+
+  // integrate logger with Sentry
+  Logger.addLogListener((LogEvent event) {
+    switch (event.level) {
+      case Level.error:
+      case Level.fatal:
+        Sentry.captureException(event.error, stackTrace: event.stackTrace);
+      case Level.warning:
+        Sentry.captureMessage(event.message.toString(),
+            params: event.message is Map ? event.message : null,
+            level: SentryLevel.warning);
+      default:
+        Sentry.addBreadcrumb(Breadcrumb(
+          message: event.message is String
+              ? event.message
+              : event.message.toString(),
+          data: event.message is Map ? event.message : null,
+          level: switch (event.level) {
+            Level.debug => SentryLevel.debug,
+            _ => SentryLevel.info,
+          },
+        ));
+    }
+  });
 
   // Run the app, wrapped w/ Sentry
   await SentryFlutter.init(
