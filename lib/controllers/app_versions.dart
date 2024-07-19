@@ -62,6 +62,8 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
       PackageInfo(installerStore: 'com.google.android.apps.nbu.files') ||
       PackageInfo(installerStore: 'com.google.android.packageinstaller') =>
         AppVersionChannel.githubAPK,
+      PackageInfo(installerStore: 'com.android.vending') =>
+        AppVersionChannel.android,
       _ when kIsWeb => AppVersionChannel.web,
       _ when Platform.isAndroid => AppVersionChannel.android,
       _ when Platform.isIOS => AppVersionChannel.ios,
