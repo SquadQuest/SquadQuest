@@ -95,10 +95,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     .read(firebaseMessagingServiceProvider)
                     .requestPermissions();
               },
-              child: const Text('Request notification permission'))
+              child: const Text('Request notification permission')),
+          const SizedBox(height: 16),
+          ElevatedButton(
+              onPressed: () async {
+                await ref.read(settingsControllerProvider).clear();
+              },
+              child: const Text('Clear SharedPreferences')),
+          const SizedBox(height: 16),
+          Text('Installer Store: ${packageInfo.value?.installerStore}',
+              textAlign: TextAlign.center),
         ],
         Text(
-            'App version: ${packageInfo.value?.version}+${packageInfo.value?.buildNumber}\nInstaller Store: ${packageInfo.value?.installerStore}',
+            'App version: ${packageInfo.value?.version}+${packageInfo.value?.buildNumber}',
             textAlign: TextAlign.center),
       ]),
     );
