@@ -460,203 +460,195 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           if (event.bannerPhoto != null) ...[
-                            AspectRatio(
-                                aspectRatio: 16 / 9,
+                            ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxHeight: 175),
                                 child: Image.network(
                                     event.bannerPhoto!.toString(),
                                     fit: BoxFit.cover)),
                           ],
                           Expanded(
-                              child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Expanded(
-                                                  flex: 2,
-                                                  child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        if (event.status ==
-                                                            InstanceStatus
-                                                                .canceled)
-                                                          const Text(
-                                                              'Status: CANCELED'),
-                                                        Text(
-                                                            'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
-                                                        Text(
-                                                            'Date: ${eventDateFormat.format(event.startTimeMin)}'),
-                                                        Text(
-                                                            'Topic: ${event.topic?.name}'),
-                                                        Text(
-                                                            'Posted by: ${event.createdBy?.displayName}'),
-                                                        Text(
-                                                            'Visibility: ${event.visibility.name}'),
-                                                        Text(
-                                                            'Location: ${event.locationDescription}'),
-                                                        if (event.link !=
-                                                            null) ...[
-                                                          RichText(
-                                                              text: TextSpan(
-                                                                  children: [
-                                                                const TextSpan(
-                                                                    text:
-                                                                        'Link: '),
-                                                                TextSpan(
-                                                                  text: event
-                                                                      .link
-                                                                      .toString(),
-                                                                  style:
-                                                                      const TextStyle(
-                                                                    color: Colors
-                                                                        .blue,
-                                                                    decoration:
-                                                                        TextDecoration
-                                                                            .underline,
-                                                                  ),
-                                                                  recognizer: TapGestureRecognizer()
-                                                                    ..onTap = () =>
-                                                                        launchUrl(
-                                                                            event.link!),
-                                                                )
-                                                              ]))
-                                                        ],
-                                                        if (event.notes !=
-                                                                null &&
-                                                            event.notes!
-                                                                .trim()
-                                                                .isNotEmpty) ...[
-                                                          Text(
-                                                              'Notes: ${event.notes}')
-                                                        ]
-                                                      ])),
-                                              if (event.rallyPoint != null)
-                                                Expanded(
-                                                    flex: 1,
-                                                    child: AspectRatio(
-                                                        aspectRatio: 1,
-                                                        child: Consumer(
-                                                            builder: (_, ref,
-                                                                child) {
-                                                              final eventPointsAsync =
-                                                                  ref.watch(
-                                                                      eventPointsProvider(
-                                                                          widget
-                                                                              .instanceId));
-                                                              return Stack(
-                                                                  children: [
-                                                                    child!,
-                                                                    const Positioned(
-                                                                        top: 0,
-                                                                        right:
-                                                                            0,
-                                                                        child: IgnorePointer(
-                                                                            child: Icon(
-                                                                          Icons
-                                                                              .zoom_in,
-                                                                          // color: Colors.red,
-                                                                          size:
-                                                                              32,
-                                                                        ))),
-                                                                    eventPointsAsync
-                                                                        .when(
-                                                                      data: (eventPoints) => eventPoints == null ||
-                                                                              eventPoints.users ==
-                                                                                  0
-                                                                          ? const SizedBox
-                                                                              .shrink()
-                                                                          : Positioned(
-                                                                              bottom: 0,
-                                                                              left: 0,
-                                                                              right: 0,
-                                                                              child: IgnorePointer(
-                                                                                  child: Container(
-                                                                                      color: Colors.black.withOpacity(0.5),
-                                                                                      child: Text(
-                                                                                        '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
-                                                                                        style: const TextStyle(fontSize: 12),
-                                                                                        textAlign: TextAlign.center,
-                                                                                      )))),
-                                                                      loading: () =>
-                                                                          const SizedBox
-                                                                              .shrink(),
-                                                                      error: (_,
-                                                                              __) =>
-                                                                          const SizedBox
-                                                                              .shrink(),
-                                                                    )
-                                                                  ]);
-                                                            },
-                                                            child: MapLibreMap(
-                                                              styleString:
-                                                                  'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+                              child: RefreshIndicator(
+                                  onRefresh: () async {
+                                    ref.invalidate(eventDetailsProvider(
+                                        widget.instanceId));
+                                    ref.invalidate(rsvpsPerEventProvider(
+                                        widget.instanceId));
+                                  },
+                                  child: SingleChildScrollView(
+                                      child: Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
+                                              children: [
+                                                Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Expanded(
+                                                          flex: 2,
+                                                          child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                if (event
+                                                                        .status ==
+                                                                    InstanceStatus
+                                                                        .canceled)
+                                                                  const Text(
+                                                                      'Status: CANCELED'),
+                                                                Text(
+                                                                    'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
+                                                                Text(
+                                                                    'Date: ${eventDateFormat.format(event.startTimeMin)}'),
+                                                                Text(
+                                                                    'Topic: ${event.topic?.name}'),
+                                                                Text(
+                                                                    'Posted by: ${event.createdBy?.displayName}'),
+                                                                Text(
+                                                                    'Visibility: ${event.visibility.name}'),
+                                                                Text(
+                                                                    'Location: ${event.locationDescription}'),
+                                                                if (event
+                                                                        .link !=
+                                                                    null) ...[
+                                                                  RichText(
+                                                                      text: TextSpan(
+                                                                          children: [
+                                                                        const TextSpan(
+                                                                            text:
+                                                                                'Link: '),
+                                                                        TextSpan(
+                                                                          text: event
+                                                                              .link
+                                                                              .toString(),
+                                                                          style:
+                                                                              const TextStyle(
+                                                                            color:
+                                                                                Colors.blue,
+                                                                            decoration:
+                                                                                TextDecoration.underline,
+                                                                          ),
+                                                                          recognizer: TapGestureRecognizer()
+                                                                            ..onTap =
+                                                                                () => launchUrl(event.link!),
+                                                                        )
+                                                                      ]))
+                                                                ],
+                                                                if (event.notes !=
+                                                                        null &&
+                                                                    event.notes!
+                                                                        .trim()
+                                                                        .isNotEmpty) ...[
+                                                                  Text(
+                                                                      'Notes: ${event.notes}')
+                                                                ]
+                                                              ])),
+                                                      if (event.rallyPoint !=
+                                                          null)
+                                                        Expanded(
+                                                            flex: 1,
+                                                            child: AspectRatio(
+                                                                aspectRatio: 1,
+                                                                child: Consumer(
+                                                                    builder: (_,
+                                                                        ref,
+                                                                        child) {
+                                                                      final eventPointsAsync =
+                                                                          ref.watch(
+                                                                              eventPointsProvider(widget.instanceId));
+                                                                      return Stack(
+                                                                          children: [
+                                                                            child!,
+                                                                            const Positioned(
+                                                                                top: 0,
+                                                                                right: 0,
+                                                                                child: IgnorePointer(
+                                                                                    child: Icon(
+                                                                                  Icons.zoom_in,
+                                                                                  // color: Colors.red,
+                                                                                  size: 32,
+                                                                                ))),
+                                                                            eventPointsAsync.when(
+                                                                              data: (eventPoints) => eventPoints == null || eventPoints.users == 0
+                                                                                  ? const SizedBox.shrink()
+                                                                                  : Positioned(
+                                                                                      bottom: 0,
+                                                                                      left: 0,
+                                                                                      right: 0,
+                                                                                      child: IgnorePointer(
+                                                                                          child: Container(
+                                                                                              color: Colors.black.withOpacity(0.5),
+                                                                                              child: Text(
+                                                                                                '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
+                                                                                                style: const TextStyle(fontSize: 12),
+                                                                                                textAlign: TextAlign.center,
+                                                                                              )))),
+                                                                              loading: () => const SizedBox.shrink(),
+                                                                              error: (_, __) => const SizedBox.shrink(),
+                                                                            )
+                                                                          ]);
+                                                                    },
+                                                                    child:
+                                                                        MapLibreMap(
+                                                                      styleString:
+                                                                          'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
 
-                                                              // listeners
-                                                              onMapCreated:
-                                                                  _onMapCreated,
-                                                              onStyleLoadedCallback:
-                                                                  () =>
-                                                                      _onMapStyleLoaded(
-                                                                          event),
-                                                              onMapClick: (_,
-                                                                      __) =>
-                                                                  _showLiveMap(),
+                                                                      // listeners
+                                                                      onMapCreated:
+                                                                          _onMapCreated,
+                                                                      onStyleLoadedCallback:
+                                                                          () =>
+                                                                              _onMapStyleLoaded(event),
+                                                                      onMapClick:
+                                                                          (_, __) =>
+                                                                              _showLiveMap(),
 
-                                                              // disable all interaction
-                                                              dragEnabled:
-                                                                  false,
-                                                              compassEnabled:
-                                                                  false,
-                                                              zoomGesturesEnabled:
-                                                                  false,
-                                                              rotateGesturesEnabled:
-                                                                  false,
-                                                              tiltGesturesEnabled:
-                                                                  false,
-                                                              scrollGesturesEnabled:
-                                                                  false,
-                                                              doubleClickZoomEnabled:
-                                                                  false,
+                                                                      // disable all interaction
+                                                                      dragEnabled:
+                                                                          false,
+                                                                      compassEnabled:
+                                                                          false,
+                                                                      zoomGesturesEnabled:
+                                                                          false,
+                                                                      rotateGesturesEnabled:
+                                                                          false,
+                                                                      tiltGesturesEnabled:
+                                                                          false,
+                                                                      scrollGesturesEnabled:
+                                                                          false,
+                                                                      doubleClickZoomEnabled:
+                                                                          false,
 
-                                                              // hide attribution in mini view
-                                                              attributionButtonPosition:
-                                                                  AttributionButtonPosition
-                                                                      .bottomRight,
-                                                              attributionButtonMargins:
-                                                                  const Point(
-                                                                      -100,
-                                                                      -100),
+                                                                      // hide attribution in mini view
+                                                                      attributionButtonPosition:
+                                                                          AttributionButtonPosition
+                                                                              .bottomRight,
+                                                                      attributionButtonMargins: const Point(
+                                                                          -100,
+                                                                          -100),
 
-                                                              // set initial camera position to rally point
-                                                              initialCameraPosition:
-                                                                  CameraPosition(
-                                                                target: LatLng(
-                                                                    event
-                                                                        .rallyPoint!
-                                                                        .lat,
-                                                                    event
-                                                                        .rallyPoint!
-                                                                        .lon),
-                                                                zoom: 11.75,
-                                                              ),
-                                                            ))))
-                                            ]),
-                                        Expanded(
-                                            child: rsvpsFriendsAsync.when(
-                                                loading: () => const Center(
-                                                    child:
-                                                        CircularProgressIndicator()),
-                                                error: (error, _) =>
-                                                    Text('Error: $error'),
-                                                data:
-                                                    (rsvpsFriends) =>
+                                                                      // set initial camera position to rally point
+                                                                      initialCameraPosition:
+                                                                          CameraPosition(
+                                                                        target: LatLng(
+                                                                            event.rallyPoint!.lat,
+                                                                            event.rallyPoint!.lon),
+                                                                        zoom:
+                                                                            11.75,
+                                                                      ),
+                                                                    ))))
+                                                    ]),
+                                                rsvpsFriendsAsync.when(
+                                                    loading: () => const Center(
+                                                        child:
+                                                            CircularProgressIndicator()),
+                                                    error: (error, _) =>
+                                                        Text('Error: $error'),
+                                                    data: (rsvpsFriends) =>
                                                         rsvpsFriends.isEmpty
                                                             ? const Padding(
                                                                 padding:
@@ -671,13 +663,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                 ),
                                                               )
                                                             : GroupedListView(
+                                                                primary: false,
+                                                                shrinkWrap:
+                                                                    true,
                                                                 elements:
                                                                     rsvpsFriends,
-                                                                useStickyGroupSeparators:
-                                                                    true,
-                                                                stickyHeaderBackgroundColor:
-                                                                    theme
-                                                                        .scaffoldBackgroundColor,
                                                                 groupBy: (RsvpFriend
                                                                         rsvpFriend) =>
                                                                     rsvpFriend
@@ -769,8 +759,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                               )),
                                                                       trailing: rsvpIcons[rsvpFriend.rsvp.status]);
                                                                 },
-                                                              ))),
-                                      ])))
+                                                              )),
+                                              ])))))
                         ])),
         bottomNavigationBar: session == null
             ? null
