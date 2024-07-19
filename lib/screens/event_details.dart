@@ -460,8 +460,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           if (event.bannerPhoto != null) ...[
-                            AspectRatio(
-                                aspectRatio: 16 / 9,
+                            ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxHeight: 175),
                                 child: Image.network(
                                     event.bannerPhoto!.toString(),
                                     fit: BoxFit.cover)),
