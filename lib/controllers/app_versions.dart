@@ -187,8 +187,9 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
                   switch (type) {
                     _AppUpdateDialogType.update =>
                       'You currently have v$fromVersion installed and v$toVersion is available',
-                    _AppUpdateDialogType.changes =>
-                      'You have just updated from v$fromVersion to v$toVersion'
+                    _AppUpdateDialogType.changes => fromBuild > 1
+                        ? 'You have just updated from v$fromVersion to v$toVersion'
+                        : 'You have just installed v$toVersion'
                   },
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               ...versionsWithNotices.map((version) => ListTile(
