@@ -21,16 +21,35 @@ final _filteredEventsProvider =
   final topics = await ref.watch(topicSubscriptionsProvider.future);
   final rsvpsList = ref.watch(rsvpsProvider);
 
+  // TODO: filter out canceled events unless you created or are a member of the event
   return (
-    events: events
-        .where((event) =>
-            event.createdById == session?.user.id ||
-            event.visibility != InstanceVisibility.public ||
-            topics.contains(event.topicId) ||
-            rsvpsList.value
-                    ?.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id) !=
-                null)
-        .toList(),
+    events: events.where((event) {
+      // always show events you created
+      if (event.createdById == session?.user.id) {
+        return true;
+      }
+
+      // always show events you have an invitation/RSVP to
+      if (rsvpsList.value
+              ?.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id) !=
+          null) {
+        return true;
+      }
+
+      // don't show canceled or draft events if none of the above passed
+      if (event.status != InstanceStatus.live) {
+        return false;
+      }
+
+      // don't show public events unless you're subscribed to the topic
+      if (event.visibility == InstanceVisibility.public &&
+          !topics.contains(event.topicId)) {
+        return false;
+      }
+
+      // any remaining events are visible, if the API returned them
+      return true;
+    }).toList(),
     topics: topics
   );
 });
