@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/drawer.dart';
 import 'package:squadquest/components/sheets/location_sharing.dart';
+import 'package:squadquest/models/instance.dart';
 
 final _bottomPaddingProvider = StateProvider<double?>((ref) => null);
 
@@ -14,6 +15,7 @@ class AppScaffold extends StatelessWidget {
   final EdgeInsetsGeometry? bodyPadding;
   final bool showDrawer;
   final bool showLocationSharingSheet;
+  final InstanceID? locationSharingAvailableEvent;
   final List<Widget>? actions;
   final FloatingActionButton? floatingActionButton;
   final Widget? bottomNavigationBar;
@@ -26,6 +28,7 @@ class AppScaffold extends StatelessWidget {
       this.bodyPadding,
       this.showDrawer = true,
       this.showLocationSharingSheet = true,
+      this.locationSharingAvailableEvent,
       this.actions,
       this.floatingActionButton,
       this.bottomNavigationBar});
@@ -67,7 +70,10 @@ class AppScaffold extends StatelessWidget {
                           return true;
                         },
                         child: SizeChangedLayoutNotifier(
-                            child: LocationSharingSheet(key: _bottomSheetKey))))
+                            child: LocationSharingSheet(
+                                key: _bottomSheetKey,
+                                locationSharingAvailableEvent:
+                                    locationSharingAvailableEvent))))
             ]);
           }),
       appBar: AppBar(

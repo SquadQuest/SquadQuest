@@ -3,23 +3,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/theme.dart';
 import 'package:squadquest/controllers/location.dart';
+import 'package:squadquest/models/instance.dart';
 
 class LocationSharingSheet extends ConsumerWidget {
-  const LocationSharingSheet({super.key});
+  final InstanceID? locationSharingAvailableEvent;
+
+  const LocationSharingSheet({super.key, this.locationSharingAvailableEvent});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final squadQuestTheme = Theme.of(context).extension<SquadQuestColors>()!;
     final locationSharing = ref.watch(locationSharingProvider);
 
-    if (locationSharing == false) {
+    if (locationSharing == false && locationSharingAvailableEvent == null) {
       return const SizedBox.shrink();
     }
 
     return BottomSheet(
         enableDrag: false,
-        backgroundColor:
-            squadQuestTheme.locationSharingBottomSheetBackgroundColor,
+        backgroundColor: locationSharing == false
+            ? squadQuestTheme.locationSharingBottomSheetAvailableBackgroundColor
+            : squadQuestTheme.locationSharingBottomSheetActiveBackgroundColor,
         onClosing: () {},
         builder: (_) => Padding(
             padding: const EdgeInsets.all(8),
@@ -31,7 +35,9 @@ class LocationSharingSheet extends ConsumerWidget {
                   child: Text(
                     locationSharing == true
                         ? 'Your location is currently being shared with friends'
-                        : 'Initializing location sharing...',
+                        : locationSharing == false
+                            ? 'Your location is not currently being shared'
+                            : 'Initializing location sharing...',
                     textAlign: TextAlign.center,
                     style: squadQuestTheme.locationSharingBottomSheetTextStyle,
                   ),
@@ -44,7 +50,16 @@ class LocationSharingSheet extends ConsumerWidget {
                         },
                         child: const Text('Stop'),
                       )
-                    : const CircularProgressIndicator()
+                    : locationSharing == false
+                        ? ElevatedButton(
+                            onPressed: () {
+                              ref
+                                  .read(locationControllerProvider)
+                                  .startTracking(locationSharingAvailableEvent);
+                            },
+                            child: const Text('Start'),
+                          )
+                        : const CircularProgressIndicator()
               ],
             )));
   }

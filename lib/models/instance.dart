@@ -14,6 +14,8 @@ enum InstanceStatus { draft, live, canceled }
 
 enum InstanceMemberStatus { invited, no, maybe, yes, omw }
 
+enum InstanceTimeGroup { current, upcoming, past }
+
 Map<InstanceVisibility, Icon> visibilityIcons = {
   InstanceVisibility.private: const Icon(Icons.lock),
   InstanceVisibility.friends: const Icon(Icons.people),
@@ -42,6 +44,7 @@ class Instance {
       this.status = InstanceStatus.live,
       required this.startTimeMin,
       required this.startTimeMax,
+      this.endTime,
       this.topic,
       this.topicId,
       required this.title,
@@ -73,6 +76,7 @@ class Instance {
   final InstanceStatus status;
   final DateTime startTimeMin;
   final DateTime startTimeMax;
+  final DateTime? endTime;
   final Topic? topic;
   final TopicID? topicId;
   final String title;
@@ -120,6 +124,9 @@ class Instance {
       ),
       startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
       startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
+      endTime: map['end_time'] == null
+          ? null
+          : DateTime.parse(map['end_time']).toLocal(),
       topic: topicModel,
       topicId: topicModel == null ? map['topic'] as TopicID : topicModel.id,
       title: map['title'] as String,
@@ -143,6 +150,7 @@ class Instance {
       'status': status.name,
       'start_time_min': startTimeMin.toUtc().toIso8601String(),
       'start_time_max': startTimeMax.toUtc().toIso8601String(),
+      'end_time': endTime?.toUtc().toIso8601String(),
       'topic': topic?.id ?? topicId,
       'title': title,
       'visibility': visibility.name,
@@ -169,6 +177,21 @@ class Instance {
   @override
   String toString() {
     return 'Instance{id: $id, title: $title}';
+  }
+
+  InstanceTimeGroup getTimeGroup([DateTime? now]) {
+    now ??= DateTime.now();
+
+    if (startTimeMax.isAfter(now)) {
+      return InstanceTimeGroup.upcoming;
+    }
+
+    if ((endTime != null && endTime!.isBefore(now)) ||
+        startTimeMax.isBefore(now.subtract(const Duration(hours: 12)))) {
+      return InstanceTimeGroup.past;
+    }
+
+    return InstanceTimeGroup.current;
   }
 }
 

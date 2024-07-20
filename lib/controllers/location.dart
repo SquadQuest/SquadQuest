@@ -10,6 +10,7 @@ import 'package:squadquest/logger.dart';
 import 'package:squadquest/router.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/models/instance.dart';
 
 final locationControllerProvider = Provider<LocationController>((ref) {
@@ -68,6 +69,29 @@ class LocationController {
         'permissionGranted': _permissionGranted,
       }
     });
+
+    // listen for changes to events to stop tracking automatically
+    ref.listen(
+      instancesProvider,
+      (oldInstances, instances) async {
+        if (instances.value == null) {
+          return;
+        }
+
+        final now = DateTime.now().toUtc();
+
+        for (final instance in instances.value!) {
+          if (!_trackingInstanceIds.contains(instance.id)) {
+            continue;
+          }
+
+          if (instance.getTimeGroup(now) == InstanceTimeGroup.past) {
+            await stopTracking(instance.id);
+          }
+        }
+      },
+      fireImmediately: true,
+    );
 
     // mark that initialization is complete
     _initialized = true;

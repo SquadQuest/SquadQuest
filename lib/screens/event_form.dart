@@ -192,8 +192,10 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Event posted!'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_editingInstance.value == null
+            ? 'Event posted!'
+            : 'Event updated!'),
       ));
 
       final router = ref.read(routerProvider);

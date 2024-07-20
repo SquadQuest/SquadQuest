@@ -60,4 +60,9 @@ class SettingsController {
           'locationSharingEnabled', locationSharingEnabled.toString());
     });
   }
+
+  Future<void> clear() {
+    final prefs = ref.read(sharedPreferencesProvider);
+    return prefs.clear();
+  }
 }

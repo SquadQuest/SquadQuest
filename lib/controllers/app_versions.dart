@@ -62,6 +62,8 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
       PackageInfo(installerStore: 'com.google.android.apps.nbu.files') ||
       PackageInfo(installerStore: 'com.google.android.packageinstaller') =>
         AppVersionChannel.githubAPK,
+      PackageInfo(installerStore: 'com.android.vending') =>
+        AppVersionChannel.android,
       _ when kIsWeb => AppVersionChannel.web,
       _ when Platform.isAndroid => AppVersionChannel.android,
       _ when Platform.isIOS => AppVersionChannel.ios,
@@ -185,8 +187,9 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
                   switch (type) {
                     _AppUpdateDialogType.update =>
                       'You currently have v$fromVersion installed and v$toVersion is available',
-                    _AppUpdateDialogType.changes =>
-                      'You have just updated from v$fromVersion to v$toVersion'
+                    _AppUpdateDialogType.changes => fromBuild > 1
+                        ? 'You have just updated from v$fromVersion to v$toVersion'
+                        : 'You have just installed v$toVersion'
                   },
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               ...versionsWithNotices.map((version) => ListTile(
