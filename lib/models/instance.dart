@@ -182,7 +182,7 @@ class Instance {
   InstanceTimeGroup getTimeGroup([DateTime? now]) {
     now ??= DateTime.now();
 
-    if (startTimeMax.isAfter(now)) {
+    if (startTimeMin.isAfter(now)) {
       return InstanceTimeGroup.upcoming;
     }
 
