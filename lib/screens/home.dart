@@ -19,13 +19,17 @@ final _filteredEventsProvider =
   final session = ref.read(authControllerProvider);
   final events = await ref.watch(instancesProvider.future);
   final topics = await ref.watch(topicSubscriptionsProvider.future);
+  final rsvpsList = ref.watch(rsvpsProvider);
 
   return (
     events: events
         .where((event) =>
             event.createdById == session?.user.id ||
             event.visibility != InstanceVisibility.public ||
-            topics.contains(event.topicId))
+            topics.contains(event.topicId) ||
+            rsvpsList.value
+                    ?.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id) !=
+                null)
         .toList(),
     topics: topics
   );
