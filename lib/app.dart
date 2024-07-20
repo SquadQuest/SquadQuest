@@ -9,6 +9,7 @@ import 'package:squadquest/router.dart';
 import 'package:squadquest/theme.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/friends.dart';
+import 'package:squadquest/controllers/location.dart';
 import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/models/user.dart';
@@ -44,6 +45,10 @@ class MyApp extends ConsumerWidget {
 
               // force friends list to refresh
               ref.read(friendsProvider.notifier).refresh();
+            case 'event-ended':
+              ref
+                  .read(locationControllerProvider)
+                  .stopTracking(data['event']['id']);
           }
           // (temporarily)? display any push notification in-app
           _scaffoldKey.currentState?.showSnackBar(SnackBar(
