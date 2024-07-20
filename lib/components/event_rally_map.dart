@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geobase/coordinates.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as http; // TODO: switch to dio
 
 import 'package:squadquest/controllers/auth.dart';
 

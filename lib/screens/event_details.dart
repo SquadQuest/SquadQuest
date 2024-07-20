@@ -125,6 +125,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         isScrollControlled: true,
         builder: (BuildContext context) => FriendsList(
             title: 'Find friends to invite',
+            emptyText: 'No friends found who haven\'t already been invited',
             status: FriendStatus.accepted,
             excludeUsers: excludeRsvps
                 .map((rsvp) => rsvp.memberId)
