@@ -142,11 +142,20 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
           key: _formKey,
           child: Column(
             children: [
-              if (profile == null)
+              if (profile == null) ...[
+                const SizedBox(height: 16),
                 const Text(
                   'Welcome to SquadQuest!\n\nPlease set up your profile to get started:',
                   textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+              ],
+              const SizedBox(height: 16),
+              const Text(
+                'Your full name and photo will only be visible to confirmed friends',
+                style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               TextFormField(
                 readOnly: submitted,
