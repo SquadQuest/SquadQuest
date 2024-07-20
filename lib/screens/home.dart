@@ -163,7 +163,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     ScaffoldMessenger.of(context)
                                         .showSnackBar(const SnackBar(
                                       content: Text(
-                                          'Your event has been ended and location sharing will be stoppe'),
+                                          'Your event has been ended and location sharing will be stopped'),
                                     ));
                                   }
                                 }
