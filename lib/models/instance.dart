@@ -179,7 +179,7 @@ class Instance {
     return 'Instance{id: $id, title: $title}';
   }
 
-  InstanceTimeGroup getTimeGroup(DateTime? now) {
+  InstanceTimeGroup getTimeGroup([DateTime? now]) {
     now ??= DateTime.now();
 
     if (startTimeMax.isAfter(now)) {

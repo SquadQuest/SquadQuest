@@ -7,8 +7,10 @@ final appThemeLight = ThemeData.light(useMaterial3: true).copyWith(
   ),
   extensions: <ThemeExtension<dynamic>>[
     const SquadQuestColors(
-        locationSharingBottomSheetBackgroundColor:
+        locationSharingBottomSheetActiveBackgroundColor:
             Color.fromRGBO(129, 199, 132, 1),
+        locationSharingBottomSheetAvailableBackgroundColor:
+            Color.fromRGBO(255, 235, 59, 1),
         locationSharingBottomSheetTextStyle: TextStyle(
           color: Colors.black,
           fontSize: 16,
@@ -23,8 +25,10 @@ final appThemeDark = ThemeData.dark(useMaterial3: true).copyWith(
   ),
   extensions: <ThemeExtension<dynamic>>[
     const SquadQuestColors(
-        locationSharingBottomSheetBackgroundColor:
+        locationSharingBottomSheetActiveBackgroundColor:
             Color.fromRGBO(27, 94, 32, 1),
+        locationSharingBottomSheetAvailableBackgroundColor:
+            Color.fromRGBO(245, 127, 23, 1),
         locationSharingBottomSheetTextStyle: TextStyle(
           color: Colors.white,
           fontSize: 16,
@@ -34,22 +38,27 @@ final appThemeDark = ThemeData.dark(useMaterial3: true).copyWith(
 
 @immutable
 class SquadQuestColors extends ThemeExtension<SquadQuestColors> {
-  final Color? locationSharingBottomSheetBackgroundColor;
+  final Color? locationSharingBottomSheetActiveBackgroundColor;
+  final Color? locationSharingBottomSheetAvailableBackgroundColor;
   final TextStyle? locationSharingBottomSheetTextStyle;
 
   const SquadQuestColors({
-    required this.locationSharingBottomSheetBackgroundColor,
+    required this.locationSharingBottomSheetActiveBackgroundColor,
+    required this.locationSharingBottomSheetAvailableBackgroundColor,
     required this.locationSharingBottomSheetTextStyle,
   });
 
   @override
   SquadQuestColors copyWith(
-      {Color? locationSharingBottomSheetBackgroundColor,
+      {Color? locationSharingBottomSheetActiveBackgroundColor,
       TextStyle? locationSharingBottomSheetTextStyle}) {
     return SquadQuestColors(
-      locationSharingBottomSheetBackgroundColor:
-          locationSharingBottomSheetBackgroundColor ??
-              this.locationSharingBottomSheetBackgroundColor,
+      locationSharingBottomSheetActiveBackgroundColor:
+          locationSharingBottomSheetActiveBackgroundColor ??
+              this.locationSharingBottomSheetActiveBackgroundColor,
+      locationSharingBottomSheetAvailableBackgroundColor:
+          locationSharingBottomSheetAvailableBackgroundColor ??
+              this.locationSharingBottomSheetAvailableBackgroundColor,
       locationSharingBottomSheetTextStyle:
           locationSharingBottomSheetTextStyle ??
               this.locationSharingBottomSheetTextStyle,
@@ -62,9 +71,13 @@ class SquadQuestColors extends ThemeExtension<SquadQuestColors> {
       return this;
     }
     return SquadQuestColors(
-      locationSharingBottomSheetBackgroundColor: Color.lerp(
-          locationSharingBottomSheetBackgroundColor,
-          other.locationSharingBottomSheetBackgroundColor,
+      locationSharingBottomSheetActiveBackgroundColor: Color.lerp(
+          locationSharingBottomSheetActiveBackgroundColor,
+          other.locationSharingBottomSheetActiveBackgroundColor,
+          t),
+      locationSharingBottomSheetAvailableBackgroundColor: Color.lerp(
+          locationSharingBottomSheetAvailableBackgroundColor,
+          other.locationSharingBottomSheetAvailableBackgroundColor,
           t),
       locationSharingBottomSheetTextStyle: TextStyle(
         color: Color.lerp(locationSharingBottomSheetTextStyle!.color,

@@ -363,19 +363,22 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     });
 
     // build RSVP buttons selection from rsvps list
-    List<bool> myRsvpSelection = List.filled(4, false);
+    final List<bool> myRsvpSelection = List.filled(4, false);
+    InstanceMemberStatus? myRsvpStatus;
+
     if (eventRsvpsAsync.hasValue &&
         eventRsvpsAsync.value != null &&
         session != null) {
-      final myRsvp = eventRsvpsAsync.value!
+      myRsvpStatus = eventRsvpsAsync.value!
           .cast<InstanceMember?>()
-          .firstWhereOrNull((rsvp) => rsvp?.memberId == session.user.id);
+          .firstWhereOrNull((rsvp) => rsvp?.memberId == session.user.id)
+          ?.status;
 
       for (int buttonIndex = 0;
           buttonIndex < myRsvpSelection.length;
           buttonIndex++) {
         myRsvpSelection[buttonIndex] =
-            myRsvp != null && buttonIndex == myRsvp.status.index - 1;
+            myRsvpStatus != null && buttonIndex == myRsvpStatus.index - 1;
       }
     }
 
@@ -452,6 +455,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               _sendInvitations(context, eventRsvpsAsync.value ?? []),
           child: const Icon(Icons.mail),
         ),
+        locationSharingAvailableEvent:
+            eventAsync.value?.getTimeGroup() != InstanceTimeGroup.current ||
+                    myRsvpStatus != InstanceMemberStatus.omw
+                ? null
+                : eventAsync.value!.id,
         body: eventAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(child: Text(error.toString())),
