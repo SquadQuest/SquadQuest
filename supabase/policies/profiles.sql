@@ -23,13 +23,3 @@ create policy "Authenticated users can update their own profile" on "public"."pr
 UPDATE to authenticated using (id = auth.uid ())
 with
   check (id = auth.uid ());
-
-CREATE VIEW
-  profiles_anonymous
-WITH
-  (security_invoker = false) AS
-SELECT
-  id,
-  first_name
-FROM
-  profiles;

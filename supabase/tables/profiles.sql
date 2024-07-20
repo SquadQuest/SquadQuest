@@ -13,3 +13,13 @@ create table
   );
 
 alter table public.profiles enable row level security;
+
+CREATE VIEW
+  profiles_anonymous
+WITH
+  (security_invoker = false) AS
+SELECT
+  id,
+  first_name
+FROM
+  profiles;
