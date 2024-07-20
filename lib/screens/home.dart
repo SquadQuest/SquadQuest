@@ -13,12 +13,6 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/components/tiles/instance.dart';
 
-enum _InstanceGroup {
-  current,
-  upcoming,
-  past,
-}
-
 final _filteredEventsProvider =
     FutureProvider<({List<Instance> events, List<TopicID> topics})>(
         (ref) async {
@@ -97,20 +91,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // floatingHeader: true,
                     stickyHeaderBackgroundColor:
                         Theme.of(context).scaffoldBackgroundColor,
-                    groupBy: (Instance instance) =>
-                        instance.startTimeMax.isBefore(now)
-                            ? _InstanceGroup.past
-                            : _InstanceGroup.upcoming,
+                    groupBy: (Instance instance) => instance.getTimeGroup(now),
                     groupComparator: (group1, group2) {
                       return group1.index.compareTo(group2.index);
                     },
-                    groupSeparatorBuilder: (_InstanceGroup group) => Padding(
+                    groupSeparatorBuilder: (InstanceTimeGroup group) => Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
                           switch (group) {
-                            _InstanceGroup.past => 'In the past',
-                            _InstanceGroup.current => 'Happening now',
-                            _InstanceGroup.upcoming => 'Coming up',
+                            InstanceTimeGroup.past => 'In the past',
+                            InstanceTimeGroup.current => 'Happening now',
+                            InstanceTimeGroup.upcoming => 'Coming up',
                           },
                           textAlign: TextAlign.center,
                           style: const TextStyle(fontSize: 18),

@@ -11,6 +11,7 @@ create table
     status public.instance_status not null default 'live'::instance_status,
     start_time_min timestamp with time zone null,
     start_time_max timestamp with time zone null,
+    end_time timestamp with time zone null,
     topic uuid null,
     title character varying null,
     visibility public.instance_visibility null default 'private'::instance_visibility,
