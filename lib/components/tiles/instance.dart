@@ -6,8 +6,14 @@ import 'package:squadquest/models/instance.dart';
 class InstanceTile extends ListTile {
   final Instance instance;
   final InstanceMember? rsvp;
+  final Function(Instance instance)? onEndTap;
 
-  InstanceTile({super.key, super.onTap, required this.instance, this.rsvp})
+  InstanceTile(
+      {super.key,
+      super.onTap,
+      required this.instance,
+      this.rsvp,
+      this.onEndTap})
       : super(
           leading: statusIcons[instance.status] ??
               visibilityIcons[instance.visibility],
@@ -33,6 +39,16 @@ class InstanceTile extends ListTile {
                   'Starting between: ${eventTimeFormat.format(instance.startTimeMin)}–${eventTimeFormat.format(instance.startTimeMax)}'),
             ],
           ),
-          trailing: rsvp == null ? null : rsvpIcons[rsvp.status],
+          trailing: onEndTap != null
+              ? IconButton.filled(
+                  onPressed: () => onEndTap(instance),
+                  icon: const Icon(Icons.stop),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                )
+              : rsvp == null
+                  ? null
+                  : rsvpIcons[rsvp.status],
         );
 }

@@ -43,6 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final eventsList = ref.watch(_filteredEventsProvider);
     final rsvpsList = ref.watch(rsvpsProvider);
+    final session = ref.read(authControllerProvider);
 
     return AppScaffold(
       title: 'Welcome to SquadQuest',
@@ -119,7 +120,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             context.pushNamed('event-details', pathParameters: {
                               'id': instance.id!,
                             });
-                          });
+                          },
+                          onEndTap: session?.user.id == instance.createdById &&
+                                  instance.getTimeGroup(now) ==
+                                      InstanceTimeGroup.current
+                              ? (Instance instance) async {
+                                  final confirmed = await showDialog<bool>(
+                                      context: context,
+                                      builder: (BuildContext context) =>
+                                          AlertDialog(
+                                            title: const Text('End event?'),
+                                            content: const Text(
+                                                'Are you sure you want to end this event? Location sharing will be stopped for all guests.'),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(false),
+                                                child: const Text('No'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(true),
+                                                child: const Text('Yes'),
+                                              ),
+                                            ],
+                                          ));
+
+                                  if (confirmed != true) {
+                                    return;
+                                  }
+
+                                  await ref
+                                      .read(instancesProvider.notifier)
+                                      .patch(instance.id!, {
+                                    'end_time':
+                                        DateTime.now().toUtc().toIso8601String()
+                                  });
+
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(const SnackBar(
+                                      content: Text(
+                                          'Your event has been ended and location sharing will be stoppe'),
+                                    ));
+                                  }
+                                }
+                              : null);
                     },
                     itemComparator: (instance1, instance2) {
                       // sort past events in reverse chronological order
