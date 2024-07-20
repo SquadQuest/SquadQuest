@@ -8,12 +8,14 @@ import 'package:squadquest/models/user.dart';
 
 class FriendsList extends ConsumerStatefulWidget {
   final String title;
+  final String emptyText;
   final FriendStatus? status;
   final List<UserID> excludeUsers;
 
   const FriendsList(
       {super.key,
       this.title = 'Find friends',
+      this.emptyText = 'No friends found',
       this.status,
       this.excludeUsers = const <UserID>[]});
 
@@ -64,44 +66,51 @@ class _FriendsListState extends ConsumerState<FriendsList> {
             const SizedBox(height: 32),
             Expanded(
                 child: friendsList.when(
-                    data: (friends) => ListView(
-                        shrinkWrap: true,
-                        children: friends.where((friend) {
-                          if (widget.status != null &&
-                              friend.status != widget.status) {
-                            return false;
-                          }
+                    data: (friends) {
+                      final filteredFriends = friends.where((friend) {
+                        if (widget.status != null &&
+                            friend.status != widget.status) {
+                          return false;
+                        }
 
-                          final otherProfile =
-                              friend.getOtherProfile(session.user.id)!;
+                        final otherProfile =
+                            friend.getOtherProfile(session.user.id)!;
 
-                          if (widget.excludeUsers.contains(otherProfile.id)) {
-                            return false;
-                          }
+                        if (widget.excludeUsers.contains(otherProfile.id)) {
+                          return false;
+                        }
 
-                          return _searchQuery.isEmpty ||
-                              otherProfile.displayName
-                                  .toLowerCase()
-                                  .contains(_searchQuery);
-                        }).map((friend) {
-                          final otherProfile =
-                              friend.getOtherProfile(session.user.id);
+                        return _searchQuery.isEmpty ||
+                            otherProfile.displayName
+                                .toLowerCase()
+                                .contains(_searchQuery);
+                      });
 
-                          return CheckboxListTile(
-                            title: Text(otherProfile!.displayName),
-                            value: _selectedUsers.contains(otherProfile.id),
-                            onChanged: (bool? value) {
-                              setState(() {
-                                if (value!) {
-                                  _selectedUsers.add(otherProfile.id);
-                                } else {
-                                  _selectedUsers.remove(otherProfile.id);
-                                }
-                                FocusScope.of(context).unfocus();
-                              });
-                            },
-                          );
-                        }).toList()),
+                      return filteredFriends.isEmpty
+                          ? Text(widget.emptyText)
+                          : ListView(
+                              shrinkWrap: true,
+                              children: filteredFriends.map((friend) {
+                                final otherProfile =
+                                    friend.getOtherProfile(session.user.id);
+
+                                return CheckboxListTile(
+                                  title: Text(otherProfile!.displayName),
+                                  value:
+                                      _selectedUsers.contains(otherProfile.id),
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      if (value!) {
+                                        _selectedUsers.add(otherProfile.id);
+                                      } else {
+                                        _selectedUsers.remove(otherProfile.id);
+                                      }
+                                      FocusScope.of(context).unfocus();
+                                    });
+                                  },
+                                );
+                              }).toList());
+                    },
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
                     error: (error, _) => Text('Error: $error'))),
