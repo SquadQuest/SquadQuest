@@ -22,6 +22,10 @@ SELECT
     'DELETE FROM location_points WHERE timestamp < now() - interval 1 hour'
   );
 
+CREATE FUNCTION get_users_with_location_points (for_event uuid) RETURNS uuid[] AS $$
+  SELECT array_agg(DISTINCT created_by) FROM location_points WHERE event = for_event;
+$$ LANGUAGE 'sql';
+
 CREATE VIEW
   instance_points
 WITH
