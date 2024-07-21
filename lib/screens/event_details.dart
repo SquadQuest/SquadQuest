@@ -457,7 +457,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           child: const Icon(Icons.mail),
         ),
         locationSharingAvailableEvent:
-            eventAsync.value?.getTimeGroup() != InstanceTimeGroup.current ||
+            eventAsync.value?.getTimeGroup() == InstanceTimeGroup.past ||
                     myRsvpStatus != InstanceMemberStatus.omw
                 ? null
                 : eventAsync.value!.id,
@@ -485,6 +485,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                         widget.instanceId));
                                   },
                                   child: SingleChildScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
                                       child: Padding(
                                           padding: const EdgeInsets.all(16),
                                           child: Column(

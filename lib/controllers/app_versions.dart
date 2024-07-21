@@ -90,7 +90,7 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
     final prefs = ref.read(sharedPreferencesProvider);
     final updateAppBuildDismissed = prefs.getInt('updateAppBuildDismissed');
     final appUpdatedChangesDismissed =
-        prefs.getInt('appUpdatedChangesDismissed') ?? 1;
+        prefs.getInt('appUpdatedChangesDismissed');
 
     // show update dialog if current version isn't the newest
     if (latestBuild != null &&
@@ -133,8 +133,8 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
     }
 
     // show changes dialog when a new version launches for the first time
-    if (appUpdatedChangesDismissed < currentBuild) {
-      // show changes dialog
+    if (appUpdatedChangesDismissed != null &&
+        appUpdatedChangesDismissed < currentBuild) {
       await showDialog<bool>(
         context: navigatorKey.currentContext!,
         barrierDismissible: false,
@@ -143,9 +143,9 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
             toBuild: currentBuild,
             type: _AppUpdateDialogType.changes),
       );
-
-      prefs.setInt('appUpdatedChangesDismissed', currentBuild);
     }
+
+    prefs.setInt('appUpdatedChangesDismissed', currentBuild);
   }
 
   Future<Widget Function(BuildContext)> _buildDialog(
