@@ -47,84 +47,86 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           return ref.read(friendsProvider.notifier).refresh();
         },
         child: friendsList.when(
-            data: (friends) {
-              if (friends.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text(
-                    'You have no friends yet! Get a friend to join SquadQuest and then send a request via their phone number with the button below.',
-                    style: TextStyle(fontSize: 20),
-                  ),
-                );
-              }
-
-              return GroupedListView(
-                elements: friends,
-                physics: const AlwaysScrollableScrollPhysics(),
-                useStickyGroupSeparators: true,
-                // floatingHeader: true,
-                stickyHeaderBackgroundColor:
-                    Theme.of(context).scaffoldBackgroundColor,
-                groupBy: (Friend friend) => friend.status,
-                groupComparator: (group1, group2) {
-                  return _statusGroupOrder[group1]!
-                      .compareTo(_statusGroupOrder[group2]!);
-                },
-                groupSeparatorBuilder: (FriendStatus group) => Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      switch (group) {
-                        FriendStatus.requested => 'Request pending',
-                        FriendStatus.accepted => 'My Buddies',
-                        FriendStatus.declined => 'Declined',
-                      },
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 18),
-                    )),
-                itemBuilder: (context, friend) {
-                  final friendProfile = friend.getOtherProfile(session.user.id);
-                  return ListTile(
-                      onTap: friend.status == FriendStatus.accepted ||
-                              (friend.status == FriendStatus.requested &&
-                                  friend.requestee!.id == session.user.id)
-                          ? () {
-                              context.pushNamed('profile-view',
-                                  pathParameters: {'id': friendProfile!.id});
-                            }
-                          : null,
-                      leading: friendProfile!.photo != null
-                          ? CircleAvatar(
-                              backgroundImage:
-                                  NetworkImage(friendProfile.photo.toString()),
-                            )
-                          : const CircleAvatar(
-                              child: Icon(Icons.person),
-                            ),
-                      title: Text(friendProfile.displayName),
-                      subtitle: switch (friend.status) {
-                        FriendStatus.requested => switch (
-                              friend.requester!.id == session.user.id) {
-                            true => Text(
-                                'Request sent ${_requestDateFormat.format(friend.createdAt!)}'),
-                            false => Text(
-                                'Request received ${_requestDateFormat.format(friend.createdAt!)}'),
+            data: (friends) => Stack(children: [
+                  if (friends.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Text(
+                        'You have no friends yet! Get a friend to join SquadQuest and then send a request via their phone number with the button below.',
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ),
+                  GroupedListView(
+                    elements: friends,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    useStickyGroupSeparators: true,
+                    // floatingHeader: true,
+                    stickyHeaderBackgroundColor:
+                        Theme.of(context).scaffoldBackgroundColor,
+                    groupBy: (Friend friend) => friend.status,
+                    groupComparator: (group1, group2) {
+                      return _statusGroupOrder[group1]!
+                          .compareTo(_statusGroupOrder[group2]!);
+                    },
+                    groupSeparatorBuilder: (FriendStatus group) => Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          switch (group) {
+                            FriendStatus.requested => 'Request pending',
+                            FriendStatus.accepted => 'My Buddies',
+                            FriendStatus.declined => 'Declined',
                           },
-                        FriendStatus.accepted => null,
-                        FriendStatus.declined => const Text('Request declined'),
-                      },
-                      trailing: friend.status == FriendStatus.requested &&
-                              friend.requestee?.id == session.user.id
-                          ? IconButton.filledTonal(
-                              icon: const Icon(Icons.next_plan_outlined),
-                              onPressed: () =>
-                                  _respondFriendRequest(context, friend),
-                            )
-                          : friendStatusIcons[friend.status]);
-                },
-                itemComparator: (friend1, friend2) =>
-                    friend2.createdAt!.compareTo(friend1.createdAt!),
-              );
-            },
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 18),
+                        )),
+                    itemBuilder: (context, friend) {
+                      final friendProfile =
+                          friend.getOtherProfile(session.user.id);
+                      return ListTile(
+                          onTap: friend.status == FriendStatus.accepted ||
+                                  (friend.status == FriendStatus.requested &&
+                                      friend.requestee!.id == session.user.id)
+                              ? () {
+                                  context.pushNamed('profile-view',
+                                      pathParameters: {
+                                        'id': friendProfile!.id
+                                      });
+                                }
+                              : null,
+                          leading: friendProfile!.photo != null
+                              ? CircleAvatar(
+                                  backgroundImage: NetworkImage(
+                                      friendProfile.photo.toString()),
+                                )
+                              : const CircleAvatar(
+                                  child: Icon(Icons.person),
+                                ),
+                          title: Text(friendProfile.displayName),
+                          subtitle: switch (friend.status) {
+                            FriendStatus.requested => switch (
+                                  friend.requester!.id == session.user.id) {
+                                true => Text(
+                                    'Request sent ${_requestDateFormat.format(friend.createdAt!)}'),
+                                false => Text(
+                                    'Request received ${_requestDateFormat.format(friend.createdAt!)}'),
+                              },
+                            FriendStatus.accepted => null,
+                            FriendStatus.declined =>
+                              const Text('Request declined'),
+                          },
+                          trailing: friend.status == FriendStatus.requested &&
+                                  friend.requestee?.id == session.user.id
+                              ? IconButton.filledTonal(
+                                  icon: const Icon(Icons.next_plan_outlined),
+                                  onPressed: () =>
+                                      _respondFriendRequest(context, friend),
+                                )
+                              : friendStatusIcons[friend.status]);
+                    },
+                    itemComparator: (friend1, friend2) =>
+                        friend2.createdAt!.compareTo(friend1.createdAt!),
+                  )
+                ]),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stackTrace) => Center(child: Text('Error: $error'))),
       ),
