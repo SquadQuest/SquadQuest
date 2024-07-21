@@ -83,7 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final now = DateTime.now();
 
             return Column(children: [
-              if (data.topics.isEmpty) ...[
+              if (data.topics.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(32),
                   child: Text(
@@ -92,7 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
                   ),
                 )
-              ] else if (data.events.isEmpty) ...[
+              else if (data.events.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(32),
                   child: Text(
@@ -101,8 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
                   ),
-                )
-              ],
+                ),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
