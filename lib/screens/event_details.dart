@@ -457,7 +457,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           child: const Icon(Icons.mail),
         ),
         locationSharingAvailableEvent:
-            eventAsync.value?.getTimeGroup() != InstanceTimeGroup.current ||
+            eventAsync.value?.getTimeGroup() == InstanceTimeGroup.past ||
                     myRsvpStatus != InstanceMemberStatus.omw
                 ? null
                 : eventAsync.value!.id,
