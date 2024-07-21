@@ -485,6 +485,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                         widget.instanceId));
                                   },
                                   child: SingleChildScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
                                       child: Padding(
                                           padding: const EdgeInsets.all(16),
                                           child: Column(
