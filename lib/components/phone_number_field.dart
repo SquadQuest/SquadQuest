@@ -154,4 +154,64 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
       ],
     );
   }
+
+class _PhoneClipboard extends StatefulWidget {
+  const _PhoneClipboard(
+      {super.key, required this.onNumberPasted, this.onNumberFound});
+
+  final void Function(String) onNumberPasted;
+  final void Function(String)? onNumberFound;
+
+  @override
+  State<_PhoneClipboard> createState() => _PhoneClipboardState();
+}
+
+class _PhoneClipboardState extends State<_PhoneClipboard> {
+  bool _hasClipboardData = false;
+  String? _clipboardData;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Stream.periodic(const Duration(seconds: 3))
+        // .takeWhile((element) => _clipboardData == null)
+        .listen((event) {
+      _checkClipboard();
+    });
+  }
+
+  void _checkClipboard() async {
+    final foo = await Clipboard.getData(Clipboard.kTextPlain);
+
+    if (foo?.text != null) {
+      final phone = foo!.text!.replaceAll(RegExp(r"[^0-9\+]"), "");
+
+      if (phone.isNotEmpty) {
+        log('Found phone number in clipboard: $phone');
+        setState(() {
+          _hasClipboardData = true;
+          _clipboardData = phone;
+        });
+
+        if (widget.onNumberFound != null) {
+          widget.onNumberFound!(phone);
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasClipboardData && _clipboardData != null) {
+      return TextButton.icon(
+          icon: const Icon(Icons.paste),
+          label: const Text('Paste phone'),
+          onPressed: () async {
+            widget.onNumberPasted(_clipboardData!);
+          });
+    } else {
+      return const SizedBox.shrink();
+    }
+  }
 }
