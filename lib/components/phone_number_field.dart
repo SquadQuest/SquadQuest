@@ -39,8 +39,6 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
   late final TextEditingController _internalController;
   late PhoneCountryData _selectedPhoneCountry;
 
-  String suggestion = "";
-
   String get completePhoneNumber =>
       '+${_selectedPhoneCountry.internalPhoneCode} ${_internalController.text}';
 
@@ -104,25 +102,6 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
 
     final countryDecoration = widget.countryFieldDecoration ??
         const InputDecoration(labelText: 'Country Code');
-
-    final clipboardButton = _PhoneClipboardButton(
-      onNumberPasted: (v) => _detectCountryFromPhone(v),
-      onNumberFound: (text) => setState(() {
-        suggestion = formatPhone(text);
-      }),
-    );
-
-    decoration = decoration.copyWith(
-      hintText: decoration.hintText != null ? decoration.hintText! : suggestion,
-      suffix: decoration.suffix == null
-          ? clipboardButton
-          : Row(
-              children: [
-                if (decoration.suffix != null) decoration.suffix!,
-                clipboardButton,
-              ],
-            ),
-    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,131 +210,6 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
         log("Phone invalid for ${newCountry.country}");
       }
     }
-  }
-}
-
-class _PhoneClipboardButton extends StatefulWidget {
-  const _PhoneClipboardButton({
-    required this.onNumberPasted,
-    this.onNumberFound,
-  });
-
-  final void Function(String text) onNumberPasted;
-  final void Function(String text)? onNumberFound;
-
-  @override
-  State<_PhoneClipboardButton> createState() => _PhoneClipboardButtonState();
-}
-
-class _PhoneClipboardButtonState extends State<_PhoneClipboardButton> {
-  String? _phoneFound;
-  bool pasted = false;
-
-  late final ClipboardStatusNotifier _clipboardStatus;
-
-  // Ths many async components ensures that the data from streams and
-  // subscriptions is not missed (lost in memory) when the widget is
-  // disposed
-  late final Timer _periodicTimer;
-  final StreamController<String?> _clipboardStreamController =
-      StreamController.broadcast();
-  late final StreamSubscription _subscription;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _clipboardStatus = ClipboardStatusNotifier();
-
-    _periodicTimer = Timer.periodic(
-      const Duration(seconds: 5),
-      (timer) async {
-        final content = await _getClipboardData();
-        _clipboardStreamController.add(content);
-      },
-    );
-
-    _subscription = _clipboardStreamController.stream
-        .where(_shouldPickData)
-        .cast<String>()
-        .listen(_checkValue);
-
-    // HACK: Timer will wait 5 seconds to do the first check.
-    // Replicate stream behavior but in a imperative way
-    _getClipboardData().then(
-      (value) {
-        if (_shouldPickData(value)) {
-          _checkValue(value!);
-        }
-      },
-    );
-  }
-
-  void _checkValue(String text) async {
-    if (isPhoneValid(text)) {
-      setState(() {
-        _phoneFound = text;
-        pasted = false;
-      });
-
-      if (widget.onNumberFound != null) {
-        widget.onNumberFound!(text);
-      }
-    }
-  }
-
-  bool _shouldPickData(String? data) {
-    return data != null && data != _phoneFound;
-  }
-
-  static Future<String?> _getClipboardData() async {
-    if (await Clipboard.hasStrings()) {
-      final data = await Clipboard.getData(Clipboard.kTextPlain);
-      return data?.text;
-    } else {
-      return null;
-    }
-  }
-
-  void _pasteButtonPressed() {
-    widget.onNumberPasted(_phoneFound!);
-    setState(() {
-      pasted = true;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: _clipboardStatus,
-      builder: (context, value, child) {
-        switch (value) {
-          case ClipboardStatus.unknown:
-          case ClipboardStatus.notPasteable:
-            return const SizedBox.shrink();
-          case ClipboardStatus.pasteable:
-            if (_phoneFound != null) {
-              return TextButton.icon(
-                icon: const Icon(Icons.paste),
-                label:
-                    pasted ? const Text('Pasted') : const Text('Paste phone'),
-                onPressed: pasted ? null : _pasteButtonPressed,
-              );
-            } else {
-              return const SizedBox.shrink();
-            }
-        }
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _periodicTimer.cancel();
-    _subscription.cancel();
-    _clipboardStreamController.close();
-    _clipboardStatus.dispose();
-    super.dispose();
   }
 }
 
