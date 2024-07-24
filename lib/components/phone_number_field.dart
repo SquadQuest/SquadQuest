@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 
-import 'package:squadquest/common.dart';
+import '../common.dart';
 
 class PhoneNumberFormField extends StatefulWidget {
   const PhoneNumberFormField({
@@ -191,52 +194,81 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
       });
     }
   }
-  }
-
-class _PhoneClipboard extends StatefulWidget {
-  const _PhoneClipboard(
-      {super.key, required this.onNumberPasted, this.onNumberFound});
-
-  final void Function(String) onNumberPasted;
-  final void Function(String)? onNumberFound;
-
-  @override
-  State<_PhoneClipboard> createState() => _PhoneClipboardState();
 }
 
-class _PhoneClipboardState extends State<_PhoneClipboard> {
-  bool _hasClipboardData = false;
+class _PhoneClipboardButton extends StatefulWidget {
+  const _PhoneClipboardButton({
+    required this.onNumberPasted,
+    this.onNumberFound,
+  });
+
+  final void Function(String text) onNumberPasted;
+  final void Function(String text)? onNumberFound;
+
+  @override
+  State<_PhoneClipboardButton> createState() => _PhoneClipboardButtonState();
+}
+
+class _PhoneClipboardButtonState extends State<_PhoneClipboardButton> {
+  String? _phoneFound;
+  bool pasted = false;
+
   late final ClipboardStatusNotifier _clipboardStatus;
+
+  // Ths many async components ensures that the data from streams and
+  // subscriptions is not missed (lost in memory) when the widget is
+  // disposed
+  late final Timer _periodicTimer;
+  final StreamController<String?> _clipboardStreamController =
+      StreamController.broadcast();
+  late final StreamSubscription _subscription;
 
   @override
   void initState() {
     super.initState();
 
-    Stream.periodic(const Duration(seconds: 3))
-        // .takeWhile((element) => _clipboardData == null)
-        .listen((event) {
-      _checkClipboard();
-    });
+    _clipboardStatus = ClipboardStatusNotifier();
+
+    _periodicTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (timer) async {
+        final content = await _getClipboardData();
+        _clipboardStreamController.add(content);
+      },
+    );
+
+    _subscription = _clipboardStreamController.stream
+        .where(_shouldPickData)
+        .cast<String>()
+        .listen(_checkValue);
   }
 
-  void _checkClipboard() async {
-    final foo = await Clipboard.getData(Clipboard.kTextPlain);
+  void _checkValue(String text) async {
+    if (isPhoneValid(text)) {
+      setState(() {
+        _phoneFound = text;
+        pasted = false;
+      });
 
-    if (foo?.text != null) {
-      final phone = foo!.text!.replaceAll(RegExp(r"[^0-9\+]"), "");
-
-      if (phone.isNotEmpty) {
-        log('Found phone number in clipboard: $phone');
-        setState(() {
-          _hasClipboardData = true;
-          _clipboardData = phone;
-        });
-
-        if (widget.onNumberFound != null) {
-          widget.onNumberFound!(phone);
-        }
+      if (widget.onNumberFound != null) {
+        widget.onNumberFound!(text);
       }
     }
+  }
+
+  bool _shouldPickData(String? data) {
+    return data != null && data != _phoneFound;
+  }
+
+  static Future<String?> _getClipboardData() async {
+    if (await Clipboard.hasStrings()) {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      return data?.text;
+    } else {
+      return null;
+    }
+  }
+
   void _pasteButtonPressed() {
     widget.onNumberPasted(_phoneFound!);
     setState(() {
@@ -255,15 +287,15 @@ class _PhoneClipboardState extends State<_PhoneClipboard> {
             return const SizedBox.shrink();
           case ClipboardStatus.pasteable:
             if (_phoneFound != null) {
-      return TextButton.icon(
-          icon: const Icon(Icons.paste),
+              return TextButton.icon(
+                icon: const Icon(Icons.paste),
                 label:
                     pasted ? const Text('Pasted') : const Text('Paste phone'),
                 onPressed: pasted ? null : _pasteButtonPressed,
               );
-    } else {
-      return const SizedBox.shrink();
-    }
+            } else {
+              return const SizedBox.shrink();
+            }
         }
       },
     );
@@ -271,6 +303,9 @@ class _PhoneClipboardState extends State<_PhoneClipboard> {
 
   @override
   void dispose() {
+    _periodicTimer.cancel();
+    _subscription.cancel();
+    _clipboardStreamController.close();
     _clipboardStatus.dispose();
     super.dispose();
   }
