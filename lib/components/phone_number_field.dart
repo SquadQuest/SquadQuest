@@ -206,7 +206,7 @@ class _PhoneClipboard extends StatefulWidget {
 
 class _PhoneClipboardState extends State<_PhoneClipboard> {
   bool _hasClipboardData = false;
-  String? _clipboardData;
+  late final ClipboardStatusNotifier _clipboardStatus;
 
   @override
   void initState() {
@@ -237,19 +237,41 @@ class _PhoneClipboardState extends State<_PhoneClipboard> {
         }
       }
     }
+  void _pasteButtonPressed() {
+    widget.onNumberPasted(_phoneFound!);
+    setState(() {
+      pasted = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_hasClipboardData && _clipboardData != null) {
+    return ValueListenableBuilder(
+      valueListenable: _clipboardStatus,
+      builder: (context, value, child) {
+        switch (value) {
+          case ClipboardStatus.unknown:
+          case ClipboardStatus.notPasteable:
+            return const SizedBox.shrink();
+          case ClipboardStatus.pasteable:
+            if (_phoneFound != null) {
       return TextButton.icon(
           icon: const Icon(Icons.paste),
-          label: const Text('Paste phone'),
-          onPressed: () async {
-            widget.onNumberPasted(_clipboardData!);
-          });
+                label:
+                    pasted ? const Text('Pasted') : const Text('Paste phone'),
+                onPressed: pasted ? null : _pasteButtonPressed,
+              );
     } else {
       return const SizedBox.shrink();
     }
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _clipboardStatus.dispose();
+    super.dispose();
   }
 }
