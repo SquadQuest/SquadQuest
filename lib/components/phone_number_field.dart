@@ -241,6 +241,15 @@ class _PhoneClipboardButtonState extends State<_PhoneClipboardButton> {
         .where(_shouldPickData)
         .cast<String>()
         .listen(_checkValue);
+
+    // initial check. Replicate stream behavior but in a imperative way
+    _getClipboardData().then(
+      (value) {
+        if (_shouldPickData(value)) {
+          _checkValue(value!);
+        }
+      },
+    );
   }
 
   void _checkValue(String text) async {
