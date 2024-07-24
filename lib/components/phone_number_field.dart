@@ -90,11 +90,26 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
 
   @override
   Widget build(BuildContext context) {
-    final decoration = widget.decoration ??
+    var decoration = widget.decoration ??
         const InputDecoration(
             prefixIcon: Icon(Icons.phone), labelText: "Phone Number");
     final countryDecoration = widget.countryFieldDecoration ??
         const InputDecoration(labelText: 'Country Code');
+
+    final clipboardButton = _PhoneClipboard(
+      onNumberPasted: (v) => _detectCountryFromPhone(v),
+    );
+
+    decoration = decoration.copyWith(
+      suffix: decoration.suffix == null
+          ? clipboardButton
+          : Row(
+              children: [
+                if (decoration.suffix != null) decoration.suffix!,
+                clipboardButton,
+              ],
+            ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,6 +117,7 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
         SizedBox(
           width: 140,
           child: CountryDropdown(
+            key: Key('country_dropdown_${_selectedPhoneCountry.countryCode}'),
             printCountryName: true,
             iconSize: 28, // match phone input field height
             decoration: countryDecoration,
@@ -129,6 +145,7 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
               allowEndlessPhone: true,
             )
           ],
+          // 98212841
           keyboardType: TextInputType.phone,
           textInputAction: TextInputAction.done,
           autofillHints: const [AutofillHints.telephoneNumber],
@@ -153,6 +170,18 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
         ),
       ],
     );
+  }
+
+  void _detectCountryFromPhone(String value) {
+    final newCountry = PhoneCodes.getCountryDataByPhone(value);
+
+    if (newCountry != null) {
+      setState(() {
+        _internalController.text = formatPhone(value);
+        _selectedPhoneCountry = newCountry;
+      });
+    }
+  }
   }
 
 class _PhoneClipboard extends StatefulWidget {
