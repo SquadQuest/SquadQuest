@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -147,9 +148,12 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
           autofocus: widget.autofocus,
           readOnly: !widget.enabled,
           controller: _internalController,
-          onChanged: widget.onPhoneNumberChanged != null
-              ? (value) => widget.onPhoneNumberChanged!(completePhoneNumber)
-              : null,
+          onChanged: (value) {
+            _onPhoneNumberChanged(value);
+            widget.onPhoneNumberChanged != null
+                ? (v) => widget.onPhoneNumberChanged!(completePhoneNumber)
+                : null;
+          },
           inputFormatters: [
             phoneInputFilter,
             PhoneInputFormatter(
@@ -184,14 +188,48 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
     );
   }
 
+  String _lastText = "";
+
+  void _onPhoneNumberChanged(String value) {
+    value =
+        value.replaceAll(RegExp(r'\D'), ''); // remove all non-digit characters
+    final similarity = StringSimilarity.compareTwoStrings(value, _lastText);
+
+    switch (similarity) {
+      // Assuming value parameter is a complete number (with country code), this means
+      // the new content has country code too and we won't to display it to the user.
+      // Then we trigger the detection that will format everything for us.
+      //
+      // TL;DR: Solves a problem where the country code is displayed if the same number
+      // is pasted again.
+      case 1:
+        _detectCountryFromPhone(value);
+        break;
+      // Sufficient similarity to not trigger the detection. This is like removing
+      // less than half the number in one edit.
+      case >= 0.6:
+        break;
+      default:
+        _detectCountryFromPhone(value);
+    }
+
+    _lastText = value;
+  }
+
   void _detectCountryFromPhone(String value) {
     final newCountry = PhoneCodes.getCountryDataByPhone(value);
 
     if (newCountry != null) {
-      setState(() {
-        _internalController.text = formatPhone(value);
-        _selectedPhoneCountry = newCountry;
-      });
+      log("Found country: ${newCountry.country}");
+      if (isPhoneValid(value, defaultCountryCode: newCountry.countryCode)) {
+        log("Phone valid for ${newCountry.country}");
+        setState(() {
+          _internalController.text = formatPhone(value);
+          _selectedPhoneCountry = newCountry;
+        });
+      } else {
+        log("Phone invalid for ${newCountry.country}");
+      }
     }
   }
 }
