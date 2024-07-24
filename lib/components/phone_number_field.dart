@@ -242,7 +242,8 @@ class _PhoneClipboardButtonState extends State<_PhoneClipboardButton> {
         .cast<String>()
         .listen(_checkValue);
 
-    // initial check. Replicate stream behavior but in a imperative way
+    // HACK: Timer will wait 5 seconds to do the first check.
+    // Replicate stream behavior but in a imperative way
     _getClipboardData().then(
       (value) {
         if (_shouldPickData(value)) {
