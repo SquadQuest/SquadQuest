@@ -35,6 +35,8 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
   late final TextEditingController _internalController;
   late PhoneCountryData _selectedPhoneCountry;
 
+  String suggestion = "";
+
   String get completePhoneNumber =>
       '+${_selectedPhoneCountry.internalPhoneCode} ${_internalController.text}';
 
@@ -92,15 +94,22 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
   Widget build(BuildContext context) {
     var decoration = widget.decoration ??
         const InputDecoration(
-            prefixIcon: Icon(Icons.phone), labelText: "Phone Number");
+          prefixIcon: Icon(Icons.phone),
+          labelText: "Phone Number",
+        );
+
     final countryDecoration = widget.countryFieldDecoration ??
         const InputDecoration(labelText: 'Country Code');
 
-    final clipboardButton = _PhoneClipboard(
+    final clipboardButton = _PhoneClipboardButton(
       onNumberPasted: (v) => _detectCountryFromPhone(v),
+      onNumberFound: (text) => setState(() {
+        suggestion = formatPhone(text);
+      }),
     );
 
     decoration = decoration.copyWith(
+      hintText: decoration.hintText != null ? decoration.hintText! : suggestion,
       suffix: decoration.suffix == null
           ? clipboardButton
           : Row(
