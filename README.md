@@ -64,6 +64,8 @@ Some major milestones currently envisioned include:
 
 - **SMS Integration**: Invite friends more easily by sending friend requests or event invitations to people who aren't on SquadQuest yet through SMS
 - **Calendar Integration**: See the events you're going to right in the mobile calendar you already use
+- **Chat**: Chat rooms for events that hosts can pin announcements to
+- **Photo Album**: Upload photos to an event that participants can download individually or all at once to their phone
 - **Polling**: Ping friends about potential event to find out what times might work for everyone
 - **Smart Event Suggestions**: Tell SquadQuest what you want to do more of and it'll keep an eye out for times that you and friends with the same interest have room on your calendar
 

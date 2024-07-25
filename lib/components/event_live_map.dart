@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,7 +42,8 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   StreamSubscription? subscription;
   final Map<UserID, List<Line>> trailsLinesByUser = {};
   final Map<UserID, Symbol> symbolsByUser = {};
-  List<LocationPoint>? lastPoints;
+  List<LocationPoint>? points;
+  bool renderingTrails = false;
 
   @override
   void initState() {
@@ -177,17 +179,22 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   }
 
   Future<void> _renderTrails([List<LocationPoint>? points]) async {
-    final keepRallyPointInView = ref.read(keepRallyPointInViewProvider);
-
-    // render previous points or skip if not available
-    if (points == null) {
-      if (lastPoints == null) {
-        return;
-      } else {
-        points = lastPoints;
-      }
+    if (points != null) {
+      this.points = points;
     }
-    lastPoints = points;
+
+    EasyDebounce.debounce(
+        'render-trails', const Duration(milliseconds: 100), _doRenderTrails);
+  }
+
+  Future<void> _doRenderTrails() async {
+    // prevent parallel executions and skip if no points available
+    if (renderingTrails || points == null) {
+      return;
+    }
+    renderingTrails = true;
+
+    final keepRallyPointInView = ref.read(keepRallyPointInViewProvider);
 
     // group points by user
     final Map<UserID, List<LocationPoint>> pointsByUser = {};
@@ -355,5 +362,7 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
           top: 50,
           bottom: 50));
     }
+
+    renderingTrails = false;
   }
 }

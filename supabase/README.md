@@ -45,3 +45,27 @@ This is a minimal Docker Compose setup for self-hosting Supabase. Follow the ste
     ```bash
     rm -r volumes/{db/data,storage}
     ```
+
+## Debugging functions
+
+1. Uncomment the following line in `docker-compose.yml` under the `functions` service:
+
+    ```yaml
+    --inspect-wait=0.0.0.0:9229
+    ```
+
+1. Apply changes to `docker-compose.yml` to running services:
+
+    ```bash
+    docker compose up -d
+    ```
+
+1. Run the `Attach to Deno` launch task in VSCode and set some breakpoints in your editor!
+
+ ### Viewing logs
+
+ You can also see `console.log` and `console.error` output by following logs for the `functions` service:
+
+ ```bash
+ docker compose logs -f functions
+ ```
