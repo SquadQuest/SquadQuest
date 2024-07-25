@@ -137,7 +137,7 @@ jobs:
           serviceAccountJsonPlainText: '${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}'
           packageName: app.squadquest
           releaseFiles: build/app/outputs/bundle/release/SquadQuest.aab
-          track: beta
+          track: production
           whatsNewDirectory: /tmp//whatsnew
 
       - name: Insert new row into app_versions
