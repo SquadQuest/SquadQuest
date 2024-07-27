@@ -17,6 +17,7 @@ class AppScaffold extends StatelessWidget {
   final bool showLocationSharingSheet;
   final InstanceID? locationSharingAvailableEvent;
   final List<Widget>? actions;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
   final FloatingActionButton? floatingActionButton;
   final Widget? bottomNavigationBar;
 
@@ -30,6 +31,7 @@ class AppScaffold extends StatelessWidget {
       this.showLocationSharingSheet = true,
       this.locationSharingAvailableEvent,
       this.actions,
+      this.floatingActionButtonLocation,
       this.floatingActionButton,
       this.bottomNavigationBar});
 
@@ -81,6 +83,7 @@ class AppScaffold extends StatelessWidget {
         actions: actions,
       ),
       drawer: showDrawer ? const AppDrawer() : null,
+      floatingActionButtonLocation: floatingActionButtonLocation,
       floatingActionButton: floatingActionButton == null
           ? null
           : Consumer(
