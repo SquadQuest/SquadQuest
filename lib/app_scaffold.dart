@@ -88,9 +88,9 @@ class AppScaffold extends StatelessWidget {
               builder: (_, ref, child) {
                 final bottomPadding = ref.watch(_bottomPaddingProvider);
 
-                return Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [child!, SizedBox(height: bottomPadding)]);
+                return Padding(
+                    padding: EdgeInsets.only(bottom: bottomPadding ?? 0),
+                    child: child);
               }),
       bottomNavigationBar: bottomNavigationBar,
     ));
