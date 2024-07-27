@@ -3,19 +3,22 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
+import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
-import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/components/phone_number_field.dart';
+import 'package:squadquest/components/contacts_list.dart';
 
 final _statusGroupOrder = {
   FriendStatus.requested: 0,
   FriendStatus.accepted: 1,
   FriendStatus.declined: 2,
 };
+
+enum AddFriendMethod { number, contacts }
 
 class FriendsScreen extends ConsumerStatefulWidget {
   const FriendsScreen({super.key});
@@ -26,6 +29,7 @@ class FriendsScreen extends ConsumerStatefulWidget {
 
 class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   static final _requestDateFormat = DateFormat('MMM d, h:mm a');
+  final _fabKey = GlobalKey<ExpandableFabState>();
 
   @override
   Widget build(BuildContext context) {
@@ -38,9 +42,48 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 
     return AppScaffold(
       title: 'Buddy List',
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _sendFriendRequest(context),
-        child: const Icon(Icons.person_add),
+      floatingActionButtonLocation: ExpandableFab.location,
+      floatingActionButton: ExpandableFab(
+        key: _fabKey,
+        type: ExpandableFabType.up,
+        distance: 80,
+        childrenAnimation: ExpandableFabAnimation.none,
+        overlayStyle: ExpandableFabOverlayStyle(
+          color: Colors.black.withOpacity(0.75),
+          blur: 5,
+        ),
+        openButtonBuilder: RotateFloatingActionButtonBuilder(
+          child: const Icon(Icons.person_add),
+        ),
+        closeButtonBuilder: DefaultFloatingActionButtonBuilder(
+          child: const Icon(Icons.close),
+        ),
+        children: [
+          Row(
+            children: [
+              const Text('By Phone Number'),
+              const SizedBox(width: 20),
+              FloatingActionButton(
+                heroTag: null,
+                onPressed: () =>
+                    _sendFriendRequest(context, AddFriendMethod.number),
+                child: const Icon(Icons.pin_outlined),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              const Text('Search Contacts'),
+              const SizedBox(width: 20),
+              FloatingActionButton(
+                heroTag: null,
+                onPressed: () =>
+                    _sendFriendRequest(context, AddFriendMethod.contacts),
+                child: const Icon(Icons.search),
+              ),
+            ],
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -187,8 +230,16 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     ));
   }
 
-  void _sendFriendRequest(BuildContext context) async {
-    final String? phone = await _showAddFriendDialog();
+  void _sendFriendRequest(BuildContext context, AddFriendMethod method) async {
+    final fabState = _fabKey.currentState;
+    if (fabState != null && fabState.isOpen) {
+      fabState.toggle();
+    }
+
+    final String? phone = switch (method) {
+      AddFriendMethod.number => await _showPhoneNumberPicker(),
+      AddFriendMethod.contacts => await _showContactPicker(),
+    };
 
     if (phone == null) {
       // dialog cancelled
@@ -211,7 +262,24 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     ));
   }
 
-  Future<dynamic> _showAddFriendDialog() async {
+  Future<dynamic> _showContactPicker() async {
+    return showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (BuildContext context) => SizedBox(
+            height: MediaQuery.of(context).size.height * .75,
+            child: Padding(
+                padding: const EdgeInsets.only(top: 16, bottom: 16),
+                child: ContactsList(
+                    confirmBuilder: (contact, actions) => AlertDialog(
+                          title: const Text('Send friend request?'),
+                          content: Text(
+                              'Do you want to send a friend request to ${contact.displayName}?'),
+                          actions: actions,
+                        )))));
+  }
+
+  Future<dynamic> _showPhoneNumberPicker() async {
     return showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -242,8 +310,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                           return;
                         }
 
-                        Navigator.of(context)
-                            .pop(normalizePhone(phoneController.text));
+                        Navigator.of(context).pop(phoneController.text);
                       },
                     ),
                     const SizedBox(height: 32),
@@ -263,8 +330,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                                 return;
                               }
 
-                              Navigator.of(context)
-                                  .pop(normalizePhone(phoneController.text));
+                              Navigator.of(context).pop(phoneController.text);
                             },
                             child: const Text('Send'),
                           ),
