@@ -18,7 +18,7 @@ class AppScaffold extends StatelessWidget {
   final InstanceID? locationSharingAvailableEvent;
   final List<Widget>? actions;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
-  final FloatingActionButton? floatingActionButton;
+  final Widget? floatingActionButton;
   final Widget? bottomNavigationBar;
 
   AppScaffold(
