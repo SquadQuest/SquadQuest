@@ -39,8 +39,7 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
+    return Scaffold(
       body: Consumer(
           child: body,
           builder: (_, ref, child) {
@@ -96,7 +95,7 @@ class AppScaffold extends StatelessWidget {
                     child: child);
               }),
       bottomNavigationBar: bottomNavigationBar,
-    ));
+    );
   }
 
   void _updateBottomPadding(WidgetRef ref) {
