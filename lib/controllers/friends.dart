@@ -49,8 +49,8 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
     final supabase = ref.read(supabaseClientProvider);
 
     try {
-      final response = await supabase.functions
-          .invoke('send-friend-request', body: {'phone': phone});
+      final response = await supabase.functions.invoke('send-friend-request',
+          body: {'phone': normalizePhone(phone)});
 
       final insertedFriend = (await hydrate([response.data])).first;
 

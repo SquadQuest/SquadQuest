@@ -17,7 +17,8 @@ class AppScaffold extends StatelessWidget {
   final bool showLocationSharingSheet;
   final InstanceID? locationSharingAvailableEvent;
   final List<Widget>? actions;
-  final FloatingActionButton? floatingActionButton;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
+  final Widget? floatingActionButton;
   final Widget? bottomNavigationBar;
 
   AppScaffold(
@@ -30,6 +31,7 @@ class AppScaffold extends StatelessWidget {
       this.showLocationSharingSheet = true,
       this.locationSharingAvailableEvent,
       this.actions,
+      this.floatingActionButtonLocation,
       this.floatingActionButton,
       this.bottomNavigationBar});
 
@@ -37,8 +39,7 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
+    return Scaffold(
       body: Consumer(
           child: body,
           builder: (_, ref, child) {
@@ -81,6 +82,7 @@ class AppScaffold extends StatelessWidget {
         actions: actions,
       ),
       drawer: showDrawer ? const AppDrawer() : null,
+      floatingActionButtonLocation: floatingActionButtonLocation,
       floatingActionButton: floatingActionButton == null
           ? null
           : Consumer(
@@ -88,12 +90,12 @@ class AppScaffold extends StatelessWidget {
               builder: (_, ref, child) {
                 final bottomPadding = ref.watch(_bottomPaddingProvider);
 
-                return Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [child!, SizedBox(height: bottomPadding)]);
+                return Padding(
+                    padding: EdgeInsets.only(bottom: bottomPadding ?? 0),
+                    child: child);
               }),
       bottomNavigationBar: bottomNavigationBar,
-    ));
+    );
   }
 
   void _updateBottomPadding(WidgetRef ref) {
