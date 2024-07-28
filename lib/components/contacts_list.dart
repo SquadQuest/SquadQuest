@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+
 import 'package:squadquest/common.dart';
 import 'package:squadquest/services/contacts.dart';
+
+export 'package:flutter_contacts/flutter_contacts.dart' show Contact;
 
 class ContactsList extends ConsumerStatefulWidget {
   final Function(Contact contact, List<Widget> actions)? confirmBuilder;
@@ -103,8 +106,7 @@ class _ContactsListState extends ConsumerState<ContactsList> {
                           }
 
                           if (context.mounted) {
-                            Navigator.of(context)
-                                .pop(contact.phones.first.number);
+                            Navigator.of(context).pop(contact);
                           }
                         },
                         leading: CircleAvatar(

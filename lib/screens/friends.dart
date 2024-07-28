@@ -236,10 +236,18 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       fabState.toggle();
     }
 
-    final String? phone = switch (method) {
-      AddFriendMethod.number => await _showPhoneNumberPicker(),
-      AddFriendMethod.contacts => await _showContactPicker(),
-    };
+    String? phone;
+    Contact? contact;
+
+    switch (method) {
+      case AddFriendMethod.number:
+        phone = await _showPhoneNumberPicker();
+      case AddFriendMethod.contacts:
+        contact = await _showContactPicker();
+        if (contact != null) {
+          phone = contact.phones.first.number;
+        }
+    }
 
     if (phone == null) {
       // dialog cancelled
@@ -247,7 +255,23 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     }
 
     try {
-      await ref.read(friendsProvider.notifier).sendFriendRequest(phone);
+      final friendship = await ref
+          .read(friendsProvider.notifier)
+          .sendFriendRequest(
+              phone,
+              contact == null
+                  ? null
+                  : {
+                      'first_name': contact.name.first,
+                      'last_name': contact.name.last
+                    });
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(friendship == null
+            ? 'New friend invited to join SquadQuest!'
+            : 'Friend request sent!'),
+      ));
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -255,11 +279,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       ));
       return;
     }
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Friend request sent!'),
-    ));
   }
 
   Future<dynamic> _showContactPicker() async {
