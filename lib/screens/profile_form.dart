@@ -161,7 +161,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
               ],
               const SizedBox(height: 16),
               const Text(
-                'Your full name and photo will only be visible to confirmed friends',
+                'Your last name and photo will only ever be visible to your confirmed friends, everyone else will just see your first name when you post or respond to events',
                 style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
                 textAlign: TextAlign.center,
               ),
