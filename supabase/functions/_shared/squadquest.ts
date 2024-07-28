@@ -8,7 +8,14 @@ function scrubProfile(userProfile: { [key: string]: string | number }) {
 }
 
 function normalizePhone(phone: string): string {
-  return phone.replaceAll(/[^\d]/g, "");
+  phone = phone.replaceAll(/[^\d]/g, "");
+
+  // assume north american prefix
+  if (phone.length == 10 && phone[0] != "1") {
+    phone = `1${phone}`;
+  }
+
+  return phone;
 }
 
 export { normalizePhone, scrubProfile };
