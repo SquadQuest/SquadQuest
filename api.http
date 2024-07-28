@@ -9,7 +9,9 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
     {
-        "phone": "{{friendPhone}}"
+        "phone": "{{jarvus_userPhone}}",
+        "first_name": "Benjamin",
+        "last_name": "Franklin"
     }
 
 
