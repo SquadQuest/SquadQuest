@@ -7,4 +7,8 @@ function scrubProfile(userProfile: { [key: string]: string | number }) {
   };
 }
 
-export { scrubProfile };
+function normalizePhone(phone: string): string {
+  return phone.replaceAll(/[^\d]/g, "");
+}
+
+export { normalizePhone, scrubProfile };
