@@ -195,19 +195,27 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
   }
 
   void _detectCountryFromPhone(String value) {
-    final newCountry = PhoneCodes.getCountryDataByPhone(value);
+    // if phone number is valid under already-selected country, we don't want to change it
+    if (isPhoneValid(value,
+        defaultCountryCode: _selectedPhoneCountry.countryCode)) {
+      return;
+    }
 
-    if (newCountry != null) {
-      log("Found country: ${newCountry.country}");
-      if (isPhoneValid(value, defaultCountryCode: newCountry.countryCode)) {
-        log("Phone valid for ${newCountry.country}");
-        setState(() {
-          _internalController.text = formatPhone(value);
-          _selectedPhoneCountry = newCountry;
-        });
-      } else {
-        log("Phone invalid for ${newCountry.country}");
-      }
+    // attempt to detect country from phone number
+    final newCountry = PhoneCodes.getCountryDataByPhone(value);
+    if (newCountry == null) {
+      return;
+    }
+
+    log("Found country: ${newCountry.country}");
+    if (isPhoneValid(value, defaultCountryCode: newCountry.countryCode)) {
+      log("Phone valid for ${newCountry.country}");
+      setState(() {
+        _internalController.text = formatPhone(value);
+        _selectedPhoneCountry = newCountry;
+      });
+    } else {
+      log("Phone invalid for ${newCountry.country}");
     }
   }
 }
