@@ -13,13 +13,18 @@ function getTwilioClient() {
 async function sendSMS(phone: string, message: string): Promise<boolean> {
   const twilioClient = getTwilioClient();
 
-  const response = await twilioClient.messages.create({
-    body: message,
-    to: phone,
-    from: Deno.env.get("TWILIO_PHONE_NUMBER"),
-  });
+  try {
+    const response = await twilioClient.messages.create({
+      body: message,
+      to: phone,
+      from: Deno.env.get("TWILIO_PHONE_NUMBER"),
+    });
 
-  return response.status == "queued";
+    return response.status == "queued";
+  } catch (error) {
+    console.error(`Failed to send SMS: ${error}`);
+    return false;
+  }
 }
 
 export { getTwilioClient, sendSMS };
