@@ -1,8 +1,10 @@
 import 'dart:developer';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
@@ -104,7 +106,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 18),
                       ),
-                    )
+                    ),
+              if (kIsWeb) ...[
+                const Spacer(),
+                const Text('Install the app instead for the best experience:'),
+                Row(children: [
+                  Expanded(
+                      flex: 1,
+                      child: Padding(
+                          padding: const EdgeInsets.only(right: 12, top: 16),
+                          child: InkWell(
+                              onTap: () => launchUrl(Uri.parse(
+                                  'https://play.google.com/store/apps/details?id=app.squadquest')),
+                              child: Image.asset(
+                                  'images/app-stores/google-dark-on-white.png')))),
+                  Expanded(
+                      flex: 1,
+                      child: Padding(
+                          padding: const EdgeInsets.only(left: 12, top: 24),
+                          child: InkWell(
+                              onTap: () => launchUrl(Uri.parse(
+                                  'https://apps.apple.com/us/app/squadquest/id6504465196')),
+                              child: Image.asset(
+                                  'images/app-stores/apple-dark-on-white.png'))))
+                ]),
+              ]
             ],
           ),
         ),
