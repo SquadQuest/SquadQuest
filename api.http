@@ -9,7 +9,9 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
     {
-        "phone": "{{friendPhone}}"
+        "phone": "{{jarvus_userPhone}}",
+        "first_name": "Benjamin",
+        "last_name": "Franklin"
     }
 
 
@@ -80,3 +82,27 @@ Authorization: Bearer {{token}}
 
 GET {{baseUrl}}/get-friends-network
 Authorization: Bearer {{token}}
+
+
+### Trigger: INSERT profile
+
+POST {{baseUrl}}/on-profile-insert
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+    {
+        "type": "INSERT",
+        "table": "profiles",
+        "schema": "public",
+        "old_record": null,
+        "record": {
+            "id": "8ea503ff-403a-4d1d-8a0d-25df32476590",
+            "phone": "12152598338",
+            "photo": null,
+            "fcm_token": null,
+            "last_name": "Franklin",
+            "first_name": "Benjamin",
+            "fcm_token_app_build": null,
+            "fcm_token_updated_at": null
+        }
+    }

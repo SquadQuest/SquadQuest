@@ -31,6 +31,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   bool submitted = false;
 
   void _submitProfile(BuildContext context) async {
+    final session = ref.read(authControllerProvider);
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -40,7 +42,6 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     });
 
     try {
-      final session = ref.read(authControllerProvider);
       final supabase = ref.read(supabaseClientProvider);
       final profileController = ref.read(profileProvider.notifier);
 
@@ -103,7 +104,15 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
 
     if (!context.mounted) return;
 
-    context.go(widget.redirect ?? '/');
+    // redirect to next screen
+    if (widget.redirect != null) {
+      context.go(widget.redirect!);
+    } else if (session.user.appMetadata['invite_friends'] != null &&
+        session.user.appMetadata['invite_friends'].isNotEmpty) {
+      context.goNamed('friends');
+    } else {
+      context.goNamed('home');
+    }
   }
 
   @override

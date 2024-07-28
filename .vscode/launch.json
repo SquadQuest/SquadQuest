@@ -22,6 +22,25 @@
         },
         {
             "request": "launch",
+            "name": "Deno: on-profile-insert",
+            "type": "node",
+            "program": "${workspaceFolder}/supabase/functions/on-profile-insert/index.ts",
+            "cwd": "${workspaceFolder}/supabase/functions/on-profile-insert",
+            "env": {
+                "PORT": "8001"
+            },
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-wait",
+                "--allow-all"
+            ],
+            "attachSimplePort": 9229,
+            "outputCapture": "std",
+            "envFile": "${workspaceFolder}/supabase/functions/.env"
+        },
+        {
+            "request": "launch",
             "name": "Deno: push-test",
             "type": "node",
             "program": "${workspaceFolder}/supabase/functions/push-test/index.ts",

@@ -45,12 +45,16 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
     return data.map(Friend.fromMap).toList();
   }
 
-  Future<Friend> sendFriendRequest(String phone) async {
+  Future<Friend?> sendFriendRequest(String phone, [Map? extra]) async {
     final supabase = ref.read(supabaseClientProvider);
 
     try {
       final response = await supabase.functions.invoke('send-friend-request',
-          body: {'phone': normalizePhone(phone)});
+          body: {'phone': normalizePhone(phone), ...extra ?? {}});
+
+      if (response.data['invited'] == true) {
+        return null;
+      }
 
       final insertedFriend = (await hydrate([response.data])).first;
 
