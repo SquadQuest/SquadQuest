@@ -119,7 +119,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onTap: () => launchUrl(Uri.parse(
                                   'https://play.google.com/store/apps/details?id=app.squadquest')),
                               child: Image.asset(
-                                  'images/app-stores/google-dark-on-white.png')))),
+                                  'assets/images/app-stores/google-dark-on-white.png')))),
                   Expanded(
                       flex: 1,
                       child: Padding(
@@ -128,7 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onTap: () => launchUrl(Uri.parse(
                                   'https://apps.apple.com/us/app/squadquest/id6504465196')),
                               child: Image.asset(
-                                  'images/app-stores/apple-dark-on-white.png'))))
+                                  'assets/images/app-stores/apple-dark-on-white.png'))))
                 ]),
               ]
             ],
