@@ -36,7 +36,7 @@ serve(async (request) => {
   }
 
   // get requestee user
-  let { data: requesteeUser } = await serviceRoleSupabase.from(
+  const { data: requesteeUser } = await serviceRoleSupabase.from(
     "profiles",
   )
     .select("*")
