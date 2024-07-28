@@ -10,3 +10,18 @@ BEGIN
   RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+create view
+  public.auth_users as
+select
+  id,
+  phone,
+  raw_app_meta_data -> 'invite_friends' AS invite_friends,
+  raw_app_meta_data -> 'invite_events' AS invite_events
+from
+  auth.users;
+
+revoke all on public.auth_users
+from
+  anon,
+  authenticated;
