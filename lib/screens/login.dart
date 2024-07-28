@@ -80,6 +80,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       title: 'Log in to SquadQuest',
       showDrawer: false,
       showLocationSharingSheet: false,
+      bodyPadding: const EdgeInsets.all(16),
       body: AutofillGroup(
         child: Form(
           key: _formKey,
