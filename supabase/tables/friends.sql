@@ -10,8 +10,8 @@ create table
     status public.friend_status null default 'requested'::friend_status,
     constraint friends_pkey primary key (id),
     constraint requester_requestee unique (requester, requestee),
-    constraint friends_requester_fkey foreign key (requester) references profiles (id),
-    constraint friends_requestee_fkey foreign key (requestee) references profiles (id)
+    constraint friends_requester_fkey foreign key (requester) references profiles (id) on update cascade on delete cascade,
+    constraint friends_requestee_fkey foreign key (requestee) references profiles (id) on update cascade on delete cascade
   );
 
 alter table public.friends enable row level security;

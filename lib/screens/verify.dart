@@ -79,6 +79,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
       title: 'Verify phone number',
       showDrawer: false,
       showLocationSharingSheet: false,
+      bodyPadding: const EdgeInsets.all(16),
       body: AutofillGroup(
         child: Form(
           key: _formKey,

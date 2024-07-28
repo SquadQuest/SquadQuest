@@ -10,7 +10,7 @@ The SquadQuest maintainers ("we," "us," or "our") are committed to protecting th
 
 2. Usage Information: We may collect information about how you use the App, such as the features you access and the actions you take within the App. This information is used to improve our services and to provide a better user experience.
 
-3. Location Information: If you indicate that you are on your way to an event and choose to approve access to location information, your live location and recent location history will be transmitted to our servers and shared with other users who both have a mutually-approved friend connection with and are permitted to access the same event. Location data is retained on our servers for between one and two hours and then permenantly deleted.
+3. Location Information: If you indicate that you are on your way to an event and choose to approve access to location information, your live location and recent location history will be transmitted to our servers and shared with other users who both have a mutually-approved friend connection with and are permitted to access the same event. Location data is retained on our servers for approximately 12 hours and then permenantly deleted.
 
 ## 2. How We Use Your Information
 

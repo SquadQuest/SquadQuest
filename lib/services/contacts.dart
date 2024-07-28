@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
+export 'package:flutter_contacts/flutter_contacts.dart' show Contact;
+
 final contactsProvider =
     AsyncNotifierProvider<ContactsService, List<Contact>>(ContactsService.new);
 

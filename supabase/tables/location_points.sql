@@ -14,12 +14,12 @@ create table
 
 alter table public.location_points enable row level security;
 
--- delete data older than 3 days every hour
+-- trim old location data
 SELECT
   cron.schedule (
-    'trim location_points to 1 hour',
+    'trim location_points',
     '55 * * * *',
-    'DELETE FROM location_points WHERE timestamp < now() - interval 1 hour'
+    'DELETE FROM location_points WHERE timestamp < NOW() - INTERVAL ''12 hour'';'
   );
 
 CREATE FUNCTION get_users_with_location_points (for_event uuid) RETURNS uuid[] AS $$

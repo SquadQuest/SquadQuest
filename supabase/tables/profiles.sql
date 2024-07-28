@@ -23,3 +23,13 @@ SELECT
   first_name
 FROM
   profiles;
+
+CREATE TRIGGER profile_insert
+AFTER INSERT ON profiles FOR EACH ROW
+execute function "supabase_functions"."http_request" (
+  'http://functions:9000/on-profile-insert',
+  'POST',
+  '{"Content-Type":"application/json"}',
+  '{}',
+  '1000'
+);

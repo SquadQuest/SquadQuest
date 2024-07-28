@@ -8,7 +8,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Remove non-digits from the phone number
 String normalizePhone(String phone) {
-  return phone.replaceAll(RegExp(r'[^\d]'), '');
+  phone = phone.replaceAll(RegExp(r'[^\d]'), '');
+
+  // assume north american prefix
+  if (phone.length == 10 && phone[0] != '1') {
+    phone = '1$phone';
+  }
+
+  return phone;
 }
 
 String formatPhone(String phone) {
