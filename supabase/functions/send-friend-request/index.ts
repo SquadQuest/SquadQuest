@@ -84,9 +84,12 @@ serve(async (request) => {
       const inviteFriends = new Set(existingAuthUser.invite_friends);
       inviteFriends.add(currentUser.id);
 
-      serviceRoleSupabase.auth.admin.updateUserById(existingAuthUser.id, {
-        app_metadata: { invite_friends: Array.from(inviteFriends) },
-      }).then(console.log);
+      const { error: updateUserError } = await serviceRoleSupabase.auth.admin
+        .updateUserById(existingAuthUser.id, {
+          app_metadata: { invite_friends: Array.from(inviteFriends) },
+        });
+
+      if (updateUserError) throw updateUserError;
     } else {
       const { error: createUserError } = await serviceRoleSupabase.auth.admin
         .createUser({
