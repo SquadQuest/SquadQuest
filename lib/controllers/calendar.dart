@@ -106,7 +106,10 @@ class _MobileCalendarController implements CalendarController {
       attendees: [
         Attendee(
           name: user!.fullName,
-          emailAddress: "${user.fullName}@squadquest.app",
+          // TODO(@themightychris): Email is mandatory. Do we have a standard email address?
+          emailAddress:
+              "${user.fullName.replaceAll(RegExp(r'[\W]'), '').toLowerCase()}"
+              "@squadquest.app",
           role: AttendeeRole.Optional,
           androidAttendeeDetails: AndroidAttendeeDetails(
             attendanceStatus: switch (subscription.status) {
