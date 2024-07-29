@@ -110,9 +110,10 @@ class _MobileCalendarController implements CalendarController {
           emailAddress:
               "${user.fullName.replaceAll(RegExp(r'[\W]'), '').toLowerCase()}"
               "@squadquest.app",
-          role: AttendeeRole.Optional,
+          role: AttendeeRole.None,
           androidAttendeeDetails: AndroidAttendeeDetails(
             attendanceStatus: switch (subscription.status) {
+              // reversing to squadquest's enum:
               // None -> invited
               InstanceMemberStatus.invited => AndroidAttendanceStatus.Invited,
               InstanceMemberStatus.no => AndroidAttendanceStatus.Declined,
@@ -124,6 +125,7 @@ class _MobileCalendarController implements CalendarController {
           ),
           iosAttendeeDetails: IosAttendeeDetails(
             attendanceStatus: switch (subscription.status) {
+              // reversing to squadquest's enum:
               // Unknown -> Invited,
               // Delegated -> Maybe,
               // InProcess -> Yes,
@@ -139,8 +141,11 @@ class _MobileCalendarController implements CalendarController {
       ],
     ));
 
-    logger.i(
-        'CalendarController.upsertEvent: result=\n${result?.data ?? (result?.errors.map((e) => e.errorMessage).join('\n'))}');
+    if (result?.hasErrors == true) {
+      logger.e(
+          'CalendarController.upsertEvent: errors=\n${result?.errors.map((e) => e.errorMessage).join('\n')}');
+      return;
+    }
 
     _showEvent(result!.data);
 
@@ -201,8 +206,6 @@ class _MobileCalendarController implements CalendarController {
     );
 
     if (foundCalendar != null) {
-      logger.i(
-          'CalendarController._createCalendar: found calendar=${foundCalendar.id}');
       return foundCalendar.id!;
     } else {
       final newCalendar = await _calendar.createCalendar(
@@ -214,9 +217,6 @@ class _MobileCalendarController implements CalendarController {
       if (newCalendar.hasErrors) {
         throw newCalendar.errors.first.errorMessage;
       }
-
-      logger.i(
-          'CalendarController._createCalendar: created calendar=${newCalendar.data!}');
       return newCalendar.data!;
     }
   }
