@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/common.dart';
+import 'package:squadquest/controllers/calendar.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/models/instance.dart';
@@ -57,12 +58,15 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
 
       // update loaded rsvps with created/updated one
       if (state.hasValue && state.value != null) {
-        state = AsyncValue.data(updateListWithRecord<InstanceMember>(
+        state = AsyncValue.data(
+          updateListWithRecord<InstanceMember>(
             state.value!,
             (existing) =>
                 existing.instanceId == instanceId &&
                 existing.memberId == supabase.auth.currentUser!.id,
-            instanceMember));
+            instanceMember,
+          ),
+        );
       }
 
       return instanceMember;
@@ -119,9 +123,13 @@ class InstanceRsvpsController
     state = AsyncValue.data(await rsvpsController.hydrate(data));
   }
 
-  Future<InstanceMember?> save(InstanceMemberStatus? status) async {
+  Future<InstanceMember?> save(
+    InstanceMemberStatus? status,
+    Instance instance,
+  ) async {
     final supabase = ref.read(supabaseClientProvider);
     final rsvpsController = ref.read(rsvpsProvider.notifier);
+
     final savedRsvp = await rsvpsController.save(instanceId, status);
 
     // update loaded rsvps with created/updated one
@@ -132,6 +140,13 @@ class InstanceRsvpsController
               existing.instanceId == instanceId &&
               existing.memberId == supabase.auth.currentUser!.id,
           savedRsvp));
+    }
+
+    if (savedRsvp != null) {
+      CalendarController.instance.upsertEvent(
+        subscription: savedRsvp,
+        instance: instance,
+      );
     }
 
     return savedRsvp;
