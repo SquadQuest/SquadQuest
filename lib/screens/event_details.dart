@@ -142,42 +142,51 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 .toList()));
   }
 
-  Future<void> _saveRsvp(InstanceMemberStatus? status) async {
-    final eventRsvpsController =
-        ref.read(rsvpsPerEventProvider(widget.instanceId).notifier);
+  Future<void> _saveRsvp(
+      InstanceMemberStatus? status, Instance instance) async {
+    try {
+      final eventRsvpsController =
+          ref.read(rsvpsPerEventProvider(widget.instanceId).notifier);
 
-    final savedRsvp = await eventRsvpsController.save(status);
+      final savedRsvp = await eventRsvpsController.save(status, instance);
 
-    logger.i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
+      logger
+          .i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
 
-    // start or stop tracking
-    final locationController = ref.read(locationControllerProvider);
-    if (status == InstanceMemberStatus.omw) {
-      await locationController.startTracking(widget.instanceId);
-    } else {
-      await locationController.stopTracking(widget.instanceId);
-    }
-
-    if (_rsvpSnackbar != null) {
-      try {
-        _rsvpSnackbar!.close();
-      } catch (error) {
-        loggerWithStack.e(error);
+      // start or stop tracking
+      final locationController = ref.read(locationControllerProvider);
+      if (status == InstanceMemberStatus.omw) {
+        await locationController.startTracking(widget.instanceId);
+      } else {
+        await locationController.stopTracking(widget.instanceId);
       }
-      _rsvpSnackbar = null;
-    }
 
-    if (mounted) {
-      _rsvpSnackbar = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(savedRsvp == null
-            ? 'You\'ve removed your RSVP'
-            : 'You\'ve RSVPed ${savedRsvp.status.name}'),
-      ));
-    }
+      if (_rsvpSnackbar != null) {
+        try {
+          _rsvpSnackbar!.close();
+        } catch (error) {
+          loggerWithStack.e(error);
+        }
+        _rsvpSnackbar = null;
+      }
 
-    _rsvpSnackbar?.closed.then((reason) {
-      _rsvpSnackbar = null;
-    });
+      if (mounted) {
+        _rsvpSnackbar = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            savedRsvp == null
+                ? 'You\'ve removed your RSVP'
+                : 'You\'ve RSVPed ${savedRsvp.status.name}',
+          ),
+        ));
+      }
+
+      _rsvpSnackbar?.closed.then((reason) {
+        _rsvpSnackbar = null;
+      });
+    } catch (e) {
+      logger.e(e);
+      rethrow;
+    }
   }
 
   Future<void> _cancelEvent([bool canceled = true]) async {
@@ -803,61 +812,64 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: session == null
-          ? null
-          : Padding(
-              padding: const EdgeInsets.only(bottom: 16, top: 16),
-              child: Row(
-                children: [
-                  const SizedBox(width: 16),
-                  const Text(
-                    'RSVP: ',
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return ToggleButtons(
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(8)),
-                          constraints: BoxConstraints.expand(
-                              width: constraints.maxWidth / 4 -
-                                  (myRsvpSelection.length - 1)),
-                          isSelected: myRsvpSelection,
-                          onPressed: (int selectedIndex) async {
-                            // update button state (will not apply to UI until action updates RSVP list though)
-                            for (int buttonIndex = 0;
-                                buttonIndex < myRsvpSelection.length;
-                                buttonIndex++) {
-                              myRsvpSelection[buttonIndex] =
-                                  buttonIndex == selectedIndex &&
-                                      !myRsvpSelection[selectedIndex];
-                            }
+      bottomNavigationBar: eventAsync.whenOrNull(
+        data: (instance) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                const Text(
+                  'RSVP: ',
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return ToggleButtons(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(8)),
+                        constraints: BoxConstraints.expand(
+                            width: constraints.maxWidth / 4 -
+                                (myRsvpSelection.length - 1)),
+                        isSelected: myRsvpSelection,
+                        onPressed: session == null
+                            ? null
+                            : (int selectedIndex) async {
+                                // update button state (will not apply to UI until action updates RSVP list though)
+                                for (int buttonIndex = 0;
+                                    buttonIndex < myRsvpSelection.length;
+                                    buttonIndex++) {
+                                  myRsvpSelection[buttonIndex] =
+                                      buttonIndex == selectedIndex &&
+                                          !myRsvpSelection[selectedIndex];
+                                }
 
-                            // convert index and button state to desired status
-                            InstanceMemberStatus? status =
-                                myRsvpSelection[selectedIndex]
-                                    ? InstanceMemberStatus
-                                        .values[selectedIndex + 1]
-                                    : null;
+                                // convert index and button state to desired status
+                                InstanceMemberStatus? status =
+                                    myRsvpSelection[selectedIndex]
+                                        ? InstanceMemberStatus
+                                            .values[selectedIndex + 1]
+                                        : null;
 
-                            // save
-                            _saveRsvp(status);
-                          },
-                          children: const [
-                            Text('No'),
-                            Text('Maybe'),
-                            Text('Yes'),
-                            Text('OMW'),
-                          ],
-                        );
-                      },
-                    ),
+                                // save
+                                _saveRsvp(status, instance);
+                              },
+                        children: const [
+                          Text('No'),
+                          Text('Maybe'),
+                          Text('Yes'),
+                          Text('OMW'),
+                        ],
+                      );
+                    },
                   ),
-                  const SizedBox(width: 16),
-                ],
-              ),
+                ),
+              ],
             ),
+          );
+        },
+      ),
     );
   }
 }
