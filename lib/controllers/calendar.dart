@@ -69,7 +69,9 @@ class _MobileCalendarController implements CalendarController {
       {required InstanceMember subscription,
       required Instance instance}) async {
     await requestPermission();
+
     final calendarId = await _getCalendar();
+    final existingEvent = await _getEventIdByInstance(calendarId, instance);
 
     final user = subscription.member;
     final event = instance;
@@ -78,6 +80,7 @@ class _MobileCalendarController implements CalendarController {
 
     final result = await _calendar.createOrUpdateEvent(Event(
       calendarId,
+      eventId: existingEvent,
       title: event.title,
       status: switch (event.status) {
         InstanceStatus.draft => null,
@@ -154,6 +157,34 @@ class _MobileCalendarController implements CalendarController {
   @override
   Future<bool> requestPermission() async {
     return (await _calendar.requestPermissions()).data ?? false;
+  }
+
+  Future<String?> _getEventIdByInstance(
+      String calendarId, Instance instance) async {
+    final event = await _calendar.retrieveEvents(
+      calendarId,
+      RetrieveEventsParams(
+        startDate: instance.startTimeMin.subtract(const Duration(days: 1)),
+        endDate: instance.endTime?.add(const Duration(days: 1)) ??
+            instance.startTimeMin.add(const Duration(days: 60)),
+      ),
+    );
+
+    if (event.hasErrors) {
+      logger.e(
+          'CalendarController._getEventIdByInstance: errors=\n${event.errors.map((e) => e.errorMessage).join('\n')}');
+      return null;
+    }
+
+    if (event.data?.isNotEmpty != true) {
+      return null;
+    }
+
+    return event.data
+        ?.firstWhereOrNull(
+          (element) => element.description?.contains(instance.id!) == true,
+        )
+        ?.eventId;
   }
 
   Future<String> _getCalendar() async {
