@@ -290,11 +290,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       return null;
     }
 
+    final profile = await ref.read(profileProvider.future);
+
     if (!mounted) {
       return null;
     }
-
-    final profile = await ref.read(profileProvider.future);
 
     return showModalBottomSheet(
         context: context,
