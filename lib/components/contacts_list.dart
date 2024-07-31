@@ -45,10 +45,10 @@ class _ContactsListState extends ConsumerState<ContactsList> {
             ),
           ),
         ),
-        contactsService.permissionDenied
+        contactsService.permissionGranted != true
             ? const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('Permission to read contacts was denied'))
+                child: Text('Permission to read contacts has not been granted'))
             : contacts.when(
                 loading: () => const Padding(
                     padding: EdgeInsets.all(16),

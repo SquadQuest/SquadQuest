@@ -6,6 +6,8 @@ import 'package:grouped_list/grouped_list.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/services/contacts.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/models/friend.dart';
@@ -269,7 +271,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(friendship == null
-            ? 'New friend invited to join SquadQuest!'
+            ? 'New friend invited to join SquadQuest!\n\nThe pending request won\'t appear in your buddy list until they join.'
             : 'Friend request sent!'),
       ));
     } catch (error) {
@@ -282,6 +284,18 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   }
 
   Future<dynamic> _showContactPicker() async {
+    final contactsService = ref.read(contactsProvider.notifier);
+
+    if (!await contactsService.requestPermission()) {
+      return null;
+    }
+
+    if (!mounted) {
+      return null;
+    }
+
+    final profile = await ref.read(profileProvider.future);
+
     return showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -292,8 +306,24 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 child: ContactsList(
                     confirmBuilder: (contact, actions) => AlertDialog(
                           title: const Text('Send friend request?'),
-                          content: Text(
-                              'Do you want to send a friend request to ${contact.displayName}?'),
+                          content:
+                              Column(mainAxisSize: MainAxisSize.min, children: [
+                            Text(
+                                'Do you want to send a friend request to ${contact.displayName}?\n\n'
+                                'SquadQuest will send them the following message and register their'
+                                ' phone number so that if/when they sign up—even if by finding SquadQuest'
+                                ' in the app store without using your link—your friend request can'
+                                ' automatically added to their new account:'),
+                            Container(
+                                margin: const EdgeInsets.only(
+                                    top: 16, right: 8, left: 8),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey)),
+                                child: Text(
+                                    'Hi, ${profile!.fullName} wants to be your friend on SquadQuest!\n\n'
+                                    'Download the app at https://squadquest.app'))
+                          ]),
                           actions: actions,
                         )))));
   }
