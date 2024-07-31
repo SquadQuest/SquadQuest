@@ -39,7 +39,10 @@ class _MobileCalendarController implements CalendarController {
   static const defaultCalendarAccountName = "SquadQuest";
   static const defaultCalendarName = "SquadQuest Events";
 
+  bool? get permissionGranted => _permissionGranted;
+
   final DeviceCalendarPlugin _calendar = DeviceCalendarPlugin();
+  bool? _permissionGranted;
 
   // As an example, our default timezone is UTC.
   Location _currentLocation = getLocation('UTC');
@@ -68,7 +71,11 @@ class _MobileCalendarController implements CalendarController {
   Future<void> upsertEvent(
       {required InstanceMember subscription,
       required Instance instance}) async {
-    await requestPermission();
+    _permissionGranted = await requestPermission();
+
+    if (_permissionGranted != true) {
+      return;
+    }
 
     final calendarId = await _getCalendar();
     final existingEvent = await _getEventIdByInstance(calendarId, instance);
