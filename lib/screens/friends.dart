@@ -270,7 +270,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(friendship == null
-            ? 'New friend invited to join SquadQuest!'
+            ? 'New friend invited to join SquadQuest!\n\nThe pending request won\'t appear in your buddy list until they join.'
             : 'Friend request sent!'),
       ));
     } catch (error) {
