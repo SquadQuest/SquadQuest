@@ -6,6 +6,7 @@ import 'package:grouped_list/grouped_list.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/contacts.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/models/friend.dart';
@@ -282,6 +283,16 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   }
 
   Future<dynamic> _showContactPicker() async {
+    final contactsService = ref.read(contactsProvider.notifier);
+
+    if (!await contactsService.requestPermission()) {
+      return null;
+    }
+
+    if (!mounted) {
+      return null;
+    }
+
     return showModalBottomSheet(
         context: context,
         isScrollControlled: true,
