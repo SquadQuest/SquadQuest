@@ -83,8 +83,6 @@ class _MobileCalendarController implements CalendarController {
     final user = subscription.member;
     final event = instance;
 
-    final startTime = event.startTimeMin;
-
     final result = await _calendar.createOrUpdateEvent(Event(
       calendarId,
       eventId: existingEvent,
@@ -96,16 +94,20 @@ class _MobileCalendarController implements CalendarController {
       },
       description:
           "${event.notes}\n\nSquadQuest event: https://squadquest.app/event/${subscription.instanceId}",
-      start: TZDateTime.from(startTime, _currentLocation),
-      allDay: event.endTime == null,
-      end: event.endTime != null
-          ? TZDateTime.from(event.endTime!, _currentLocation)
-          : TZDateTime(
-              _currentLocation,
-              startTime.year,
-              startTime.month,
-              startTime.day,
-            ), // besides the nullality, this parameter is required
+      start: TZDateTime.from(event.startTimeMin, _currentLocation),
+      // endTime is a fuzzy concept right now that only gets set sometimes after an event is over
+      // -- in the future we may enable setting it ahead of time while creating an event
+      // allDay: event.endTime == null,
+      // end: event.endTime != null
+      //     ? TZDateTime.from(event.endTime!, _currentLocation)
+      //     : TZDateTime(
+      //         _currentLocation,
+      //         startTime.year,
+      //         startTime.month,
+      //         startTime.day,
+      //       ), // besides the nullality, this parameter is required
+      // for now, use the startTimeMax as the end—this indicates the range of time for "showing up"
+      end: TZDateTime.from(event.startTimeMax, _currentLocation),
       location: event.locationDescription,
       reminders: [
         Reminder(minutes: 60),
