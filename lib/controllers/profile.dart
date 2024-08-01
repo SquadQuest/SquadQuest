@@ -42,11 +42,12 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
 
     try {
       logger.t('ProfileController.fetch: loading');
-      final profiles = await supabase
+      final data = await supabase
           .from('profiles')
           .select(_defaultSelect)
-          .eq('id', session.user.id)
-          .withConverter((data) => data.map(UserProfile.fromMap).toList());
+          .eq('id', session.user.id);
+
+      final profiles = await hydrate(data);
       logger.t({'ProfileController.fetch: loaded': profiles});
 
       final profile = profiles.isNotEmpty ? profiles.first : null;
@@ -61,6 +62,10 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
     }
   }
 
+  Future<List<UserProfile>> hydrate(List<Map<String, dynamic>> data) async {
+    return data.map(UserProfile.fromMap).toList();
+  }
+
   Future<UserProfile> save(UserProfile profile) async {
     logger.i({'profile:save': profile});
 
@@ -73,9 +78,10 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
     final insertedData = await supabase
         .from('profiles')
         .upsert(profileData)
-        .select(_defaultSelect);
+        .select(_defaultSelect)
+        .single();
 
-    final insertedProfile = UserProfile.fromMap(insertedData.first);
+    final insertedProfile = (await hydrate([insertedData])).first;
 
     state = AsyncValue.data(insertedProfile);
 
