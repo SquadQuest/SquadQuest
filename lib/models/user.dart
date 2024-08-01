@@ -2,6 +2,14 @@ import 'package:squadquest/common.dart';
 
 typedef UserID = String;
 
+enum NotificationType {
+  friendRequest,
+  eventInvitation,
+  eventChange,
+  friendsEventPosted,
+  publicEventPosted
+}
+
 class UserProfile {
   UserProfile(
       {required this.id,
@@ -12,6 +20,7 @@ class UserProfile {
       required this.fcmTokenUpdatedAt,
       required this.fcmTokenAppBuild,
       required this.photo,
+      required this.enabledNotifications,
       this.mutuals});
 
   final UserID id;
@@ -22,6 +31,7 @@ class UserProfile {
   final DateTime? fcmTokenUpdatedAt;
   final int? fcmTokenAppBuild;
   final Uri? photo;
+  final Set<NotificationType> enabledNotifications;
   final List<UserID>? mutuals;
 
   String get fullName => '$firstName $lastName';
@@ -42,6 +52,14 @@ class UserProfile {
           : DateTime.parse(map['fcm_token_updated_at']).toLocal(),
       fcmTokenAppBuild: map['fcm_token_app_build'],
       photo: map['photo'] == null ? null : Uri.parse(map['photo']),
+      enabledNotifications: map['enabled_notifications'] == null
+          ? {}
+          : map['enabled_notifications']
+              .map((type) => NotificationType.values.firstWhere(
+                    (e) => e.name == type,
+                  ))
+              .toSet()
+              .cast<NotificationType>(),
       mutuals:
           map['mutuals'] == null ? null : List<UserID>.from(map['mutuals']),
     );
@@ -56,6 +74,8 @@ class UserProfile {
       'fcm_token': fcmToken,
       'fcm_token_updated_at': fcmTokenUpdatedAt?.toUtc().toIso8601String(),
       'fcm_token_app_build': fcmTokenAppBuild,
+      'enabled_notifications':
+          enabledNotifications.map((type) => type.name).toList().cast<String>(),
       'photo': photo?.toString(),
     };
   }

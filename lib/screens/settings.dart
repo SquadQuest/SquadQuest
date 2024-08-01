@@ -73,6 +73,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           },
           secondary: const Icon(Icons.pin_drop),
         ),
+        Text('Notifications', style: Theme.of(context).textTheme.headlineSmall),
+        const NotificationOptions(),
         Text('Developer', style: Theme.of(context).textTheme.headlineSmall),
         ListTile(
             leading: const Icon(Icons.token),

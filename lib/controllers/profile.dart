@@ -104,4 +104,35 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
 
     return save(patchedProfile);
   }
+
+  Future<void> setNotificationEnabled(
+      NotificationType type, bool enabled) async {
+    final enabledNotifications = state.value!.enabledNotifications;
+
+    if (enabled) {
+      enabledNotifications.add(type);
+    } else {
+      enabledNotifications.remove(type);
+    }
+
+    try {
+      final updatedData = await ref
+          .read(supabaseClientProvider)
+          .from('profiles')
+          .update({
+            'enabled_notifications':
+                enabledNotifications.map((e) => e.name).toList()
+          })
+          .eq('id', state.value!.id)
+          .select()
+          .single();
+
+      final updatedProfile = (await hydrate([updatedData])).first;
+
+      state = AsyncValue.data(updatedProfile);
+    } catch (error) {
+      loggerWithStack.e({'error patching enabled_notifications': error});
+      rethrow;
+    }
+  }
 }
