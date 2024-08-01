@@ -1,11 +1,13 @@
 import 'package:device_calendar/device_calendar.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/timezone.dart' as tz;
+
 import 'package:squadquest/common.dart';
 import 'package:squadquest/logger.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:flutter/foundation.dart';
 import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/user.dart';
 
 abstract interface class CalendarController {
   static CalendarController? _instance;
@@ -31,8 +33,7 @@ abstract interface class CalendarController {
     required InstanceMember subscription,
     required Instance instance,
   });
-  Future<void> editEventRSVP();
-  Future<void> findEvent();
+  Future<void> deleteEvent();
 }
 
 class _MobileCalendarController implements CalendarController {
@@ -68,9 +69,15 @@ class _MobileCalendarController implements CalendarController {
   }
 
   @override
-  Future<void> upsertEvent(
-      {required InstanceMember subscription,
-      required Instance instance}) async {
+  Future<bool> requestPermission() async {
+    return (await _calendar.requestPermissions()).data ?? false;
+  }
+
+  @override
+  Future<void> upsertEvent({
+    required Instance instance,
+    required InstanceMember? subscription,
+  }) async {
     _permissionGranted = await requestPermission();
 
     if (_permissionGranted != true) {
@@ -80,20 +87,17 @@ class _MobileCalendarController implements CalendarController {
     final calendarId = await _getCalendar();
     final existingEvent = await _getEventIdByInstance(calendarId, instance);
 
-    final user = subscription.member;
+    final user = subscription?.member;
     final event = instance;
+    final eventCreatorId = (instance.createdBy?.id ?? instance.createdById);
 
     final result = await _calendar.createOrUpdateEvent(Event(
       calendarId,
       eventId: existingEvent,
       title: event.title,
-      status: switch (event.status) {
-        InstanceStatus.draft => null,
-        InstanceStatus.live => EventStatus.Confirmed,
-        InstanceStatus.canceled => EventStatus.Canceled,
-      },
+      location: event.locationDescription,
       description:
-          "${event.notes}\n\nSquadQuest event: https://squadquest.app/event/${subscription.instanceId}",
+          "${event.notes}\n\nSquadQuest event: https://squadquest.app/event/${instance.id!}",
       start: TZDateTime.from(event.startTimeMin, _currentLocation),
       // endTime is a fuzzy concept right now that only gets set sometimes after an event is over
       // -- in the future we may enable setting it ahead of time while creating an event
@@ -108,45 +112,21 @@ class _MobileCalendarController implements CalendarController {
       //       ), // besides the nullality, this parameter is required
       // for now, use the startTimeMax as the end—this indicates the range of time for "showing up"
       end: TZDateTime.from(event.startTimeMax, _currentLocation),
-      location: event.locationDescription,
       reminders: [
         Reminder(minutes: 60),
       ],
+      status: switch (event.status) {
+        InstanceStatus.draft => null,
+        InstanceStatus.live => EventStatus.Confirmed,
+        InstanceStatus.canceled => EventStatus.Canceled,
+      },
       attendees: [
-        Attendee(
-          name: user!.fullName,
-          // TODO(@themightychris): Email is mandatory. Do we have a standard email address?
-          emailAddress:
-              "${user.fullName.replaceAll(RegExp(r'[\W]'), '').toLowerCase()}"
-              "@squadquest.app",
-          role: AttendeeRole.None,
-          androidAttendeeDetails: AndroidAttendeeDetails(
-            attendanceStatus: switch (subscription.status) {
-              // reversing to squadquest's enum:
-              // None -> invited
-              InstanceMemberStatus.invited => AndroidAttendanceStatus.Invited,
-              InstanceMemberStatus.no => AndroidAttendanceStatus.Declined,
-              InstanceMemberStatus.maybe => AndroidAttendanceStatus.Tentative,
-              InstanceMemberStatus.yes ||
-              InstanceMemberStatus.omw =>
-                AndroidAttendanceStatus.Accepted,
-            },
-          ),
-          iosAttendeeDetails: IosAttendeeDetails(
-            attendanceStatus: switch (subscription.status) {
-              // reversing to squadquest's enum:
-              // Unknown -> Invited,
-              // Delegated -> Maybe,
-              // InProcess -> Yes,
-              // Completed -> Yes,
-              InstanceMemberStatus.invited => IosAttendanceStatus.Pending,
-              InstanceMemberStatus.no => IosAttendanceStatus.Declined,
-              InstanceMemberStatus.maybe => IosAttendanceStatus.Tentative,
-              InstanceMemberStatus.yes => IosAttendanceStatus.Accepted,
-              InstanceMemberStatus.omw => IosAttendanceStatus.InProcess,
-            },
-          ),
-        ),
+        if (subscription != null && user != null)
+          _UserAttendee.fromUser(
+            user,
+            eventCreatorId == user.id,
+            subscription.status,
+          )
       ],
     ));
 
@@ -162,18 +142,9 @@ class _MobileCalendarController implements CalendarController {
   }
 
   @override
-  Future<void> editEventRSVP() {
+  Future<void> deleteEvent() {
+    // TODO: implement deleteEvent
     throw UnimplementedError();
-  }
-
-  @override
-  Future<void> findEvent() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<bool> requestPermission() async {
-    return (await _calendar.requestPermissions()).data ?? false;
   }
 
   Future<String?> _getEventIdByInstance(
@@ -257,11 +228,64 @@ class _MobileCalendarController implements CalendarController {
         'start=${eventData.start}\n'
         'end=${eventData.end}\n'
         'location=${eventData.location}\n'
-        'attendees=${eventData.attendees}\n'
+        'attendees=${eventData.attendees?.map(
+              (e) => "\n"
+                  "\tname=${e?.name}\n"
+                  "\temailAddress=${e?.emailAddress}\n"
+                  "\trole=${e?.role}\n"
+                  "\tisCurrentUser=${e?.isCurrentUser}\n"
+                  "\tisOrganiser=${e?.isOrganiser}\n"
+                  "\tandroidAttendeeDetails=${e?.androidAttendeeDetails?.attendanceStatus?.enumToString}\n"
+                  "\tiosAttendeeDetails=${e?.iosAttendeeDetails?.attendanceStatus?.enumToString}\n",
+            ).join('\n')}\n'
         'reminders=${eventData.reminders}\n'
         'status=${eventData.status}\n'
         'allDay=${eventData.allDay}\n',
       );
     }
+  }
+}
+
+extension _UserAttendee on Attendee {
+  static fromUser(
+    UserProfile user,
+    bool isOrganizer,
+    InstanceMemberStatus? rsvpStatus,
+  ) {
+    Attendee(
+      isCurrentUser: true,
+      isOrganiser: isOrganizer,
+      name: user.fullName,
+      emailAddress: "calendars@squadquest.app",
+      role: AttendeeRole.None,
+      androidAttendeeDetails: AndroidAttendeeDetails(
+        attendanceStatus: switch (rsvpStatus) {
+          // reversing to squadquest's enum:
+          // None -> invited
+          null => AndroidAttendanceStatus.None,
+          InstanceMemberStatus.invited => AndroidAttendanceStatus.Invited,
+          InstanceMemberStatus.no => AndroidAttendanceStatus.Declined,
+          InstanceMemberStatus.maybe => AndroidAttendanceStatus.Tentative,
+          InstanceMemberStatus.yes ||
+          InstanceMemberStatus.omw =>
+            AndroidAttendanceStatus.Accepted,
+        },
+      ),
+      iosAttendeeDetails: IosAttendeeDetails(
+        attendanceStatus: switch (rsvpStatus) {
+          // reversing to squadquest's enum:
+          // Unknown -> Invited,
+          // Delegated -> Maybe,
+          // InProcess -> Yes,
+          // Completed -> Yes,
+          null => IosAttendanceStatus.Unknown,
+          InstanceMemberStatus.invited => IosAttendanceStatus.Pending,
+          InstanceMemberStatus.no => IosAttendanceStatus.Declined,
+          InstanceMemberStatus.maybe => IosAttendanceStatus.Tentative,
+          InstanceMemberStatus.yes => IosAttendanceStatus.Accepted,
+          InstanceMemberStatus.omw => IosAttendanceStatus.InProcess,
+        },
+      ),
+    );
   }
 }
