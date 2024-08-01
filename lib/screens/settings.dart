@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/components/forms/notifications.dart';
 import 'package:squadquest/controllers/app_versions.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/firebase.dart';
@@ -37,7 +38,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return AppScaffold(
       title: 'Settings',
       bodyPadding: const EdgeInsets.all(16),
-      body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      body: ListView(children: [
+        Text('General', style: Theme.of(context).textTheme.headlineSmall),
         ListTile(
           title: const Text('Theme Mode'),
           trailing: DropdownButton<ThemeMode>(
@@ -63,15 +65,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           leading: const Icon(Icons.color_lens),
         ),
         CheckboxListTile(
-          title: const Text('Developer mode'),
-          value: developerMode,
-          onChanged: (bool? developerMode) {
-            ref.read(developerModeProvider.notifier).state =
-                developerMode ?? false;
-          },
-          secondary: const Icon(Icons.developer_mode),
-        ),
-        CheckboxListTile(
           title: const Text('Location sharing'),
           value: locationSharingEnabled ?? false,
           onChanged: (bool? locationSharingEnabled) {
@@ -80,35 +73,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           },
           secondary: const Icon(Icons.pin_drop),
         ),
-        const Spacer(),
+        Text('Developer', style: Theme.of(context).textTheme.headlineSmall),
+        ListTile(
+            leading: const Icon(Icons.token),
+            title: const Text('App Version'),
+            trailing: Text(
+                '${packageInfo.value?.version}+${packageInfo.value?.buildNumber}',
+                style: const TextStyle(fontSize: 16))),
+        CheckboxListTile(
+          title: const Text('Developer mode'),
+          value: developerMode,
+          onChanged: (bool? developerMode) {
+            ref.read(developerModeProvider.notifier).state =
+                developerMode ?? false;
+          },
+          secondary: const Icon(Icons.build),
+        ),
         if (developerMode) ...[
-          if (browser != null) ...[
-            Text('Browser name: ${browser!.browser}'),
-            Text('Browser version ${browser!.version}'),
-            const SizedBox(height: 16),
-          ],
-          Text('FCM token: $fcmToken'),
-          const SizedBox(height: 16),
-          ElevatedButton(
-              onPressed: () async {
-                await ref
-                    .read(firebaseMessagingServiceProvider)
-                    .requestPermissions();
-              },
-              child: const Text('Request notification permission')),
-          const SizedBox(height: 16),
-          ElevatedButton(
-              onPressed: () async {
-                await ref.read(settingsControllerProvider).clear();
-              },
-              child: const Text('Clear SharedPreferences')),
-          const SizedBox(height: 16),
-          Text('Installer Store: ${packageInfo.value?.installerStore}',
-              textAlign: TextAlign.center),
+          ListTile(
+            title: const Text('Notification permission'),
+            trailing: ElevatedButton(
+                onPressed: () async {
+                  await ref
+                      .read(firebaseMessagingServiceProvider)
+                      .requestPermissions();
+                },
+                child: const Text('Request')),
+          ),
+          ListTile(
+            title: const Text('Shared preferences'),
+            trailing: ElevatedButton(
+                onPressed: () async {
+                  await ref.read(settingsControllerProvider).clear();
+                },
+                child: const Text('Clear')),
+          ),
+          ListTile(
+            title: const Text('Installer store'),
+            trailing:
+                Text(packageInfo.value?.installerStore ?? 'Not available'),
+          ),
+          ListTile(
+            title: const Text('Browser name'),
+            trailing: Text(browser?.browser ?? 'Not available'),
+          ),
+          ListTile(
+            title: const Text('Browser version'),
+            trailing: Text(browser?.version ?? 'Not available'),
+          ),
+          ListTile(
+            title: const Text('FCM Token'),
+            subtitle: Text(fcmToken ?? 'Not available',
+                style: const TextStyle(fontSize: 12)),
+          ),
         ],
-        Text(
-            'App version: ${packageInfo.value?.version}+${packageInfo.value?.buildNumber}',
-            textAlign: TextAlign.center),
       ]),
     );
   }
