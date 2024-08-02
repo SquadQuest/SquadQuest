@@ -77,6 +77,7 @@ final _rsvpsFriendsProvider = FutureProvider.autoDispose
   // filter out non-friend members who haven't responded to their invitation
   return rsvpFriends
       .where((rsvpMember) =>
+          rsvpMember.rsvp.memberId == session.user.id ||
           rsvpMember.rsvp.status != InstanceMemberStatus.invited ||
           rsvpMember.friendship != null)
       .toList();
