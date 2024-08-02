@@ -120,10 +120,13 @@ serve(async (request) => {
   for (const insertedInvitation of insertedInvitations!) {
     // scrub profile data
     const fcmToken = insertedInvitation.member.fcm_token;
+    const notificationEnabled = insertedInvitation.member
+      .enabled_notifications
+      .includes("eventInvitation");
     insertedInvitation.created_by = scrubProfile(insertedInvitation.created_by);
     insertedInvitation.member = scrubProfile(insertedInvitation.member);
 
-    if (fcmToken) {
+    if (fcmToken && notificationEnabled) {
       try {
         await postMessage({
           notificationType: "invitation",

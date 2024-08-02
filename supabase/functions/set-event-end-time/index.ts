@@ -66,7 +66,10 @@ serve(async (request) => {
 
   // send notification to all queued recipients
   for (const profile of profiles!) {
-    if (!profile.fcm_token) {
+    if (
+      !profile.fcm_token ||
+      !profile.enabled_notifications.includes("eventChange")
+    ) {
       continue;
     }
 
