@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:squadquest/controllers/settings.dart';
 
 import 'package:squadquest/router.dart';
+import 'package:squadquest/controllers/settings.dart';
 
 export 'package:flutter_contacts/flutter_contacts.dart' show Contact;
 
@@ -36,9 +36,10 @@ class ContactsService extends AsyncNotifier<List<Contact>> {
     }
 
     final prefs = ref.read(sharedPreferencesProvider);
-    final confirmedContactsAccess = prefs.getBool('confirmedContactsAccess');
+    final confirmedContactsPermission =
+        prefs.getBool('confirmedContactsPermission');
 
-    final confirmed = confirmedContactsAccess == true ||
+    final confirmed = confirmedContactsPermission == true ||
         true ==
             await showDialog<bool>(
                 context: navigatorKey.currentContext!,
@@ -65,7 +66,7 @@ class ContactsService extends AsyncNotifier<List<Contact>> {
       return false;
     }
 
-    await prefs.setBool('confirmedContactsAccess', true);
+    await prefs.setBool('confirmedContactsPermission', true);
 
     _permissionGranted =
         await FlutterContacts.requestPermission(readonly: true);
