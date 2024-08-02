@@ -83,6 +83,32 @@ class _NotificationOptionsState extends ConsumerState<NotificationOptions> {
           },
           secondary: const Icon(Icons.event),
         ),
+        CheckboxListTile(
+          title: const Text('Guest RSVPs'),
+          subtitle: const Text(
+              'When someone changes their RSVP status to an event you posted'),
+          value: profile.value?.enabledNotifications
+                  .contains(NotificationType.guestRsvp) ??
+              false,
+          onChanged: (bool? enabled) async {
+            await profileController.setNotificationEnabled(
+                NotificationType.guestRsvp, enabled!);
+          },
+          secondary: const Icon(Icons.mail),
+        ),
+        CheckboxListTile(
+          title: const Text('Friends OMW'),
+          subtitle: const Text(
+              'When a friend is on their way to an event you RSVPd to'),
+          value: profile.value?.enabledNotifications
+                  .contains(NotificationType.friendOnTheWay) ??
+              false,
+          onChanged: (bool? enabled) async {
+            await profileController.setNotificationEnabled(
+                NotificationType.friendOnTheWay, enabled!);
+          },
+          secondary: const Icon(Icons.run_circle_outlined),
+        ),
       ],
     );
   }

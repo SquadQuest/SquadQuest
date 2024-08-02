@@ -3,7 +3,9 @@ create type public.notification_type as enum(
   'eventInvitation',
   'eventChange',
   'friendsEventPosted',
-  'publicEventPosted'
+  'publicEventPosted',
+  'guestRsvp',
+  'friendOnTheWay'
 );
 
 create table
@@ -16,7 +18,7 @@ create table
     photo text null,
     fcm_token_updated_at timestamp with time zone null,
     fcm_token_app_build integer null,
-    enabled_notifications notification_type[] not null default '{friendRequest,eventInvitation,eventChange,friendsEventPosted,publicEventPosted}'::notification_type[],
+    enabled_notifications notification_type[] not null default '{friendRequest,eventInvitation,eventChange,friendsEventPosted,publicEventPosted,guestRsvp,friendOnTheWay}'::notification_type[],
     constraint profiles_pkey primary key (id),
     constraint profiles_id_fkey foreign key (id) references auth.users (id)
   );
