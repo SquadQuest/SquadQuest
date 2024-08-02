@@ -71,7 +71,7 @@ class ContactsService extends AsyncNotifier<List<Contact>> {
         await FlutterContacts.requestPermission(readonly: true);
 
     if (_permissionGranted == true) {
-      await refresh();
+      refresh();
     }
 
     return _permissionGranted!;
