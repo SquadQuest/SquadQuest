@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -8,8 +9,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:squadquest/logger.dart';
+import 'package:squadquest/router.dart';
 import 'package:squadquest/firebase_options.dart';
 import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/components/forms/notifications.dart';
 import 'package:squadquest/interop/set_handler.stub.dart'
     if (dart.library.html) 'package:squadquest/interop/set_handler.web.dart';
 
@@ -69,6 +73,7 @@ class FirebaseMessagingService {
   late final PackageInfo _platformInfo;
   final _streamController = StreamController<FirebaseStreamRecord>.broadcast();
   Stream<FirebaseStreamRecord> get stream => _streamController.stream;
+  bool _requestingPermission = false;
 
   FirebaseMessagingService(this.ref) {
     _init();
@@ -83,29 +88,12 @@ class FirebaseMessagingService {
     // obtain FCM instance
     messaging = FirebaseMessaging.instance;
 
-    // request permissions
+    // configure notification presentation
     await messaging.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,
     );
-
-    // get FCM device token
-    try {
-      token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
-      ref.read(firebaseMessagingTokenProvider.notifier).state = token;
-    } catch (error) {
-      logger.e('Error getting FCM token', error: error);
-    }
-
-    // save token initially if profile loaded
-    await _writeToken();
-
-    // save FCM token to profile—main forced the service to initialize before the app is run so profile will never be set already
-    ref.listen(profileProvider, (previous, profile) async {
-      if (profile.isLoading) return;
-      await _writeToken();
-    });
 
     // save FCM token on refresh
     messaging.onTokenRefresh.listen((token) async {
@@ -130,6 +118,17 @@ class FirebaseMessagingService {
       // set a global handler on window instead of listening to messages to ensure there is only ever a single handler across hot reloads
       setWebHandler('onWebNotificationOpened', _onWebNotificationOpened);
     }
+
+    // save FCM token to profile—main forced the service to initialize before the app is run so profile will never be set already
+    ref.listen(profileProvider, (previous, profile) async {
+      if (profile.isLoading) return;
+      await _writeToken();
+
+      if (profile.value != null) {
+        await Future.delayed(const Duration(seconds: 2));
+        await requestPermissions();
+      }
+    }, fireImmediately: true);
   }
 
   Future<void> _writeToken() async {
@@ -201,11 +200,48 @@ class FirebaseMessagingService {
     _streamController.add((type: 'notification-opened', message: message));
   }
 
-  Future<NotificationSettings?> requestPermissions() async {
-    if (settings != null) return settings!;
+  Future<void> requestPermissions() async {
+    if (settings != null || _requestingPermission) return;
+
+    logger.t('fcm: requesting permissions...');
+    _requestingPermission = true;
+
+    final prefs = ref.read(sharedPreferencesProvider);
+    final confirmedNotificationPermission =
+        prefs.getBool('confirmedNotificationPermission');
+
+    if (confirmedNotificationPermission != true) {
+      await showDialog<void>(
+        context: navigatorKey.currentContext!,
+        barrierDismissible: false,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Notifications'),
+          contentPadding: const EdgeInsets.all(0),
+          content: const SingleChildScrollView(
+              child: Column(children: [
+            Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child:
+                    Text('SquadQuest isn\'t very useful without notifications,'
+                        ' you\'ll be asked next to grant the app permission to'
+                        ' show them.\n\nYou can review what you\'ll be notified'
+                        ' about below, or any time from the settings screen:')),
+            NotificationOptions()
+          ])),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      );
+
+      prefs.setBool('confirmedNotificationPermission', true);
+    }
 
     try {
-      return settings = await messaging.requestPermission(
+      settings = await messaging.requestPermission(
         alert: true,
         announcement: false,
         badge: true,
@@ -215,8 +251,18 @@ class FirebaseMessagingService {
         sound: true,
       );
     } catch (error) {
-      logger.e('Error requesting FCM permissions', error: error);
-      return null;
+      logger.e('fcm: error requesting permissions', error: error);
     }
+
+    // get FCM device token
+    try {
+      token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
+      ref.read(firebaseMessagingTokenProvider.notifier).state = token;
+      await _writeToken();
+    } catch (error) {
+      logger.e('fcm: error getting token', error: error);
+    }
+
+    _requestingPermission = false;
   }
 }
