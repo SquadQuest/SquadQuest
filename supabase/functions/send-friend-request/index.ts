@@ -149,11 +149,13 @@ serve(async (request) => {
 
   // scrub profile data
   const fcmToken = newFriendRequest.requestee.fcm_token;
+  const notificationEnabled = newFriendRequest.requestee.enabled_notifications
+    .includes("friendRequest");
   newFriendRequest.requester = scrubProfile(newFriendRequest.requester);
   newFriendRequest.requestee = scrubProfile(newFriendRequest.requestee);
 
   // send notification to recipient
-  if (fcmToken) {
+  if (fcmToken && notificationEnabled) {
     try {
       await postMessage({
         notificationType: "friend-request-received",

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/router.dart';
 import 'package:squadquest/drawer.dart';
-import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
@@ -73,14 +72,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       await ref.read(appVersionsProvider.notifier).showUpdateAlertIfAvailable();
     } catch (error, stackTrack) {
       logger.e({'error showing update alert': error}, stackTrace: stackTrack);
-    }
-
-    // request permissions
-    try {
-      logger.t('_continueLoading: requesting permissions...');
-      await ref.read(firebaseMessagingServiceProvider).requestPermissions();
-    } catch (error, stackTrace) {
-      logger.e({'error requesting permissions': error}, stackTrace: stackTrace);
     }
 
     // route to initial screen
