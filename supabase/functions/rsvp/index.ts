@@ -106,6 +106,7 @@ serve(async (request) => {
 
   // branch actions
   const defaultSelect = "*, member(*)";
+  // TODO: only first name if not friend
   const userFullName =
     `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`;
   let rsvp;
@@ -188,6 +189,7 @@ serve(async (request) => {
     }
 
     // send to other guests who are RSVP'd for OMWs
+    // TODO: only friends
     if (status == "omw") {
       const { data: rsvps } = await serviceRoleSupabase
         .from(
@@ -207,7 +209,12 @@ serve(async (request) => {
 
     // send notification to all queued recipients
     for (const profile of profilesToNotify) {
-      if (!profile.fcm_token) {
+      if (
+        !profile.fcm_token ||
+        !profile.enabled_notifications.includes(
+          profile.id == event.created_by ? "guestRsvp" : "friendOnTheWay",
+        )
+      ) {
         continue;
       }
 
