@@ -1,5 +1,7 @@
 # SquadQuest
 
+Bring your social circle to life with SquadQuest: the free, privacy-first app for planning real-world hangouts.
+
 - [What is SquadQuest?](#what-is-squadquest)
 - [Screenshots](#screenshots)
 - [Features](#features)
