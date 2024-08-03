@@ -114,7 +114,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Expanded(
                       flex: 1,
                       child: Padding(
-                          padding: const EdgeInsets.only(right: 12, top: 16),
+                          padding: const EdgeInsets.only(
+                              right: 12, top: 16, bottom: 16),
                           child: InkWell(
                               onTap: () => launchUrl(Uri.parse(
                                   'https://play.google.com/store/apps/details?id=app.squadquest')),
@@ -123,7 +124,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Expanded(
                       flex: 1,
                       child: Padding(
-                          padding: const EdgeInsets.only(left: 12, top: 24),
+                          padding: const EdgeInsets.only(
+                              left: 12, top: 16, bottom: 16),
                           child: InkWell(
                               onTap: () => launchUrl(Uri.parse(
                                   'https://apps.apple.com/us/app/squadquest/id6504465196')),
