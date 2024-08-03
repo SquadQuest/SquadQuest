@@ -107,32 +107,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                     ),
-              if (kIsWeb) ...[
-                const Spacer(),
-                const Text('Install the app instead for the best experience:'),
-                Row(children: [
-                  Expanded(
-                      flex: 1,
-                      child: Padding(
-                          padding: const EdgeInsets.only(
-                              right: 12, top: 16, bottom: 16),
-                          child: InkWell(
-                              onTap: () => launchUrl(Uri.parse(
-                                  'https://play.google.com/store/apps/details?id=app.squadquest')),
-                              child: Image.asset(
-                                  'assets/images/app-stores/google-dark-on-white.png')))),
-                  Expanded(
-                      flex: 1,
-                      child: Padding(
-                          padding: const EdgeInsets.only(
-                              left: 12, top: 16, bottom: 16),
-                          child: InkWell(
-                              onTap: () => launchUrl(Uri.parse(
-                                  'https://apps.apple.com/us/app/squadquest/id6504465196')),
-                              child: Image.asset(
-                                  'assets/images/app-stores/apple-dark-on-white.png'))))
-                ]),
-              ]
             ],
           ),
         ),

@@ -126,5 +126,4 @@ flutter:
     - .env
     # Add assets from the images directory to the application.
     - assets/images/
-    - assets/images/app-stores/
     - assets/symbols/
