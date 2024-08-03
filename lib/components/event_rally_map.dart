@@ -65,82 +65,87 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                 displayFeaturesHeight
             : mediaQueryData.size.height * .80,
         padding: mediaQueryData.viewInsets,
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Stack(alignment: Alignment.center, children: [
-            Positioned(
-                left: 12,
-                child: IconButton(
-                    icon: const Icon(Icons.save),
-                    onPressed: () {
-                      Navigator.of(context).pop(rallyPointGeographic);
-                    })),
-            Positioned(
-                right: 12,
-                child: PopupMenuButton(
-                    icon: const Icon(Icons.more_vert),
-                    offset: const Offset(0, 50),
-                    itemBuilder: (BuildContext context) => [
-                          PopupMenuItem(
-                            child: const ListTile(
-                              leading: Icon(Icons.save),
-                              title: Text('Save rally point'),
-                            ),
-                            onTap: () {
+        child: Scaffold(
+            resizeToAvoidBottomInset: false,
+            body: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Stack(alignment: Alignment.center, children: [
+                    Positioned(
+                        left: 12,
+                        child: IconButton(
+                            icon: const Icon(Icons.save),
+                            onPressed: () {
                               Navigator.of(context).pop(rallyPointGeographic);
-                            },
-                          ),
-                          PopupMenuItem(
-                            child: const ListTile(
-                              leading: Icon(Icons.delete),
-                              title: Text('Clear rally point'),
-                            ),
-                            onTap: () {
-                              Navigator.of(context).pop(null);
-                            },
-                          ),
-                          PopupMenuItem(
-                            child: const ListTile(
-                              leading: Icon(Icons.undo),
-                              title: Text('Cancel change'),
-                            ),
-                            onTap: () {
-                              Navigator.of(context)
-                                  .pop(widget.initialRallyPoint);
-                            },
-                          ),
-                        ])),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              child: Text(
-                widget.title,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-          ]),
-          TextField(
-            focusNode: searchFocus,
-            textInputAction: TextInputAction.search,
-            decoration: const InputDecoration(
-              labelText: 'Search locations',
-            ),
-            onSubmitted: _onSearch,
-          ),
-          Expanded(
-              child: MapLibreMap(
-            onMapCreated: _onMapCreated,
-            onStyleLoadedCallback: _onStyleLoadedCallback,
-            styleString:
-                'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
-            myLocationEnabled: true,
-            myLocationRenderMode: MyLocationRenderMode.compass,
-            myLocationTrackingMode: MyLocationTrackingMode.tracking,
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(39.9550, -75.1605),
-              zoom: 11.75,
-            ),
-          )),
-        ]));
+                            })),
+                    Positioned(
+                        right: 12,
+                        child: PopupMenuButton(
+                            icon: const Icon(Icons.more_vert),
+                            offset: const Offset(0, 50),
+                            itemBuilder: (BuildContext context) => [
+                                  PopupMenuItem(
+                                    child: const ListTile(
+                                      leading: Icon(Icons.save),
+                                      title: Text('Save rally point'),
+                                    ),
+                                    onTap: () {
+                                      Navigator.of(context)
+                                          .pop(rallyPointGeographic);
+                                    },
+                                  ),
+                                  PopupMenuItem(
+                                    child: const ListTile(
+                                      leading: Icon(Icons.delete),
+                                      title: Text('Clear rally point'),
+                                    ),
+                                    onTap: () {
+                                      Navigator.of(context).pop(null);
+                                    },
+                                  ),
+                                  PopupMenuItem(
+                                    child: const ListTile(
+                                      leading: Icon(Icons.undo),
+                                      title: Text('Cancel change'),
+                                    ),
+                                    onTap: () {
+                                      Navigator.of(context)
+                                          .pop(widget.initialRallyPoint);
+                                    },
+                                  ),
+                                ])),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 20),
+                      child: Text(
+                        widget.title,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ]),
+                  TextField(
+                    focusNode: searchFocus,
+                    textInputAction: TextInputAction.search,
+                    decoration: const InputDecoration(
+                      labelText: 'Search locations',
+                    ),
+                    onSubmitted: _onSearch,
+                  ),
+                  Expanded(
+                      child: MapLibreMap(
+                    onMapCreated: _onMapCreated,
+                    onStyleLoadedCallback: _onStyleLoadedCallback,
+                    styleString:
+                        'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+                    myLocationEnabled: true,
+                    myLocationRenderMode: MyLocationRenderMode.compass,
+                    myLocationTrackingMode: MyLocationTrackingMode.tracking,
+                    initialCameraPosition: const CameraPosition(
+                      target: LatLng(39.9550, -75.1605),
+                      zoom: 11.75,
+                    ),
+                  )),
+                ])));
   }
 
   void _onMapCreated(MapLibreMapController controller) {
@@ -219,6 +224,15 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
           'bounded': '1'
         }));
     final responseData = jsonDecode(response.body);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          'Found ${responseData.length} ${responseData.length == 1 ? 'result' : 'results'}',
+          textAlign: TextAlign.center,
+        ),
+      ));
+    }
 
     // render results
     final List<SymbolOptions> resultSymbolOptions = [];
