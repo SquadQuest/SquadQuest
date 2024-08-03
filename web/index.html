@@ -45,24 +45,32 @@
 
     .preflight-modal {
       background-color: #141218;
-      color: #F29C38;
+      color: #FFF;
       font-family: sans-serif;
       font-size: 5vw;
 
       text-align: center;
 
       width: 100vw;
-      height: 100vh;
       position: absolute;
       top: 0;
       left: 0;
       z-index: 100;
+      padding-bottom: 1em;
     }
 
-    .preflight-modaln p,
+    .preflight-modal p,
     .preflight-modal h1 {
       padding: 0 1em;
       margin: 1em 0;
+    }
+
+    .preflight-modal .appstore-link+.appstore-link {
+      margin-left: 5vw;
+    }
+
+    .preflight-modal .appstore-link img {
+      max-width: 40vw;
     }
 
     .preflight-modal button {
@@ -70,8 +78,13 @@
       margin-top: 1em;
     }
 
-    .flutter-loader {
-      display: none;
+    .preflight-modal a.launch-app {
+      display: inline-block;
+      background: #FFF;
+      color: #000;
+      text-decoration: none;
+      padding: 24px;
+      border-radius: 25px;
     }
 
     #loading-container {
@@ -127,32 +140,52 @@
     <div id="loading-spinner"></div>
   </div>
 
-  <div id="add-to-homescreen" class="preflight-modal" style="display: none">
+  <div id="welcome" class="preflight-modal" style="display: none">
     <h1>Welcome to SquadQuest!</h1>
-    <p>I see you're using Safari on iOS</p>
-    <p>For the best experience, add this website to your home screen by clicking the 📤 button and then scrolling down
-      to "Add to Home Screen"</p>
-    <p>This is necessary for push notifications to work when you get a friend request, invited to an event, or someone
-      RSVPs to one of your events.</p>
-    <button id="add-to-homescreen-decline">I don't wanna!</button>
+    <p>
+      Bring your social circle to life: the free, privacy-first app for planning real-world hangouts.
+    </p>
+    <p>
+      SquadQuest works best if you install it as an app:
+    </p>
+    <p>
+      <a class="appstore-link" href="https://play.google.com/store/apps/details?id=com.squadquest.app"><img
+          src="images/google-dark-on-white.png"></a>
+      <a class="appstore-link" href="https://apps.apple.com/us/app/squadquest/id1560194914"><img
+          src="images/apple-dark-on-white.png"></a>
+    </p>
+    <div id="add-to-homescreen" style="display: none">
+      <hr>
+      <p>
+        Since you're on iOS, the next-best thing is to add the website to your homescreen. This
+        is the only way notifications can work on iOS without installing the app:
+      </p>
+      <p>Click the 📤 button at the bottom of your screen and then scrolling down to and select "Add to Home Screen"</p>
+    </div>
+    <hr>
+    <p>You can also just use SquadQuest in your browser, but not all functionality will be available:</p>
+    <p>
+      <a class="launch-app" href="javascript:launchFlutterApp()">Continue in browser</a>
+    </p>
   </div>
 
   <script>
     // load FCM service worker and proxy notification events
     if ("serviceWorker" in navigator) {
-      const serviceWorkerVersion = {{flutter_service_worker_version}} || 1;
+      const serviceWorkerVersion = {{ flutter_service_worker_version }
+    } || 1;
 
-      window.addEventListener("load", function () {
-        navigator.serviceWorker.register(`./firebase-messaging-sw.js?v=${serviceWorkerVersion}`);
-      });
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register(`./firebase-messaging-sw.js?v=${serviceWorkerVersion}`);
+    });
 
-      // relay notification clicks from service worker to Flutter app
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        // relay message where Flutter app can catch it
-        if (event.data.messageType == 'notification-opened' && window.onWebNotificationOpened) {
-          window.onWebNotificationOpened(event.data);
-        }
-      });
+    // relay notification clicks from service worker to Flutter app
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      // relay message where Flutter app can catch it
+      if (event.data.messageType == 'notification-opened' && window.onWebNotificationOpened) {
+        window.onWebNotificationOpened(event.data);
+      }
+    });
     }
   </script>
   <script src="flutter_bootstrap.js"></script>
