@@ -39,6 +39,10 @@
   <link rel="manifest" href="manifest.json">
 
   <style type="text/css">
+    body {
+      background-color: #141218;
+    }
+
     .preflight-modal {
       background-color: #141218;
       color: #F29C38;
@@ -65,10 +69,63 @@
       font-size: 75px;
       margin-top: 1em;
     }
+
+    .flutter-loader {
+      display: none;
+    }
+
+    #loading-container {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    #loading-spinner {
+      border: 16px solid #555;
+      border-radius: 50%;
+      border-left: 16px solid white;
+      width: 100px;
+      height: 100px;
+      -webkit-animation: spin 1s linear infinite;
+      animation: spin 1s linear infinite;
+    }
+
+    body.loading #loading-container {
+      display: flex;
+    }
+
+    @-webkit-keyframes spin {
+      0% {
+        -webkit-transform: rotate(0deg);
+      }
+
+      100% {
+        -webkit-transform: rotate(360deg);
+      }
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
 
-<body style="background-color: #141218">
+<body class="loading">
+  <div id="loading-container">
+    <div id="loading-spinner"></div>
+  </div>
 
   <div id="add-to-homescreen" class="preflight-modal" style="display: none">
     <h1>Welcome to SquadQuest!</h1>
@@ -92,10 +149,12 @@
   </div>
 
   <script>
-    // load FCM service worked and proxy notification events
+    // load FCM service worker and proxy notification events
     if ("serviceWorker" in navigator) {
+      const serviceWorkerVersion = {{flutter_service_worker_version}} || 1;
+
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./firebase-messaging-sw.js?v=40");
+        navigator.serviceWorker.register(`./firebase-messaging-sw.js?v=${serviceWorkerVersion}`);
       });
 
       // relay notification clicks from service worker to Flutter app
@@ -106,67 +165,9 @@
         }
       });
     }
-
-
-    // Pre-launch screens for mobile Safari
-    const addToHomescreenCt = document.getElementById('add-to-homescreen');
-    const requestNotificationPermissionCt = document.getElementById('request-notification-permission');
-    runPreflightChecklist();
-
-    function runPreflightChecklist() {
-      const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-      const isInStandaloneMode = ('standalone' in window.navigator) && window.navigator.standalone;
-      const canRequestNotificationPermission = 'Notification' in window && Notification.permission != 'granted' && !localStorage.getItem('request-notification-permission-declined');
-      const addToHomescreenDeclined = localStorage.getItem('add-to-homescreen-declined');
-      const enablePushNotificationsDeclined = localStorage.getItem('push-notifications-declined');
-
-      if (isIos && !isInStandaloneMode && !addToHomescreenDeclined) {
-        showAddToHomeScreen();
-      } else if (isIos && isInStandaloneMode && canRequestNotificationPermission) {
-        showRequestNotificationPermission();
-      } else {
-        loadFlutterApp();
-      }
-    }
-
-    function showAddToHomeScreen() {
-      addToHomescreenCt.style.display = 'block';
-
-      document.getElementById('add-to-homescreen-decline').addEventListener('click', function (event) {
-        event.preventDefault();
-        localStorage.setItem('add-to-homescreen-declined', true);
-        loadFlutterApp();
-      });
-    }
-
-    function showRequestNotificationPermission() {
-      requestNotificationPermissionCt.style.display = 'block';
-
-      document.getElementById('request-notification-permission-launch').addEventListener('click', function (event) {
-        event.preventDefault();
-        requestNotificationPermissionCt.style.display = 'none';
-        Notification.requestPermission().then(function (result) {
-          // store result because mobile Safari will lie about Notification.permission until we request permission
-          if (result == 'denied') {
-            localStorage.setItem('request-notification-permission-declined', true);
-          }
-
-          loadFlutterApp();
-        });
-      });
-    }
-
-    function loadFlutterApp() {
-      console.log('loading flutter app');
-      addToHomescreenCt.style.display = 'none';
-      requestNotificationPermissionCt.style.display = 'none';
-
-      const scriptTag = document.createElement('script');
-      scriptTag.src = 'flutter_bootstrap.js';
-      scriptTag.async = true;
-      document.body.appendChild(scriptTag);
-    }
   </script>
+  <script src="flutter_bootstrap.js"></script>
+  <script src="squadquest-init.js"></script>
 </body>
 
 </html>
