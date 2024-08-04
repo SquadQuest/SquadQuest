@@ -14,8 +14,10 @@ const welcomeCt = document.getElementById('welcome');
 const addToHomescreenCt = document.getElementById('add-to-homescreen');
 const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 const isInStandaloneMode = ('standalone' in window.navigator) && window.navigator.standalone;
+const lastWebLaunch = localStorage.getItem('lastWebLaunch');
+const lastWebLaunchWithinWeek = lastWebLaunch && Date.now() - lastWebLaunch < 7 * 24 * 60 * 60 * 1000;
 
-if (isInStandaloneMode) {
+if (isInStandaloneMode || lastWebLaunchWithinWeek) {
   launchFlutterApp();
 } else {
   welcomeCt.style.display = 'block';
@@ -26,6 +28,9 @@ if (isInStandaloneMode) {
 
 async function launchFlutterApp() {
   console.log('Launching Flutter app...');
+
+  // remember last time web app was launched
+  localStorage.setItem('lastWebLaunch', Date.now());
 
   // ensure all overlay content is hidden
   welcomeCt.style.display = 'none';
