@@ -132,6 +132,17 @@
         transform: rotate(360deg);
       }
     }
+
+    /* hide attribution on map thumbnails */
+    .maplibregl-map {
+      container-type: inline-size;
+    }
+
+    @container (max-width: 250px) {
+      .maplibregl-ctrl-attrib {
+        display: none;
+      }
+    }
   </style>
 </head>
 
@@ -172,8 +183,7 @@
   <script>
     // load FCM service worker and proxy notification events
     if ("serviceWorker" in navigator) {
-      const serviceWorkerVersion = {{ flutter_service_worker_version }
-    } || 1;
+      const serviceWorkerVersion = {{flutter_service_worker_version}} || 1;
 
     window.addEventListener("load", function () {
       navigator.serviceWorker.register(`./firebase-messaging-sw.js?v=${serviceWorkerVersion}`);
