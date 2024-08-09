@@ -81,8 +81,10 @@ class _FormPhotoPickerState extends ConsumerState<FormPhotoPicker> {
         )),
         Column(children: [
           ElevatedButton(
-            child: const Text('Select'),
+            child: const Text('Browse Photos'),
             onPressed: () async {
+              FocusScope.of(context).unfocus();
+
               final pickedFile =
                   await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -100,6 +102,7 @@ class _FormPhotoPickerState extends ConsumerState<FormPhotoPicker> {
             ElevatedButton(
               child: const Text('Clear'),
               onPressed: () {
+                FocusScope.of(context).unfocus();
                 _onValueChanged(null);
               },
             )

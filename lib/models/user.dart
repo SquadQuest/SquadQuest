@@ -55,7 +55,7 @@ class UserProfile {
       fcmTokenAppBuild: map['fcm_token_app_build'],
       photo: map['photo'] == null ? null : Uri.parse(map['photo']),
       enabledNotifications: map['enabled_notifications'] == null
-          ? {}
+          ? NotificationType.values.toSet().cast<NotificationType>()
           : map['enabled_notifications']
               .map((type) => NotificationType.values.firstWhere(
                     (e) => e.name == type,

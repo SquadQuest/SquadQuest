@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/components/forms/notifications.dart';
@@ -72,6 +73,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 locationSharingEnabled;
           },
           secondary: const Icon(Icons.pin_drop),
+        ),
+        ListTile(
+          title: const Text('Delete Account'),
+          leading: const Icon(Icons.delete),
+          trailing: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              onPressed: () {
+                launchUrl(
+                    Uri.parse('https://squadquest.app/request-deletion.html'));
+              },
+              child:
+                  const Text('Request', style: TextStyle(color: Colors.white))),
         ),
         Text('Notifications', style: Theme.of(context).textTheme.headlineSmall),
         const NotificationOptions(),

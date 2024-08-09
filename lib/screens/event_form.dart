@@ -65,6 +65,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   DateTime? startDate;
   bool startTimeMaxSet = false;
   bool submitted = false;
+  late final bool isNewEvent;
 
   void _showValidationError(String error) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -73,7 +74,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   }
 
   void _submitEvent(BuildContext context) async {
-    // FocusManager.instance.primaryFocus?.unfocus();
+    FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) {
       return;
@@ -234,8 +235,10 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     startDate = DateTime.now();
 
     if (widget.instanceId == null) {
+      isNewEvent = true;
       _editingInstance = const AsyncValue.data(null);
     } else {
+      isNewEvent = false;
       _editingInstance = const AsyncValue.loading();
       final instancesController = ref.read(instancesProvider.notifier);
       AsyncValue.guard(() => instancesController.getById(widget.instanceId!))
@@ -269,10 +272,27 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     return AppScaffold(
       title: _editingInstance.when(
         data: (Instance? instance) =>
-            instance == null ? 'Post an event' : 'Edit event',
+            isNewEvent ? 'Post an event' : 'Edit event',
         loading: () => '',
         error: (_, __) => 'Error loading event',
       ),
+      loadMask: submitted
+          ? isNewEvent
+              ? 'Posting event...'
+              : 'Saving event...'
+          : null,
+      actions: [
+        if (!submitted)
+          TextButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
+            onPressed: () => _submitEvent(context),
+            child: Text(isNewEvent ? 'Post' : 'Save',
+                style: const TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+      ],
       showDrawer: false,
       showLocationSharingSheet: false,
       body: _editingInstance.when(
@@ -286,8 +306,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextFormField(
-                        autofocus: instance == null,
-                        readOnly: submitted,
+                        autofocus: isNewEvent,
                         textInputAction: TextInputAction.done,
                         decoration: const InputDecoration(
                           // prefixIcon: Icon(Icons.flag),
@@ -309,7 +328,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                         height: 24,
                       ),
                       TextFormField(
-                        readOnly: submitted,
                         textInputAction: TextInputAction.done,
                         decoration: const InputDecoration(
                           // prefixIcon: Icon(Icons.pin_drop),
@@ -333,8 +351,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                       FormDatePicker(
                           labelText: 'Date to meet up on',
                           initialValue: startDate,
-                          firstDate: instance == null ||
-                                  instance.startTimeMax.isAfter(DateTime.now())
+                          firstDate: isNewEvent ||
+                                  instance!.startTimeMax.isAfter(DateTime.now())
                               ? null
                               : instance.startTimeMin,
                           onChanged: (DateTime date) {
@@ -369,7 +387,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                         height: 24,
                       ),
                       TextFormField(
-                        readOnly: submitted,
                         textInputAction: TextInputAction.done,
                         autofillHints: const [AutofillHints.url],
                         keyboardType: TextInputType.url,
@@ -390,7 +407,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                         height: 24,
                       ),
                       TextFormField(
-                        readOnly: submitted,
                         // textInputAction: TextInputAction.done,
                         keyboardType: TextInputType.multiline,
                         decoration: const InputDecoration(
@@ -402,20 +418,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                       const SizedBox(height: 32),
                       FormPhotoPicker(
                           labelText: 'Event banner photo',
-                          valueProvider: _bannerPhotoProvider),
-                      const SizedBox(height: 16),
-                      submitted
-                          ? const Center(child: CircularProgressIndicator())
-                          : ElevatedButton(
-                              onPressed: submitted
-                                  ? null
-                                  : () => _submitEvent(context),
-                              child: Text(
-                                instance == null ? 'Post' : 'Save Changes',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 18),
-                              ),
-                            )
+                          valueProvider: _bannerPhotoProvider)
                     ],
                   ),
                 ),
