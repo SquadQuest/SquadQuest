@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:loader_overlay/loader_overlay.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
@@ -32,6 +31,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   late final bool isNewProfile;
 
   void _submitProfile(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+
     final session = ref.read(authControllerProvider);
 
     if (!_formKey.currentState!.validate()) {
@@ -41,10 +42,6 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     setState(() {
       submitted = true;
     });
-
-    context.loaderOverlay.show();
-
-    FocusScope.of(context).unfocus();
 
     try {
       final supabase = ref.read(supabaseClientProvider);
@@ -70,8 +67,6 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
           });
 
           if (!context.mounted) return;
-
-          context.loaderOverlay.hide();
 
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Failed to upload profile photo:\n\n$error'),
@@ -101,8 +96,6 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       });
 
       if (!context.mounted) return;
-
-      context.loaderOverlay.hide();
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Failed to update profile:\n\n$error'),
@@ -156,6 +149,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
 
     return AppScaffold(
         title: isNewProfile ? 'Set up your profile' : 'Update your profile',
+        loadMask: submitted ? 'Saving profile...' : null,
         showDrawer: !isNewProfile,
         actions: [
           if (!submitted)

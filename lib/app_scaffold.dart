@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loader_overlay/loader_overlay.dart';
 
 import 'package:squadquest/drawer.dart';
 import 'package:squadquest/components/sheets/location_sharing.dart';
@@ -12,6 +11,7 @@ final _bottomPaddingProvider = StateProvider<double?>((ref) => null);
 class AppScaffold extends StatelessWidget {
   final String title;
   final TextStyle? titleStyle;
+  final String? loadMask;
   final Widget body;
   final EdgeInsetsGeometry? bodyPadding;
   final bool showDrawer;
@@ -26,6 +26,7 @@ class AppScaffold extends StatelessWidget {
       {super.key,
       required this.title,
       this.titleStyle,
+      this.loadMask,
       required this.body,
       this.bodyPadding,
       this.showDrawer = true,
@@ -54,17 +55,29 @@ class AppScaffold extends StatelessWidget {
                     ? ref.watch(_bottomPaddingProvider) ?? 0
                     : 0);
             return Stack(children: [
-              LoaderOverlay(
-                  useDefaultLoading: false,
-                  overlayWidgetBuilder: (_) => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                  overlayColor: Colors.grey.withOpacity(0.5),
-                  child: Padding(
-                      padding: bodyPadding == null
-                          ? padding
-                          : padding.add(bodyPadding!),
-                      child: child!)),
+              Padding(
+                  padding:
+                      bodyPadding == null ? padding : padding.add(bodyPadding!),
+                  child: child!),
+              if (loadMask != null) ...[
+                const Opacity(
+                  opacity: 0.7,
+                  child: ModalBarrier(dismissible: false, color: Colors.black),
+                ),
+                Center(
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          loadMask!,
+                          style: const TextStyle(fontSize: 30),
+                        ),
+                        const SizedBox(height: 16),
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 32),
+                      ]),
+                ),
+              ],
               if (showLocationSharingSheet)
                 Positioned(
                     bottom: 0,
