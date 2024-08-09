@@ -284,10 +284,13 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       actions: [
         if (!submitted)
           TextButton(
-            onPressed: () => _submitEvent(context),
-            child: Text(
-              isNewEvent ? 'Post' : 'Save',
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
             ),
+            onPressed: () => _submitEvent(context),
+            child: Text(isNewEvent ? 'Post' : 'Save',
+                style: const TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)),
           ),
       ],
       showDrawer: false,

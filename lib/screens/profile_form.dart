@@ -154,8 +154,13 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         actions: [
           if (!submitted)
             TextButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+              ),
               onPressed: () => _submitProfile(context),
-              child: Text(isNewProfile ? 'Continue' : 'Save'),
+              child: Text(isNewProfile ? 'Continue' : 'Save',
+                  style: const TextStyle(
+                      color: Colors.black, fontWeight: FontWeight.bold)),
             ),
         ],
         bodyPadding: const EdgeInsets.all(16),
