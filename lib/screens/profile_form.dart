@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
@@ -29,6 +29,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   final _photoProvider = StateProvider<Uri?>((ref) => null);
 
   bool submitted = false;
+  late final bool isNewProfile;
 
   void _submitProfile(BuildContext context) async {
     final session = ref.read(authControllerProvider);
@@ -40,6 +41,10 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     setState(() {
       submitted = true;
     });
+
+    context.loaderOverlay.show();
+
+    FocusScope.of(context).unfocus();
 
     try {
       final supabase = ref.read(supabaseClientProvider);
@@ -65,6 +70,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
           });
 
           if (!context.mounted) return;
+
+          context.loaderOverlay.hide();
 
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Failed to upload profile photo:\n\n$error'),
@@ -95,6 +102,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
 
       if (!context.mounted) return;
 
+      context.loaderOverlay.hide();
+
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Failed to update profile:\n\n$error'),
       ));
@@ -107,7 +116,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     // redirect to next screen
     if (widget.redirect != null) {
       context.go(widget.redirect!);
-    } else if (session.user.appMetadata['invite_friends'] != null &&
+    } else if (isNewProfile &&
+        session.user.appMetadata['invite_friends'] != null &&
         session.user.appMetadata['invite_friends'].isNotEmpty) {
       context.goNamed('friends');
     } else {
@@ -122,18 +132,20 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     final profile = ref.read(profileProvider);
 
     if (profile.hasValue && profile.value != null) {
+      isNewProfile = false;
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _firstNameController.text = profile.value!.firstName;
         _lastNameController.text = profile.value!.lastName!;
         ref.read(_photoProvider.notifier).state = profile.value!.photo;
       });
+    } else {
+      isNewProfile = true;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(profileProvider).value;
-
     ref.listen(profileProvider, (previous, next) {
       if (next.hasValue && next.value != null) {
         _firstNameController.text = next.value!.firstName;
@@ -143,82 +155,78 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     });
 
     return AppScaffold(
-      title: profile != null ? 'Update your profile' : 'Set up your profile',
-      showDrawer: profile != null,
-      bodyPadding: const EdgeInsets.only(bottom: 16),
-      body: AutofillGroup(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              if (profile == null) ...[
-                const SizedBox(height: 16),
-                const Text(
-                  'Welcome to SquadQuest!\n\nPlease set up your profile to get started:',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-              const SizedBox(height: 16),
-              const Text(
-                'Your last name and photo will only ever be visible to your confirmed friends, everyone else will just see your first name when you post or respond to events',
-                style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
-                textAlign: TextAlign.center,
+        title: isNewProfile ? 'Set up your profile' : 'Update your profile',
+        showDrawer: !isNewProfile,
+        actions: [
+          if (!submitted)
+            TextButton(
+              onPressed: () => _submitProfile(context),
+              child: Text(isNewProfile ? 'Continue' : 'Save'),
+            ),
+        ],
+        bodyPadding: const EdgeInsets.all(16),
+        body: SingleChildScrollView(
+          child: AutofillGroup(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  if (isNewProfile) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Welcome to SquadQuest!\n\nPlease set up your profile to get started:',
+                      textAlign: TextAlign.center,
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Your last name and photo will only ever be visible to your confirmed friends, everyone else will just see your first name when you post or respond to events',
+                    style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    autofillHints: const [AutofillHints.givenName],
+                    keyboardType: TextInputType.name,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.person),
+                      labelText: 'First name',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your first name';
+                      }
+                      return null;
+                    },
+                    controller: _firstNameController,
+                  ),
+                  TextFormField(
+                    autofillHints: const [AutofillHints.familyName],
+                    keyboardType: TextInputType.name,
+                    textInputAction: TextInputAction.done,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.person),
+                      labelText: 'Last name',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your last name';
+                      }
+                      return null;
+                    },
+                    controller: _lastNameController,
+                  ),
+                  const SizedBox(height: 32),
+                  FormPhotoPicker(
+                      labelText: 'Profile photo',
+                      valueProvider: _photoProvider),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                readOnly: submitted,
-                autofillHints: const [AutofillHints.givenName],
-                keyboardType: TextInputType.name,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.person),
-                  labelText: 'First name',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your first name';
-                  }
-                  return null;
-                },
-                controller: _firstNameController,
-              ),
-              TextFormField(
-                readOnly: submitted,
-                autofillHints: const [AutofillHints.familyName],
-                keyboardType: TextInputType.name,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.person),
-                  labelText: 'Last name',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your last name';
-                  }
-                  return null;
-                },
-                controller: _lastNameController,
-              ),
-              const SizedBox(height: 32),
-              FormPhotoPicker(
-                  labelText: 'Profile photo', valueProvider: _photoProvider),
-              const SizedBox(height: 32),
-              submitted
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed:
-                          submitted ? null : () => _submitProfile(context),
-                      child: const Text(
-                        'Save profile',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                    )
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }
