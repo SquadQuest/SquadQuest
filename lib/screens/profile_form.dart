@@ -214,20 +214,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 18),
                       ),
-                    ),
-              if (profile != null) ...[
-                const Spacer(),
-                ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                    onPressed: () {
-                      launchUrl(Uri.parse(
-                          'https://squadquest.app/request-deletion.html'));
-                    },
-                    child: const Text('Delete my account',
-                        style: TextStyle(color: Colors.white)))
-              ]
+                    )
             ],
           ),
         ),
