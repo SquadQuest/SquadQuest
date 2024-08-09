@@ -40,6 +40,8 @@
 	<string>Select photos to upload for your profile and events</string>
 	<key>NSContactsUsageDescription</key>
     <string>Search your contacts to send friend requests and invite friends to events</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Sync event RSVPs to calendar</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
