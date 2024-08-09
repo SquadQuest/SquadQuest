@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 import 'package:squadquest/drawer.dart';
 import 'package:squadquest/components/sheets/location_sharing.dart';
@@ -53,10 +54,17 @@ class AppScaffold extends StatelessWidget {
                     ? ref.watch(_bottomPaddingProvider) ?? 0
                     : 0);
             return Stack(children: [
-              Padding(
-                  padding:
-                      bodyPadding == null ? padding : padding.add(bodyPadding!),
-                  child: child!),
+              LoaderOverlay(
+                  useDefaultLoading: false,
+                  overlayWidgetBuilder: (_) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                  overlayColor: Colors.grey.withOpacity(0.5),
+                  child: Padding(
+                      padding: bodyPadding == null
+                          ? padding
+                          : padding.add(bodyPadding!),
+                      child: child!)),
               if (showLocationSharingSheet)
                 Positioned(
                     bottom: 0,
