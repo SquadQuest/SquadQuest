@@ -123,8 +123,14 @@ serve(async (request) => {
     const notificationEnabled = insertedInvitation.member
       .enabled_notifications
       .includes("eventInvitation");
-    insertedInvitation.created_by = scrubProfile(insertedInvitation.created_by);
-    insertedInvitation.member = scrubProfile(insertedInvitation.member);
+    insertedInvitation.created_by = await scrubProfile(
+      insertedInvitation.created_by,
+      true,
+    );
+    insertedInvitation.member = await scrubProfile(
+      insertedInvitation.member,
+      true,
+    );
 
     if (fcmToken && notificationEnabled) {
       try {

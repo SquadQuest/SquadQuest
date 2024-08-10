@@ -88,8 +88,14 @@ serve(async (request) => {
   const notificationEnabled = updatedFriendRequest.requester
     .enabled_notifications
     .includes("friendRequest");
-  updatedFriendRequest.requester = scrubProfile(updatedFriendRequest.requester);
-  updatedFriendRequest.requestee = scrubProfile(updatedFriendRequest.requestee);
+  updatedFriendRequest.requester = await scrubProfile(
+    updatedFriendRequest.requester,
+    true,
+  );
+  updatedFriendRequest.requestee = await scrubProfile(
+    updatedFriendRequest.requestee,
+    action == "accepted",
+  );
 
   // send notification to sender (if accepted)
   if (fcmToken && action == "accepted" && notificationEnabled) {

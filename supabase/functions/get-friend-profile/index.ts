@@ -106,7 +106,7 @@ serve(async (request) => {
   // return friend profile
   return new Response(
     JSON.stringify({
-      profile: scrubProfile(friendProfile),
+      profile: await scrubProfile(friendProfile, true),
       topic_subscriptions: topicSubscriptions,
     }),
     {
