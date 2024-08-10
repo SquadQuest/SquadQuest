@@ -36,7 +36,7 @@ class _ContactsListState extends ConsumerState<ContactsList> {
             autofocus: true,
             onChanged: (query) {
               setState(() {
-                _query = query.toLowerCase();
+                _query = query.toLowerCase().trim();
               });
             },
             decoration: const InputDecoration(
