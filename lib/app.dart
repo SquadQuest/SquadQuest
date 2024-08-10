@@ -36,15 +36,19 @@ class MyApp extends ConsumerWidget {
         case 'message-received':
           switch (message.data['notificationType']) {
             case 'friend-request-accepted':
+              final profilesCache = ref.read(profilesCacheProvider.notifier);
+
               // load expanded profile data into cache
               final friendProfile =
                   UserProfile.fromMap(data['friendship']['requestee']);
-              ref
-                  .read(profilesCacheProvider.notifier)
-                  .cacheProfiles([friendProfile]);
+
+              profilesCache.cacheProfiles([friendProfile]);
 
               // force friends list to refresh
               ref.read(friendsProvider.notifier).refresh();
+
+              // refresh network
+              profilesCache.loadNetwork();
             case 'friend-request-received':
               // load expanded profile data into cache
               final friendProfile =
