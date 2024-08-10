@@ -99,6 +99,9 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
             insertedFriend));
       }
 
+      // refresh network
+      await ref.read(profilesCacheProvider.notifier).loadNetwork();
+
       // return insertedFriend;
       return insertedFriend;
     } on FunctionException catch (error) {

@@ -6,9 +6,11 @@ import 'package:grouped_list/grouped_list.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/topic_subscriptions.dart';
+import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/components/tiles/instance.dart';
@@ -67,6 +69,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final eventsList = ref.watch(_filteredEventsProvider);
     final rsvpsList = ref.watch(rsvpsProvider);
     final session = ref.read(authControllerProvider);
+    final friendsList = ref.watch(friendsProvider);
+    final pendingFriendsList = friendsList.value?.where((friend) {
+          return friend.status == FriendStatus.requested;
+        }) ??
+        [];
 
     return AppScaffold(
       title: 'Welcome to SquadQuest',
@@ -82,131 +89,173 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           data: (data) {
             final now = DateTime.now();
 
-            return Column(children: [
-              if (data.topics.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text(
-                    'Head to the Topics section and subscribe to some topics to see public events',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-                  ),
-                )
-              else if (data.events.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text(
-                    'There are no events yet that you\'ve been invited to, have been shared by friends, or are public and match your subscribed topics.\n\n'
-                    'Subscribe to more topics, add some friends, or start planning your own event!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-                  ),
-                ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    return ref.read(instancesProvider.notifier).refresh();
-                  },
-                  child: GroupedListView(
-                    elements: data.events,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    useStickyGroupSeparators: true,
-                    // floatingHeader: true,
-                    stickyHeaderBackgroundColor:
-                        Theme.of(context).scaffoldBackgroundColor,
-                    groupBy: (Instance instance) => instance.getTimeGroup(now),
-                    groupComparator: (group1, group2) {
-                      return group1.index.compareTo(group2.index);
-                    },
-                    groupSeparatorBuilder: (InstanceTimeGroup group) => Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          switch (group) {
-                            InstanceTimeGroup.past => 'In the past',
-                            InstanceTimeGroup.current => 'Happening now',
-                            InstanceTimeGroup.upcoming => 'Coming up',
-                          },
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 18),
-                        )),
-                    itemBuilder: (context, instance) {
-                      return InstanceTile(
-                          instance: instance,
-                          rsvp: rsvpsList.hasValue
-                              ? rsvpsList.value!
-                                  .cast<InstanceMember?>()
-                                  .firstWhereOrNull(
-                                      (rsvp) => rsvp!.instanceId == instance.id)
-                              : null,
-                          onTap: () {
-                            context.pushNamed('event-details', pathParameters: {
-                              'id': instance.id!,
-                            });
-                          },
-                          onEndTap: session?.user.id == instance.createdById &&
-                                  instance.getTimeGroup(now) ==
-                                      InstanceTimeGroup.current
-                              ? (Instance instance) async {
-                                  final confirmed = await showDialog<bool>(
-                                      context: context,
-                                      builder: (BuildContext context) =>
-                                          AlertDialog(
-                                            title: const Text('End event?'),
-                                            content: const Text(
-                                                'Are you sure you want to end this event? Location sharing will be stopped for all guests.'),
-                                            actions: <Widget>[
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(context)
-                                                        .pop(false),
-                                                child: const Text('No'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(context)
-                                                        .pop(true),
-                                                child: const Text('Yes'),
-                                              ),
-                                            ],
-                                          ));
+            return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (pendingFriendsList.isNotEmpty)
+                    InkWell(
+                        onTap: () {
+                          context.pushNamed('friends');
+                        },
+                        child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.amber[900],
+                            ),
+                            child: RichText(
+                                textAlign: TextAlign.center,
+                                text: TextSpan(
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                          text: 'You have'
+                                              ' ${pendingFriendsList.length == 1 ? 'a pending friend request' : 'pending friend requests'}'
+                                              ' from'
+                                              ' ${pendingFriendsList.map((fr) => fr.requester!.displayName).join(', ')}\n\n'),
+                                      const TextSpan(
+                                          text:
+                                              'Head to the buddy list screen to accept or reject the request.')
+                                    ])))),
+                  if (data.topics.isEmpty)
+                    InkWell(
+                        onTap: () {
+                          context.pushNamed('topics');
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Text(
+                            'Head to the Topics screen and subscribe to some topics to see public events, or add friends to your buddy list to see private and friends-only events.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 16, fontStyle: FontStyle.italic),
+                          ),
+                        ))
+                  else if (data.events.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Text(
+                        'There are no events yet that you\'ve been invited to, have been shared by friends, or are public and match your subscribed topics.\n\n'
+                        'Subscribe to more topics, add some friends, or start planning your own event!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 16, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        return ref.read(instancesProvider.notifier).refresh();
+                      },
+                      child: GroupedListView(
+                        elements: data.events,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        useStickyGroupSeparators: true,
+                        // floatingHeader: true,
+                        stickyHeaderBackgroundColor:
+                            Theme.of(context).scaffoldBackgroundColor,
+                        groupBy: (Instance instance) =>
+                            instance.getTimeGroup(now),
+                        groupComparator: (group1, group2) {
+                          return group1.index.compareTo(group2.index);
+                        },
+                        groupSeparatorBuilder: (InstanceTimeGroup group) =>
+                            Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  switch (group) {
+                                    InstanceTimeGroup.past => 'In the past',
+                                    InstanceTimeGroup.current =>
+                                      'Happening now',
+                                    InstanceTimeGroup.upcoming => 'Coming up',
+                                  },
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 18),
+                                )),
+                        itemBuilder: (context, instance) {
+                          return InstanceTile(
+                              instance: instance,
+                              rsvp: rsvpsList.hasValue
+                                  ? rsvpsList.value!
+                                      .cast<InstanceMember?>()
+                                      .firstWhereOrNull((rsvp) =>
+                                          rsvp!.instanceId == instance.id)
+                                  : null,
+                              onTap: () {
+                                context.pushNamed('event-details',
+                                    pathParameters: {
+                                      'id': instance.id!,
+                                    });
+                              },
+                              onEndTap: session?.user.id ==
+                                          instance.createdById &&
+                                      instance.getTimeGroup(now) ==
+                                          InstanceTimeGroup.current
+                                  ? (Instance instance) async {
+                                      final confirmed = await showDialog<bool>(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              AlertDialog(
+                                                title: const Text('End event?'),
+                                                content: const Text(
+                                                    'Are you sure you want to end this event? Location sharing will be stopped for all guests.'),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(context)
+                                                            .pop(false),
+                                                    child: const Text('No'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(context)
+                                                            .pop(true),
+                                                    child: const Text('Yes'),
+                                                  ),
+                                                ],
+                                              ));
 
-                                  if (confirmed != true) {
-                                    return;
-                                  }
+                                      if (confirmed != true) {
+                                        return;
+                                      }
 
-                                  await ref
-                                      .read(instancesProvider.notifier)
-                                      .patch(instance.id!, {
-                                    'end_time':
-                                        DateTime.now().toUtc().toIso8601String()
-                                  });
+                                      await ref
+                                          .read(instancesProvider.notifier)
+                                          .patch(instance.id!, {
+                                        'end_time': DateTime.now()
+                                            .toUtc()
+                                            .toIso8601String()
+                                      });
 
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(const SnackBar(
-                                      content: Text(
-                                          'Your event has been ended and location sharing will be stopped'),
-                                    ));
-                                  }
-                                }
-                              : null);
-                    },
-                    itemComparator: (instance1, instance2) {
-                      // sort past events in reverse chronological order
-                      if (instance1.startTimeMax.isBefore(now) &&
-                          instance2.startTimeMax.isBefore(now)) {
-                        return instance2.startTimeMax
-                            .compareTo(instance1.startTimeMax);
-                      }
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                          content: Text(
+                                              'Your event has been ended and location sharing will be stopped'),
+                                        ));
+                                      }
+                                    }
+                                  : null);
+                        },
+                        itemComparator: (instance1, instance2) {
+                          // sort past events in reverse chronological order
+                          if (instance1.startTimeMax.isBefore(now) &&
+                              instance2.startTimeMax.isBefore(now)) {
+                            return instance2.startTimeMax
+                                .compareTo(instance1.startTimeMax);
+                          }
 
-                      // sort current/upcoming events in chronological order
-                      return instance1.startTimeMax
-                          .compareTo(instance2.startTimeMax);
-                    },
-                  ),
-                ),
-              )
-            ]);
+                          // sort current/upcoming events in chronological order
+                          return instance1.startTimeMax
+                              .compareTo(instance2.startTimeMax);
+                        },
+                      ),
+                    ),
+                  )
+                ]);
           }),
     );
   }

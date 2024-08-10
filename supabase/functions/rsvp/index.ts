@@ -106,9 +106,6 @@ serve(async (request) => {
 
   // branch actions
   const defaultSelect = "*, member(*)";
-  // TODO: only first name if not friend
-  const userFullName =
-    `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`;
   let rsvp;
   let notificationBody: string | null = null;
 
@@ -135,7 +132,7 @@ serve(async (request) => {
     deletedRsvp.status = null;
     rsvp = deletedRsvp;
 
-    notificationBody = `RSVP removed for ${userFullName}`;
+    notificationBody = `RSVP removed for {{userDisplayName}}`;
   } else if (existingRsvp) {
     // update existing RSVP
     const { data: updatedRsvp } = await serviceRoleSupabase.from(
@@ -150,8 +147,8 @@ serve(async (request) => {
     rsvp = updatedRsvp;
 
     notificationBody = status == "invited"
-      ? `RSVP removed for ${userFullName}`
-      : `RSVP ${status} (from ${existingRsvp.status}) for ${userFullName}`;
+      ? `RSVP removed for {{userDisplayName}}`
+      : `RSVP ${status} (from ${existingRsvp.status}) for {{userDisplayName}}`;
   } else if (status) {
     // insert new RSVP
     const { data: insertedRsvp } = await serviceRoleSupabase.from(
@@ -169,18 +166,39 @@ serve(async (request) => {
 
     rsvp = insertedRsvp;
 
-    notificationBody = `RSVP ${status} for ${userFullName}`;
+    notificationBody = `RSVP ${status} for {{userDisplayName}}`;
   } else {
     // posting null status to an RSVP that doesn't exist is a no-op
   }
-
-  // scrub profile data
-  rsvp.member = scrubProfile(rsvp.member);
 
   // build list of profiles to notify
   const profilesToNotify = [];
 
   if (notificationBody) {
+    const { data: friends } = await serviceRoleSupabase
+      .from(
+        "friends",
+      )
+      .select("requester, requestee")
+      .or(
+        `status.eq."accepted",and(status.eq."requested", requestee.eq."${
+          currentUser!.id
+        }")`,
+      )
+      .or(
+        `requester.eq."${currentUser!.id}", requestee.eq."${currentUser!.id}"`,
+      )
+      .throwOnError();
+
+    const friendIds = new Set();
+    for (const friendship of friends!) {
+      const friendId = friendship.requester == currentUser!.id
+        ? friendship.requestee
+        : friendship.requester;
+
+      friendIds.add(friendId);
+    }
+
     // send to host if they're not the one RSVPing
     if (event.created_by != currentUser.id) {
       profilesToNotify.push(
@@ -189,7 +207,6 @@ serve(async (request) => {
     }
 
     // send to other guests who are RSVP'd for OMWs
-    // TODO: only friends
     if (status == "omw") {
       const { data: rsvps } = await serviceRoleSupabase
         .from(
@@ -200,6 +217,7 @@ serve(async (request) => {
         .in("status", ["maybe", "yes", "omw"])
         .neq("member", currentUser.id)
         .neq("member", event.created_by)
+        .in("id", Array.from(friendIds))
         .throwOnError();
 
       for (const rsvp of rsvps!) {
@@ -219,13 +237,31 @@ serve(async (request) => {
       }
 
       try {
+        const scrubbedProfile = await scrubProfile(
+          rsvp.member,
+          friendIds.has(profile.id),
+        );
+
+        const userDisplayName = scrubbedProfile.last_name
+          ? `${scrubbedProfile.first_name} ${scrubbedProfile.last_name}`
+          : `${scrubbedProfile.first_name}`;
+
         await postMessage({
           notificationType: "rsvp",
           token: profile.fcm_token,
           title: event.title,
-          body: notificationBody,
+          body: notificationBody.replace(
+            "{{userDisplayName}}",
+            userDisplayName,
+          ),
           url: `https://squadquest.app/events/${event.id}`,
-          payload: { event, rsvp },
+          payload: {
+            event,
+            rsvp: {
+              ...rsvp,
+              member: scrubbedProfile,
+            },
+          },
           collapseKey: "rsvp",
         });
       } catch (error) {

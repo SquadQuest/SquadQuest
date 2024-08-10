@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
 
 import 'package:squadquest/common.dart';
 import 'package:squadquest/services/contacts.dart';
@@ -8,9 +7,7 @@ import 'package:squadquest/services/contacts.dart';
 export 'package:flutter_contacts/flutter_contacts.dart' show Contact;
 
 class ContactsList extends ConsumerStatefulWidget {
-  final Function(Contact contact, List<Widget> actions)? confirmBuilder;
-
-  const ContactsList({super.key, this.confirmBuilder});
+  const ContactsList({super.key});
   @override
   ConsumerState<ContactsList> createState() => _ContactsListState();
 }
@@ -36,7 +33,7 @@ class _ContactsListState extends ConsumerState<ContactsList> {
             autofocus: true,
             onChanged: (query) {
               setState(() {
-                _query = query.toLowerCase();
+                _query = query.toLowerCase().trim();
               });
             },
             decoration: const InputDecoration(
@@ -82,32 +79,8 @@ class _ContactsListState extends ConsumerState<ContactsList> {
                     itemBuilder: (context, index) {
                       Contact contact = filteredContacts[index];
                       return ListTile(
-                        onTap: () async {
-                          final confirmed = widget.confirmBuilder == null
-                              ? true
-                              : await showDialog<bool>(
-                                  context: context,
-                                  builder: (BuildContext context) =>
-                                      widget.confirmBuilder!(contact, <Widget>[
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(false),
-                                          child: const Text('No'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(true),
-                                          child: const Text('Yes'),
-                                        ),
-                                      ]));
-
-                          if (confirmed != true) {
-                            return;
-                          }
-
-                          if (context.mounted) {
-                            Navigator.of(context).pop(contact);
-                          }
+                        onTap: () {
+                          Navigator.of(context).pop(contact);
                         },
                         leading: CircleAvatar(
                           backgroundImage: contact.photoOrThumbnail != null

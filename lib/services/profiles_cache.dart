@@ -18,29 +18,33 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
 
   @override
   ProfilesCache build() {
-    final supabase = ref.read(supabaseClientProvider);
-
-    // load profiles of friends network first
-    supabase.functions
-        .invoke('get-friends-network', method: HttpMethod.get)
-        .then((response) async {
-      for (final profile in response.data) {
-        state[profile['id']] = UserProfile.fromMap(profile);
-      }
-
-      // load own profile if needed
-      final myUserId = supabase.auth.currentUser?.id;
-      if (myUserId != null && !state.containsKey(myUserId)) {
-        final myProfile = await ref.read(profileProvider.future);
-
-        if (myProfile != null) {
-          state[myUserId] = myProfile;
-        }
-      }
+    // load profiles of friends network
+    loadNetwork().then((_) {
       _initializedCompleter.complete();
     });
 
     return {};
+  }
+
+  Future<void> loadNetwork() async {
+    final supabase = ref.read(supabaseClientProvider);
+
+    final response = await supabase.functions
+        .invoke('get-friends-network', method: HttpMethod.get);
+
+    for (final profile in response.data) {
+      state[profile['id']] = UserProfile.fromMap(profile);
+    }
+
+    // load own profile if needed
+    final myUserId = supabase.auth.currentUser?.id;
+    if (myUserId != null && !state.containsKey(myUserId)) {
+      final myProfile = await ref.read(profileProvider.future);
+
+      if (myProfile != null) {
+        state[myUserId] = myProfile;
+      }
+    }
   }
 
   Future<void> cacheProfiles(List<UserProfile> profiles) async {

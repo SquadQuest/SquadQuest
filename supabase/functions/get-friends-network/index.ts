@@ -1,4 +1,5 @@
 import { assertGet, HttpError, serve } from "../_shared/http.ts";
+import { scrubProfile } from "../_shared/squadquest.ts";
 import {
   getServiceRoleSupabaseClient,
   getSupabaseUser,
@@ -65,10 +66,8 @@ serve(async (request) => {
 
   for (const profile of friendProfiles!) {
     Object.assign(network.get(profile.id)!, {
-      first_name: profile.first_name,
-      last_name: profile.last_name,
-      phone: profile.phone,
-      photo: profile.photo,
+      ...await scrubProfile(profile, true),
+      id: undefined,
     });
   }
 
