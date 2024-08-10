@@ -23,7 +23,6 @@ final _filteredEventsProvider =
   final topics = await ref.watch(topicSubscriptionsProvider.future);
   final rsvpsList = ref.watch(rsvpsProvider);
 
-  // TODO: filter out canceled events unless you created or are a member of the event
   return (
     events: events.where((event) {
       // always show events you created
