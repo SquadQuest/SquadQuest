@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/logger.dart';
+import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/models/user.dart';
@@ -84,6 +85,9 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
     final insertedProfile = (await hydrate([insertedData])).first;
 
     state = AsyncValue.data(insertedProfile);
+
+    // update profile cache
+    ref.read(profilesCacheProvider.notifier).cacheProfiles([insertedProfile]);
 
     return insertedProfile;
   }
