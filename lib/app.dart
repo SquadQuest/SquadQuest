@@ -45,6 +45,16 @@ class MyApp extends ConsumerWidget {
 
               // force friends list to refresh
               ref.read(friendsProvider.notifier).refresh();
+            case 'friend-request-received':
+              // load expanded profile data into cache
+              final friendProfile =
+                  UserProfile.fromMap(data['friendship']['requester']);
+              ref
+                  .read(profilesCacheProvider.notifier)
+                  .cacheProfiles([friendProfile]);
+
+              // force friends list to refresh
+              ref.read(friendsProvider.notifier).refresh();
             case 'event-ended':
               ref
                   .read(locationControllerProvider)
