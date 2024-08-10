@@ -98,6 +98,25 @@
         },
         {
             "request": "launch",
+            "name": "Deno: get-profile",
+            "type": "node",
+            "program": "${workspaceFolder}/supabase/functions/get-profile/index.ts",
+            "cwd": "${workspaceFolder}/supabase/functions/get-profile",
+            "env": {
+                "PORT": "8001"
+            },
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-wait",
+                "--allow-all"
+            ],
+            "attachSimplePort": 9229,
+            "outputCapture": "std",
+            "envFile": "${workspaceFolder}/supabase/functions/.env"
+        },
+        {
+            "request": "launch",
             "name": "Deno: action-friend-request",
             "type": "node",
             "program": "${workspaceFolder}/supabase/functions/action-friend-request/index.ts",

@@ -106,3 +106,9 @@ Authorization: Bearer {{token}}
             "fcm_token_updated_at": null
         }
     }
+
+### Get profile
+
+GET {{baseUrl}}/get-profile
+    ?phone={{userPhone}}
+Authorization: Bearer {{token}}
