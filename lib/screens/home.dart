@@ -70,9 +70,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final rsvpsList = ref.watch(rsvpsProvider);
     final session = ref.read(authControllerProvider);
     final friendsList = ref.watch(friendsProvider);
-    final pendingFriendsList = friendsList.value?.where((friend) {
-          return friend.status == FriendStatus.requested;
-        }) ??
+    final pendingFriendsList = friendsList.value?.where((friend) =>
+            friend.status == FriendStatus.requested &&
+            friend.requesterId != session?.user.id) ??
         [];
 
     return AppScaffold(
