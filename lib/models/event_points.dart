@@ -21,7 +21,7 @@ class EventPoints {
         map['user_points'] == null ? [] : map['user_points'].split(';');
 
     final userPoints =
-        userPointsText.map(_parsePoint).toList().cast<Geographic>();
+        userPointsText.map((p) => _parsePoint(p)).toList().cast<Geographic>();
 
     return EventPoints(
         id: map['id'],
