@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/screens/splash.dart';
 import 'package:squadquest/screens/login.dart';
 import 'package:squadquest/screens/verify.dart';
@@ -16,6 +18,7 @@ import 'package:squadquest/screens/event_details.dart';
 import 'package:squadquest/screens/friends.dart';
 import 'package:squadquest/screens/map.dart';
 import 'package:squadquest/screens/topics.dart';
+import 'package:squadquest/models/instance.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -24,18 +27,38 @@ final routerProvider = Provider((ref) {
     initialLocation: '/splash',
     navigatorKey: navigatorKey,
     observers: [SentryNavigatorObserver()],
-    redirect: (BuildContext context, GoRouterState state) {
+    redirect: (BuildContext context, GoRouterState state) async {
       final session = ref.read(authControllerProvider);
-      if (session == null &&
-          state.topRoute?.name != 'login' &&
-          state.topRoute?.name != 'verify' &&
-          state.topRoute?.name != 'splash') {
-        return state.namedLocation('login', queryParameters: {
-          'redirect': state.uri.toString(),
-        });
-      } else {
+
+      // continue if user is authenticated
+      if (session != null) {
         return null;
       }
+
+      // continue if route is login, verify or splash
+      if (state.topRoute?.name == 'login' ||
+          state.topRoute?.name == 'verify' ||
+          state.topRoute?.name == 'splash') {
+        return null;
+      }
+
+      // continue unauthenticated if on a public event details screen
+      if (state.topRoute?.name == 'event-details' &&
+          state.pathParameters['id'] != null) {
+        await supabaseInitialized;
+        final event = await ref
+            .read(eventDetailsProvider(state.pathParameters['id']!).future);
+
+        // allow unauthenticated access to public events
+        if (event.visibility == InstanceVisibility.public) {
+          return null;
+        }
+      }
+
+      // redirect to login screen
+      return state.namedLocation('login', queryParameters: {
+        'redirect': state.uri.toString(),
+      });
     },
     routes: [
       GoRoute(

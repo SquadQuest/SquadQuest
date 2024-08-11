@@ -353,9 +353,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
     final session = ref.watch(authControllerProvider);
     final eventAsync = ref.watch(eventDetailsProvider(widget.instanceId));
-    final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(widget.instanceId));
-    final rsvpsFriendsAsync =
-        ref.watch(_rsvpsFriendsProvider(widget.instanceId));
+    final eventRsvpsAsync = session == null
+        ? const AsyncValue.data(<InstanceMember>[])
+        : ref.watch(rsvpsPerEventProvider(widget.instanceId));
+    final rsvpsFriendsAsync = session == null
+        ? const AsyncValue.data(<RsvpFriend>[])
+        : ref.watch(_rsvpsFriendsProvider(widget.instanceId));
 
     // refresh map when event changes
     ref.listen(eventDetailsProvider(widget.instanceId), (_, event) async {
@@ -391,6 +394,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           loading: () => '',
           error: (_, __) => 'Error loading event details',
         ),
+        showDrawer: session == null ? false : null,
         titleStyle: eventAsync.valueOrNull?.status == InstanceStatus.canceled
             ? const TextStyle(
                 decoration: TextDecoration.lineThrough,
@@ -670,124 +674,135 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                     ])));
                                                       })
                                                     ]),
-                                                rsvpsFriendsAsync.when(
-                                                    loading: () => const Center(
-                                                        child:
-                                                            CircularProgressIndicator()),
-                                                    error: (error, _) =>
-                                                        Text('Error: $error'),
-                                                    data: (rsvpsFriends) =>
-                                                        rsvpsFriends.isEmpty
-                                                            ? const Padding(
-                                                                padding:
-                                                                    EdgeInsets
-                                                                        .all(
-                                                                            32),
-                                                                child: Text(
-                                                                  'No one has RSVPed to this event yet. Be the first! And then invite your friends with the button below.',
-                                                                  style: TextStyle(
-                                                                      fontSize:
-                                                                          20),
-                                                                ),
-                                                              )
-                                                            : GroupedListView(
-                                                                primary: false,
-                                                                shrinkWrap:
-                                                                    true,
-                                                                elements:
-                                                                    rsvpsFriends,
-                                                                groupBy: (RsvpFriend
-                                                                        rsvpFriend) =>
-                                                                    rsvpFriend
-                                                                        .rsvp
-                                                                        .status,
-                                                                groupComparator:
-                                                                    (group1,
-                                                                        group2) {
-                                                                  return _statusGroupOrder[
-                                                                          group1]!
-                                                                      .compareTo(
-                                                                          _statusGroupOrder[
-                                                                              group2]!);
-                                                                },
-                                                                groupSeparatorBuilder: (InstanceMemberStatus
-                                                                        group) =>
-                                                                    Padding(
-                                                                        padding: const EdgeInsets
-                                                                            .all(
-                                                                            8.0),
-                                                                        child:
-                                                                            Text(
-                                                                          switch (
-                                                                              group) {
-                                                                            InstanceMemberStatus.omw =>
-                                                                              'OMW!',
-                                                                            InstanceMemberStatus.yes =>
-                                                                              'Attending',
-                                                                            InstanceMemberStatus.maybe =>
-                                                                              'Might be attending',
-                                                                            InstanceMemberStatus.no =>
-                                                                              'Not attending',
-                                                                            InstanceMemberStatus.invited =>
-                                                                              'Invited',
-                                                                          },
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                          style:
-                                                                              const TextStyle(fontSize: 18),
-                                                                        )),
-                                                                itemBuilder:
-                                                                    (context,
-                                                                        rsvpFriend) {
-                                                                  final isFriendOrSelf = rsvpFriend
-                                                                              .rsvp
-                                                                              .memberId! ==
-                                                                          session!
-                                                                              .user
-                                                                              .id ||
+                                                if (session == null)
+                                                  Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 32),
+                                                      child: Center(
+                                                          child: ElevatedButton(
+                                                              child: const Text(
+                                                                  'Join SquadQuest to RSVP to this event'),
+                                                              onPressed: () {
+                                                                context.goNamed(
+                                                                    'login',
+                                                                    queryParameters: {
+                                                                      'redirect':
+                                                                          '/events/${widget.instanceId}'
+                                                                    });
+                                                              })))
+                                                else
+                                                  rsvpsFriendsAsync.when(
+                                                      loading: () => const Center(
+                                                          child:
+                                                              CircularProgressIndicator()),
+                                                      error: (error, _) =>
+                                                          Text('Error: $error'),
+                                                      data: (rsvpsFriends) =>
+                                                          rsvpsFriends.isEmpty
+                                                              ? const Padding(
+                                                                  padding:
+                                                                      EdgeInsets
+                                                                          .all(
+                                                                              32),
+                                                                  child: Text(
+                                                                    'No one has RSVPed to this event yet. Be the first! And then invite your friends with the button below.',
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                            20),
+                                                                  ),
+                                                                )
+                                                              : GroupedListView(
+                                                                  primary:
+                                                                      false,
+                                                                  shrinkWrap:
+                                                                      true,
+                                                                  elements:
+                                                                      rsvpsFriends,
+                                                                  groupBy: (RsvpFriend
+                                                                          rsvpFriend) =>
                                                                       rsvpFriend
-                                                                              .friendship !=
-                                                                          null;
-                                                                  return ListTile(
-                                                                      onTap: isFriendOrSelf
-                                                                          ? () {
-                                                                              context.pushNamed('profile-view', pathParameters: {
-                                                                                'id': rsvpFriend.rsvp.memberId!
-                                                                              });
-                                                                            }
-                                                                          : null,
-                                                                      leading: !isFriendOrSelf
-                                                                          ? CircleAvatar(
-                                                                              backgroundColor: theme.colorScheme.primaryContainer.withAlpha(100),
-                                                                              child: Icon(
-                                                                                Icons.person_outline,
-                                                                                color: theme.iconTheme.color!.withAlpha(100),
-                                                                              ),
-                                                                            )
-                                                                          : rsvpFriend.rsvp.member!.photo == null
-                                                                              ? const CircleAvatar(
-                                                                                  child: Icon(Icons.person),
-                                                                                )
-                                                                              : CircleAvatar(
-                                                                                  backgroundImage: NetworkImage(rsvpFriend.rsvp.member!.photo.toString()),
-                                                                                ),
-                                                                      title: Text(rsvpFriend.rsvp.member!.displayName,
-                                                                          style: TextStyle(
-                                                                            color: isFriendOrSelf
-                                                                                ? null
-                                                                                : theme.disabledColor,
+                                                                          .rsvp
+                                                                          .status,
+                                                                  groupComparator:
+                                                                      (group1,
+                                                                          group2) {
+                                                                    return _statusGroupOrder[
+                                                                            group1]!
+                                                                        .compareTo(
+                                                                            _statusGroupOrder[group2]!);
+                                                                  },
+                                                                  groupSeparatorBuilder: (InstanceMemberStatus
+                                                                          group) =>
+                                                                      Padding(
+                                                                          padding: const EdgeInsets
+                                                                              .all(
+                                                                              8.0),
+                                                                          child:
+                                                                              Text(
+                                                                            switch (group) {
+                                                                              InstanceMemberStatus.omw =>
+                                                                                'OMW!',
+                                                                              InstanceMemberStatus.yes =>
+                                                                                'Attending',
+                                                                              InstanceMemberStatus.maybe =>
+                                                                                'Might be attending',
+                                                                              InstanceMemberStatus.no =>
+                                                                                'Not attending',
+                                                                              InstanceMemberStatus.invited =>
+                                                                                'Invited',
+                                                                            },
+                                                                            textAlign:
+                                                                                TextAlign.center,
+                                                                            style:
+                                                                                const TextStyle(fontSize: 18),
                                                                           )),
-                                                                      subtitle: rsvpFriend.mutuals == null || isFriendOrSelf
-                                                                          ? null
-                                                                          : Text(
-                                                                              // ignore: prefer_interpolation_to_compose_strings
-                                                                              'Friend of ${rsvpFriend.mutuals!.map((profile) => profile.displayName).join(', ')}',
-                                                                              style: TextStyle(
-                                                                                color: isFriendOrSelf ? theme.disabledColor : null,
-                                                                              )),
-                                                                      trailing: rsvpIcons[rsvpFriend.rsvp.status]);
-                                                                },
-                                                              )),
+                                                                  itemBuilder:
+                                                                      (context,
+                                                                          rsvpFriend) {
+                                                                    final isFriendOrSelf = rsvpFriend.rsvp.memberId! ==
+                                                                            session!
+                                                                                .user.id ||
+                                                                        rsvpFriend.friendship !=
+                                                                            null;
+                                                                    return ListTile(
+                                                                        onTap: isFriendOrSelf
+                                                                            ? () {
+                                                                                context.pushNamed('profile-view', pathParameters: {
+                                                                                  'id': rsvpFriend.rsvp.memberId!
+                                                                                });
+                                                                              }
+                                                                            : null,
+                                                                        leading: !isFriendOrSelf
+                                                                            ? CircleAvatar(
+                                                                                backgroundColor: theme.colorScheme.primaryContainer.withAlpha(100),
+                                                                                child: Icon(
+                                                                                  Icons.person_outline,
+                                                                                  color: theme.iconTheme.color!.withAlpha(100),
+                                                                                ),
+                                                                              )
+                                                                            : rsvpFriend.rsvp.member!.photo == null
+                                                                                ? const CircleAvatar(
+                                                                                    child: Icon(Icons.person),
+                                                                                  )
+                                                                                : CircleAvatar(
+                                                                                    backgroundImage: NetworkImage(rsvpFriend.rsvp.member!.photo.toString()),
+                                                                                  ),
+                                                                        title: Text(rsvpFriend.rsvp.member!.displayName,
+                                                                            style: TextStyle(
+                                                                              color: isFriendOrSelf ? null : theme.disabledColor,
+                                                                            )),
+                                                                        subtitle: rsvpFriend.mutuals == null || isFriendOrSelf
+                                                                            ? null
+                                                                            : Text(
+                                                                                // ignore: prefer_interpolation_to_compose_strings
+                                                                                'Friend of ${rsvpFriend.mutuals!.map((profile) => profile.displayName).join(', ')}',
+                                                                                style: TextStyle(
+                                                                                  color: isFriendOrSelf ? theme.disabledColor : null,
+                                                                                )),
+                                                                        trailing: rsvpIcons[rsvpFriend.rsvp.status]);
+                                                                  },
+                                                                )),
                                               ])))))
                         ])),
         bottomNavigationBar: session == null

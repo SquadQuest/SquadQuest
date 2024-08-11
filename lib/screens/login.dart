@@ -45,12 +45,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       log('Sent SMS');
 
       if (context.mounted) {
-        context
-            .pushNamed('verify',
-                queryParameters: widget.redirect == null
-                    ? {}
-                    : {'redirect': widget.redirect})
-            .then((_) {});
+        context.pushNamed('verify',
+            queryParameters:
+                widget.redirect == null ? {} : {'redirect': widget.redirect});
       }
     } catch (error, st) {
       log('Error sending SMS:', error: error, stackTrace: st);
