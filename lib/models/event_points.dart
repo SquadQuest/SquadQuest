@@ -7,26 +7,21 @@ class EventPoints {
   final DateTime? latest;
   final int users;
   final List<Geographic> userPoints;
+  final Geographic? centroid;
 
   EventPoints(
       {required this.id,
       required this.latest,
       required this.users,
-      required this.userPoints});
+      required this.userPoints,
+      required this.centroid});
 
   factory EventPoints.fromMap(Map<String, dynamic> map) {
     final userPointsText =
         map['user_points'] == null ? [] : map['user_points'].split(';');
 
-    final userPoints = userPointsText
-        .map((pointText) {
-          final [longitude, latitude] =
-              pointText.substring(6, pointText.length - 1).split(' ');
-          return Geographic(
-              lon: double.parse(longitude), lat: double.parse(latitude));
-        })
-        .toList()
-        .cast<Geographic>();
+    final userPoints =
+        userPointsText.map(_parsePoint).toList().cast<Geographic>();
 
     return EventPoints(
         id: map['id'],
@@ -34,11 +29,19 @@ class EventPoints {
             ? null
             : DateTime.parse(map['latest']).toLocal(),
         users: map['users'],
-        userPoints: userPoints);
+        userPoints: userPoints,
+        centroid:
+            map['centroid'] == null ? null : _parsePoint(map['centroid']));
   }
 
   @override
   String toString() {
     return 'EventPoints{id: $id, users: $users}';
   }
+}
+
+Geographic _parsePoint(String pointText) {
+  final [longitude, latitude] =
+      pointText.substring(6, pointText.length - 1).split(' ');
+  return Geographic(lon: double.parse(longitude), lat: double.parse(latitude));
 }

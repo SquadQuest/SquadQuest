@@ -558,100 +558,117 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                       'Notes: ${event.notes}')
                                                                 ]
                                                               ])),
-                                                      if (event.rallyPoint !=
-                                                          null)
-                                                        Expanded(
+                                                      Consumer(builder:
+                                                          (_, ref, child) {
+                                                        final eventPointsAsync =
+                                                            ref.watch(
+                                                                eventPointsProvider(
+                                                                    widget
+                                                                        .instanceId));
+                                                        final mapCenter =
+                                                            eventPointsAsync
+                                                                    .value
+                                                                    ?.centroid ??
+                                                                event
+                                                                    .rallyPoint;
+
+                                                        if (mapCenter == null) {
+                                                          return const SizedBox
+                                                              .shrink();
+                                                        }
+
+                                                        return Expanded(
                                                             flex: 1,
                                                             child: AspectRatio(
                                                                 aspectRatio: 1,
-                                                                child: Consumer(
-                                                                    builder: (_,
-                                                                        ref,
-                                                                        child) {
-                                                                      final eventPointsAsync =
-                                                                          ref.watch(
-                                                                              eventPointsProvider(widget.instanceId));
-                                                                      return Stack(
-                                                                          children: [
-                                                                            child!,
-                                                                            const Positioned(
-                                                                                top: 0,
+                                                                child: Stack(
+                                                                    children: [
+                                                                      MapLibreMap(
+                                                                        styleString:
+                                                                            'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+
+                                                                        // listeners
+                                                                        onMapCreated:
+                                                                            _onMapCreated,
+                                                                        onStyleLoadedCallback:
+                                                                            () =>
+                                                                                _onMapStyleLoaded(event),
+                                                                        onMapClick:
+                                                                            (_, __) =>
+                                                                                _showLiveMap(),
+
+                                                                        // disable all interaction
+                                                                        gestureRecognizers:
+                                                                            null,
+                                                                        dragEnabled:
+                                                                            false,
+                                                                        compassEnabled:
+                                                                            false,
+                                                                        zoomGesturesEnabled:
+                                                                            false,
+                                                                        rotateGesturesEnabled:
+                                                                            false,
+                                                                        tiltGesturesEnabled:
+                                                                            false,
+                                                                        scrollGesturesEnabled:
+                                                                            false,
+                                                                        doubleClickZoomEnabled:
+                                                                            false,
+
+                                                                        // hide attribution in mini view
+                                                                        attributionButtonPosition:
+                                                                            AttributionButtonPosition.bottomRight,
+                                                                        attributionButtonMargins: const Point(
+                                                                            -100,
+                                                                            -100),
+
+                                                                        // set initial camera position to rally point
+                                                                        initialCameraPosition:
+                                                                            CameraPosition(
+                                                                          target: LatLng(
+                                                                              mapCenter.lat,
+                                                                              mapCenter.lon),
+                                                                          zoom:
+                                                                              11.75,
+                                                                        ),
+                                                                      ),
+                                                                      const Positioned(
+                                                                          top:
+                                                                              0,
+                                                                          right:
+                                                                              0,
+                                                                          child: IgnorePointer(
+                                                                              child: Icon(
+                                                                            Icons.zoom_in,
+                                                                            size:
+                                                                                32,
+                                                                          ))),
+                                                                      eventPointsAsync
+                                                                          .when(
+                                                                        data: (eventPoints) => eventPoints == null ||
+                                                                                eventPoints.users == 0
+                                                                            ? const SizedBox.shrink()
+                                                                            : Positioned(
+                                                                                bottom: 0,
+                                                                                left: 0,
                                                                                 right: 0,
                                                                                 child: IgnorePointer(
-                                                                                    child: Icon(
-                                                                                  Icons.zoom_in,
-                                                                                  // color: Colors.red,
-                                                                                  size: 32,
-                                                                                ))),
-                                                                            eventPointsAsync.when(
-                                                                              data: (eventPoints) => eventPoints == null || eventPoints.users == 0
-                                                                                  ? const SizedBox.shrink()
-                                                                                  : Positioned(
-                                                                                      bottom: 0,
-                                                                                      left: 0,
-                                                                                      right: 0,
-                                                                                      child: IgnorePointer(
-                                                                                          child: Container(
-                                                                                              color: Colors.black.withOpacity(0.5),
-                                                                                              child: Text(
-                                                                                                '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
-                                                                                                style: const TextStyle(fontSize: 12),
-                                                                                                textAlign: TextAlign.center,
-                                                                                              )))),
-                                                                              loading: () => const SizedBox.shrink(),
-                                                                              error: (_, __) => const SizedBox.shrink(),
-                                                                            )
-                                                                          ]);
-                                                                    },
-                                                                    child:
-                                                                        MapLibreMap(
-                                                                      styleString:
-                                                                          'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
-
-                                                                      // listeners
-                                                                      onMapCreated:
-                                                                          _onMapCreated,
-                                                                      onStyleLoadedCallback:
-                                                                          () =>
-                                                                              _onMapStyleLoaded(event),
-                                                                      onMapClick:
-                                                                          (_, __) =>
-                                                                              _showLiveMap(),
-
-                                                                      // disable all interaction
-                                                                      dragEnabled:
-                                                                          false,
-                                                                      compassEnabled:
-                                                                          false,
-                                                                      zoomGesturesEnabled:
-                                                                          false,
-                                                                      rotateGesturesEnabled:
-                                                                          false,
-                                                                      tiltGesturesEnabled:
-                                                                          false,
-                                                                      scrollGesturesEnabled:
-                                                                          false,
-                                                                      doubleClickZoomEnabled:
-                                                                          false,
-
-                                                                      // hide attribution in mini view
-                                                                      attributionButtonPosition:
-                                                                          AttributionButtonPosition
-                                                                              .bottomRight,
-                                                                      attributionButtonMargins: const Point(
-                                                                          -100,
-                                                                          -100),
-
-                                                                      // set initial camera position to rally point
-                                                                      initialCameraPosition:
-                                                                          CameraPosition(
-                                                                        target: LatLng(
-                                                                            event.rallyPoint!.lat,
-                                                                            event.rallyPoint!.lon),
-                                                                        zoom:
-                                                                            11.75,
-                                                                      ),
-                                                                    ))))
+                                                                                    child: Container(
+                                                                                        color: Colors.black.withOpacity(0.5),
+                                                                                        child: Text(
+                                                                                          '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
+                                                                                          style: const TextStyle(fontSize: 12),
+                                                                                          textAlign: TextAlign.center,
+                                                                                        )))),
+                                                                        loading:
+                                                                            () =>
+                                                                                const SizedBox.shrink(),
+                                                                        error: (_,
+                                                                                __) =>
+                                                                            const SizedBox.shrink(),
+                                                                      )
+                                                                    ])));
+                                                      })
                                                     ]),
                                                 rsvpsFriendsAsync.when(
                                                     loading: () => const Center(
