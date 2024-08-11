@@ -106,21 +106,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     }
 
     // go to the home screen if no splashNextScreen has been set
-    if (splashNextScreen == null) {
+    if (splashNextScreen == null || splashNextScreen.name == 'home') {
       router.goNamed('home');
       return;
     }
 
-    // if splashNextScreen is in the drawer navigation, go directly to it replacing the splash screen
-    if (isDrawerRoute(splashNextScreen.name)) {
-      logger.t('replacing splash screen with drawer nav screen');
-      router.goNamed(splashNextScreen.name,
-          pathParameters: splashNextScreen.pathParameters ?? {});
-      return;
-    }
-
     // put the home screen in the stack first
-    logger.t('pushing home screen before splashNextScreen');
     router.goNamed('home');
 
     // push the queued splashNextScreen after the home screen
