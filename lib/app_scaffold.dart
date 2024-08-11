@@ -29,7 +29,7 @@ class AppScaffold extends StatelessWidget {
       this.loadMask,
       required this.body,
       this.bodyPadding,
-      this.showDrawer = true,
+      this.showDrawer = false,
       this.showLocationSharingSheet = true,
       this.locationSharingAvailableEvent,
       this.actions,

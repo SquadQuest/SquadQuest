@@ -112,8 +112,10 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
 
         if (menuItem.handler != null) {
           await menuItem.handler!(context, ref);
-        } else {
+        } else if (menuItem.route == 'home') {
           context.goNamed(menuItem.route!);
+        } else {
+          context.pushNamed(menuItem.route!);
         }
       },
       children: <Widget>[

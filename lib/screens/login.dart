@@ -78,7 +78,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Log in to SquadQuest',
-      showDrawer: false,
       showLocationSharingSheet: false,
       bodyPadding: const EdgeInsets.all(16),
       body: AutofillGroup(

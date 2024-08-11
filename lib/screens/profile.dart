@@ -104,7 +104,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      showDrawer: !context.canPop(),
       title: profileAsync.when(
         data: (UserProfile profile) => profile.displayName,
         loading: () => '',
