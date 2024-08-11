@@ -75,6 +75,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         [];
 
     return AppScaffold(
+      showDrawer: true,
       title: 'Welcome to SquadQuest',
       floatingActionButton: FloatingActionButton(
         onPressed: () {

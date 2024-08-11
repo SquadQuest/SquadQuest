@@ -148,7 +148,6 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     return AppScaffold(
         title: isNewProfile ? 'Set up your profile' : 'Update your profile',
         loadMask: submitted ? 'Saving profile...' : null,
-        showDrawer: !isNewProfile,
         actions: [
           if (!submitted)
             TextButton(

@@ -293,7 +293,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                     color: Colors.black, fontWeight: FontWeight.bold)),
           ),
       ],
-      showDrawer: false,
       showLocationSharingSheet: false,
       body: _editingInstance.when(
           error: (error, __) => Center(child: Text(error.toString())),

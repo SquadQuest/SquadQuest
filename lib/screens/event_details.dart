@@ -386,7 +386,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
     // build widgets
     return AppScaffold(
-        showDrawer: !context.canPop(),
         title: eventAsync.when(
           data: (event) => event.title,
           loading: () => '',
