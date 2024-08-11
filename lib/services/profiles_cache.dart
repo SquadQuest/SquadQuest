@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/models/user.dart';
@@ -29,21 +30,26 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
   Future<void> loadNetwork() async {
     final supabase = ref.read(supabaseClientProvider);
 
-    final response = await supabase.functions
-        .invoke('get-friends-network', method: HttpMethod.get);
+    try {
+      final response = await supabase.functions
+          .invoke('get-friends-network', method: HttpMethod.get);
 
-    for (final profile in response.data) {
-      state[profile['id']] = UserProfile.fromMap(profile);
-    }
-
-    // load own profile if needed
-    final myUserId = supabase.auth.currentUser?.id;
-    if (myUserId != null && !state.containsKey(myUserId)) {
-      final myProfile = await ref.read(profileProvider.future);
-
-      if (myProfile != null) {
-        state[myUserId] = myProfile;
+      for (final profile in response.data) {
+        state[profile['id']] = UserProfile.fromMap(profile);
       }
+
+      // load own profile if needed
+      final myUserId = supabase.auth.currentUser?.id;
+      if (myUserId != null && !state.containsKey(myUserId)) {
+        final myProfile = await ref.read(profileProvider.future);
+
+        if (myProfile != null) {
+          state[myUserId] = myProfile;
+        }
+      }
+    } catch (error, stackTrace) {
+      logger.e('Failed to load friends network',
+          error: error, stackTrace: stackTrace);
     }
   }
 

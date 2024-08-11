@@ -4,7 +4,8 @@ SELECT
 
 create policy "Everyone can read public instances" on "public"."instances" as PERMISSIVE for
 SELECT
-  to authenticated using (
+  to anon,
+  authenticated using (
     visibility = 'public'
     AND status IN ('live', 'canceled')
   );

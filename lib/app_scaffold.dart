@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/drawer.dart';
 import 'package:squadquest/components/sheets/location_sharing.dart';
@@ -14,7 +15,7 @@ class AppScaffold extends StatelessWidget {
   final String? loadMask;
   final Widget body;
   final EdgeInsetsGeometry? bodyPadding;
-  final bool showDrawer;
+  final bool? showDrawer;
   final bool showLocationSharingSheet;
   final InstanceID? locationSharingAvailableEvent;
   final List<Widget>? actions;
@@ -29,7 +30,7 @@ class AppScaffold extends StatelessWidget {
       this.loadMask,
       required this.body,
       this.bodyPadding,
-      this.showDrawer = false,
+      this.showDrawer,
       this.showLocationSharingSheet = true,
       this.locationSharingAvailableEvent,
       this.actions,
@@ -102,7 +103,7 @@ class AppScaffold extends StatelessWidget {
         title: Text(title, style: titleStyle),
         actions: actions,
       ),
-      drawer: showDrawer ? const AppDrawer() : null,
+      drawer: showDrawer ?? !context.canPop() ? const AppDrawer() : null,
       floatingActionButtonLocation: floatingActionButtonLocation,
       floatingActionButton: floatingActionButton == null
           ? null
