@@ -464,118 +464,121 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         body: eventAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(child: Text(error.toString())),
-            data: (event) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (event.bannerPhoto != null) ...[
-                        ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 175),
-                            child: Image.network(event.bannerPhoto!.toString(),
-                                fit: BoxFit.cover)),
-                      ],
-                      Expanded(
-                          child: RefreshIndicator(
-                              onRefresh: () async {
-                                ref.invalidate(
-                                    eventDetailsProvider(widget.instanceId));
-                                ref.invalidate(
-                                    rsvpsPerEventProvider(widget.instanceId));
-                              },
-                              child: SingleChildScrollView(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  child: Padding(
-                                      padding: const EdgeInsets.all(16),
-                                      child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Expanded(
-                                                      flex: 2,
-                                                      child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            if (event.status ==
-                                                                InstanceStatus
-                                                                    .canceled)
-                                                              const Text(
-                                                                  'Status: CANCELED'),
-                                                            Text(
-                                                                'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
-                                                            Text(
-                                                                'Date: ${eventDateFormat.format(event.startTimeMin)}'),
-                                                            Text(
-                                                                'Topic: ${event.topic?.name}'),
-                                                            Text(
-                                                                'Posted by: ${event.createdBy?.displayName}'),
-                                                            Text(
-                                                                'Visibility: ${event.visibility.name}'),
-                                                            Text(
-                                                                'Location: ${event.locationDescription}'),
-                                                            if (event.link !=
-                                                                null) ...[
-                                                              RichText(
-                                                                  text: TextSpan(
-                                                                      children: [
-                                                                    const TextSpan(
-                                                                        text:
-                                                                            'Link: '),
-                                                                    TextSpan(
-                                                                      text: event
-                                                                          .link
-                                                                          .toString(),
-                                                                      style:
-                                                                          const TextStyle(
-                                                                        color: Colors
-                                                                            .blue,
-                                                                        decoration:
-                                                                            TextDecoration.underline,
-                                                                      ),
-                                                                      recognizer: TapGestureRecognizer()
-                                                                        ..onTap =
-                                                                            () =>
-                                                                                launchUrl(event.link!),
-                                                                    )
-                                                                  ]))
-                                                            ],
-                                                            if (event.notes !=
-                                                                    null &&
-                                                                event.notes!
-                                                                    .trim()
-                                                                    .isNotEmpty) ...[
-                                                              Text(
-                                                                  'Notes: ${event.notes}')
-                                                            ]
-                                                          ])),
-                                                  Consumer(
-                                                      builder: (_, ref, child) {
-                                                    final eventPointsAsync =
-                                                        ref.watch(
-                                                            eventPointsProvider(
-                                                                widget
-                                                                    .instanceId));
-                                                    final mapCenter =
-                                                        eventPointsAsync.value
-                                                                ?.centroid ??
-                                                            event.rallyPoint;
+            data:
+                (event) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (event.bannerPhoto != null) ...[
+                            ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxHeight: 175),
+                                child: Image.network(
+                                    event.bannerPhoto!.toString(),
+                                    fit: BoxFit.cover)),
+                          ],
+                          Expanded(
+                              child: RefreshIndicator(
+                                  onRefresh: () async {
+                                    ref.invalidate(eventDetailsProvider(
+                                        widget.instanceId));
+                                    ref.invalidate(rsvpsPerEventProvider(
+                                        widget.instanceId));
+                                  },
+                                  child: SingleChildScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      child: Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
+                                              children: [
+                                                Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Expanded(
+                                                          flex: 2,
+                                                          child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                if (event
+                                                                        .status ==
+                                                                    InstanceStatus
+                                                                        .canceled)
+                                                                  const Text(
+                                                                      'Status: CANCELED'),
+                                                                Text(
+                                                                    'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
+                                                                Text(
+                                                                    'Date: ${eventDateFormat.format(event.startTimeMin)}'),
+                                                                Text(
+                                                                    'Topic: ${event.topic?.name}'),
+                                                                Text(
+                                                                    'Posted by: ${event.createdBy?.displayName}'),
+                                                                Text(
+                                                                    'Visibility: ${event.visibility.name}'),
+                                                                Text(
+                                                                    'Location: ${event.locationDescription}'),
+                                                                if (event
+                                                                        .link !=
+                                                                    null) ...[
+                                                                  RichText(
+                                                                      text: TextSpan(
+                                                                          children: [
+                                                                        const TextSpan(
+                                                                            text:
+                                                                                'Link: '),
+                                                                        TextSpan(
+                                                                          text: event
+                                                                              .link
+                                                                              .toString(),
+                                                                          style:
+                                                                              const TextStyle(
+                                                                            color:
+                                                                                Colors.blue,
+                                                                            decoration:
+                                                                                TextDecoration.underline,
+                                                                          ),
+                                                                          recognizer: TapGestureRecognizer()
+                                                                            ..onTap =
+                                                                                () => launchUrl(event.link!),
+                                                                        )
+                                                                      ]))
+                                                                ],
+                                                                if (event.notes !=
+                                                                        null &&
+                                                                    event.notes!
+                                                                        .trim()
+                                                                        .isNotEmpty) ...[
+                                                                  Text(
+                                                                      'Notes: ${event.notes}')
+                                                                ]
+                                                              ])),
+                                                      Consumer(builder:
+                                                          (_, ref, child) {
+                                                        final eventPointsAsync =
+                                                            ref.watch(
+                                                                eventPointsProvider(
+                                                                    widget
+                                                                        .instanceId));
+                                                        final mapCenter =
+                                                            eventPointsAsync
+                                                                    .value
+                                                                    ?.centroid ??
+                                                                event
+                                                                    .rallyPoint;
 
-                                                    if (mapCenter == null) {
-                                                      return const SizedBox
-                                                          .shrink();
-                                                    }
+                                                        if (mapCenter == null) {
+                                                          return const SizedBox
+                                                              .shrink();
+                                                        }
 
-                                                    return Expanded(
-                                                        flex: 1,
-                                                        child: GestureDetector(
-                                                            onTap: () {
-                                                              _showLiveMap();
-                                                            },
+                                                        return Expanded(
+                                                            flex: 1,
                                                             child: AspectRatio(
                                                                 aspectRatio: 1,
                                                                 child: Stack(
@@ -637,7 +640,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                           child: IgnorePointer(
                                                                               child: Icon(
                                                                             Icons.zoom_in,
-                                                                            // color: Colors.red,
                                                                             size:
                                                                                 32,
                                                                           ))),
@@ -650,15 +652,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                                 bottom: 0,
                                                                                 left: 0,
                                                                                 right: 0,
-                                                                                child: /*IgnorePointer(
-                                                                                        child:*/
-                                                                                    Container(
+                                                                                child: IgnorePointer(
+                                                                                    child: Container(
                                                                                         color: Colors.black.withOpacity(0.5),
                                                                                         child: Text(
                                                                                           '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
                                                                                           style: const TextStyle(fontSize: 12),
                                                                                           textAlign: TextAlign.center,
-                                                                                        ))), //),
+                                                                                        )))),
                                                                         loading:
                                                                             () =>
                                                                                 const SizedBox.shrink(),
@@ -666,17 +667,16 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                                 __) =>
                                                                             const SizedBox.shrink(),
                                                                       )
-                                                                    ]))));
-                                                  })
-                                                ]),
-                                            rsvpsFriendsAsync.when(
-                                                loading: () => const Center(
-                                                    child:
-                                                        CircularProgressIndicator()),
-                                                error: (error, _) =>
-                                                    Text('Error: $error'),
-                                                data:
-                                                    (rsvpsFriends) =>
+                                                                    ])));
+                                                      })
+                                                    ]),
+                                                rsvpsFriendsAsync.when(
+                                                    loading: () => const Center(
+                                                        child:
+                                                            CircularProgressIndicator()),
+                                                    error: (error, _) =>
+                                                        Text('Error: $error'),
+                                                    data: (rsvpsFriends) =>
                                                         rsvpsFriends.isEmpty
                                                             ? const Padding(
                                                                 padding:
@@ -788,8 +788,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                       trailing: rsvpIcons[rsvpFriend.rsvp.status]);
                                                                 },
                                                               )),
-                                          ])))))
-                    ])),
+                                              ])))))
+                        ])),
         bottomNavigationBar: session == null
             ? null
             : Padding(
