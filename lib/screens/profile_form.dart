@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
+import 'package:squadquest/router.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
@@ -88,6 +90,13 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         'last_name': savedProfile.lastName!,
         'profile_initialized': true,
       });
+
+      // refresh network if profile just got created
+      if (isNewProfile) {
+        // small manual delay to allow async backend trigger to initialize friends
+        await Future.delayed(const Duration(seconds: 1));
+        await ref.read(profilesCacheProvider.notifier).loadNetwork();
+      }
     } catch (error) {
       setState(() {
         submitted = false;
@@ -102,18 +111,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       return;
     }
 
-    if (!context.mounted) return;
-
     // redirect to next screen
-    if (widget.redirect != null) {
-      context.go(widget.redirect!);
-    } else if (isNewProfile &&
-        session.user.appMetadata['invite_friends'] != null &&
-        session.user.appMetadata['invite_friends'].isNotEmpty) {
-      context.goNamed('friends');
-    } else {
-      context.goNamed('home');
-    }
+    goInitialLocation(widget.redirect);
   }
 
   @override
@@ -148,6 +147,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     return AppScaffold(
         title: isNewProfile ? 'Set up your profile' : 'Update your profile',
         loadMask: submitted ? 'Saving profile...' : null,
+        showDrawer: isNewProfile ? false : null,
         actions: [
           if (!submitted)
             TextButton(

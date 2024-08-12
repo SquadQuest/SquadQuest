@@ -2,8 +2,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/router.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
@@ -60,17 +60,9 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
       return;
     }
 
-    final profile = await ref.read(profileProvider.notifier).fetch();
+    await ref.read(profileProvider.notifier).fetch();
 
-    if (!context.mounted) return;
-
-    if (profile == null) {
-      context.goNamed('profile-edit',
-          queryParameters:
-              widget.redirect == null ? {} : {'redirect': widget.redirect});
-    } else {
-      context.go(widget.redirect ?? '/');
-    }
+    goInitialLocation(widget.redirect);
   }
 
   @override
