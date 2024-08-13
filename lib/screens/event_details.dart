@@ -394,7 +394,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           loading: () => '',
           error: (_, __) => 'Error loading event details',
         ),
-        showDrawer: session == null ? false : null,
         titleStyle: eventAsync.valueOrNull?.status == InstanceStatus.canceled
             ? const TextStyle(
                 decoration: TextDecoration.lineThrough,
