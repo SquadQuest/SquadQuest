@@ -87,15 +87,13 @@ class MyApp extends ConsumerWidget {
             case 'event-uncanceled':
             case 'rally-point-updated':
             case 'rsvp':
-              goToNotificationRoute(ref, 'event-details',
-                  pathParameters: {'id': data['event']['id'] as String});
+              goToNotificationRoute(ref, '/events/${data['event']['id']}');
             case 'invitation':
-              goToNotificationRoute(ref, 'event-details', pathParameters: {
-                'id': data['invitation']['instance'] as String
-              });
+              goToNotificationRoute(
+                  ref, '/events/${data['invitation']['instance']}');
             case 'friend-request-received':
             case 'friend-request-accepted':
-              goToNotificationRoute(ref, 'friends');
+              goToNotificationRoute(ref, '/friends');
           }
       }
     });
@@ -111,19 +109,12 @@ class MyApp extends ConsumerWidget {
     );
   }
 
-  void goToNotificationRoute(WidgetRef ref, String routeName,
-      {Map<String, String> pathParameters = const {}}) {
+  Future<void> goToNotificationRoute(WidgetRef ref, String location) async {
     final navContext = navigatorKey.currentContext;
     final router = ref.read(routerProvider);
-    final currentScreenName =
-        router.routerDelegate.currentConfiguration.last.route.name;
 
     logger.t({
-      'goToNotificationRoute': {
-        'route-name': routeName,
-        'path-parameters': pathParameters,
-        'current-screen-name': currentScreenName
-      }
+      'goToNotificationRoute': {'location': location}
     });
 
     if (navContext == null) {
@@ -131,21 +122,7 @@ class MyApp extends ConsumerWidget {
       return;
     }
 
-    // if the current screen is splash, queue the notification route for it to handle
-    if (currentScreenName == 'splash') {
-      ref.read(splashNextScreenProvider.notifier).state =
-          (name: routeName, pathParameters: pathParameters);
-      return;
-    }
-
-    // if the current screen is that same as the notification route, replace it
-    if (currentScreenName == routeName) {
-      navContext.pushReplacementNamed(routeName,
-          pathParameters: pathParameters);
-      return;
-    }
-
     // otherwise, push the notification route
-    navContext.pushNamed(routeName, pathParameters: pathParameters);
+    navContext.push(location);
   }
 }

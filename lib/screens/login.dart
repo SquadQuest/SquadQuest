@@ -75,6 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Log in to SquadQuest',
+      loadMask: submitted ? 'Sending login code...' : null,
       showLocationSharingSheet: false,
       bodyPadding: const EdgeInsets.all(16),
       body: AutofillGroup(
@@ -91,16 +92,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              submitted
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: submitted ? null : () => _submitPhone(context),
-                      child: const Text(
-                        'Send login code via SMS',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                    ),
+              ElevatedButton(
+                onPressed: submitted ? null : () => _submitPhone(context),
+                child: const Text(
+                  'Send login code via SMS',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              ),
             ],
           ),
         ),

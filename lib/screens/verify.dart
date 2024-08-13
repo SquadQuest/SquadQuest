@@ -2,8 +2,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/router.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
@@ -60,23 +60,16 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
       return;
     }
 
-    final profile = await ref.read(profileProvider.notifier).fetch();
+    await ref.read(profileProvider.notifier).fetch();
 
-    if (!context.mounted) return;
-
-    if (profile == null) {
-      context.goNamed('profile-edit',
-          queryParameters:
-              widget.redirect == null ? {} : {'redirect': widget.redirect});
-    } else {
-      context.go(widget.redirect ?? '/');
-    }
+    goInitialLocation(widget.redirect);
   }
 
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Verify phone number',
+      loadMask: submitted ? 'Verifying code...' : null,
       showLocationSharingSheet: false,
       bodyPadding: const EdgeInsets.all(16),
       body: AutofillGroup(
@@ -109,16 +102,13 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
                 onFieldSubmitted: (_) => _submitToken(context),
               ),
               const SizedBox(height: 16),
-              submitted
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: submitted ? null : () => _submitToken(context),
-                      child: const Text(
-                        'Verify',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                    )
+              ElevatedButton(
+                onPressed: submitted ? null : () => _submitToken(context),
+                child: const Text(
+                  'Verify',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              )
             ],
           ),
         ),
