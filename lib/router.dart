@@ -150,12 +150,16 @@ Future<String?> _redirect(BuildContext context, GoRouterState state) async {
   if (state.topRoute?.name == 'event-details' &&
       state.pathParameters['id'] != null) {
     await supabaseInitialized;
-    final event = await _ref!
-        .read(eventDetailsProvider(state.pathParameters['id']!).future);
+    try {
+      final event = await _ref!
+          .read(eventDetailsProvider(state.pathParameters['id']!).future);
 
-    // allow unauthenticated access to public events
-    if (event.visibility == InstanceVisibility.public) {
-      return null;
+      // allow unauthenticated access to public events
+      if (event.visibility == InstanceVisibility.public) {
+        return null;
+      }
+    } catch (error) {
+      logger.e('error fetching event details', error: error);
     }
   }
 
