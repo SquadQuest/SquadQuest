@@ -69,6 +69,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Verify phone number',
+      loadMask: submitted ? 'Verifying code...' : null,
       showLocationSharingSheet: false,
       bodyPadding: const EdgeInsets.all(16),
       body: AutofillGroup(
@@ -101,16 +102,13 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
                 onFieldSubmitted: (_) => _submitToken(context),
               ),
               const SizedBox(height: 16),
-              submitted
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: submitted ? null : () => _submitToken(context),
-                      child: const Text(
-                        'Verify',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                    )
+              ElevatedButton(
+                onPressed: submitted ? null : () => _submitToken(context),
+                child: const Text(
+                  'Verify',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              )
             ],
           ),
         ),
