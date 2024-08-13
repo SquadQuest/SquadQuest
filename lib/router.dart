@@ -127,14 +127,16 @@ Future<String?> _redirect(BuildContext context, GoRouterState state) async {
   // save to initial route and return existing location if splash isn't finished
   if (!splashComplete) {
     _initialLocation = state.uri.toString();
+    final currentLocation = _router.routerDelegate.currentConfiguration.isEmpty
+        ? '/splash'
+        : _router.routerDelegate.currentConfiguration.last.matchedLocation;
     logger.d({
-      'redirect': {
+      'splash not complete, saving redirect to initialLocation': {
         'initialLocation': state.uri.toString(),
-        'curretLocation':
-            _router.routerDelegate.currentConfiguration.last.matchedLocation,
+        'curretLocation': currentLocation,
       }
     });
-    return _router.routerDelegate.currentConfiguration.last.matchedLocation;
+    return currentLocation;
   }
 
   logger.d('processing redirect to ${state.uri.toString()}');
@@ -158,9 +160,13 @@ Future<String?> _redirect(BuildContext context, GoRouterState state) async {
   }
 
   // otherwise: redirect to login screen
-  return state.namedLocation('login', queryParameters: {
-    'redirect': state.uri.toString(),
-  });
+  final redirect = state.uri.toString();
+  return state.namedLocation('login',
+      queryParameters: redirect == '/'
+          ? {}
+          : {
+              'redirect': redirect,
+            });
 }
 
 void goInitialLocation([String? overrideLocation]) async {
@@ -175,21 +181,21 @@ void goInitialLocation([String? overrideLocation]) async {
     }
   });
 
-  // send user to login screen if not authenticated
+  // send user to profile screen if profile is not set
   final session = _ref!.read(authControllerProvider);
-  if (session == null) {
-    _router.goNamed('login',
-        queryParameters:
-            overrideLocation == null ? {} : {'redirect': overrideLocation});
-    return;
+  if (session != null) {
+    final profile = await _ref!.read(profileProvider.future);
+    if (profile == null) {
+      _router.goNamed('profile-edit',
+          queryParameters:
+              overrideLocation == null ? {} : {'redirect': overrideLocation});
+      return;
+    }
   }
 
-  // send user to profile screen if profile is not set
-  final profile = await _ref!.read(profileProvider.future);
-  if (profile == null) {
-    _router.goNamed('profile-edit',
-        queryParameters:
-            overrideLocation == null ? {} : {'redirect': overrideLocation});
+  // if not authenticated, go directly to initialLocation instead of stacking home first
+  if (session == null) {
+    _router.go(initialLocation);
     return;
   }
 
