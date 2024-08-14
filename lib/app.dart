@@ -13,7 +13,6 @@ import 'package:squadquest/controllers/location.dart';
 import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/models/user.dart';
-import 'package:squadquest/screens/splash.dart';
 
 class MyApp extends ConsumerWidget {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
