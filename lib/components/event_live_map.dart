@@ -224,12 +224,13 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
     double maxLongitude =
         (keepRallyPointInView ? widget.rallyPoint?.longitude : null) ?? -180;
 
+    final List<UserID> usersToRemove = [];
     for (final UserID userId in pointsByUser.keys) {
       final List<LocationPoint> userPoints = pointsByUser[userId]!;
 
       // erase and skip user if there aren't enough points—cleanup code later will then delete any existing lines/symbols
       if (userPoints.length < 2) {
-        pointsByUser.remove(userId);
+        usersToRemove.add(userId);
         continue;
       }
 
@@ -310,6 +311,11 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
         symbolsByUser[userId] =
             await controller!.addSymbol(symbolOptions, {'user': userId});
       }
+    }
+
+    // remove any users with too few points
+    for (final userId in usersToRemove) {
+      pointsByUser.remove(userId);
     }
 
     // remove any unused symbols
