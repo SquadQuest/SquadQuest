@@ -241,6 +241,7 @@ class FirebaseMessagingService {
     }
 
     try {
+      logger.t('requesting permissions');
       settings = await messaging.requestPermission(
         alert: true,
         announcement: false,
@@ -250,15 +251,25 @@ class FirebaseMessagingService {
         provisional: false,
         sound: true,
       );
+      logger.t('got permissions: $settings');
     } catch (error) {
       logger.e('fcm: error requesting permissions', error: error);
     }
 
+    // wait for 5 seconds before getting the token... seems to help it work on iOS the first time
+    await Future.delayed(const Duration(seconds: 5));
+
     // get FCM device token
     try {
+      logger.t('getting APNS token');
+      final apnsToken = await messaging.getAPNSToken();
+      logger.t('got APNS token: $apnsToken');
       token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
+      logger.t('got FCM token: $token');
       ref.read(firebaseMessagingTokenProvider.notifier).state = token;
+      logger.t('wrote FCM token to provider');
       await _writeToken();
+      logger.t('wrote FCM token to profile');
     } catch (error) {
       logger.e('fcm: error getting token', error: error);
     }
