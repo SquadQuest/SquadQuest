@@ -596,9 +596,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                         onStyleLoadedCallback:
                                                                             () =>
                                                                                 _onMapStyleLoaded(event),
-                                                                        onMapClick:
-                                                                            (_, __) =>
-                                                                                _showLiveMap(),
 
                                                                         // disable all interaction
                                                                         gestureRecognizers:
@@ -640,12 +637,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                               0,
                                                                           right:
                                                                               0,
-                                                                          child: IgnorePointer(
-                                                                              child: Icon(
+                                                                          child:
+                                                                              Icon(
                                                                             Icons.zoom_in,
                                                                             size:
                                                                                 32,
-                                                                          ))),
+                                                                          )),
                                                                       eventPointsAsync
                                                                           .when(
                                                                         data: (eventPoints) => eventPoints == null ||
@@ -655,20 +652,23 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                                 bottom: 0,
                                                                                 left: 0,
                                                                                 right: 0,
-                                                                                child: IgnorePointer(
-                                                                                    child: Container(
-                                                                                        color: Colors.black.withOpacity(0.5),
-                                                                                        child: Text(
-                                                                                          '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
-                                                                                          style: const TextStyle(fontSize: 12),
-                                                                                          textAlign: TextAlign.center,
-                                                                                        )))),
+                                                                                child: Container(
+                                                                                    color: Colors.black.withOpacity(0.5),
+                                                                                    child: Text(
+                                                                                      '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
+                                                                                      style: const TextStyle(fontSize: 12),
+                                                                                      textAlign: TextAlign.center,
+                                                                                    ))),
                                                                         loading:
                                                                             () =>
                                                                                 const SizedBox.shrink(),
                                                                         error: (_,
                                                                                 __) =>
                                                                             const SizedBox.shrink(),
+                                                                      ),
+                                                                      InkWell(
+                                                                        onTap:
+                                                                            _showLiveMap,
                                                                       )
                                                                     ])));
                                                       })
