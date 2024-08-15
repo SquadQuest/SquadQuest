@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geobase/coordinates.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:open_location_code/open_location_code.dart' as pluscode;
 
 import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/topic.dart';
@@ -89,6 +90,12 @@ class Instance {
 
   LatLng? get rallyPointLatLng =>
       rallyPoint == null ? null : LatLng(rallyPoint!.lat, rallyPoint!.lon);
+
+  String? get rallyPointPlusCode => rallyPoint == null
+      ? null
+      : pluscode.PlusCode.encode(
+              pluscode.LatLng(rallyPoint!.lat, rallyPoint!.lon))
+          .toString();
 
   factory Instance.fromMap(Map<String, dynamic> map) {
     final createdByModel = map['created_by'] is UserProfile
