@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -524,8 +525,31 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                     'Posted by: ${event.createdBy?.displayName}'),
                                                                 Text(
                                                                     'Visibility: ${event.visibility.name}'),
-                                                                Text(
-                                                                    'Location: ${event.locationDescription}'),
+                                                                InkWell(
+                                                                  child: Text(
+                                                                      'Location: ${event.locationDescription}'),
+                                                                  onTap: () {
+                                                                    final query =
+                                                                        event.rallyPointPlusCode ??
+                                                                            event.locationDescription;
+                                                                    final uri = Platform
+                                                                            .isIOS
+                                                                        ? Uri(
+                                                                            scheme: 'comgooglemaps',
+                                                                            queryParameters: {
+                                                                                'q': query
+                                                                              })
+                                                                        : Uri(
+                                                                            scheme:
+                                                                                'https',
+                                                                            host: 'maps.google.com',
+                                                                            queryParameters: {
+                                                                                'q': query
+                                                                              });
+                                                                    launchUrl(
+                                                                        uri);
+                                                                  },
+                                                                ),
                                                                 if (event
                                                                         .link !=
                                                                     null) ...[
@@ -576,6 +600,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                     .rallyPoint;
 
                                                         if (mapCenter == null) {
+                                                          _mapController = null;
                                                           return const SizedBox
                                                               .shrink();
                                                         }
