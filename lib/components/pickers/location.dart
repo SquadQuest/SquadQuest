@@ -11,7 +11,7 @@ class FormLocationPicker extends ConsumerStatefulWidget {
   final String labelText;
   final Geographic? initialValue;
   final StateProvider<Geographic?>? valueProvider;
-  final ValueChanged<Geographic>? onChanged;
+  final ValueChanged<Geographic?>? onChanged;
 
   const FormLocationPicker({
     super.key,
@@ -31,7 +31,7 @@ class _FormLocationPickerState extends ConsumerState<FormLocationPicker> {
 
   Geographic? value;
 
-  void _onValueChanged(Geographic value) {
+  void _onValueChanged(Geographic? value) {
     if (widget.onChanged != null && value != ref.read(_valueProvider!)) {
       widget.onChanged!(value);
     }
@@ -82,13 +82,9 @@ class _FormLocationPickerState extends ConsumerState<FormLocationPicker> {
                 context: context,
                 isScrollControlled: true,
                 enableDrag: false,
+                isDismissible: false,
                 builder: (BuildContext context) =>
                     EventRallyMap(initialRallyPoint: value));
-
-            // Don't change the value if the picker returns null.
-            if (newValue == null) {
-              return;
-            }
 
             _onValueChanged(newValue);
           },
