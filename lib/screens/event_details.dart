@@ -576,6 +576,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                     .rallyPoint;
 
                                                         if (mapCenter == null) {
+                                                          _mapController = null;
                                                           return const SizedBox
                                                               .shrink();
                                                         }
