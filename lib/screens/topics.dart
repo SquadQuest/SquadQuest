@@ -17,6 +17,7 @@ class TopicsScreen extends ConsumerStatefulWidget {
 }
 
 class _TopicsScreenState extends ConsumerState<TopicsScreen> {
+  String _searchQuery = '';
   final Map<TopicID, bool> pendingChanges = {};
 
   @override
@@ -37,6 +38,18 @@ class _TopicsScreenState extends ConsumerState<TopicsScreen> {
                 'Select topics you are interested in to receive notifications when new events are posted',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic))),
+        TextFormField(
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search),
+            labelText: 'Search topics',
+          ),
+          onChanged: (String searchQuery) {
+            setState(() {
+              _searchQuery = searchQuery.toLowerCase();
+            });
+          },
+        ),
         Expanded(
             child: RefreshIndicator(
           onRefresh: () async {
@@ -44,8 +57,16 @@ class _TopicsScreenState extends ConsumerState<TopicsScreen> {
           },
           child: topicMembershipsList.when(
               data: (topicMemberships) {
+                final filteredTopicMemberships =
+                    topicMemberships.where((topicMembership) {
+                  return _searchQuery.isEmpty ||
+                      topicMembership.topic.name
+                          .toLowerCase()
+                          .contains(_searchQuery);
+                }).toList();
+
                 return GroupedListView(
-                  elements: topicMemberships,
+                  elements: filteredTopicMemberships,
                   physics: const AlwaysScrollableScrollPhysics(),
                   useStickyGroupSeparators: true,
                   stickyHeaderBackgroundColor:
@@ -66,8 +87,38 @@ class _TopicsScreenState extends ConsumerState<TopicsScreen> {
                         style: const TextStyle(fontSize: 18),
                       )),
                   itemBuilder: (context, topicMembership) {
+                    final topicName = topicMembership.topic.name;
+                    int? matchIndex;
+
+                    if (_searchQuery.isNotEmpty) {
+                      matchIndex = topicName
+                          .toLowerCase()
+                          .indexOf(_searchQuery!.toLowerCase());
+                      if (matchIndex == -1) {
+                        matchIndex = null;
+                      }
+                    }
                     return CheckboxListTile(
-                      title: Text(topicMembership.topic.name),
+                      title: RichText(
+                          text: TextSpan(
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              children: matchIndex == null
+                                  ? [TextSpan(text: topicName)]
+                                  : [
+                                      TextSpan(
+                                          text: topicName.substring(
+                                              0, matchIndex)),
+                                      TextSpan(
+                                          text: topicName.substring(
+                                              matchIndex,
+                                              matchIndex +
+                                                  _searchQuery!.length),
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                      TextSpan(
+                                          text: topicName.substring(matchIndex +
+                                              _searchQuery!.length))
+                                    ])),
                       enabled:
                           !pendingChanges.containsKey(topicMembership.topic.id),
                       value: pendingChanges[topicMembership.topic.id] ??
