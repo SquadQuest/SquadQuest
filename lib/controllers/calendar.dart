@@ -9,6 +9,12 @@ import 'package:squadquest/logger.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';
 
+/// {@template calendar_controller}
+///
+/// A controller for interacting with the device's calendar. This is used to create
+/// and update events in the device's calendar.
+///
+/// {@endtemplate}
 abstract interface class CalendarController {
   static CalendarController? _instance;
 
@@ -24,16 +30,25 @@ abstract interface class CalendarController {
 
   static CalendarController get instance => _instance ??= CalendarController._getByPlatform();
 
+  /// Returns true if the device has permission to access the calendar.
   Future<bool> isAvailable();
+
+  /// Requests permission to access the calendar.
   Future<bool> requestPermission();
 
+  /// Creates or updates an event in the device's calendar based on the provided
+  /// instance and subscription. The event will have in its description a link to
+  /// the instance's page on squadquest app.
   Future<void> upsertEvent({
     required InstanceMember subscription,
     required Instance instance,
   });
+
+  /// Deletes an event from the device's calendar based on the provided instance.
   Future<void> deleteEvent(Instance instance);
 }
 
+/// {@macro calendar_controller}
 class _MobileCalendarController implements CalendarController {
   static const defaultCalendarAccountName = "SquadQuest";
   static const defaultCalendarName = "SquadQuest Events";
@@ -43,7 +58,6 @@ class _MobileCalendarController implements CalendarController {
   final DeviceCalendarPlugin _calendar = DeviceCalendarPlugin();
   bool? _permissionGranted;
 
-  // As an example, our default timezone is UTC.
   Location _currentLocation = getLocation('UTC');
 
   _MobileCalendarController() {
@@ -173,6 +187,8 @@ class _MobileCalendarController implements CalendarController {
     return;
   }
 
+  /// Returns the eventId of the event that matches the instance or null if no match
+  /// is found.
   Future<String?> _getEventIdByInstance(String calendarId, Instance instance) async {
     final event = await _calendar.retrieveEvents(
       calendarId,
@@ -200,6 +216,8 @@ class _MobileCalendarController implements CalendarController {
         ?.eventId;
   }
 
+  /// Returns the calendarId for creating or updating an event. If no calendar
+  /// exists, a new one is created.
   Future<String> _getCalendar() async {
     final calendars = await _calendar.retrieveCalendars();
 
