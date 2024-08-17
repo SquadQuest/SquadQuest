@@ -31,7 +31,7 @@ abstract interface class CalendarController {
     required InstanceMember subscription,
     required Instance instance,
   });
-  Future<void> deleteEvent();
+  Future<void> deleteEvent(Instance instance);
 }
 
 class _MobileCalendarController implements CalendarController {
@@ -143,9 +143,34 @@ class _MobileCalendarController implements CalendarController {
   }
 
   @override
-  Future<void> deleteEvent() {
-    // TODO: implement deleteEvent
-    throw UnimplementedError();
+  Future<void> deleteEvent(Instance instance) async {
+    logger.d('CalendarController.deleteEvent');
+
+    _permissionGranted = await requestPermission();
+    if (_permissionGranted != true) {
+      logger.d('CalendarController.deleteEvent -> permission not granted');
+      return;
+    }
+
+    final calendarId = await _getCalendar();
+
+    final existingEventId = await _getEventIdByInstance(calendarId, instance);
+
+    if (existingEventId == null) {
+      logger.d('CalendarController.deleteEvent -> no event found');
+      return;
+    }
+
+    final result = await _calendar.deleteEvent(calendarId, existingEventId);
+
+    if (result.hasErrors == true) {
+      logger.e(
+          'CalendarController.deleteEvent: errors=\n${result.errors.map((e) => e.errorMessage).join('\n')}');
+      return;
+    }
+
+    logger.d('CalendarController.deleteEvent -> finished');
+    return;
   }
 
   Future<String?> _getEventIdByInstance(String calendarId, Instance instance) async {

@@ -140,6 +140,8 @@ class InstanceRsvpsController
         subscription: savedRsvp,
         instance: instance,
       );
+    } else {
+      await CalendarController.instance.deleteEvent(instance);
     }
 
     return savedRsvp;
