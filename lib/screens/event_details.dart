@@ -183,8 +183,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       _rsvpSnackbar?.closed.then((reason) {
         _rsvpSnackbar = null;
       });
-    } catch (e) {
-      logger.e(e);
+    } catch (e, st) {
+      logger.e("EventDetailsScreen._saveRsvp: error", error: e, stackTrace: st);
       rethrow;
     }
   }

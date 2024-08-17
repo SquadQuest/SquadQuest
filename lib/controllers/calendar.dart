@@ -19,12 +19,10 @@ abstract interface class CalendarController {
         defaultTargetPlatform == TargetPlatform.iOS) {
       return _MobileCalendarController();
     }
-    throw UnsupportedError(
-        'CalendarController is not supported on this platform');
+    throw UnsupportedError('CalendarController is not supported on this platform');
   }
 
-  static CalendarController get instance =>
-      _instance ??= CalendarController._getByPlatform();
+  static CalendarController get instance => _instance ??= CalendarController._getByPlatform();
 
   Future<bool> isAvailable();
   Future<bool> requestPermission();
@@ -78,9 +76,11 @@ class _MobileCalendarController implements CalendarController {
     required Instance instance,
     required InstanceMember? subscription,
   }) async {
+    logger.d('CalendarController.upsertEvent');
     _permissionGranted = await requestPermission();
 
     if (_permissionGranted != true) {
+      logger.d('CalendarController.upsertEvent -> permission not granted');
       return;
     }
 
@@ -138,6 +138,7 @@ class _MobileCalendarController implements CalendarController {
 
     _showEvent(result!.data);
 
+    logger.d('CalendarController.upsertEvent -> finished');
     return;
   }
 
@@ -147,8 +148,7 @@ class _MobileCalendarController implements CalendarController {
     throw UnimplementedError();
   }
 
-  Future<String?> _getEventIdByInstance(
-      String calendarId, Instance instance) async {
+  Future<String?> _getEventIdByInstance(String calendarId, Instance instance) async {
     final event = await _calendar.retrieveEvents(
       calendarId,
       RetrieveEventsParams(
@@ -247,12 +247,12 @@ class _MobileCalendarController implements CalendarController {
 }
 
 extension _UserAttendee on Attendee {
-  static fromUser(
+  static Attendee fromUser(
     UserProfile user,
     bool isOrganizer,
     InstanceMemberStatus? rsvpStatus,
   ) {
-    Attendee(
+    return Attendee(
       isCurrentUser: true,
       isOrganiser: isOrganizer,
       name: user.fullName,
@@ -266,9 +266,7 @@ extension _UserAttendee on Attendee {
           InstanceMemberStatus.invited => AndroidAttendanceStatus.Invited,
           InstanceMemberStatus.no => AndroidAttendanceStatus.Declined,
           InstanceMemberStatus.maybe => AndroidAttendanceStatus.Tentative,
-          InstanceMemberStatus.yes ||
-          InstanceMemberStatus.omw =>
-            AndroidAttendanceStatus.Accepted,
+          InstanceMemberStatus.yes || InstanceMemberStatus.omw => AndroidAttendanceStatus.Accepted,
         },
       ),
       iosAttendeeDetails: IosAttendeeDetails(

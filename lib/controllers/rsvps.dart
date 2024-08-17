@@ -9,13 +9,10 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';
 
 final rsvpsProvider =
-    AsyncNotifierProvider<RsvpsController, List<InstanceMember>>(
-        RsvpsController.new);
+    AsyncNotifierProvider<RsvpsController, List<InstanceMember>>(RsvpsController.new);
 
-final rsvpsPerEventProvider = AutoDisposeAsyncNotifierProviderFamily<
-    InstanceRsvpsController,
-    List<InstanceMember>,
-    InstanceID>(InstanceRsvpsController.new);
+final rsvpsPerEventProvider = AutoDisposeAsyncNotifierProviderFamily<InstanceRsvpsController,
+    List<InstanceMember>, InstanceID>(InstanceRsvpsController.new);
 
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   @override
@@ -38,23 +35,20 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     final profilesCache = ref.read(profilesCacheProvider.notifier);
 
     // populate profile data
-    await profilesCache
-        .populateData(data, [(idKey: 'member', modelKey: 'member')]);
+    await profilesCache.populateData(data, [(idKey: 'member', modelKey: 'member')]);
 
     return data.map(InstanceMember.fromMap).toList();
   }
 
-  Future<InstanceMember?> save(
-      InstanceID instanceId, InstanceMemberStatus? status) async {
+  Future<InstanceMember?> save(InstanceID instanceId, InstanceMemberStatus? status) async {
     final supabase = ref.read(supabaseClientProvider);
 
     try {
-      final response = await supabase.functions.invoke('rsvp',
-          body: {'instance_id': instanceId, 'status': status?.name});
+      final response = await supabase.functions
+          .invoke('rsvp', body: {'instance_id': instanceId, 'status': status?.name});
 
-      final instanceMember = response.data['status'] == null
-          ? null
-          : (await hydrate([response.data])).first;
+      final instanceMember =
+          response.data['status'] == null ? null : (await hydrate([response.data])).first;
 
       // update loaded rsvps with created/updated one
       if (state.hasValue && state.value != null) {
@@ -75,13 +69,12 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     }
   }
 
-  Future<List<InstanceMember>> invite(
-      InstanceID instanceId, List<UserID> userIds) async {
+  Future<List<InstanceMember>> invite(InstanceID instanceId, List<UserID> userIds) async {
     final supabase = ref.read(supabaseClientProvider);
 
     try {
-      final response = await supabase.functions.invoke('invite',
-          body: {'instance_id': instanceId, 'users': userIds});
+      final response = await supabase.functions
+          .invoke('invite', body: {'instance_id': instanceId, 'users': userIds});
 
       return hydrate(response.data);
     } on FunctionException catch (error) {
@@ -143,7 +136,7 @@ class InstanceRsvpsController
     }
 
     if (savedRsvp != null) {
-      CalendarController.instance.upsertEvent(
+      await CalendarController.instance.upsertEvent(
         subscription: savedRsvp,
         instance: instance,
       );
