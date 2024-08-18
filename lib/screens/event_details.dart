@@ -553,12 +553,19 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                 if (event
                                                                         .link !=
                                                                     null) ...[
-                                                                  RichText(
-                                                                      text: TextSpan(
-                                                                          children: [
-                                                                        const TextSpan(
-                                                                            text:
-                                                                                'Link: '),
+                                                                  InkWell(
+                                                                      onTap: () =>
+                                                                          launchUrl(
+                                                                              event.link!),
+                                                                      child: RichText(
+                                                                          text: TextSpan(children: [
+                                                                        TextSpan(
+                                                                          text:
+                                                                              'Link: ',
+                                                                          style: Theme.of(context)
+                                                                              .textTheme
+                                                                              .bodyMedium,
+                                                                        ),
                                                                         TextSpan(
                                                                           text: event
                                                                               .link
@@ -570,11 +577,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                             decoration:
                                                                                 TextDecoration.underline,
                                                                           ),
-                                                                          recognizer: TapGestureRecognizer()
-                                                                            ..onTap =
-                                                                                () => launchUrl(event.link!),
                                                                         )
-                                                                      ]))
+                                                                      ])))
                                                                 ],
                                                                 if (event.notes !=
                                                                         null &&

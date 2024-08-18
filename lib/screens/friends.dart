@@ -345,9 +345,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   Future<dynamic> _showContactPicker() async {
     final contactsService = ref.read(contactsProvider.notifier);
 
-    await contactsService.requestPermission();
+    final permissionGranted = await contactsService.requestPermission();
 
-    if (!mounted) {
+    if (!mounted || permissionGranted == null) {
       return null;
     }
 

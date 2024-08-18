@@ -173,4 +173,12 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
       rethrow;
     }
   }
+
+  Future<Instance> fetchFacebookEventData(String facebookUrl) async {
+    final supabase = ref.read(supabaseClientProvider);
+    final response = await supabase.functions.invoke('scrape-facebook-event',
+        method: HttpMethod.get, queryParameters: {'url': facebookUrl});
+
+    return Instance.fromMap(response.data);
+  }
 }
