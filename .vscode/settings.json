@@ -10,6 +10,7 @@
     "android",
     "web"
   ],
+  "dart.lineLength": 80,
   "deno.enable": true,
   "deno.lint": true,
   "deno.enablePaths": [
