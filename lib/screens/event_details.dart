@@ -35,7 +35,15 @@ final _statusGroupOrder = {
   InstanceMemberStatus.invited: 4,
 };
 
-enum Menu { showSetRallyPointMap, showLiveMap, getLink, edit, cancel, uncancel }
+enum Menu {
+  showSetRallyPointMap,
+  showLiveMap,
+  getLink,
+  edit,
+  cancel,
+  uncancel,
+  duplicate
+}
 
 typedef RsvpFriend = ({
   InstanceMember rsvp,
@@ -241,6 +249,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         break;
       case Menu.uncancel:
         await _cancelEvent(false);
+        break;
+      case Menu.duplicate:
+        context.pushNamed('post-event', queryParameters: {
+          'duplicateEventId': widget.instanceId,
+        });
         break;
     }
   }
@@ -448,6 +461,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     title: eventAsync.value?.status == InstanceStatus.canceled
                         ? const Text('Uncancel event')
                         : const Text('Cancel event'),
+                  ),
+                ),
+                const PopupMenuItem<Menu>(
+                  value: Menu.duplicate,
+                  child: ListTile(
+                    leading: Icon(Icons.copy),
+                    title: Text('Duplicate event'),
                   ),
                 ),
               ]
@@ -788,7 +808,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                       (context,
                                                                           rsvpFriend) {
                                                                     final isFriendOrSelf = rsvpFriend.rsvp.memberId! ==
-                                                                            session!
+                                                                            session
                                                                                 .user.id ||
                                                                         rsvpFriend.friendship !=
                                                                             null;

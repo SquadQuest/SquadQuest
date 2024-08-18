@@ -42,8 +42,16 @@ TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
 class EventEditScreen extends ConsumerStatefulWidget {
   final InstanceID? instanceId;
   final String? facebookUrl;
+  final InstanceID? duplicateEventId;
 
-  const EventEditScreen({super.key, this.instanceId, this.facebookUrl});
+  const EventEditScreen(
+      {super.key, this.instanceId, this.facebookUrl, this.duplicateEventId})
+      : assert(duplicateEventId == null || facebookUrl == null,
+            'duplicateEventId and facebookUrl cannot both be provided'),
+        assert(instanceId == null || facebookUrl == null,
+            'instanceId and facebookUrl cannot both be provided'),
+        assert(instanceId == null || duplicateEventId == null,
+            'instanceId and duplicateEventId cannot both be provided');
 
   @override
   ConsumerState<EventEditScreen> createState() => _EventEditScreenState();
@@ -287,6 +295,43 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Failed to load event to edit:\n\n$error'),
+        ));
+
+        return;
+      });
+
+      return;
+    }
+
+    // load an existing event for duplicating
+    if (widget.duplicateEventId != null) {
+      isNewEvent = true;
+      autoFocusField = null;
+      loadMask = 'Loading event...';
+      _editingInstance = const AsyncValue.loading();
+
+      instancesController.getById(widget.duplicateEventId!).then((instance) {
+        setState(() {
+          // pre-populate form controllers
+          _loadValuesFromInstance(instance);
+
+          // clear date
+          startDate = null;
+
+          // apply AsyncValue to state
+          _editingInstance = const AsyncValue.data(null);
+
+          // clear mask
+          loadMask = null;
+        });
+      }).onError((error, stackTrace) {
+        logger.e('Error loading event to duplicate',
+            error: error, stackTrace: stackTrace);
+
+        context.pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to load event to duplicate:\n\n$error'),
         ));
 
         return;
