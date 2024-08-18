@@ -197,6 +197,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         log('Moved banner photo');
       }
 
+      ref.invalidate(eventDetailsProvider(savedInstance.id!));
+
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
