@@ -110,7 +110,6 @@ class MyApp extends ConsumerWidget {
 
   Future<void> goToNotificationRoute(WidgetRef ref, String location) async {
     final navContext = navigatorKey.currentContext;
-    final router = ref.read(routerProvider);
 
     logger.t({
       'goToNotificationRoute': {'location': location}

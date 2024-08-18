@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/router.dart';
 import 'package:squadquest/app_scaffold.dart';
@@ -17,6 +18,8 @@ import 'package:squadquest/components/pickers/time.dart';
 import 'package:squadquest/components/pickers/visibility.dart';
 import 'package:squadquest/components/pickers/topic.dart';
 import 'package:squadquest/controllers/instances.dart';
+
+enum AutoFocusField { title, topic }
 
 final _urlRegex = RegExp(r'^https?://', caseSensitive: false);
 
@@ -38,14 +41,24 @@ TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
 
 class EventEditScreen extends ConsumerStatefulWidget {
   final InstanceID? instanceId;
+  final String? facebookUrl;
+  final InstanceID? duplicateEventId;
 
-  const EventEditScreen({super.key, this.instanceId});
+  const EventEditScreen(
+      {super.key, this.instanceId, this.facebookUrl, this.duplicateEventId})
+      : assert(duplicateEventId == null || facebookUrl == null,
+            'duplicateEventId and facebookUrl cannot both be provided'),
+        assert(instanceId == null || facebookUrl == null,
+            'instanceId and facebookUrl cannot both be provided'),
+        assert(instanceId == null || duplicateEventId == null,
+            'instanceId and duplicateEventId cannot both be provided');
 
   @override
   ConsumerState<EventEditScreen> createState() => _EventEditScreenState();
 }
 
 class _EventEditScreenState extends ConsumerState<EventEditScreen> {
+  String? loadMask;
   late AsyncValue<Instance?> _editingInstance;
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
@@ -66,6 +79,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   bool startTimeMaxSet = false;
   bool submitted = false;
   late final bool isNewEvent;
+  late final AutoFocusField? autoFocusField;
 
   void _showValidationError(String error) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -174,7 +188,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           link: _linkController.text.trim().isNotEmpty
               ? Uri.parse(_linkController.text.trim())
               : null,
-          notes: _notesController.text.trim());
+          notes: _notesController.text.trim(),
+          bannerPhoto: tempBannerPhotoPath == null ? bannerPhoto : null);
 
       final Instance savedInstance =
           await instancesController.save(draftInstance);
@@ -190,6 +205,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
             savedInstance.id!, {'banner_photo': bannerPhotoUrl.toString()});
         log('Moved banner photo');
       }
+
+      ref.invalidate(eventDetailsProvider(savedInstance.id!));
 
       if (!context.mounted) return;
 
@@ -228,43 +245,146 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     }
   }
 
+  void _loadValuesFromInstance(Instance instance) {
+    _titleController.text = instance.title;
+    _locationDescriptionController.text = instance.locationDescription;
+    ref.read(_topicProvider.notifier).state = instance.topic;
+    ref.read(_locationProvider.notifier).state = instance.rallyPoint;
+    startDate = instance.startTimeMin;
+    ref.read(_startTimeMinProvider.notifier).state =
+        TimeOfDay.fromDateTime(instance.startTimeMin);
+    ref.read(_startTimeMaxProvider.notifier).state =
+        TimeOfDay.fromDateTime(instance.startTimeMax);
+    ref.read(_visibilityProvider.notifier).state = instance.visibility;
+    _linkController.text = instance.link?.toString() ?? '';
+    _notesController.text = instance.notes?.toString() ?? '';
+    ref.read(_bannerPhotoProvider.notifier).state = instance.bannerPhoto;
+  }
+
   @override
   void initState() {
     super.initState();
 
     startDate = DateTime.now();
 
-    if (widget.instanceId == null) {
-      isNewEvent = true;
-      _editingInstance = const AsyncValue.data(null);
-    } else {
+    final instancesController = ref.read(instancesProvider.notifier);
+
+    // load an existing event for editing
+    if (widget.instanceId != null) {
       isNewEvent = false;
+      autoFocusField = null;
+      loadMask = 'Loading event...';
       _editingInstance = const AsyncValue.loading();
-      final instancesController = ref.read(instancesProvider.notifier);
-      AsyncValue.guard(() => instancesController.getById(widget.instanceId!))
-          .then((instanceAsync) {
+
+      instancesController.getById(widget.instanceId!).then((instance) {
         setState(() {
           // pre-populate form controllers
-          final instance = instanceAsync.value!;
-          _titleController.text = instance.title;
-          _locationDescriptionController.text = instance.locationDescription;
-          ref.read(_topicProvider.notifier).state = instance.topic;
-          ref.read(_locationProvider.notifier).state = instance.rallyPoint;
-          startDate = instance.startTimeMin;
-          ref.read(_startTimeMinProvider.notifier).state =
-              TimeOfDay.fromDateTime(instance.startTimeMin);
-          ref.read(_startTimeMaxProvider.notifier).state =
-              TimeOfDay.fromDateTime(instance.startTimeMax);
-          ref.read(_visibilityProvider.notifier).state = instance.visibility;
-          _linkController.text = instance.link?.toString() ?? '';
-          _notesController.text = instance.notes?.toString() ?? '';
-          ref.read(_bannerPhotoProvider.notifier).state = instance.bannerPhoto;
+          _loadValuesFromInstance(instance);
 
           // apply AsyncValue to state
-          _editingInstance = instanceAsync;
+          _editingInstance = AsyncValue.data(instance);
+
+          // clear mask
+          loadMask = null;
         });
+      }).onError((error, stackTrace) {
+        logger.e('Error loading event to edit',
+            error: error, stackTrace: stackTrace);
+
+        context.pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to load event to edit:\n\n$error'),
+        ));
+
+        return;
       });
+
+      return;
     }
+
+    // load an existing event for duplicating
+    if (widget.duplicateEventId != null) {
+      isNewEvent = true;
+      autoFocusField = null;
+      loadMask = 'Loading event...';
+      _editingInstance = const AsyncValue.loading();
+
+      instancesController.getById(widget.duplicateEventId!).then((instance) {
+        setState(() {
+          // pre-populate form controllers
+          _loadValuesFromInstance(instance);
+
+          // clear date
+          startDate = null;
+
+          // apply AsyncValue to state
+          _editingInstance = const AsyncValue.data(null);
+
+          // clear mask
+          loadMask = null;
+        });
+      }).onError((error, stackTrace) {
+        logger.e('Error loading event to duplicate',
+            error: error, stackTrace: stackTrace);
+
+        context.pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to load event to duplicate:\n\n$error'),
+        ));
+
+        return;
+      });
+
+      return;
+    }
+
+    // populate a new event from Facebook event data
+    if (widget.facebookUrl != null) {
+      isNewEvent = true;
+      autoFocusField = AutoFocusField.topic;
+      loadMask = 'Loading Facebook event...';
+      _editingInstance = const AsyncValue.loading();
+
+      instancesController
+          .fetchFacebookEventData(widget.facebookUrl!)
+          .then((instance) {
+        logger.d({'loaded FB instance': instance});
+        setState(() {
+          // pre-populate form controllers
+          _loadValuesFromInstance(instance);
+
+          // apply AsyncValue to state
+          _editingInstance = const AsyncValue.data(null);
+
+          // clear mask
+          loadMask = null;
+        });
+      }).onError((error, stackTrace) {
+        logger.e('Error loading Facebook event',
+            error: error, stackTrace: stackTrace);
+
+        context.pop();
+
+        final message = error is FunctionException
+            ? (error.details?['message'] ?? error.details)
+            : error;
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to load Facebook event:\n\n$message'),
+        ));
+
+        return;
+      });
+
+      return;
+    }
+
+    // default: create a new event from scratch
+    isNewEvent = true;
+    autoFocusField = AutoFocusField.title;
+    _editingInstance = const AsyncValue.data(null);
   }
 
   @override
@@ -280,9 +400,9 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           ? isNewEvent
               ? 'Posting event...'
               : 'Saving event...'
-          : null,
+          : loadMask,
       actions: [
-        if (!submitted)
+        if (!submitted && !_editingInstance.isLoading && loadMask == null)
           TextButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
@@ -296,7 +416,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       showLocationSharingSheet: false,
       body: _editingInstance.when(
           error: (error, __) => Center(child: Text(error.toString())),
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const SizedBox.shrink(),
           data: (Instance? instance) => SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 child: Form(
@@ -305,7 +425,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextFormField(
-                        autofocus: isNewEvent,
+                        autofocus: autoFocusField == AutoFocusField.title,
                         textInputAction: TextInputAction.done,
                         decoration: const InputDecoration(
                           // prefixIcon: Icon(Icons.flag),

@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/router.dart';
-import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
-import 'package:squadquest/models/user.dart';
 
 import 'package:squadquest/services/supabase.dart';
 

@@ -22,6 +22,25 @@
         },
         {
             "request": "launch",
+            "name": "Deno: scrape-facebook-event",
+            "type": "node",
+            "program": "${workspaceFolder}/supabase/functions/scrape-facebook-event/index.ts",
+            "cwd": "${workspaceFolder}/supabase/functions/scrape-facebook-event",
+            "env": {
+                "PORT": "8001"
+            },
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-wait",
+                "--allow-all"
+            ],
+            "attachSimplePort": 9229,
+            "outputCapture": "std",
+            "envFile": "${workspaceFolder}/supabase/functions/.env"
+        },
+        {
+            "request": "launch",
             "name": "Deno: on-profile-insert",
             "type": "node",
             "program": "${workspaceFolder}/supabase/functions/on-profile-insert/index.ts",

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +35,15 @@ final _statusGroupOrder = {
   InstanceMemberStatus.invited: 4,
 };
 
-enum Menu { showSetRallyPointMap, showLiveMap, getLink, edit, cancel, uncancel }
+enum Menu {
+  showSetRallyPointMap,
+  showLiveMap,
+  getLink,
+  edit,
+  cancel,
+  uncancel,
+  duplicate
+}
 
 typedef RsvpFriend = ({
   InstanceMember rsvp,
@@ -242,6 +249,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         break;
       case Menu.uncancel:
         await _cancelEvent(false);
+        break;
+      case Menu.duplicate:
+        context.pushNamed('post-event', queryParameters: {
+          'duplicateEventId': widget.instanceId,
+        });
         break;
     }
   }
@@ -451,6 +463,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         : const Text('Cancel event'),
                   ),
                 ),
+                const PopupMenuItem<Menu>(
+                  value: Menu.duplicate,
+                  child: ListTile(
+                    leading: Icon(Icons.copy),
+                    title: Text('Duplicate event'),
+                  ),
+                ),
               ]
             ],
           ),
@@ -553,12 +572,19 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                 if (event
                                                                         .link !=
                                                                     null) ...[
-                                                                  RichText(
-                                                                      text: TextSpan(
-                                                                          children: [
-                                                                        const TextSpan(
-                                                                            text:
-                                                                                'Link: '),
+                                                                  InkWell(
+                                                                      onTap: () =>
+                                                                          launchUrl(
+                                                                              event.link!),
+                                                                      child: RichText(
+                                                                          text: TextSpan(children: [
+                                                                        TextSpan(
+                                                                          text:
+                                                                              'Link: ',
+                                                                          style: Theme.of(context)
+                                                                              .textTheme
+                                                                              .bodyMedium,
+                                                                        ),
                                                                         TextSpan(
                                                                           text: event
                                                                               .link
@@ -570,11 +596,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                             decoration:
                                                                                 TextDecoration.underline,
                                                                           ),
-                                                                          recognizer: TapGestureRecognizer()
-                                                                            ..onTap =
-                                                                                () => launchUrl(event.link!),
                                                                         )
-                                                                      ]))
+                                                                      ])))
                                                                 ],
                                                                 if (event.notes !=
                                                                         null &&
@@ -785,7 +808,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                                       (context,
                                                                           rsvpFriend) {
                                                                     final isFriendOrSelf = rsvpFriend.rsvp.memberId! ==
-                                                                            session!
+                                                                            session
                                                                                 .user.id ||
                                                                         rsvpFriend.friendship !=
                                                                             null;

@@ -93,7 +93,7 @@ class _TopicsScreenState extends ConsumerState<TopicsScreen> {
                     if (_searchQuery.isNotEmpty) {
                       matchIndex = topicName
                           .toLowerCase()
-                          .indexOf(_searchQuery!.toLowerCase());
+                          .indexOf(_searchQuery.toLowerCase());
                       if (matchIndex == -1) {
                         matchIndex = null;
                       }
@@ -109,15 +109,13 @@ class _TopicsScreenState extends ConsumerState<TopicsScreen> {
                                           text: topicName.substring(
                                               0, matchIndex)),
                                       TextSpan(
-                                          text: topicName.substring(
-                                              matchIndex,
-                                              matchIndex +
-                                                  _searchQuery!.length),
+                                          text: topicName.substring(matchIndex,
+                                              matchIndex + _searchQuery.length),
                                           style: const TextStyle(
                                               fontWeight: FontWeight.bold)),
                                       TextSpan(
-                                          text: topicName.substring(matchIndex +
-                                              _searchQuery!.length))
+                                          text: topicName.substring(
+                                              matchIndex + _searchQuery.length))
                                     ])),
                       enabled:
                           !pendingChanges.containsKey(topicMembership.topic.id),
