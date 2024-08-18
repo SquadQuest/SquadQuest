@@ -180,7 +180,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           link: _linkController.text.trim().isNotEmpty
               ? Uri.parse(_linkController.text.trim())
               : null,
-          notes: _notesController.text.trim());
+          notes: _notesController.text.trim(),
+          bannerPhoto: tempBannerPhotoPath == null ? bannerPhoto : null);
 
       final Instance savedInstance =
           await instancesController.save(draftInstance);
