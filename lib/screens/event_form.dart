@@ -256,6 +256,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
     startDate = DateTime.now();
 
+    final instancesController = ref.read(instancesProvider.notifier);
+
     // load an existing event for editing
     if (widget.instanceId != null) {
       isNewEvent = false;
@@ -263,21 +265,28 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       loadMask = 'Loading event...';
       _editingInstance = const AsyncValue.loading();
 
-      final instancesController = ref.read(instancesProvider.notifier);
-      AsyncValue.guard(() async {
-        await Future.delayed(const Duration(seconds: 2));
-        return instancesController.getById(widget.instanceId!);
-      }).then((instanceAsync) {
+      instancesController.getById(widget.instanceId!).then((instance) {
         setState(() {
           // pre-populate form controllers
-          _loadValuesFromInstance(instanceAsync
-              .value!); // TODO: test error condition here by loading fake ID
+          _loadValuesFromInstance(instance);
 
           // apply AsyncValue to state
-          _editingInstance = instanceAsync;
+          _editingInstance = AsyncValue.data(instance);
 
+          // clear mask
           loadMask = null;
         });
+      }).onError((error, stackTrace) {
+        logger.e('Error loading event to edit',
+            error: error, stackTrace: stackTrace);
+
+        context.pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Failed to load event to edit:\n\n$error'),
+        ));
+
+        return;
       });
 
       return;
@@ -288,9 +297,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       isNewEvent = true;
       autoFocusField = AutoFocusField.topic;
       loadMask = 'Loading Facebook event...';
-      _editingInstance = const AsyncValue.data(null);
+      _editingInstance = const AsyncValue.loading();
 
-      final instancesController = ref.read(instancesProvider.notifier);
       instancesController
           .fetchFacebookEventData(widget.facebookUrl!)
           .then((instance) {
@@ -299,6 +307,10 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           // pre-populate form controllers
           _loadValuesFromInstance(instance);
 
+          // apply AsyncValue to state
+          _editingInstance = const AsyncValue.data(null);
+
+          // clear mask
           loadMask = null;
         });
       }).onError((error, stackTrace) {
