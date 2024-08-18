@@ -30,7 +30,7 @@ class ContactsService extends AsyncNotifier<List<Contact>> {
     state = await AsyncValue.guard(build);
   }
 
-  Future<bool> requestPermission() async {
+  Future<bool?> requestPermission() async {
     if (_permissionGranted == true) {
       return true;
     }
@@ -63,7 +63,7 @@ class ContactsService extends AsyncNotifier<List<Contact>> {
                     ));
 
     if (confirmed != true) {
-      return false;
+      return null;
     }
 
     await prefs.setBool('confirmedContactsPermission', true);
