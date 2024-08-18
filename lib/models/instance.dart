@@ -117,29 +117,35 @@ class Instance {
             .split(' ');
 
     return Instance(
-      id: map['id'] as InstanceID,
-      createdAt: DateTime.parse(map['created_at']).toLocal(),
+      id: map['id'] as InstanceID?,
+      createdAt: map['created_at'] == null
+          ? null
+          : DateTime.parse(map['created_at']).toLocal(),
       createdBy: createdByModel,
       createdById: createdByModel == null
-          ? map['created_by'] as UserID
+          ? map['created_by'] as UserID?
           : createdByModel.id,
       updatedAt: map['updated_at'] == null
           ? null
           : DateTime.parse(map['updated_at']).toLocal(),
-      status: InstanceStatus.values.firstWhere(
-        (e) => e.name == map['status'],
-      ),
+      status: map['status'] == null
+          ? InstanceStatus.live
+          : InstanceStatus.values.firstWhere(
+              (e) => e.name == map['status'],
+            ),
       startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
       startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
       endTime: map['end_time'] == null
           ? null
           : DateTime.parse(map['end_time']).toLocal(),
       topic: topicModel,
-      topicId: topicModel == null ? map['topic'] as TopicID : topicModel.id,
+      topicId: topicModel == null ? map['topic'] as TopicID? : topicModel.id,
       title: map['title'] as String,
-      visibility: InstanceVisibility.values.firstWhere(
-        (e) => e.name == map['visibility'],
-      ),
+      visibility: map['visibility'] == null
+          ? InstanceVisibility.friends
+          : InstanceVisibility.values.firstWhere(
+              (e) => e.name == map['visibility'],
+            ),
       locationDescription: map['location_description'] as String,
       rallyPoint: map['rally_point_text'] == null
           ? null

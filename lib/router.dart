@@ -75,7 +75,8 @@ final _router = GoRouter(
     GoRoute(
       name: 'post-event',
       path: '/post-event',
-      builder: (context, state) => const EventEditScreen(),
+      builder: (context, state) => EventEditScreen(
+          facebookUrl: state.uri.queryParameters['facebookUrl']),
     ),
     GoRoute(
       name: 'event-details',

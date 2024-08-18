@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grouped_list/grouped_list.dart';
@@ -63,6 +64,39 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _fabKey = GlobalKey<ExpandableFabState>();
+
+  Future<String?> _promptFacebookUrl(BuildContext context) {
+    final urlController = TextEditingController();
+
+    return showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => AlertDialog(
+              title: const Text('Import Event from Facebook'),
+              content: TextFormField(
+                controller: urlController,
+                autofocus: true,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.facebook),
+                  labelText: 'Paste Facebook event URL',
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(urlController.text.trim()),
+                  child: const Text('Load and edit'),
+                ),
+              ],
+            ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final eventsList = ref.watch(_filteredEventsProvider);
@@ -77,11 +111,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return AppScaffold(
       showDrawer: true,
       title: 'Welcome to SquadQuest',
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.push('/post-event');
-        },
-        child: const Icon(Icons.add),
+      floatingActionButtonLocation: ExpandableFab.location,
+      floatingActionButton: ExpandableFab(
+        key: _fabKey,
+        type: ExpandableFabType.up,
+        distance: 80,
+        childrenAnimation: ExpandableFabAnimation.none,
+        overlayStyle: ExpandableFabOverlayStyle(
+          color: Colors.black.withOpacity(0.75),
+          blur: 5,
+        ),
+        openButtonBuilder: RotateFloatingActionButtonBuilder(
+          child: const Icon(Icons.add),
+        ),
+        closeButtonBuilder: DefaultFloatingActionButtonBuilder(
+          child: const Icon(Icons.close),
+        ),
+        children: [
+          Row(
+            children: [
+              const Text('Create New Event'),
+              const SizedBox(width: 20),
+              FloatingActionButton(
+                heroTag: null,
+                onPressed: () {
+                  final fabState = _fabKey.currentState;
+                  if (fabState != null && fabState.isOpen) {
+                    fabState.toggle();
+                  }
+
+                  context.pushNamed('post-event');
+                },
+                child: const Icon(Icons.keyboard),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              const Text('Import from Facebook'),
+              const SizedBox(width: 20),
+              FloatingActionButton(
+                heroTag: null,
+                onPressed: () async {
+                  final fabState = _fabKey.currentState;
+                  if (fabState != null && fabState.isOpen) {
+                    fabState.toggle();
+                  }
+
+                  final url = await _promptFacebookUrl(context);
+                  if (url == null) return;
+                  if (!context.mounted) return;
+                  context.pushNamed('post-event', queryParameters: {
+                    'facebookUrl': url,
+                  });
+                },
+                child: const Icon(Icons.facebook),
+              ),
+            ],
+          ),
+        ],
       ),
       body: eventsList.when(
           loading: () => const Center(child: CircularProgressIndicator()),
