@@ -25,10 +25,12 @@ abstract interface class CalendarController {
         defaultTargetPlatform == TargetPlatform.iOS) {
       return _MobileCalendarController();
     }
-    throw UnsupportedError('CalendarController is not supported on this platform');
+    throw UnsupportedError(
+        'CalendarController is not supported on this platform');
   }
 
-  static CalendarController get instance => _instance ??= CalendarController._getByPlatform();
+  static CalendarController get instance =>
+      _instance ??= CalendarController._getByPlatform();
 
   /// Returns true if the device has permission to access the calendar.
   Future<bool> isAvailable();
@@ -111,7 +113,7 @@ class _MobileCalendarController implements CalendarController {
       title: event.title,
       location: event.locationDescription,
       description:
-          "${event.notes}\n\nSquadQuest event: https://squadquest.app/event/${instance.id!}",
+          "${event.notes}\n\nSquadQuest event: https://squadquest.app/events/${instance.id!}",
       start: TZDateTime.from(event.startTimeMin, _currentLocation),
       // endTime is a fuzzy concept right now that only gets set sometimes after an event is over
       // -- in the future we may enable setting it ahead of time while creating an event
@@ -189,7 +191,8 @@ class _MobileCalendarController implements CalendarController {
 
   /// Returns the eventId of the event that matches the instance or null if no match
   /// is found.
-  Future<String?> _getEventIdByInstance(String calendarId, Instance instance) async {
+  Future<String?> _getEventIdByInstance(
+      String calendarId, Instance instance) async {
     final event = await _calendar.retrieveEvents(
       calendarId,
       RetrieveEventsParams(
@@ -309,7 +312,9 @@ extension _UserAttendee on Attendee {
           InstanceMemberStatus.invited => AndroidAttendanceStatus.Invited,
           InstanceMemberStatus.no => AndroidAttendanceStatus.Declined,
           InstanceMemberStatus.maybe => AndroidAttendanceStatus.Tentative,
-          InstanceMemberStatus.yes || InstanceMemberStatus.omw => AndroidAttendanceStatus.Accepted,
+          InstanceMemberStatus.yes ||
+          InstanceMemberStatus.omw =>
+            AndroidAttendanceStatus.Accepted,
         },
       ),
       iosAttendeeDetails: IosAttendeeDetails(
