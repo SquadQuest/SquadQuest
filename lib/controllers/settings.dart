@@ -33,6 +33,13 @@ final locationSharingEnabledProvider = StateProvider<bool?>((ref) {
       : locationSharingEnabled == 'true';
 });
 
+final calendarWritingEnabledProvider = StateProvider<bool>((ref) {
+  final prefs = ref.read(sharedPreferencesProvider);
+  final calendarWritingEnabled =
+      prefs.getString('calendarWritingEnabled') ?? 'false';
+  return calendarWritingEnabled == 'true';
+});
+
 class SettingsController {
   final Ref ref;
 
