@@ -1,13 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:web_browser_detect/web_browser_detect.dart';
 
 import 'package:squadquest/app_scaffold.dart';
-import 'package:squadquest/components/forms/notifications.dart';
+import 'package:squadquest/services/firebase.dart';
+import 'package:squadquest/controllers/calendar.dart';
 import 'package:squadquest/controllers/app_versions.dart';
 import 'package:squadquest/controllers/settings.dart';
-import 'package:squadquest/services/firebase.dart';
-import 'package:web_browser_detect/web_browser_detect.dart';
+import 'package:squadquest/components/forms/notifications.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -31,6 +34,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = ref.watch(themeModeProvider);
     final developerMode = ref.watch(developerModeProvider);
     final locationSharingEnabled = ref.watch(locationSharingEnabledProvider);
+    final calendarWritingEnabled = ref.watch(calendarWritingEnabledProvider);
     final packageInfo = ref.watch(currentAppPackageProvider);
 
     final fcmToken =
@@ -73,6 +77,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 locationSharingEnabled;
           },
           secondary: const Icon(Icons.pin_drop),
+        ),
+        CheckboxListTile(
+          title: const Text('Show RSVPd events in calendar'),
+          value: calendarWritingEnabled,
+          onChanged: (bool? calendarWritingEnabled) async {
+            calendarWritingEnabled ??= false;
+
+            if (calendarWritingEnabled) {
+              final permissionGranted =
+                  await CalendarController.instance.requestPermission();
+
+              if (!permissionGranted) {
+                await _showAlert(
+                    'Calendar permission required',
+                    'It looks like you\'ve denied SquadQuest\'s permission to access your calendar.\n\n'
+                        'To enable it now, you\'ll need to manually go into your device settings and enable the calendar permission for SquadQuest.');
+                calendarWritingEnabled = false;
+              }
+            }
+
+            if (calendarWritingEnabled && Platform.isAndroid) {
+              await _showAlert(
+                  'Enabling SquadQuest Calendar',
+                  'On Android, an additional manual step is required before you\'ll see SquadQuest events on your calendar:\n\n'
+                      '1. Open your Google Calendar app\n'
+                      '2. Tap the three lines in the top left corner\n'
+                      '3. Scroll down and tap "Settings"\n'
+                      '4. Tap "Manage accounts"\n'
+                      '5. Enable the "SquadQuest" account\n');
+            }
+
+            ref.read(calendarWritingEnabledProvider.notifier).state =
+                calendarWritingEnabled;
+          },
+          secondary: const Icon(Icons.calendar_today),
         ),
         ListTile(
           title: const Text('Delete Account'),
@@ -145,6 +184,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ],
       ]),
+    );
+  }
+
+  Future<void> _showAlert(title, body) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(body),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

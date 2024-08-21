@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/common.dart';
 import 'package:squadquest/controllers/calendar.dart';
+import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/models/instance.dart';
@@ -142,13 +143,15 @@ class InstanceRsvpsController
           savedRsvp));
     }
 
-    if (savedRsvp != null) {
-      await CalendarController.instance.upsertEvent(
-        subscription: savedRsvp,
-        instance: instance,
-      );
-    } else {
-      await CalendarController.instance.deleteEvent(instance);
+    if (ref.read(calendarWritingEnabledProvider)) {
+      if (savedRsvp != null) {
+        await CalendarController.instance.upsertEvent(
+          subscription: savedRsvp,
+          instance: instance,
+        );
+      } else {
+        await CalendarController.instance.deleteEvent(instance);
+      }
     }
 
     return savedRsvp;
