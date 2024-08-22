@@ -11,6 +11,8 @@ import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/app.dart';
 
+// TODO: setup background geolocation headless: https://github.com/transistorsoft/flutter_background_geolocation/blob/master/help/INSTALL-ANDROID.md#android-headless-mode-with-enableheadless-true
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

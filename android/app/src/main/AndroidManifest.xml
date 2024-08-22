@@ -7,6 +7,10 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
+
+        <!-- flutter_background_geolocation licence -->
+        <meta-data android:name="com.transistorsoft.locationmanager.license" android:value="YOUR_LICENCE_KEY_HERE" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
