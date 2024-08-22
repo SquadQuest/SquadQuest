@@ -2,12 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.transistorsoft.fetch</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>FlutterDeepLinkingEnabled</key>
-	<true/>
 	<key>CFBundleDisplayName</key>
 	<string>SquadQuest</string>
 	<key>CFBundleExecutable</key>
@@ -26,28 +28,33 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Sync event RSVPs to calendar</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Search your contacts to send friend requests and invite friends to events</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Shares your location with friends during an event</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Shares your location with friends during an event</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Shares your location with friends during an event</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Shares your location with friends during an event</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Select photos to upload for your profile and events</string>
-	<key>NSContactsUsageDescription</key>
-    <string>Search your contacts to send friend requests and invite friends to events</string>
-	<key>NSCalendarsUsageDescription</key>
-	<string>Sync event RSVPs to calendar</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
 		<string>location</string>
+		<string>processing</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

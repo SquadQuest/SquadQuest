@@ -1,6 +1,11 @@
 PODS:
   - app_links (0.0.1):
     - Flutter
+  - background_fetch (1.3.5):
+    - Flutter
+  - CocoaLumberjack (3.8.5):
+    - CocoaLumberjack/Core (= 3.8.5)
+  - CocoaLumberjack/Core (3.8.5)
   - device_calendar (0.0.1):
     - Flutter
   - Firebase/CoreOnly (10.27.0):
@@ -36,6 +41,9 @@ PODS:
     - GoogleUtilities/UserDefaults (~> 7.8)
     - nanopb (< 2.30911.0, >= 2.30908.0)
   - Flutter (1.0.0)
+  - flutter_background_geolocation (4.15.5):
+    - CocoaLumberjack (~> 3.8.5)
+    - Flutter
   - flutter_contacts (0.0.1):
     - Flutter
   - flutter_keyboard_visibility (0.0.1):
@@ -105,11 +113,13 @@ PODS:
 
 DEPENDENCIES:
   - app_links (from `.symlinks/plugins/app_links/ios`)
+  - background_fetch (from `.symlinks/plugins/background_fetch/ios`)
   - device_calendar (from `.symlinks/plugins/device_calendar/ios`)
   - Firebase/Messaging
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - Flutter (from `Flutter`)
+  - flutter_background_geolocation (from `.symlinks/plugins/flutter_background_geolocation/ios`)
   - flutter_contacts (from `.symlinks/plugins/flutter_contacts/ios`)
   - flutter_keyboard_visibility (from `.symlinks/plugins/flutter_keyboard_visibility/ios`)
   - flutter_timezone (from `.symlinks/plugins/flutter_timezone/ios`)
@@ -125,6 +135,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - CocoaLumberjack
     - Firebase
     - FirebaseCore
     - FirebaseCoreInternal
@@ -140,6 +151,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   app_links:
     :path: ".symlinks/plugins/app_links/ios"
+  background_fetch:
+    :path: ".symlinks/plugins/background_fetch/ios"
   device_calendar:
     :path: ".symlinks/plugins/device_calendar/ios"
   firebase_core:
@@ -148,6 +161,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_messaging/ios"
   Flutter:
     :path: Flutter
+  flutter_background_geolocation:
+    :path: ".symlinks/plugins/flutter_background_geolocation/ios"
   flutter_contacts:
     :path: ".symlinks/plugins/flutter_contacts/ios"
   flutter_keyboard_visibility:
@@ -175,6 +190,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   app_links: e70ca16b4b0f88253b3b3660200d4a10b4ea9795
+  background_fetch: f73d045fee3d313ea8c0afa205317bff8a6bf8d2
+  CocoaLumberjack: 6a459bc897d6d80bd1b8c78482ec7ad05dffc3f0
   device_calendar: 9cb33f88a02e19652ec7b8b122ca778f751b1f7b
   Firebase: 26b040b20866a55f55eb3611b9fcf3ae64816b86
   firebase_core: 483cfad66d24d8f3c233f31db4263830c625c909
@@ -184,6 +201,7 @@ SPEC CHECKSUMS:
   FirebaseInstallations: 766dabca09fd94aef922538aaf144cc4a6fb6869
   FirebaseMessaging: 585984d0a1df120617eb10b44cad8968b859815e
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  flutter_background_geolocation: 41cddc9ed0aac0b674bb6642690efd28df57ca6d
   flutter_contacts: edb1c5ce76aa433e20e6cb14c615f4c0b66e0983
   flutter_keyboard_visibility: 0339d06371254c3eb25eeb90ba8d17dca8f9c069
   flutter_timezone: ffb07bdad3c6276af8dada0f11978d8a1f8a20bb

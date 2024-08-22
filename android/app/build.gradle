@@ -32,7 +32,12 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// flutter_background_geolocation
+Project background_geolocation = project(':flutter_background_geolocation')
+apply from: "${background_geolocation.projectDir}/background_geolocation.gradle"
+
 android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
     namespace = "app.squadquest"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "26.3.11579264"
@@ -55,6 +60,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
     }
 
     signingConfigs {
@@ -69,6 +76,8 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.release
+            shrinkResources false
+            proguardFiles "${background_geolocation.projectDir}/proguard-rules.pro"
         }
     }
 }
