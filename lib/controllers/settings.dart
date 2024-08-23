@@ -66,6 +66,12 @@ class SettingsController {
       prefs.setString(
           'locationSharingEnabled', locationSharingEnabled.toString());
     });
+
+    ref.listen(calendarWritingEnabledProvider, (_, calendarWritingEnabled) {
+      log('SettingsController.calendarWritingEnabled=$calendarWritingEnabled');
+      prefs.setString(
+          'calendarWritingEnabled', calendarWritingEnabled.toString());
+    });
   }
 
   Future<void> clear() {
