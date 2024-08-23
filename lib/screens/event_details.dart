@@ -548,6 +548,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                             final uri = Platform.isIOS
                                                 ? Uri(
                                                     scheme: 'comgooglemaps',
+                                                    host: '',
                                                     queryParameters: {
                                                         'q': query
                                                       })
