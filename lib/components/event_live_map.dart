@@ -336,15 +336,16 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
     }
 
     // apply minimum bounds
-    if (minLatitude == maxLatitude && minLongitude == maxLongitude) {
+    if ((minLatitude - maxLatitude).abs() <= minSinglePointBounds &&
+        (minLongitude - maxLongitude).abs() <= minSinglePointBounds) {
       // zoom out more from single-point bounds
       minLatitude -= minSinglePointBounds;
       maxLatitude += minSinglePointBounds;
       minLongitude -= minSinglePointBounds;
       maxLongitude += minSinglePointBounds;
     } else {
-      final diffLatitude = maxLatitude - minLatitude;
-      final diffLongitude = maxLongitude - minLongitude;
+      final diffLatitude = (maxLatitude - minLatitude).abs();
+      final diffLongitude = (maxLongitude - minLongitude).abs();
 
       if (diffLatitude < minMultiPointBounds &&
           diffLongitude < minMultiPointBounds) {
