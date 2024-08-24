@@ -15,9 +15,10 @@ import 'package:squadquest/models/location_point.dart';
 import 'package:squadquest/models/map_segment.dart';
 import 'package:squadquest/models/user.dart';
 
-enum Menu { keepRallyPointInView }
+enum Menu { keepRallyPointInView, keepFriendsInView }
 
 final keepRallyPointInViewProvider = StateProvider<bool>((ref) => true);
+final keepFriendsInViewProvider = StateProvider<bool>((ref) => true);
 
 class EventLiveMap extends ConsumerStatefulWidget {
   final String title;
@@ -54,6 +55,7 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
   Widget build(BuildContext context) {
     final session = ref.watch(authControllerProvider);
     final keepRallyPointInView = ref.watch(keepRallyPointInViewProvider);
+    final keepFriendsInView = ref.watch(keepFriendsInViewProvider);
 
     if (session == null) {
       return const Center(child: CircularProgressIndicator());
@@ -86,6 +88,16 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
                             ref
                                 .read(keepRallyPointInViewProvider.notifier)
                                 .state = !keepRallyPointInView;
+                            _renderTrails();
+                          },
+                        ),
+                        CheckedPopupMenuItem<Menu>(
+                          value: Menu.keepFriendsInView,
+                          checked: keepFriendsInView,
+                          child: const Text('Keep friends in view'),
+                          onTap: () {
+                            ref.read(keepFriendsInViewProvider.notifier).state =
+                                !keepFriendsInView;
                             _renderTrails();
                           },
                         ),
@@ -195,6 +207,7 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
     renderingTrails = true;
 
     final keepRallyPointInView = ref.read(keepRallyPointInViewProvider);
+    final keepFriendsInView = ref.read(keepFriendsInViewProvider);
 
     // group points by user
     final Map<UserID, List<LocationPoint>> pointsByUser = {};
@@ -252,18 +265,20 @@ class _EventLiveMapState extends ConsumerState<EventLiveMap> {
         final segment = segments[i];
 
         // find min/max lat/lon
-        for (final point in segment.points) {
-          if (point.location.lat < minLatitude) {
-            minLatitude = point.location.lat;
-          }
-          if (point.location.lat > maxLatitude) {
-            maxLatitude = point.location.lat;
-          }
-          if (point.location.lon < minLongitude) {
-            minLongitude = point.location.lon;
-          }
-          if (point.location.lon > maxLongitude) {
-            maxLongitude = point.location.lon;
+        if (keepFriendsInView) {
+          for (final point in segment.points) {
+            if (point.location.lat < minLatitude) {
+              minLatitude = point.location.lat;
+            }
+            if (point.location.lat > maxLatitude) {
+              maxLatitude = point.location.lat;
+            }
+            if (point.location.lon < minLongitude) {
+              minLongitude = point.location.lon;
+            }
+            if (point.location.lon > maxLongitude) {
+              maxLongitude = point.location.lon;
+            }
           }
         }
 
