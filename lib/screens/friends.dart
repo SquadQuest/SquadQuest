@@ -13,6 +13,7 @@ import 'package:squadquest/services/contacts.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/models/friend.dart';
+import 'package:squadquest/components/tiles/profile.dart';
 import 'package:squadquest/components/phone_number_field.dart';
 import 'package:squadquest/components/contacts_list.dart';
 
@@ -129,7 +130,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                     itemBuilder: (context, friend) {
                       final friendProfile =
                           friend.getOtherProfile(session.user.id);
-                      return ListTile(
+                      return ProfileTile(
+                          profile: friendProfile!,
                           onTap: friend.status == FriendStatus.accepted ||
                                   (friend.status == FriendStatus.requested &&
                                       friend.requestee!.id == session.user.id)
@@ -140,15 +142,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                                       });
                                 }
                               : null,
-                          leading: friendProfile!.photo != null
-                              ? CircleAvatar(
-                                  backgroundImage: NetworkImage(
-                                      friendProfile.photo.toString()),
-                                )
-                              : const CircleAvatar(
-                                  child: Icon(Icons.person),
-                                ),
-                          title: Text(friendProfile.displayName),
                           subtitle: switch (friend.status) {
                             FriendStatus.requested => switch (
                                   friend.requester!.id == session.user.id) {
