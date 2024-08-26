@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
@@ -19,13 +20,15 @@ import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/friends.dart';
+import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';
+import 'package:squadquest/screens/chat.dart';
 import 'package:squadquest/components/friends_list.dart';
 import 'package:squadquest/components/event_live_map.dart';
 import 'package:squadquest/components/event_rally_map.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:squadquest/components/tiles/profile.dart';
 
 final _statusGroupOrder = {
   InstanceMemberStatus.omw: 0,
@@ -381,6 +384,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     final rsvpsFriendsAsync = session == null
         ? const AsyncValue.data(<RsvpFriend>[])
         : ref.watch(_rsvpsFriendsProvider(widget.instanceId));
+    final latestMessageAsync = session == null
+        ? const AsyncValue.data(null)
+        : ref.watch(latestChatProvider(widget.instanceId));
 
     // refresh map when event changes
     ref.listen(eventDetailsProvider(widget.instanceId), (_, event) async {
@@ -694,7 +700,49 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                                   '/events/${widget.instanceId}'
                                             });
                                       })))
-                        else
+                        else ...[
+                          if (latestMessageAsync.hasValue) ...[
+                            Row(children: [
+                              Expanded(
+                                child: Hero(
+                                  tag:
+                                      'message-${latestMessageAsync.value!.id}',
+                                  child: Material(
+                                    child: ProfileTile(
+                                      profile:
+                                          latestMessageAsync.value!.createdBy!,
+                                      subtitle: Text(
+                                          latestMessageAsync.value!.content),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              FilledButton(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (BuildContext context) =>
+                                          ChatScreen(
+                                              instanceId: widget.instanceId,
+                                              latestMessage:
+                                                  latestMessageAsync.value!),
+                                    ),
+                                  );
+                                },
+                                style: ButtonStyle(
+                                  shape: WidgetStateProperty.all(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Open\nChat',
+                                  textAlign: TextAlign.center,
+                                ),
+                              )
+                            ])
+                          ],
                           rsvpsFriendsAsync.when(
                             loading: () => const Center(
                                 child: CircularProgressIndicator()),
@@ -804,6 +852,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                     },
                                   ),
                           ),
+                        ],
                       ],
                     ),
                   ),
