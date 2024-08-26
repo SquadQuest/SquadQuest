@@ -533,6 +533,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 onRefresh: () async {
                   ref.invalidate(eventDetailsProvider(widget.instanceId));
                   ref.invalidate(rsvpsPerEventProvider(widget.instanceId));
+                  ref.invalidate(latestChatProvider(widget.instanceId));
+                  ref.invalidate(chatProvider(widget.instanceId));
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
