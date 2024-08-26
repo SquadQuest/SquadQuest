@@ -43,8 +43,8 @@ String formatPhone(String phone) {
 final phoneInputFilter =
     FilteringTextInputFormatter.deny(RegExp(r'[^+\(\) 0-9\-]'));
 
-List<T> updateListWithRecord<T>(
-    List<T> list, bool Function(T) where, T? record) {
+List<T> updateListWithRecord<T>(List<T> list, bool Function(T) where, T? record,
+    {bool prepend = false}) {
   late List<T> updatedList;
   final currentIndex = list.indexWhere(where);
 
@@ -54,10 +54,15 @@ List<T> updateListWithRecord<T>(
       updatedList = list;
     } else {
       // append a new record
-      updatedList = [
-        ...list,
-        record,
-      ];
+      updatedList = prepend
+          ? [
+              record,
+              ...list,
+            ]
+          : [
+              ...list,
+              record,
+            ];
     }
   } else if (record == null) {
     // remove existing record
