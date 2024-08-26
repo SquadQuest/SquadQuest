@@ -41,6 +41,7 @@ final _statusGroupOrder = {
 enum Menu {
   showSetRallyPointMap,
   showLiveMap,
+  showChat,
   getLink,
   edit,
   cancel,
@@ -241,6 +242,15 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       case Menu.showLiveMap:
         _showLiveMap();
         break;
+      case Menu.showChat:
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => ChatScreen(
+              instanceId: widget.instanceId,
+              autofocus: true,
+            ),
+          ),
+        );
       case Menu.getLink:
         await Clipboard.setData(ClipboardData(
             text: "https://squadquest.app/events/${widget.instanceId}"));
@@ -441,6 +451,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 title: Text('Open live map'),
               ),
             ),
+            if (myRsvpStatus != null)
+              const PopupMenuItem<Menu>(
+                value: Menu.showChat,
+                child: ListTile(
+                  leading: Icon(Icons.chat),
+                  title: Text('Open chat'),
+                ),
+              ),
             const PopupMenuItem<Menu>(
               value: Menu.getLink,
               child: ListTile(
@@ -702,23 +720,16 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                       })))
                         else ...[
                           if (latestMessageAsync.hasValue) ...[
-                            Row(children: [
-                              Expanded(
-                                child: Hero(
-                                  tag:
-                                      'message-${latestMessageAsync.value!.id}',
-                                  child: Material(
-                                    child: ProfileTile(
-                                      profile:
-                                          latestMessageAsync.value!.createdBy!,
-                                      subtitle: Text(
-                                          latestMessageAsync.value!.content),
-                                    ),
-                                  ),
-                                ),
+                            Container(
+                              margin: const EdgeInsets.all(5),
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer
+                                    .withOpacity(.25),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              FilledButton(
-                                onPressed: () {
+                              child: InkWell(
+                                onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute<void>(
                                       builder: (BuildContext context) =>
@@ -729,19 +740,33 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                     ),
                                   );
                                 },
-                                style: ButtonStyle(
-                                  shape: WidgetStateProperty.all(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                child: Column(
+                                  children: [
+                                    const Text('Latest message:'),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Hero(
+                                            tag:
+                                                'message-${latestMessageAsync.value!.id}',
+                                            child: Material(
+                                              type: MaterialType.transparency,
+                                              child: ProfileTile(
+                                                profile: latestMessageAsync
+                                                    .value!.createdBy!,
+                                                subtitle: Text(
+                                                    latestMessageAsync
+                                                        .value!.content),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                  ],
                                 ),
-                                child: const Text(
-                                  'Open\nChat',
-                                  textAlign: TextAlign.center,
-                                ),
-                              )
-                            ])
+                              ),
+                            ),
                           ],
                           rsvpsFriendsAsync.when(
                             loading: () => const Center(

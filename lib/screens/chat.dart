@@ -17,8 +17,13 @@ final DateFormat _fullTimeFormat = DateFormat('MMM d, h:mm a');
 class ChatScreen extends ConsumerStatefulWidget {
   final InstanceID instanceId;
   final EventMessage? latestMessage;
+  final bool autofocus;
 
-  const ChatScreen({super.key, required this.instanceId, this.latestMessage});
+  const ChatScreen(
+      {super.key,
+      required this.instanceId,
+      this.latestMessage,
+      this.autofocus = false});
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -105,6 +110,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   return Hero(
                     tag: 'message-${message.id}',
                     child: Material(
+                      type: MaterialType.transparency,
                       child: tile,
                     ),
                   );
@@ -115,6 +121,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               children: [
                 Expanded(
                   child: TextField(
+                    autofocus: widget.autofocus,
                     controller: _messageController,
                     decoration: const InputDecoration(
                       hintText: 'Type a message',
