@@ -30,7 +30,7 @@ class _MenuItem {
 final _menu = [
   _MenuItem(
     icon: Icons.home,
-    label: 'Home',
+    label: 'Explore Events',
     route: 'home',
   ),
   _MenuItem(
