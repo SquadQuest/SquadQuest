@@ -33,9 +33,12 @@ final _goingStatuses = [
 final _eventsTabProvider =
     StateProvider<EventsTab>((ref) => EventsTab.invitedAndSubscribed);
 
-final _filteredEventsProvider =
-    FutureProvider<({List<Instance> events, List<TopicID> topics})>(
-        (ref) async {
+final _filteredEventsProvider = FutureProvider<
+    ({
+      int awaitingMyResponseCount,
+      List<Instance> events,
+      List<TopicID> topics
+    })>((ref) async {
   final session = ref.read(authControllerProvider);
   final events = await ref.watch(instancesProvider.future);
   final topics = await ref.watch(topicSubscriptionsProvider.future);
@@ -43,6 +46,11 @@ final _filteredEventsProvider =
   final eventsTab = ref.watch(_eventsTabProvider);
 
   return (
+    awaitingMyResponseCount: events.where((event) {
+      final rsvp = rsvpsList.value
+          ?.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id);
+      return rsvp?.status == InstanceMemberStatus.invited;
+    }).length,
     events: events.where((event) {
       final rsvp = rsvpsList.value
           ?.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id);
@@ -144,6 +152,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             friend.status == FriendStatus.requested &&
             friend.requesterId != session?.user.id) ??
         [];
+
+    final awaitingMyResponseCount =
+        eventsList.valueOrNull?.awaitingMyResponseCount ?? 0;
 
     return AppScaffold(
       showDrawer: true,
@@ -251,12 +262,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           },
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          tabs: const <Widget>[
-            Tab(text: 'Invited & Subscribed'),
-            Tab(text: 'Awaiting My Response'),
-            Tab(text: 'I\'m Going'),
-            Tab(text: 'I\'m Hosting'),
-            Tab(text: 'All Public'),
+          tabs: <Widget>[
+            const Tab(text: 'Invited & Subscribed'),
+            Tab(
+              child: Badge.count(
+                count: awaitingMyResponseCount,
+                isLabelVisible: awaitingMyResponseCount > 0,
+                offset: const Offset(20, -5),
+                child: const Text('Awaiting My Response'),
+              ),
+            ),
+            const Tab(text: 'I\'m Going'),
+            const Tab(text: 'I\'m Hosting'),
+            const Tab(text: 'All Public'),
           ],
         ),
         ...eventsList.when(
