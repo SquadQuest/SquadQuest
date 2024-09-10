@@ -304,14 +304,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ),
                       ))
                 else if (data.events.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(32),
+                  Padding(
+                    padding: const EdgeInsets.all(32),
                     child: Text(
-                      'There are no events yet that you\'ve been invited to, have been shared by friends, or are public and match your subscribed topics.\n\n'
-                      'Subscribe to more topics, add some friends, or start planning your own event!',
+                      switch (eventsTab) {
+                        EventsTab.invitedAndSubscribed =>
+                          'There are no events yet that you\'ve been invited to, have been shared by friends, or are public and match your subscribed topics.\n\n'
+                              'Subscribe to more topics, add some friends, or start planning your own event!',
+                        EventsTab.awaitingMyResponse =>
+                          'There are no events right now that you\'ve been invited and haven\'t responded to.\n\n'
+                              'Check back here later!',
+                        EventsTab.imGoing =>
+                          'There are no events yet that you\'ve RSVP\'d to.\n\n'
+                              'Check back here when you\'ve accepted some invitations!',
+                        EventsTab.imHosting =>
+                          'There are no events yet that you\'re hosting.\n\n'
+                              'Create a new event to get started!',
+                        EventsTab.allPublic =>
+                          'There are no public events yet.\n\n'
+                              'Check back here later!',
+                      },
                       textAlign: TextAlign.center,
-                      style:
-                          TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+                      style: const TextStyle(
+                          fontSize: 16, fontStyle: FontStyle.italic),
                     ),
                   ),
                 Expanded(
