@@ -62,12 +62,7 @@ dependencies:
   sentry_flutter: ^8.4.0
   dio: ^5.5.0+1
   easy_debounce: ^2.0.3
-  # flutter_contacts: ^1.1.8
-  # Until merged: https://github.com/QuisApp/flutter_contacts/pull/170
-  flutter_contacts:
-    git:
-      url: https://github.com/Tradewind-apps/flutter_contacts
-      ref: pb/fix-incompatible-java-version-target
+  flutter_contacts: ^1.1.1
   flutter_expandable_fab: ^2.2.0
   timezone: ^0.9.4
   badges: ^3.1.2
