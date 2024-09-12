@@ -44,12 +44,14 @@ final _filteredEventsProvider = FutureProvider<
   final topics = await ref.watch(topicSubscriptionsProvider.future);
   final rsvpsList = ref.watch(rsvpsProvider);
   final eventsTab = ref.watch(_eventsTabProvider);
+  final now = DateTime.now();
 
   return (
     awaitingMyResponseCount: events.where((event) {
       final rsvp = rsvpsList.value
           ?.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id);
-      return rsvp?.status == InstanceMemberStatus.invited;
+      return rsvp?.status == InstanceMemberStatus.invited &&
+          event.getTimeGroup(now) != InstanceTimeGroup.past;
     }).length,
     events: events.where((event) {
       final rsvp = rsvpsList.value
@@ -88,7 +90,8 @@ final _filteredEventsProvider = FutureProvider<
         case EventsTab.awaitingMyResponse:
 
           // only show events awaiting your response
-          if (rsvp?.status != InstanceMemberStatus.invited) {
+          if (rsvp?.status != InstanceMemberStatus.invited ||
+              event.getTimeGroup(now) == InstanceTimeGroup.past) {
             return false;
           }
 
