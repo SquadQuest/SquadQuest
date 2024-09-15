@@ -23,7 +23,8 @@ class UserProfile {
       required this.fcmTokenAppBuild,
       required this.photo,
       required this.enabledNotifications,
-      this.mutuals});
+      this.mutuals,
+      this.unparsedNotifications = const {}});
 
   final UserID id;
   final String firstName;
@@ -35,6 +36,7 @@ class UserProfile {
   final Uri? photo;
   final Set<NotificationType> enabledNotifications;
   final List<UserID>? mutuals;
+  final Set<String> unparsedNotifications;
 
   String get fullName => '$firstName $lastName';
   String get displayName => lastName == null ? firstName : fullName;
@@ -43,6 +45,21 @@ class UserProfile {
       phone == null ? null : Uri(scheme: 'tel', path: phoneFormatted);
 
   factory UserProfile.fromMap(Map<String, dynamic> map) {
+    final Set<NotificationType> parsedNotifications = {};
+    final Set<String> unparsedNotifications = {};
+
+    if (map['enabled_notifications'] != null) {
+      for (final type in map['enabled_notifications']) {
+        try {
+          parsedNotifications.add(NotificationType.values.firstWhere(
+            (e) => e.name == type,
+          ));
+        } catch (e) {
+          unparsedNotifications.add(type);
+        }
+      }
+    }
+
     return UserProfile(
       id: map['id'] as UserID,
       firstName: map['first_name'] as String,
@@ -54,20 +71,19 @@ class UserProfile {
           : DateTime.parse(map['fcm_token_updated_at']).toLocal(),
       fcmTokenAppBuild: map['fcm_token_app_build'],
       photo: map['photo'] == null ? null : Uri.parse(map['photo']),
-      enabledNotifications: map['enabled_notifications'] == null
-          ? NotificationType.values.toSet().cast<NotificationType>()
-          : map['enabled_notifications']
-              .map((type) => NotificationType.values.firstWhere(
-                    (e) => e.name == type,
-                  ))
-              .toSet()
-              .cast<NotificationType>(),
+      enabledNotifications: parsedNotifications,
+      unparsedNotifications: unparsedNotifications,
       mutuals:
           map['mutuals'] == null ? null : List<UserID>.from(map['mutuals']),
     );
   }
 
   Map<String, dynamic> toMap() {
+    final enabledNotificationsFull =
+        enabledNotifications.map((type) => type.name).toList().cast<String>();
+
+    enabledNotificationsFull.addAll(unparsedNotifications);
+
     return {
       'id': id,
       'first_name': firstName,
@@ -76,8 +92,7 @@ class UserProfile {
       'fcm_token': fcmToken,
       'fcm_token_updated_at': fcmTokenUpdatedAt?.toUtc().toIso8601String(),
       'fcm_token_app_build': fcmTokenAppBuild,
-      'enabled_notifications':
-          enabledNotifications.map((type) => type.name).toList().cast<String>(),
+      'enabled_notifications': enabledNotificationsFull,
       'photo': photo?.toString(),
     };
   }
