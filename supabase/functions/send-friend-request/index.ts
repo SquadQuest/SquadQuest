@@ -149,7 +149,8 @@ serve(async (request) => {
 
   // scrub profile data
   const fcmToken = newFriendRequest.requestee.fcm_token;
-  const notificationEnabled = newFriendRequest.requestee.enabled_notifications
+  const notificationEnabled = newFriendRequest.requestee
+    .enabled_notifications_v2
     .includes("friendRequest");
   newFriendRequest.requester = await scrubProfile(
     newFriendRequest.requester,

@@ -121,7 +121,7 @@ serve(async (request) => {
     // scrub profile data
     const fcmToken = insertedInvitation.member.fcm_token;
     const notificationEnabled = insertedInvitation.member
-      .enabled_notifications
+      .enabled_notifications_v2
       .includes("eventInvitation");
     insertedInvitation.created_by = await scrubProfile(
       insertedInvitation.created_by,

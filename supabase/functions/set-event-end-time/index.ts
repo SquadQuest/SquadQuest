@@ -68,7 +68,7 @@ serve(async (request) => {
   for (const profile of profiles!) {
     if (
       !profile.fcm_token ||
-      !profile.enabled_notifications.includes("eventChange")
+      !profile.enabled_notifications_v2.includes("eventChange")
     ) {
       continue;
     }

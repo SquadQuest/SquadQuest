@@ -51,7 +51,7 @@ serve(async (request) => {
   for (const { member: profile } of rsvps!) {
     if (
       !profile.fcm_token ||
-      !profile.enabled_notifications.includes("eventChange")
+      !profile.enabled_notifications_v2.includes("eventChange")
     ) {
       continue;
     }

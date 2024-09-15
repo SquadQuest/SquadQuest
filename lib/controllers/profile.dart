@@ -128,7 +128,7 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
       final updatedData = await ref
           .read(supabaseClientProvider)
           .from('profiles')
-          .update({'enabled_notifications': enabledNotificationsFull})
+          .update({'enabled_notifications_v2': enabledNotificationsFull})
           .eq('id', state.value!.id)
           .select()
           .single();
@@ -137,7 +137,7 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
 
       state = AsyncValue.data(updatedProfile);
     } catch (error) {
-      loggerWithStack.e({'error patching enabled_notifications': error});
+      loggerWithStack.e({'error patching enabled_notifications_v2': error});
       rethrow;
     }
   }

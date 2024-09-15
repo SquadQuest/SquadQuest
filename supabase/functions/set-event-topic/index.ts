@@ -70,12 +70,12 @@ serve(async (request) => {
 
   // build topic members query
   const notifyUsersQuery = serviceRoleSupabase.from("topic_members").select(
-    "member!inner(id, fcm_token, enabled_notifications)",
+    "member!inner(id, fcm_token, enabled_notifications_v2)",
   ).eq("topic", topic.id)
     .not("member", "in", `("${rsvpUserIds?.join('","')}")`)
     .not("member.fcm_token", "is", null)
     .filter(
-      "member.enabled_notifications",
+      "member.enabled_notifications_v2",
       "cs",
       event.visibility == "public"
         ? '{"publicEventPosted"}'
