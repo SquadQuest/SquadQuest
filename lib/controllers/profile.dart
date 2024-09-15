@@ -119,14 +119,16 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
       enabledNotifications.remove(type);
     }
 
+    final enabledNotificationsFull =
+        enabledNotifications.map((type) => type.name).toList().cast<String>();
+
+    enabledNotificationsFull.addAll(state.value!.unparsedNotifications);
+
     try {
       final updatedData = await ref
           .read(supabaseClientProvider)
           .from('profiles')
-          .update({
-            'enabled_notifications':
-                enabledNotifications.map((e) => e.name).toList()
-          })
+          .update({'enabled_notifications': enabledNotificationsFull})
           .eq('id', state.value!.id)
           .select()
           .single();
