@@ -2,7 +2,7 @@ create table
     public.event_messages (
         id uuid not null default gen_random_uuid (),
         created_at timestamp with time zone not null default now(),
-        created_by uuid not null default uid (),
+        created_by uuid not null default auth.uid (),
         instance uuid not null,
         content text null,
         pinned boolean not null default false,
