@@ -35,7 +35,7 @@ serve(async (request) => {
   // get event
   const { data: event } = await serviceRoleSupabase
     .from("instances")
-    .select("title")
+    .select()
     .eq("id", eventMessage.instance)
     .single()
     .throwOnError();
@@ -110,14 +110,14 @@ serve(async (request) => {
       title: event!.title,
       body: `${userDisplayName}: ${truncatedMessage}`,
       url: `https://squadquest.app/events/${eventMessage.instance}`,
-      payload: { eventMessage },
+      payload: { event, message: eventMessage },
       collapseKey: `event-message-${eventMessage.instance}`,
     });
   }
 
   // return event
   return new Response(
-    JSON.stringify({ success: true, eventMessage }),
+    JSON.stringify({ success: true }),
     {
       headers: { "Content-Type": "application/json" },
       status: 200,
