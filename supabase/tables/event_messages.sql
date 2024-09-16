@@ -12,3 +12,13 @@ create table
     );
 
 alter table public.event_messages enable row level security;
+
+CREATE TRIGGER event_message_create
+AFTER INSERT ON event_messages FOR EACH ROW
+execute function "supabase_functions"."http_request" (
+  'http://functions:9000/create-event-message',
+  'POST',
+  '{"Content-Type":"application/json"}',
+  '{}',
+  '1000'
+);
