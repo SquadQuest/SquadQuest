@@ -119,3 +119,26 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/scrape-facebook-event
     ?url=https%3A%2F%2Fwww.facebook.com%2Fevents%2Fs%2Faugust-19th-philly-full-moon-r%2F1188917002238256%2F
 Authorization: Bearer {{token}}
+
+
+
+### Trigger: INSERT event_messages
+
+POST {{baseUrl}}/create-event-message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+    {
+        "type": "INSERT",
+        "schema": "public",
+        "table": "event_messages",
+        "old_record": null,
+        "record": {
+            "instance": "e772a06b-191a-466c-8774-89ca7295c543",
+            "content": "ggg",
+            "id": "b941ea1e-d027-4b5b-8ebc-5f49410becfc",
+            "created_at": "2024-09-16 02:13:52.67035+00",
+            "created_by": "8592ca5b-8dd0-4ff4-a8cb-acda8b481c1e",
+            "pinned\r": false
+        }
+    }
