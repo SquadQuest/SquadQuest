@@ -41,10 +41,12 @@ serve(async (request) => {
     .throwOnError();
 
   // get sender's profile
-  const senderProfile = await getSupabaseUserProfile(
-    request,
-    eventMessage.created_by,
-  );
+  const { data: senderProfile } = await serviceRoleSupabase
+    .from("profiles")
+    .select()
+    .eq("id", eventMessage.created_by)
+    .single()
+    .throwOnError();
 
   // get sender's friends
   const { data: senderFriends } = await serviceRoleSupabase
