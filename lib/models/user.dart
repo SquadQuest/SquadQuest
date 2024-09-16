@@ -9,7 +9,8 @@ enum NotificationType {
   friendsEventPosted,
   publicEventPosted,
   guestRsvp,
-  friendOnTheWay
+  friendOnTheWay,
+  eventMessage
 }
 
 class UserProfile {
@@ -48,8 +49,8 @@ class UserProfile {
     final Set<NotificationType> parsedNotifications = {};
     final Set<String> unparsedNotifications = {};
 
-    if (map['enabled_notifications'] != null) {
-      for (final type in map['enabled_notifications']) {
+    if (map['enabled_notifications_v2'] != null) {
+      for (final type in map['enabled_notifications_v2']) {
         try {
           parsedNotifications.add(NotificationType.values.firstWhere(
             (e) => e.name == type,
@@ -92,7 +93,7 @@ class UserProfile {
       'fcm_token': fcmToken,
       'fcm_token_updated_at': fcmTokenUpdatedAt?.toUtc().toIso8601String(),
       'fcm_token_app_build': fcmTokenAppBuild,
-      'enabled_notifications': enabledNotificationsFull,
+      'enabled_notifications_v2': enabledNotificationsFull,
       'photo': photo?.toString(),
     };
   }

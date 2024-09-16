@@ -2,7 +2,7 @@ create table
     public.event_messages (
         id uuid not null default gen_random_uuid (),
         created_at timestamp with time zone not null default now(),
-        created_by uuid not null default uid (),
+        created_by uuid not null default auth.uid (),
         instance uuid not null,
         content text null,
         pinned boolean not null default false,
@@ -12,3 +12,13 @@ create table
     );
 
 alter table public.event_messages enable row level security;
+
+CREATE TRIGGER event_message_create
+AFTER INSERT ON event_messages FOR EACH ROW
+execute function "supabase_functions"."http_request" (
+  'http://functions:9000/create-event-message',
+  'POST',
+  '{"Content-Type":"application/json"}',
+  '{}',
+  '1000'
+);

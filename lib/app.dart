@@ -84,6 +84,7 @@ class MyApp extends ConsumerWidget {
             case 'event-posted':
             case 'event-canceled':
             case 'event-uncanceled':
+            case 'event-message':
             case 'rally-point-updated':
             case 'rsvp':
               goToNotificationRoute(ref, '/events/${data['event']['id']}');

@@ -229,7 +229,7 @@ serve(async (request) => {
     for (const profile of profilesToNotify) {
       if (
         !profile.fcm_token ||
-        !profile.enabled_notifications.includes(
+        !profile.enabled_notifications_v2.includes(
           profile.id == event.created_by ? "guestRsvp" : "friendOnTheWay",
         )
       ) {
