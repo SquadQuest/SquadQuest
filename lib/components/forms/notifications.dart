@@ -109,6 +109,19 @@ class _NotificationOptionsState extends ConsumerState<NotificationOptions> {
           },
           secondary: const Icon(Icons.run_circle_outlined),
         ),
+        CheckboxListTile(
+          title: const Text('Event Chat'),
+          subtitle: const Text(
+              'When a message gets posted to chat in an event you RSVPd to'),
+          value: profile.value?.enabledNotifications
+                  .contains(NotificationType.eventMessage) ??
+              false,
+          onChanged: (bool? enabled) async {
+            await profileController.setNotificationEnabled(
+                NotificationType.eventMessage, enabled!);
+          },
+          secondary: const Icon(Icons.message),
+        ),
       ],
     );
   }

@@ -9,7 +9,8 @@ enum NotificationType {
   friendsEventPosted,
   publicEventPosted,
   guestRsvp,
-  friendOnTheWay
+  friendOnTheWay,
+  eventMessage
 }
 
 class UserProfile {
