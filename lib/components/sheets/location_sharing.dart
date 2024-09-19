@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:squadquest/theme.dart';
 import 'package:squadquest/controllers/location.dart';
 import 'package:squadquest/models/instance.dart';
 
@@ -12,7 +10,8 @@ class LocationSharingSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final squadQuestTheme = Theme.of(context).extension<SquadQuestColors>()!;
+    // TODO / FIXME: restore some kind of colors here
+    // final squadQuestTheme = Theme.of(context).extension<SquadQuestColors>()!;
     final locationSharing = ref.watch(locationSharingProvider);
 
     if (locationSharing == false && locationSharingAvailableEvent == null) {
@@ -21,9 +20,9 @@ class LocationSharingSheet extends ConsumerWidget {
 
     return BottomSheet(
         enableDrag: false,
-        backgroundColor: locationSharing == false
-            ? squadQuestTheme.locationSharingBottomSheetAvailableBackgroundColor
-            : squadQuestTheme.locationSharingBottomSheetActiveBackgroundColor,
+        // backgroundColor: locationSharing == false
+        //     ? squadQuestTheme.locationSharingBottomSheetAvailableBackgroundColor
+        //     : squadQuestTheme.locationSharingBottomSheetActiveBackgroundColor,
         onClosing: () {},
         builder: (_) => Padding(
             padding: const EdgeInsets.all(8),
@@ -39,7 +38,7 @@ class LocationSharingSheet extends ConsumerWidget {
                             ? 'Your location is not currently being shared'
                             : 'Initializing location sharing...',
                     textAlign: TextAlign.center,
-                    style: squadQuestTheme.locationSharingBottomSheetTextStyle,
+                    // style: squadQuestTheme.locationSharingBottomSheetTextStyle,
                   ),
                 ),
                 const SizedBox(width: 8),

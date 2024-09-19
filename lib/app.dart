@@ -3,16 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:squadquest/logger.dart';
-import 'package:squadquest/router.dart';
-import 'package:squadquest/theme.dart';
-import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/controllers/location.dart';
+import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/logger.dart';
+import 'package:squadquest/models/user.dart';
+import 'package:squadquest/router.dart';
 import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
-import 'package:squadquest/models/user.dart';
+import 'package:squadquest/theme.dart';
 
 class MyApp extends ConsumerWidget {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
@@ -101,11 +100,11 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       scaffoldMessengerKey: _scaffoldKey,
       title: 'SquadQuest',
-      theme: appThemeLight,
-      darkTheme: appThemeDark,
-      themeMode: themeMode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      themeMode: themeMode,
+      theme: SquadQuestTheme.light,
+      darkTheme: SquadQuestTheme.dark,
     );
   }
 

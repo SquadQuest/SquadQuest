@@ -3,21 +3,20 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:squadquest/logger.dart';
-import 'package:squadquest/common.dart';
-import 'package:squadquest/router.dart';
 import 'package:squadquest/app_scaffold.dart';
-import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/common.dart';
+import 'package:squadquest/components/pickers/date.dart';
 import 'package:squadquest/components/pickers/location.dart';
 import 'package:squadquest/components/pickers/photo.dart';
+import 'package:squadquest/components/pickers/time.dart';
+import 'package:squadquest/components/pickers/topic.dart';
+import 'package:squadquest/components/pickers/visibility.dart';
+import 'package:squadquest/controllers/instances.dart';
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
-import 'package:squadquest/components/pickers/date.dart';
-import 'package:squadquest/components/pickers/time.dart';
-import 'package:squadquest/components/pickers/visibility.dart';
-import 'package:squadquest/components/pickers/topic.dart';
-import 'package:squadquest/controllers/instances.dart';
+import 'package:squadquest/router.dart';
+import 'package:squadquest/services/supabase.dart';
 
 enum AutoFocusField { title, topic }
 
@@ -389,6 +388,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return AppScaffold(
       title: _editingInstance.when(
         data: (Instance? instance) =>
@@ -404,14 +405,14 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       actions: [
         if (!submitted && !_editingInstance.isLoading && loadMask == null)
           TextButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-            ),
             onPressed: () => _submitEvent(context),
-            child: Text(isNewEvent ? 'Post' : 'Save',
-                style: const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold)),
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.onTertiaryFixed,
+              backgroundColor: colorScheme.tertiaryFixed,
+            ),
+            child: Text(isNewEvent ? 'Post' : 'Save'),
           ),
+        const SizedBox(width: 8),
       ],
       showLocationSharingSheet: false,
       body: _editingInstance.when(

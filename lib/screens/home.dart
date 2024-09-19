@@ -3,9 +3,9 @@ import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:grouped_list/grouped_list.dart';
-
-import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/common.dart';
+import 'package:squadquest/components/tiles/instance.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/controllers/instances.dart';
@@ -14,7 +14,6 @@ import 'package:squadquest/controllers/topic_subscriptions.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
-import 'package:squadquest/components/tiles/instance.dart';
 
 enum EventsTab {
   invitedAndSubscribed,
@@ -169,7 +168,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         distance: 80,
         childrenAnimation: ExpandableFabAnimation.none,
         overlayStyle: ExpandableFabOverlayStyle(
-          color: Colors.black.withOpacity(0.75),
+          color: Theme.of(context).canvasColor.withOpacity(.75),
           blur: 5,
         ),
         openButtonBuilder: RotateFloatingActionButtonBuilder(
