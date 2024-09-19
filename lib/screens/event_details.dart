@@ -509,7 +509,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       ],
       floatingActionButton: FloatingActionButton(
         onPressed: () => _sendInvitations(context, eventRsvpsAsync.value ?? []),
-        child: const Icon(Icons.mail),
+        child: const Icon(Icons.person_add),
       ),
       locationSharingAvailableEvent:
           eventAsync.value?.getTimeGroup() == InstanceTimeGroup.past ||
