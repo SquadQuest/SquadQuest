@@ -196,6 +196,7 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
     // if phone number is valid under already-selected country, we don't want to change it
     if (isPhoneValid(value,
         defaultCountryCode: _selectedPhoneCountry.countryCode)) {
+      _internalController.text = formatPhone(value);
       return;
     }
 
