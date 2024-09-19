@@ -58,7 +58,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           blur: 5,
         ),
         openButtonBuilder: RotateFloatingActionButtonBuilder(
-          child: const Icon(Icons.person_add),
+          child: const Icon(Icons.add_reaction),
         ),
         closeButtonBuilder: DefaultFloatingActionButtonBuilder(
           child: const Icon(Icons.close),

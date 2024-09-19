@@ -99,6 +99,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
               ),
+              const Spacer(),
+              const Text('SquadQuest is focused on privacy.\n\n'
+                  'Only people who know your phone number already can send you a friend request,'
+                  ' and only people you\'ve accepted friend requests from can see any of your personal details.'),
+              const SizedBox(height: 16),
             ],
           ),
         ),
