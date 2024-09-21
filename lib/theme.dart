@@ -1,92 +1,40 @@
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
+import "package:google_fonts/google_fonts.dart";
+import "package:squadquest/utils/text_theme_color.dart";
 
-final appThemeLight = ThemeData.light(useMaterial3: true).copyWith(
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: Colors.orange.shade200,
-    brightness: Brightness.light,
-  ),
-  extensions: <ThemeExtension<dynamic>>[
-    const SquadQuestColors(
-        locationSharingBottomSheetActiveBackgroundColor:
-            Color.fromRGBO(129, 199, 132, 1),
-        locationSharingBottomSheetAvailableBackgroundColor:
-            Color.fromRGBO(255, 235, 59, 1),
-        locationSharingBottomSheetTextStyle: TextStyle(
-          color: Colors.black,
-          fontSize: 16,
-        )),
-  ],
-);
+class SquadQuestTheme {
+  static String bodyFontName = 'Inter Tight';
+  static TextTheme bodyTextTheme = GoogleFonts.getTextTheme(bodyFontName);
+  static TextTheme combinedTextTheme = GoogleFonts.getTextTheme(
+    displayFontName,
+  ).copyWith(
+    bodyLarge: bodyTextTheme.bodyLarge,
+    bodyMedium: bodyTextTheme.bodyMedium,
+    bodySmall: bodyTextTheme.bodySmall,
+    labelLarge: bodyTextTheme.labelLarge,
+    labelMedium: bodyTextTheme.labelMedium,
+    labelSmall: bodyTextTheme.labelSmall,
+  );
 
-final appThemeDark = ThemeData.dark(useMaterial3: true).copyWith(
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: Colors.orange,
-    brightness: Brightness.dark,
-  ),
-  extensions: <ThemeExtension<dynamic>>[
-    const SquadQuestColors(
-        locationSharingBottomSheetActiveBackgroundColor:
-            Color.fromRGBO(27, 94, 32, 1),
-        locationSharingBottomSheetAvailableBackgroundColor:
-            Color.fromRGBO(245, 127, 23, 1),
-        locationSharingBottomSheetTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-        ))
-  ],
-);
+  static ThemeData dark = ThemeData(
+    colorScheme: darkColorScheme,
+    primaryTextTheme: textTheme.apply(bodyColor: darkColorScheme.onPrimary),
+    textTheme: textTheme,
+  );
 
-@immutable
-class SquadQuestColors extends ThemeExtension<SquadQuestColors> {
-  final Color? locationSharingBottomSheetActiveBackgroundColor;
-  final Color? locationSharingBottomSheetAvailableBackgroundColor;
-  final TextStyle? locationSharingBottomSheetTextStyle;
+  static ColorScheme darkColorScheme =
+      ColorScheme.fromSeed(brightness: Brightness.dark, seedColor: seedColor);
 
-  const SquadQuestColors({
-    required this.locationSharingBottomSheetActiveBackgroundColor,
-    required this.locationSharingBottomSheetAvailableBackgroundColor,
-    required this.locationSharingBottomSheetTextStyle,
-  });
+  static String displayFontName = 'Aleo';
+  static ThemeData light = ThemeData(
+    colorScheme: lightColorScheme,
+    primaryTextTheme: textTheme,
+    textTheme: textTheme,
+  );
 
-  @override
-  SquadQuestColors copyWith(
-      {Color? locationSharingBottomSheetActiveBackgroundColor,
-      TextStyle? locationSharingBottomSheetTextStyle}) {
-    return SquadQuestColors(
-      locationSharingBottomSheetActiveBackgroundColor:
-          locationSharingBottomSheetActiveBackgroundColor ??
-              this.locationSharingBottomSheetActiveBackgroundColor,
-      locationSharingBottomSheetAvailableBackgroundColor:
-          locationSharingBottomSheetAvailableBackgroundColor ??
-              this.locationSharingBottomSheetAvailableBackgroundColor,
-      locationSharingBottomSheetTextStyle:
-          locationSharingBottomSheetTextStyle ??
-              this.locationSharingBottomSheetTextStyle,
-    );
-  }
+  static ColorScheme lightColorScheme =
+      ColorScheme.fromSeed(seedColor: seedColor);
 
-  @override
-  SquadQuestColors lerp(SquadQuestColors? other, double t) {
-    if (other is! SquadQuestColors) {
-      return this;
-    }
-    return SquadQuestColors(
-      locationSharingBottomSheetActiveBackgroundColor: Color.lerp(
-          locationSharingBottomSheetActiveBackgroundColor,
-          other.locationSharingBottomSheetActiveBackgroundColor,
-          t),
-      locationSharingBottomSheetAvailableBackgroundColor: Color.lerp(
-          locationSharingBottomSheetAvailableBackgroundColor,
-          other.locationSharingBottomSheetAvailableBackgroundColor,
-          t),
-      locationSharingBottomSheetTextStyle: TextStyle(
-        color: Color.lerp(locationSharingBottomSheetTextStyle!.color,
-            other.locationSharingBottomSheetTextStyle!.color, t),
-        fontSize: locationSharingBottomSheetTextStyle!.fontSize! +
-            (other.locationSharingBottomSheetTextStyle!.fontSize! -
-                    locationSharingBottomSheetTextStyle!.fontSize!) *
-                t,
-      ),
-    );
-  }
+  static Color seedColor = const Color(0xffA87337);
+  static TextTheme textTheme = TextThemeColor.nullFontColor(combinedTextTheme);
 }

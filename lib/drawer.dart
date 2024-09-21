@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:squadquest/router.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/router.dart';
 
 class _MenuItem {
   static const divider = Key('divider');
@@ -121,18 +120,24 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
       children: <Widget>[
         profileAsync.when(
             data: (profile) => UserAccountsDrawerHeader(
-                decoration: const BoxDecoration(
-                  color: Colors.blue,
-                ),
                 accountName: Text(profile!.fullName),
                 accountEmail: profile.phone == null
                     ? null
                     : Text(profile.phoneFormatted!),
-                currentAccountPicture: profile.photo == null
-                    ? null
-                    : CircleAvatar(
-                        backgroundImage: NetworkImage(profile.photo.toString()),
-                      )),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Theme.of(context).colorScheme.tertiaryFixed,
+                  backgroundImage: (profile.photo != null)
+                      ? NetworkImage(profile.photo.toString())
+                      : null,
+                  child: Text(
+                    profile.displayName[0],
+                    style: TextStyle(
+                      color:
+                          Theme.of(context).colorScheme.onTertiaryFixedVariant,
+                    ),
+                    textScaler: const TextScaler.linear(2),
+                  ),
+                )),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const SizedBox.shrink()),
         ..._menu
