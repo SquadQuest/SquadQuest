@@ -463,10 +463,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                       const SizedBox(
                         height: 24,
                       ),
-                      FormLocationPicker(valueProvider: _locationProvider),
-                      const SizedBox(
-                        height: 24,
-                      ),
                       FormDatePicker(
                           labelText: 'Date to meet up on',
                           initialValue: startDate,

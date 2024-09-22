@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:squadquest/logger.dart';
+import 'package:squadquest/services/connection.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
@@ -190,11 +192,17 @@ void goInitialLocation([String? overrideLocation]) async {
   // send user to profile screen if profile is not set
   final session = _ref!.read(authControllerProvider);
   if (session != null) {
-    final profile = await _ref!.read(profileProvider.future);
-    if (profile == null) {
-      _router.goNamed('profile-edit',
-          queryParameters:
-              overrideLocation == null ? {} : {'redirect': overrideLocation});
+    try {
+      final profile = await _ref!.read(profileProvider.future);
+      if (profile == null) {
+        _router.goNamed('profile-edit',
+            queryParameters:
+                overrideLocation == null ? {} : {'redirect': overrideLocation});
+        return;
+      }
+    } catch (error) {
+      await ConnectionService.showConnectionErrorDialog();
+      await FlutterExitApp.exitApp(iosForceExit: true);
       return;
     }
   }

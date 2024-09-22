@@ -26,10 +26,10 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
       }
     });
 
-    return fetch();
+    return fetch(throwOnError: true);
   }
 
-  Future<UserProfile?> fetch() async {
+  Future<UserProfile?> fetch({bool throwOnError = false}) async {
     final supabase = ref.read(supabaseClientProvider);
     final session = ref.read(authControllerProvider);
     log('ProfileController.fetch: session: ${session == null ? 'no' : 'yes'}');
@@ -59,6 +59,11 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
     } catch (error, stackTrace) {
       logger.e({'ProfileController.fetch': error}, stackTrace: stackTrace);
       state = AsyncValue.error(error, stackTrace);
+
+      if (throwOnError) {
+        rethrow;
+      }
+
       return null;
     }
   }

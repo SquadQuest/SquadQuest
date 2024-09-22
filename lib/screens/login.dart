@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/connection.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/components/phone_number_field.dart';
@@ -49,6 +51,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             queryParameters:
                 widget.redirect == null ? {} : {'redirect': widget.redirect});
       }
+    } on AuthRetryableFetchException catch (_) {
+      await ConnectionService.showConnectionErrorDialog();
     } catch (error, st) {
       log('Error sending SMS:', error: error, stackTrace: st);
       final errorMessage = switch (error) {
