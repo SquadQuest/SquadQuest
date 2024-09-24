@@ -135,6 +135,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                       child: MapLibreMap(
                     onMapCreated: _onMapCreated,
                     onStyleLoadedCallback: _onStyleLoadedCallback,
+                    onMapLongClick: _onMapLongClick,
                     styleString:
                         'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
                     myLocationEnabled: true,
@@ -176,6 +177,14 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
         iconSize: kIsWeb ? 0.5 : 1,
         iconAnchor: 'top',
         draggable: true));
+  }
+
+  void _onMapLongClick(Point<double> point, LatLng coordinates) async {
+    rallyPoint = coordinates;
+
+    await controller!
+        .updateSymbol(dragSymbol!, SymbolOptions(geometry: coordinates));
+    selectedPlaceName = null;
   }
 
   _onFeatureDrag(dynamic id,
