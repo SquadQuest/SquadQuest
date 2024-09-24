@@ -16,6 +16,7 @@ class AuthController extends Notifier<Session?> {
   AuthController();
 
   String? _verifyingPhone;
+  String? get verifyingPhone => _verifyingPhone;
 
   @override
   Session? build() {

@@ -15,12 +15,15 @@ class EventRallyMap extends ConsumerStatefulWidget {
   final String title;
   final LatLng mapCenter;
   final Geographic? initialRallyPoint;
+  final Function(String)? onPlaceSelect;
 
-  const EventRallyMap(
-      {super.key,
-      this.title = 'Set rally point',
-      this.mapCenter = const LatLng(39.9550, -75.1605),
-      this.initialRallyPoint});
+  const EventRallyMap({
+    super.key,
+    this.title = 'Set rally point',
+    this.mapCenter = const LatLng(39.9550, -75.1605),
+    this.initialRallyPoint,
+    this.onPlaceSelect,
+  });
 
   @override
   ConsumerState<EventRallyMap> createState() => _EventRallyMapState();
@@ -32,6 +35,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
   Symbol? dragSymbol;
   FocusNode searchFocus = FocusNode();
   List<Symbol> resultSymbols = [];
+  String? selectedPlaceName;
 
   Geographic get rallyPointGeographic =>
       Geographic(lat: rallyPoint.latitude, lon: rallyPoint.longitude);
@@ -74,10 +78,9 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                     Positioned(
                         left: 12,
                         child: IconButton(
-                            icon: const Icon(Icons.save),
-                            onPressed: () {
-                              Navigator.of(context).pop(rallyPointGeographic);
-                            })),
+                          icon: const Icon(Icons.save),
+                          onPressed: () => _saveRallyPoint(),
+                        )),
                     Positioned(
                         right: 12,
                         child: PopupMenuButton(
@@ -89,10 +92,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                                       leading: Icon(Icons.save),
                                       title: Text('Save rally point'),
                                     ),
-                                    onTap: () {
-                                      Navigator.of(context)
-                                          .pop(rallyPointGeographic);
-                                    },
+                                    onTap: () => _saveRallyPoint(),
                                   ),
                                   PopupMenuItem(
                                     child: const ListTile(
@@ -135,6 +135,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
                       child: MapLibreMap(
                     onMapCreated: _onMapCreated,
                     onStyleLoadedCallback: _onStyleLoadedCallback,
+                    onMapLongClick: _onMapLongClick,
                     styleString:
                         'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
                     myLocationEnabled: true,
@@ -178,6 +179,14 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
         draggable: true));
   }
 
+  void _onMapLongClick(Point<double> point, LatLng coordinates) async {
+    rallyPoint = coordinates;
+
+    await controller!
+        .updateSymbol(dragSymbol!, SymbolOptions(geometry: coordinates));
+    selectedPlaceName = null;
+  }
+
   _onFeatureDrag(dynamic id,
       {required Point<double> point,
       required LatLng origin,
@@ -189,14 +198,26 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
     }
 
     rallyPoint = dragSymbol!.options.geometry!;
+    selectedPlaceName = null;
   }
 
   _onSymbolTapped(Symbol resultSymbol) async {
     rallyPoint = resultSymbol.options.geometry!;
 
+    selectedPlaceName = resultSymbol.options.textField!;
+
     await controller!.removeSymbols(resultSymbols);
     await controller!.updateSymbol(
         dragSymbol!, SymbolOptions(geometry: resultSymbol.options.geometry));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          'Rally point set to $selectedPlaceName',
+          textAlign: TextAlign.center,
+        ),
+      ));
+    }
   }
 
   _onSearch(String search) async {
@@ -251,6 +272,14 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
     }
 
     resultSymbols = await controller!.addSymbols(resultSymbolOptions);
+  }
+
+  void _saveRallyPoint() {
+    if (widget.onPlaceSelect != null && selectedPlaceName != null) {
+      widget.onPlaceSelect!(selectedPlaceName!);
+    }
+
+    Navigator.of(context).pop(rallyPointGeographic);
   }
 
   @override

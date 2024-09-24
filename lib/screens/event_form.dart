@@ -439,27 +439,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                         },
                         controller: _titleController,
                       ),
-                      const SizedBox(
-                        height: 24,
-                      ),
                       FormTopicPicker(valueProvider: _topicProvider),
-                      const SizedBox(
-                        height: 24,
-                      ),
-                      TextFormField(
-                        textInputAction: TextInputAction.done,
-                        decoration: const InputDecoration(
-                          // prefixIcon: Icon(Icons.pin_drop),
-                          labelText: 'Description of location',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter location descrption';
-                          }
-                          return null;
-                        },
-                        controller: _locationDescriptionController,
-                      ),
                       const SizedBox(
                         height: 24,
                       ),
@@ -475,7 +455,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                               startDate = date;
                             });
                           }),
-                      const SizedBox(height: 16),
                       FormTimePicker(
                           labelText: 'Earliest time to meet up at',
                           valueProvider: _startTimeMinProvider,
@@ -485,7 +464,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                   _plusMinutes(time, 15);
                             }
                           }),
-                      const SizedBox(height: 16),
                       FormTimePicker(
                           labelText: 'Latest time to meet up by',
                           valueProvider: _startTimeMaxProvider,
@@ -494,7 +472,31 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                               startTimeMaxSet = true;
                             });
                           }),
-                      const SizedBox(height: 16),
+                      const SizedBox(
+                        height: 24,
+                      ),
+                      FormLocationPicker(
+                          valueProvider: _locationProvider,
+                          onPlaceSelect: (placeName) {
+                            if (_locationDescriptionController.text.isEmpty) {
+                              _locationDescriptionController.text = placeName;
+                            }
+                          }),
+                      TextFormField(
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          // prefixIcon: Icon(Icons.pin_drop),
+                          labelText: 'Description of location',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter location descrption';
+                          }
+                          return null;
+                        },
+                        controller: _locationDescriptionController,
+                      ),
+                      const SizedBox(height: 24),
                       FormVisibilityPicker(
                           labelText: 'Visibility of this posting',
                           valueProvider: _visibilityProvider),
@@ -517,9 +519,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                           }
                           return null;
                         },
-                      ),
-                      const SizedBox(
-                        height: 24,
                       ),
                       TextFormField(
                         // textInputAction: TextInputAction.done,
