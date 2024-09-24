@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/router.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
@@ -67,6 +68,8 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authController = ref.read(authControllerProvider.notifier);
+
     return AppScaffold(
       title: 'Verify phone number',
       loadMask: submitted ? 'Verifying code...' : null,
@@ -83,9 +86,10 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
                 keyboardType: TextInputType.number,
                 autofillHints: const [AutofillHints.oneTimeCode],
                 textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.pin_outlined),
-                  labelText: 'Enter the code sent to your phone',
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.pin_outlined),
+                  labelText:
+                      'Enter the code sent to ${formatPhone(authController.verifyingPhone!)}',
                 ),
                 inputFormatters: [
                   FilteringTextInputFormatter.deny(RegExp(r'[^0-9]'))
