@@ -12,6 +12,7 @@ class FormLocationPicker extends ConsumerStatefulWidget {
   final Geographic? initialValue;
   final StateProvider<Geographic?>? valueProvider;
   final ValueChanged<Geographic?>? onChanged;
+  final Function(String)? onPlaceSelect;
 
   const FormLocationPicker({
     super.key,
@@ -19,6 +20,7 @@ class FormLocationPicker extends ConsumerStatefulWidget {
     this.initialValue,
     this.valueProvider,
     this.onChanged,
+    this.onPlaceSelect,
   }) : assert(initialValue == null || valueProvider == null,
             'Cannot provide both initialValue and valueProvider.');
 
@@ -83,8 +85,9 @@ class _FormLocationPickerState extends ConsumerState<FormLocationPicker> {
                 isScrollControlled: true,
                 enableDrag: false,
                 isDismissible: false,
-                builder: (BuildContext context) =>
-                    EventRallyMap(initialRallyPoint: value));
+                builder: (BuildContext context) => EventRallyMap(
+                    initialRallyPoint: value,
+                    onPlaceSelect: widget.onPlaceSelect));
 
             _onValueChanged(newValue);
           },
