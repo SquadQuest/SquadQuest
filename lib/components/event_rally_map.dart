@@ -36,6 +36,7 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
   FocusNode searchFocus = FocusNode();
   List<Symbol> resultSymbols = [];
   String? selectedPlaceName;
+  bool isDragging = false;
 
   Geographic get rallyPointGeographic =>
       Geographic(lat: rallyPoint.latitude, lon: rallyPoint.longitude);
@@ -180,6 +181,10 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
   }
 
   void _onMapLongClick(Point<double> point, LatLng coordinates) async {
+    if (isDragging) {
+      return;
+    }
+
     rallyPoint = coordinates;
 
     await controller!
@@ -193,12 +198,17 @@ class _EventRallyMapState extends ConsumerState<EventRallyMap> {
       required LatLng current,
       required LatLng delta,
       required DragEventType eventType}) {
+    if (eventType == DragEventType.start) {
+      isDragging = true;
+    }
+
     if (eventType != DragEventType.end) {
       return;
     }
 
     rallyPoint = dragSymbol!.options.geometry!;
     selectedPlaceName = null;
+    isDragging = false;
   }
 
   _onSymbolTapped(Symbol resultSymbol) async {
