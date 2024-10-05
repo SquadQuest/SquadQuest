@@ -125,6 +125,10 @@ class LatestChatController
   }
 
   void _onData(List<Map<String, dynamic>> data) async {
+    if (data.isEmpty) {
+      return;
+    }
+
     try {
       state = AsyncValue.data(await hydrate(data.first));
     } catch (error, stackTrace) {
