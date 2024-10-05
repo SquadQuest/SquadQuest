@@ -547,73 +547,43 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (event.status ==
-                                            InstanceStatus.canceled)
-                                          const Text('Status: CANCELED'),
-                                        Text(
-                                            'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
-                                        Text(
-                                            'Date: ${eventDateFormat.format(event.startTimeMin)}'),
-                                        Text('Topic: ${event.topic?.name}'),
-                                        Text(
-                                            'Posted by: ${event.createdBy?.displayName}'),
-                                        Text(
-                                            'Visibility: ${event.visibility.name}'),
-                                        InkWell(
-                                          child: Text(
-                                              'Location: ${event.locationDescription}'),
-                                          onTap: () {
-                                            final query =
-                                                event.rallyPointPlusCode ??
-                                                    event.locationDescription;
-                                            final uri = Platform.isIOS
-                                                ? Uri(
-                                                    scheme: 'comgooglemaps',
-                                                    host: '',
-                                                    queryParameters: {
-                                                        'q': query
-                                                      })
-                                                : Uri(
-                                                    scheme: 'https',
-                                                    host: 'maps.google.com',
-                                                    queryParameters: {
-                                                        'q': query
-                                                      });
-                                            launchUrl(uri);
-                                          },
-                                        ),
-                                        if (event.link != null) ...[
-                                          InkWell(
-                                              onTap: () =>
-                                                  launchUrl(event.link!),
-                                              child: RichText(
-                                                  text: TextSpan(children: [
-                                                TextSpan(
-                                                  text: 'Link: ',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium,
-                                                ),
-                                                TextSpan(
-                                                  text: event.link.toString(),
-                                                  style: const TextStyle(
-                                                    color: Colors.blue,
-                                                    decoration: TextDecoration
-                                                        .underline,
-                                                  ),
-                                                )
-                                              ])))
-                                        ],
-                                        if (event.notes != null &&
-                                            event.notes!.trim().isNotEmpty) ...[
-                                          Text('Notes: ${event.notes}')
-                                        ]
-                                      ])),
+                                flex: 2,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (event.status == InstanceStatus.canceled)
+                                      const Text('Status: CANCELED'),
+                                    Text(
+                                        'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
+                                    Text(
+                                        'Date: ${eventDateFormat.format(event.startTimeMin)}'),
+                                    Text('Topic: ${event.topic?.name}'),
+                                    Text(
+                                        'Posted by: ${event.createdBy?.displayName}'),
+                                    Text(
+                                        'Visibility: ${event.visibility.name}'),
+                                    InkWell(
+                                      child: Text(
+                                          'Location: ${event.locationDescription}'),
+                                      onTap: () {
+                                        final query =
+                                            event.rallyPointPlusCode ??
+                                                event.locationDescription;
+                                        final uri = Platform.isIOS
+                                            ? Uri(
+                                                scheme: 'comgooglemaps',
+                                                host: '',
+                                                queryParameters: {'q': query})
+                                            : Uri(
+                                                scheme: 'https',
+                                                host: 'maps.google.com',
+                                                queryParameters: {'q': query});
+                                        launchUrl(uri);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
                               Consumer(builder: (_, ref, child) {
                                 final eventPointsAsync = ref.watch(
                                     eventPointsProvider(widget.instanceId));
@@ -706,6 +676,39 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                         ])));
                               })
                             ]),
+                        if (event.link != null) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: InkWell(
+                              onTap: () => launchUrl(event.link!),
+                              child: RichText(
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: 'Link: ',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                    TextSpan(
+                                      text: event.link.toString(),
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                        if (event.notes != null &&
+                            event.notes!.trim().isNotEmpty) ...[
+                          Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: Text(event.notes!)),
+                        ],
                         if (session == null)
                           Padding(
                               padding: const EdgeInsets.symmetric(vertical: 32),
