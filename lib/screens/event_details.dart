@@ -543,169 +543,202 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (event.status == InstanceStatus.canceled)
+                          const ListTile(
+                            contentPadding: EdgeInsets.only(bottom: 16),
+                            minVerticalPadding: 3,
+                            minTileHeight: 0,
+                            leading: Icon(Icons.cancel_outlined),
+                            textColor: Colors.red,
+                            iconColor: Colors.red,
+                            title: Text('THIS EVENT HAS BEEN CANCELED'),
+                          ),
                         Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (event.status ==
-                                            InstanceStatus.canceled)
-                                          const Text('Status: CANCELED'),
-                                        Text(
-                                            'Starting between: ${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
-                                        Text(
-                                            'Date: ${eventDateFormat.format(event.startTimeMin)}'),
-                                        Text('Topic: ${event.topic?.name}'),
-                                        Text(
-                                            'Posted by: ${event.createdBy?.displayName}'),
-                                        Text(
-                                            'Visibility: ${event.visibility.name}'),
-                                        InkWell(
-                                          child: Text(
-                                              'Location: ${event.locationDescription}'),
-                                          onTap: () {
-                                            final query =
-                                                event.rallyPointPlusCode ??
-                                                    event.locationDescription;
-                                            final uri = Platform.isIOS
-                                                ? Uri(
-                                                    scheme: 'comgooglemaps',
-                                                    host: '',
-                                                    queryParameters: {
-                                                        'q': query
-                                                      })
-                                                : Uri(
-                                                    scheme: 'https',
-                                                    host: 'maps.google.com',
-                                                    queryParameters: {
-                                                        'q': query
-                                                      });
-                                            launchUrl(uri);
-                                          },
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    minVerticalPadding: 3,
+                                    minTileHeight: 0,
+                                    leading: visibilityIcons[event.visibility],
+                                    title: switch (event.visibility) {
+                                      InstanceVisibility.private =>
+                                        const Text('Private event'),
+                                      InstanceVisibility.friends =>
+                                        const Text('Friends-only event'),
+                                      InstanceVisibility.public =>
+                                        const Text('Public event'),
+                                    },
+                                  ),
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    minVerticalPadding: 3,
+                                    minTileHeight: 0,
+                                    leading: const Icon(Icons.today),
+                                    title: Text(eventDateFormat
+                                        .format(event.startTimeMin)),
+                                  ),
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    minVerticalPadding: 3,
+                                    minTileHeight: 0,
+                                    leading: const Icon(Icons.timelapse),
+                                    title: Text(
+                                        '${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
+                                    subtitle: const Text('Meet up between'),
+                                  ),
+                                  if (event.topic != null) ...[
+                                    ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      minVerticalPadding: 3,
+                                      minTileHeight: 0,
+                                      leading: const Icon(Icons.topic),
+                                      title: Text(event.topic!.name),
+                                    ),
+                                  ],
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    minVerticalPadding: 3,
+                                    minTileHeight: 0,
+                                    leading: const Icon(Icons.person_pin),
+                                    title: Text(event.createdBy!.displayName),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Consumer(builder: (_, ref, child) {
+                              final eventPointsAsync = ref.watch(
+                                  eventPointsProvider(widget.instanceId));
+                              final mapCenter =
+                                  eventPointsAsync.value?.centroid ??
+                                      event.rallyPoint;
+
+                              if (mapCenter == null) {
+                                _mapController = null;
+                                return const SizedBox.shrink();
+                              }
+
+                              return Expanded(
+                                flex: 1,
+                                child: AspectRatio(
+                                  aspectRatio: 1,
+                                  child: Stack(
+                                    children: [
+                                      MapLibreMap(
+                                        styleString:
+                                            'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
+
+                                        // listeners
+                                        onMapCreated: _onMapCreated,
+                                        onStyleLoadedCallback: () =>
+                                            _onMapStyleLoaded(event),
+
+                                        // disable all interaction
+                                        gestureRecognizers: null,
+                                        dragEnabled: false,
+                                        compassEnabled: false,
+                                        zoomGesturesEnabled: false,
+                                        rotateGesturesEnabled: false,
+                                        tiltGesturesEnabled: false,
+                                        scrollGesturesEnabled: false,
+                                        doubleClickZoomEnabled: false,
+
+                                        // hide attribution in mini view
+                                        attributionButtonPosition:
+                                            AttributionButtonPosition
+                                                .bottomRight,
+                                        attributionButtonMargins:
+                                            const Point(-100, -100),
+
+                                        // set initial camera position to rally point
+                                        initialCameraPosition: CameraPosition(
+                                          target: LatLng(
+                                              mapCenter.lat, mapCenter.lon),
+                                          zoom: 11.75,
                                         ),
-                                        if (event.link != null) ...[
-                                          InkWell(
-                                              onTap: () =>
-                                                  launchUrl(event.link!),
-                                              child: RichText(
-                                                  text: TextSpan(children: [
-                                                TextSpan(
-                                                  text: 'Link: ',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium,
-                                                ),
-                                                TextSpan(
-                                                  text: event.link.toString(),
-                                                  style: const TextStyle(
-                                                    color: Colors.blue,
-                                                    decoration: TextDecoration
-                                                        .underline,
-                                                  ),
-                                                )
-                                              ])))
-                                        ],
-                                        if (event.notes != null &&
-                                            event.notes!.trim().isNotEmpty) ...[
-                                          Text('Notes: ${event.notes}')
-                                        ]
-                                      ])),
-                              Consumer(builder: (_, ref, child) {
-                                final eventPointsAsync = ref.watch(
-                                    eventPointsProvider(widget.instanceId));
-                                final mapCenter =
-                                    eventPointsAsync.value?.centroid ??
-                                        event.rallyPoint;
-
-                                if (mapCenter == null) {
-                                  _mapController = null;
-                                  return const SizedBox.shrink();
-                                }
-
-                                return Expanded(
-                                    flex: 1,
-                                    child: AspectRatio(
-                                        aspectRatio: 1,
-                                        child: Stack(children: [
-                                          MapLibreMap(
-                                            styleString:
-                                                'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
-
-                                            // listeners
-                                            onMapCreated: _onMapCreated,
-                                            onStyleLoadedCallback: () =>
-                                                _onMapStyleLoaded(event),
-
-                                            // disable all interaction
-                                            gestureRecognizers: null,
-                                            dragEnabled: false,
-                                            compassEnabled: false,
-                                            zoomGesturesEnabled: false,
-                                            rotateGesturesEnabled: false,
-                                            tiltGesturesEnabled: false,
-                                            scrollGesturesEnabled: false,
-                                            doubleClickZoomEnabled: false,
-
-                                            // hide attribution in mini view
-                                            attributionButtonPosition:
-                                                AttributionButtonPosition
-                                                    .bottomRight,
-                                            attributionButtonMargins:
-                                                const Point(-100, -100),
-
-                                            // set initial camera position to rally point
-                                            initialCameraPosition:
-                                                CameraPosition(
-                                              target: LatLng(
-                                                  mapCenter.lat, mapCenter.lon),
-                                              zoom: 11.75,
-                                            ),
-                                          ),
-                                          const Positioned(
-                                              top: 0,
-                                              right: 0,
-                                              child: Icon(
-                                                Icons.zoom_in,
-                                                size: 32,
-                                              )),
-                                          eventPointsAsync.when(
-                                            data: (eventPoints) =>
-                                                eventPoints == null ||
-                                                        eventPoints.users == 0
-                                                    ? const SizedBox.shrink()
-                                                    : Positioned(
-                                                        bottom: 0,
-                                                        left: 0,
-                                                        right: 0,
-                                                        child: Container(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    0.5),
-                                                            child: Text(
-                                                              '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
-                                                              style:
-                                                                  const TextStyle(
-                                                                      fontSize:
-                                                                          12),
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                            ))),
-                                            loading: () =>
-                                                const SizedBox.shrink(),
-                                            error: (_, __) =>
-                                                const SizedBox.shrink(),
-                                          ),
-                                          InkWell(
-                                            onTap: _showLiveMap,
-                                          )
-                                        ])));
-                              })
-                            ]),
+                                      ),
+                                      const Positioned(
+                                          top: 0,
+                                          right: 0,
+                                          child: Icon(
+                                            Icons.zoom_in,
+                                            size: 32,
+                                          )),
+                                      eventPointsAsync.when(
+                                        data: (eventPoints) => eventPoints ==
+                                                    null ||
+                                                eventPoints.users == 0
+                                            ? const SizedBox.shrink()
+                                            : Positioned(
+                                                bottom: 0,
+                                                left: 0,
+                                                right: 0,
+                                                child: Container(
+                                                    color: Colors.black
+                                                        .withOpacity(0.5),
+                                                    child: Text(
+                                                      '${eventPoints.users} live ${eventPoints.users == 1 ? 'user' : 'users'}',
+                                                      style: const TextStyle(
+                                                          fontSize: 12),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ))),
+                                        loading: () => const SizedBox.shrink(),
+                                        error: (_, __) =>
+                                            const SizedBox.shrink(),
+                                      ),
+                                      InkWell(
+                                        onTap: _showLiveMap,
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              );
+                            })
+                          ],
+                        ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          minVerticalPadding: 3,
+                          minTileHeight: 0,
+                          leading: const Icon(Icons.place),
+                          title: Text(event.locationDescription),
+                          onTap: () {
+                            final query = event.rallyPointPlusCode ??
+                                event.locationDescription;
+                            final uri = Platform.isIOS
+                                ? Uri(
+                                    scheme: 'comgooglemaps',
+                                    host: '',
+                                    queryParameters: {'q': query})
+                                : Uri(
+                                    scheme: 'https',
+                                    host: 'maps.google.com',
+                                    queryParameters: {'q': query});
+                            launchUrl(uri);
+                          },
+                        ),
+                        if (event.link != null) ...[
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            minVerticalPadding: 3,
+                            minTileHeight: 0,
+                            leading: const Icon(Icons.open_in_new),
+                            title: Text(event.link.toString()),
+                            onTap: () => launchUrl(event.link!),
+                          ),
+                        ],
+                        if (event.notes != null &&
+                            event.notes!.trim().isNotEmpty) ...[
+                          Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: Text(event.notes!)),
+                        ],
                         if (session == null)
                           Padding(
                               padding: const EdgeInsets.symmetric(vertical: 32),
