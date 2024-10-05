@@ -707,6 +707,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                           minVerticalPadding: 3,
                           minTileHeight: 0,
                           leading: const Icon(Icons.place),
+                          trailing: const Icon(Icons.open_in_new),
                           title: Text(event.locationDescription),
                           onTap: () {
                             final query = event.rallyPointPlusCode ??
@@ -728,8 +729,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                             contentPadding: EdgeInsets.zero,
                             minVerticalPadding: 3,
                             minTileHeight: 0,
-                            leading: const Icon(Icons.open_in_new),
-                            title: Text(event.link.toString()),
+                            leading: const Icon(Icons.link),
+                            trailing: const Icon(Icons.open_in_new),
+                            title: Text(
+                              event.link.toString(),
+                              style: const TextStyle(fontSize: 12),
+                            ),
                             onTap: () => launchUrl(event.link!),
                           ),
                         ],
