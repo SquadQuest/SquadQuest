@@ -137,9 +137,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                                       friend.requestee!.id == session.user.id)
                               ? () {
                                   context.pushNamed('profile-view',
-                                      pathParameters: {
-                                        'id': friendProfile!.id
-                                      });
+                                      pathParameters: {'id': friendProfile.id});
                                 }
                               : null,
                           subtitle: switch (friend.status) {
