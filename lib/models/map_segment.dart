@@ -130,9 +130,9 @@ class MapSegment {
   }
 
   static subdivide(List<LocationPoint> points,
-      {double threshold = 0.002,
+      {double threshold = 10 / 111000,
       double? maxDistance,
-      double zigzagRadius = 20}) {
+      double zigzagRadius = 30 / 111000}) {
     final segments = <MapSegment>[];
     int currentSegmentStart = 0;
     MapSegment? currentSegment;

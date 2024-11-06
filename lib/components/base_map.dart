@@ -29,8 +29,8 @@ abstract class BaseMap extends ConsumerStatefulWidget {
 }
 
 abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
-  static const minSinglePointBounds = .005;
-  static const minMultiPointBounds = .001;
+  static const minSinglePointBounds = 500 / 111000;
+  static const minMultiPointBounds = 100 / 111000;
 
   MapLibreMapController? controller;
   StreamSubscription? subscription;
@@ -148,8 +148,7 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
       }
 
       // build trail segments
-      var segments =
-          MapSegment.subdivide(keyPoints, threshold: .0001, maxDistance: .005);
+      var segments = MapSegment.subdivide(keyPoints, maxDistance: 500 / 111000);
 
       // render segments to lines with faded color based on distance from lead time
       if (!trailsLinesByKey.containsKey(key)) {
