@@ -17,6 +17,7 @@ create table
     phone text not null,
     fcm_token text null,
     photo text null,
+    trail_color text null,
     fcm_token_updated_at timestamp with time zone null,
     fcm_token_app_build integer null,
     enabled_notifications notification_type[] not null default '{friendRequest,eventInvitation,eventChange,friendsEventPosted,publicEventPosted,guestRsvp,friendOnTheWay}'::notification_type[],
