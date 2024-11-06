@@ -130,15 +130,13 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         return AlertDialog(
           title: const Text('Pick your trail color'),
           content: SingleChildScrollView(
-            child: ColorPicker(
-              pickerColor: _selectedColor,
-              onColorChanged: (Color color) {
-                setState(() {
-                  _selectedColor = color;
-                });
-              },
-              pickerAreaHeightPercent: 0.8,
-            ),
+            child: MaterialPicker(
+                pickerColor: _selectedColor,
+                onColorChanged: (Color color) {
+                  setState(() {
+                    _selectedColor = color;
+                  });
+                }),
           ),
           actions: <Widget>[
             TextButton(
