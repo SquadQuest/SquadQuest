@@ -21,6 +21,7 @@ SELECT
           instances
         WHERE
           instances.id = location_points.event
+          -- TODO: can we get rid of this and just rely on the instances view's existing policies?
           AND (
             -- Public events
             (
