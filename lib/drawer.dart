@@ -35,7 +35,7 @@ final _menu = [
   ),
   _MenuItem(
     icon: Icons.map,
-    label: 'Map',
+    label: 'Find Friends',
     route: 'map',
   ),
   _MenuItem(
