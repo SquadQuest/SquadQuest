@@ -34,11 +34,6 @@ final _menu = [
     route: 'home',
   ),
   _MenuItem(
-    icon: Icons.map,
-    label: 'Find Friends',
-    route: 'map',
-  ),
-  _MenuItem(
     icon: Icons.people,
     label: 'Buddy List',
     route: 'friends',
@@ -52,6 +47,11 @@ final _menu = [
     icon: Icons.person,
     label: 'Profile',
     route: 'profile-edit',
+  ),
+  _MenuItem(
+    icon: Icons.map,
+    label: 'Find Friends',
+    route: 'map',
   ),
   _MenuItem(
     icon: Icons.settings,

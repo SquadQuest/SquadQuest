@@ -35,7 +35,7 @@ class _MapScreenState extends BaseMapState<MapScreen> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Map'),
+          title: const Text('Friends Map'),
         ),
         drawer: const AppDrawer(),
         body: buildMap(),
