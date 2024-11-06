@@ -49,6 +49,24 @@ class MapSegment {
         assert(points.first.timestamp.isAfter(points.last.timestamp),
             'points must be in reverse chronological order');
 
+  static List<MapSegment> _filterLargeGaps(
+      List<MapSegment> segments, double threshold) {
+    // Look for a segment that indicates a large gap
+    for (int i = 0; i < segments.length; i++) {
+      final segment = segments[i];
+
+      // Check if this segment represents a large gap:
+      // - Has exactly 2 points (no intermediate points)
+      // - Distance is greater than 5x the threshold
+      if (segment.points.length == 2 && segment.distance > threshold * 5) {
+        // Only keep segments newer than this gap
+        return segments.sublist(0, i);
+      }
+    }
+
+    return segments;
+  }
+
   static subdivide(List<LocationPoint> points,
       {double threshold = 0.002, double? maxDistance}) {
     final segments = <MapSegment>[];
@@ -89,6 +107,7 @@ class MapSegment {
       distanceSum += currentSegment.distance;
     }
 
-    return segments;
+    // Filter out segments behind any large gaps
+    return _filterLargeGaps(segments, threshold);
   }
 }
