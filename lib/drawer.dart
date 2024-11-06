@@ -49,15 +49,14 @@ final _menu = [
     route: 'profile-edit',
   ),
   _MenuItem(
+    icon: Icons.map,
+    label: 'Find Friends',
+    route: 'map',
+  ),
+  _MenuItem(
     icon: Icons.settings,
     label: 'Settings',
     route: 'settings',
-  ),
-  _MenuItem(
-    icon: Icons.map,
-    label: 'Map',
-    route: 'map',
-    developerMode: true,
   ),
   _MenuItem.divider,
   _MenuItem(

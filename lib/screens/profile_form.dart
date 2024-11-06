@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
@@ -10,6 +11,7 @@ import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/components/pickers/photo.dart';
+import 'package:squadquest/models/user.dart';
 
 class ProfileFormScreen extends ConsumerStatefulWidget {
   final String? redirect;
@@ -25,6 +27,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _photoProvider = StateProvider<Uri?>((ref) => null);
+  late Color _selectedColor;
+  String? _initialTrailColor;
 
   bool submitted = false;
   late final bool isNewProfile;
@@ -75,6 +79,10 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         }
       }
 
+      // Convert color to hex string
+      final colorString =
+          '#${_selectedColor.value.toRadixString(16).padRight(8, '0').substring(2)}';
+
       // save profile
       final savedProfile = await profileController.patch({
         'id': session!.user.id,
@@ -82,6 +90,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         'last_name': _lastNameController.text.trim(),
         'phone': session.user.phone!,
         'photo': photoUrl?.toString(),
+        'trail_color': colorString,
       });
 
       await ref.read(authControllerProvider.notifier).updateUserAttributes({
@@ -114,22 +123,59 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     goInitialLocation(widget.redirect);
   }
 
+  void _openColorPicker() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Pick your trail color'),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: _selectedColor,
+              onColorChanged: (Color color) {
+                setState(() {
+                  _selectedColor = color;
+                });
+              },
+              pickerAreaHeightPercent: 0.8,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Done'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
 
     final profile = ref.read(profileProvider);
+    final session = ref.read(authControllerProvider);
 
+    // Initialize color with auto-generated or saved color
     if (profile.hasValue && profile.value != null) {
       isNewProfile = false;
+      _selectedColor = Color(
+          int.parse('0xFF${profile.value!.effectiveTrailColor.substring(1)}'));
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _firstNameController.text = profile.value!.firstName;
         _lastNameController.text = profile.value!.lastName!;
         ref.read(_photoProvider.notifier).state = profile.value!.photo;
+        _initialTrailColor = profile.value!.trailColor;
       });
     } else {
       isNewProfile = true;
+      final generatedColor = UserProfile.generateTrailColor(session!.user.id);
+      _selectedColor = Color(int.parse('0xFF${generatedColor.substring(1)}'));
     }
   }
 
@@ -140,6 +186,16 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         _firstNameController.text = next.value!.firstName;
         _lastNameController.text = next.value!.lastName!;
         ref.read(_photoProvider.notifier).state = next.value!.photo;
+
+        // Update trail color if changed
+        if (next.value!.trailColor != null &&
+            next.value!.trailColor != _initialTrailColor) {
+          _initialTrailColor = next.value!.trailColor;
+          setState(() {
+            _selectedColor = Color(int.parse(
+                '0xFF${next.value!.effectiveTrailColor.substring(1)}'));
+          });
+        }
       }
     });
 
@@ -218,6 +274,22 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                   FormPhotoPicker(
                       labelText: 'Profile photo',
                       valueProvider: _photoProvider),
+                  const SizedBox(height: 32),
+                  ListTile(
+                    title: const Text('Trail Color'),
+                    subtitle: const Text(
+                        'Choose the color for your map trail and icon'),
+                    trailing: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: _selectedColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey),
+                      ),
+                    ),
+                    onTap: _openColorPicker,
+                  ),
                 ],
               ),
             ),
