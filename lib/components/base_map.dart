@@ -205,9 +205,11 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
       final totalMilliseconds = segments.first.latestMilliseconds -
           segments.last.earliestMilliseconds;
 
-      // Generate color based on user UUID
+      // Get user's custom trail color or generate one
       final userId = keyPoints.first.createdBy;
-      final trailColor = generateColorFromUUID(userId);
+      final userProfile = userProfiles[userId];
+      final trailColor =
+          userProfile?.trailColor ?? generateColorFromUUID(userId);
 
       for (var i = 0; i < segments.length; i++) {
         final segment = segments[i];

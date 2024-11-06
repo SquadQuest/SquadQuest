@@ -24,6 +24,7 @@ class UserProfile {
       required this.fcmTokenAppBuild,
       required this.photo,
       required this.enabledNotifications,
+      this.trailColor,
       this.mutuals,
       this.unparsedNotifications = const {}});
 
@@ -35,6 +36,7 @@ class UserProfile {
   final DateTime? fcmTokenUpdatedAt;
   final int? fcmTokenAppBuild;
   final Uri? photo;
+  final String? trailColor;
   final Set<NotificationType> enabledNotifications;
   final List<UserID>? mutuals;
   final Set<String> unparsedNotifications;
@@ -72,6 +74,7 @@ class UserProfile {
           : DateTime.parse(map['fcm_token_updated_at']).toLocal(),
       fcmTokenAppBuild: map['fcm_token_app_build'],
       photo: map['photo'] == null ? null : Uri.parse(map['photo']),
+      trailColor: map['trail_color'],
       enabledNotifications: parsedNotifications,
       unparsedNotifications: unparsedNotifications,
       mutuals:
@@ -95,6 +98,7 @@ class UserProfile {
       'fcm_token_app_build': fcmTokenAppBuild,
       'enabled_notifications_v2': enabledNotificationsFull,
       'photo': photo?.toString(),
+      'trail_color': trailColor,
     };
   }
 
