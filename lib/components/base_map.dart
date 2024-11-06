@@ -17,6 +17,13 @@ typedef TrailKey = String;
 
 String makeTrailKey(UserID userId, InstanceID eventId) => '$userId:$eventId';
 
+String generateColorFromUUID(String uuid) {
+  // Use the first 6 characters of the UUID for the color
+  // This ensures consistent colors for the same UUID
+  final colorHex = uuid.replaceAll('-', '').substring(0, 6);
+  return '#$colorHex';
+}
+
 abstract class BaseMap extends ConsumerStatefulWidget {
   const BaseMap({super.key});
 }
@@ -154,6 +161,11 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
       final earliestMilleseconds = segments.last.earliestMilliseconds;
       final totalMilliseconds = segments.first.latestMilliseconds -
           segments.last.earliestMilliseconds;
+
+      // Generate color based on user UUID
+      final userId = keyPoints.first.createdBy;
+      final trailColor = generateColorFromUUID(userId);
+
       for (var i = 0; i < segments.length; i++) {
         final segment = segments[i];
 
@@ -176,7 +188,7 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
         // build line
         final lineOptions = LineOptions(
           geometry: segment.latLngList,
-          lineColor: '#ff0000',
+          lineColor: trailColor,
           lineWidth: 5.0,
           lineOpacity: (segment.midMilliseconds - earliestMilleseconds) /
               totalMilliseconds,
@@ -200,7 +212,6 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
       }
 
       // render user marker at latest position
-      final userId = keyPoints.first.createdBy;
       final symbolOptions = SymbolOptions(
           geometry: LatLng(
               keyPoints.first.location.lat, keyPoints.first.location.lon),
