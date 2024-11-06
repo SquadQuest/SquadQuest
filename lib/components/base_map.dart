@@ -100,11 +100,14 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
     // configure symbols
     await controller!.setSymbolIconAllowOverlap(true);
     await controller!.setSymbolTextAllowOverlap(true);
+
+    // Load the SDF version of the person marker
     await controller!.addImage(
         'person-marker',
         (await rootBundle.load('assets/symbols/person-marker.png'))
             .buffer
-            .asUint8List());
+            .asUint8List(),
+        true);
 
     // Load additional markers if needed
     await loadAdditionalMarkers();
@@ -258,8 +261,9 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
           iconImage: 'person-marker',
           iconSize: kIsWeb ? 0.4 : 0.9,
           iconAnchor: 'bottom',
+          iconColor: trailColor,
           textField: userProfiles[userId]!.displayName,
-          textColor: '#ffffff',
+          textColor: trailColor,
           textAnchor: 'top-left',
           textSize: 14);
 
