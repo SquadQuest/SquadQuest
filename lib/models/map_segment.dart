@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:geobase/geobase.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:squadquest/models/location_point.dart';
@@ -68,24 +67,6 @@ class MapSegment {
     return segments;
   }
 
-  static double _haversineDistance(
-      double lat1, double lon1, double lat2, double lon2) {
-    const double earthRadius = 6371000; // Earth's radius in meters
-    double dLat = _toRadians(lat2 - lat1);
-    double dLon = _toRadians(lon2 - lon1);
-    double a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_toRadians(lat1)) *
-            cos(_toRadians(lat2)) *
-            sin(dLon / 2) *
-            sin(dLon / 2);
-    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return earthRadius * c;
-  }
-
-  static double _toRadians(double degrees) {
-    return degrees * pi / 180;
-  }
-
   static List<MapSegment> _compressZigZaggingSegments(
       List<MapSegment> segments, double radiusThreshold) {
     if (segments.length < 3) return segments;
@@ -120,32 +101,24 @@ class MapSegment {
       List<MapSegment> segments, int startIndex, double radiusThreshold) {
     if (startIndex >= segments.length - 2) return startIndex;
 
-    // Calculate centroid of the first three segments
+    // Calculate centroid using geobase's LineString capabilities
     var points = <LocationPoint>[];
-    for (int i = startIndex; i < min(startIndex + 3, segments.length); i++) {
+    for (int i = startIndex; i < startIndex + 3 && i < segments.length; i++) {
       points.addAll(segments[i].points);
     }
 
-    double sumLat = 0;
-    double sumLon = 0;
-    for (var point in points) {
-      sumLat += point.location.lat;
-      sumLon += point.location.lon;
-    }
-    double centerLat = sumLat / points.length;
-    double centerLon = sumLon / points.length;
+    // Create a LineString from all points and get its centroid
+    final allPoints = LineString.from(points.map((p) => p.location).toList());
+    final centroid = allPoints.centroid2D();
+    if (centroid == null) return startIndex;
 
     // Check how many consecutive segments have all points within the radius
     int endIndex = startIndex;
     for (int i = startIndex; i < segments.length; i++) {
       bool allPointsNearCenter = segments[i].points.every((point) {
-        double distance = _haversineDistance(
-          centerLat,
-          centerLon,
-          point.location.lat,
-          point.location.lon,
-        );
-        return distance <= radiusThreshold;
+        // Create a LineString between the point and centroid to measure distance
+        final line = LineString.from([point.location, centroid]);
+        return line.length2D() <= radiusThreshold;
       });
 
       if (!allPointsNearCenter) break;
