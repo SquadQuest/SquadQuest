@@ -11,7 +11,7 @@ import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/components/pickers/photo.dart';
-import 'package:squadquest/components/base_map.dart';
+import 'package:squadquest/models/user.dart';
 
 class ProfileFormScreen extends ConsumerStatefulWidget {
   final String? redirect;
@@ -163,10 +163,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     // Initialize color with auto-generated or saved color
     if (profile.hasValue && profile.value != null) {
       isNewProfile = false;
-      _selectedColor = profile.value!.trailColor != null
-          ? Color(int.parse('0xFF${profile.value!.trailColor!.substring(1)}'))
-          : Color(int.parse(
-              '0xFF${generateColorFromUUID(session!.user.id).substring(1)}'));
+      _selectedColor = Color(
+          int.parse('0xFF${profile.value!.effectiveTrailColor.substring(1)}'));
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _firstNameController.text = profile.value!.firstName;
@@ -176,8 +174,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       });
     } else {
       isNewProfile = true;
-      _selectedColor = Color(int.parse(
-          '0xFF${generateColorFromUUID(session!.user.id).substring(1)}'));
+      final generatedColor = UserProfile.generateTrailColor(session!.user.id);
+      _selectedColor = Color(int.parse('0xFF${generatedColor.substring(1)}'));
     }
   }
 
@@ -194,8 +192,8 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
             next.value!.trailColor != _initialTrailColor) {
           _initialTrailColor = next.value!.trailColor;
           setState(() {
-            _selectedColor =
-                Color(int.parse('0xFF${_initialTrailColor!.substring(1)}'));
+            _selectedColor = Color(int.parse(
+                '0xFF${next.value!.effectiveTrailColor.substring(1)}'));
           });
         }
       }
