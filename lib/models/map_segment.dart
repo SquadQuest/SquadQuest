@@ -80,11 +80,11 @@ class MapSegment {
 
       if (clusterEnd > i + 1) {
         // We found a cluster of zig-zagging segments
-        // Create a new segment from the first point of the first segment
-        // to the first point of the last segment (remember points are in reverse chronological order)
+        // Create a new segment from the first point of the first segment (newest)
+        // to the last point of the last segment (oldest) to maintain connectivity
         result.add(MapSegment([
           segments[i].points.first,
-          segments[clusterEnd].points.first,
+          segments[clusterEnd].points.last,
         ]));
         i = clusterEnd + 1;
       } else {
