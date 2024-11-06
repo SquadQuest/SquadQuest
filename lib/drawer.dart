@@ -57,7 +57,6 @@ final _menu = [
     icon: Icons.map,
     label: 'Map',
     route: 'map',
-    developerMode: true,
   ),
   _MenuItem.divider,
   _MenuItem(
