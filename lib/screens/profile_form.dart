@@ -11,6 +11,7 @@ import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/components/pickers/photo.dart';
+import 'package:squadquest/components/base_map.dart';
 
 class ProfileFormScreen extends ConsumerStatefulWidget {
   final String? redirect;
@@ -26,7 +27,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _photoProvider = StateProvider<Uri?>((ref) => null);
-  Color _selectedColor = Colors.blue;
+  late Color _selectedColor;
   String? _initialTrailColor;
 
   bool submitted = false;
@@ -157,24 +158,26 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     super.initState();
 
     final profile = ref.read(profileProvider);
+    final session = ref.read(authControllerProvider);
 
+    // Initialize color with auto-generated or saved color
     if (profile.hasValue && profile.value != null) {
       isNewProfile = false;
+      _selectedColor = profile.value!.trailColor != null
+          ? Color(int.parse('0xFF${profile.value!.trailColor!.substring(1)}'))
+          : Color(int.parse(
+              '0xFF${generateColorFromUUID(session!.user.id).substring(1)}'));
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _firstNameController.text = profile.value!.firstName;
         _lastNameController.text = profile.value!.lastName!;
         ref.read(_photoProvider.notifier).state = profile.value!.photo;
-
-        // Set initial trail color if exists
-        if (profile.value!.trailColor != null) {
-          _initialTrailColor = profile.value!.trailColor;
-          _selectedColor =
-              Color(int.parse('0xFF${_initialTrailColor!.substring(1)}'));
-        }
+        _initialTrailColor = profile.value!.trailColor;
       });
     } else {
       isNewProfile = true;
+      _selectedColor = Color(int.parse(
+          '0xFF${generateColorFromUUID(session!.user.id).substring(1)}'));
     }
   }
 
