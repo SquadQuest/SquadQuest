@@ -34,6 +34,11 @@ final _menu = [
     route: 'home',
   ),
   _MenuItem(
+    icon: Icons.map,
+    label: 'Map',
+    route: 'map',
+  ),
+  _MenuItem(
     icon: Icons.people,
     label: 'Buddy List',
     route: 'friends',
@@ -52,11 +57,6 @@ final _menu = [
     icon: Icons.settings,
     label: 'Settings',
     route: 'settings',
-  ),
-  _MenuItem(
-    icon: Icons.map,
-    label: 'Map',
-    route: 'map',
   ),
   _MenuItem.divider,
   _MenuItem(

@@ -5,12 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:easy_debounce/easy_debounce.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/drawer.dart';
 import 'package:squadquest/models/location_point.dart';
 import 'package:squadquest/models/map_segment.dart';
+import 'package:squadquest/models/user.dart';
+import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/services/profiles_cache.dart';
+
+typedef TrailKey = String;
+
+TrailKey _makeTrailKey(UserID userId, InstanceID eventId) => '$userId:$eventId';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -20,11 +28,15 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
+  static const minSinglePointBounds = .005;
+  static const minMultiPointBounds = .001;
+
   MapLibreMapController? controller;
   StreamSubscription? subscription;
-  final List<Line> trackLines = [];
-  Line? traceLine;
-  Circle? traceCircle;
+  final Map<TrailKey, List<Line>> trailsLinesByKey = {};
+  final Map<TrailKey, Symbol> symbolsByKey = {};
+  List<LocationPoint>? points;
+  bool renderingTrails = false;
 
   void _onMapCreated(MapLibreMapController controller) {
     logger.d('MapScreen._onMapCreated');
@@ -33,141 +45,224 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   void _onStyleLoadedCallback() async {
     logger.d('MapScreen._onStyleLoadedCallback');
+
+    // configure symbols
+    await controller!.setSymbolIconAllowOverlap(true);
+    await controller!.setSymbolTextAllowOverlap(true);
     await controller!.addImage(
         'person-marker',
         (await rootBundle.load('assets/symbols/person-marker.png'))
             .buffer
             .asUint8List());
 
-    await controller!.addSymbol(const SymbolOptions(
-        geometry: LatLng(39.9550, -75.1605),
-        iconImage: 'person-marker',
-        iconSize: kIsWeb ? 0.25 : 0.75,
-        iconAnchor: 'bottom',
-        textField: 'Full Name',
-        textColor: '#ffffff',
-        textAnchor: 'top-left',
-        textSize: 8));
-
-    _loadTracks();
+    // load trails
+    await _loadTrails();
   }
 
-  Future<void> _loadTracks() async {
+  Future<void> _loadTrails() async {
     final supabase = ref.read(supabaseClientProvider);
 
     subscription = supabase
         .from('location_points')
         .stream(primaryKey: ['id'])
-        .eq('created_by', supabase.auth.currentUser!.id)
         .order('timestamp', ascending: false)
         .listen((data) {
           final List<LocationPoint> points =
               data.map(LocationPoint.fromMap).toList();
 
-          _renderTracks(points);
+          _renderTrails(points);
         });
   }
 
-  Future<void> _renderTracks(List<LocationPoint> points) async {
-    logger.d({'rendering tracks': points.length});
-    // clear existing line and skip if points list is empty
-    if (points.length < 2) {
-      if (trackLines.isNotEmpty) {
-        for (var line in trackLines) {
-          await controller!.removeLine(line);
-        }
-        trackLines.clear();
-      }
+  Future<void> _renderTrails([List<LocationPoint>? points]) async {
+    if (points != null) {
+      this.points = points;
+    }
 
-      if (traceLine != null) {
-        await controller!.removeLine(traceLine!);
-        traceLine = null;
-      }
+    EasyDebounce.debounce(
+        'render-trails', const Duration(milliseconds: 100), _doRenderTrails);
+  }
 
-      if (traceCircle != null) {
-        await controller!.removeCircle(traceCircle!);
-        traceCircle = null;
-      }
-
+  Future<void> _doRenderTrails() async {
+    // prevent parallel executions and skip if no points available
+    if (renderingTrails || points == null) {
       return;
     }
+    renderingTrails = true;
 
-    // render trace line
-    // final traceLineOptions = LineOptions(
-    //     geometry: points
-    //         .map((point) => LatLng(point.position.lat, point.position.lon))
-    //         .toList(),
-    //     lineColor: '#00ff00',
-    //     lineWidth: 2.0,
-    //     lineOpacity: 1);
+    // group points by user and event
+    final Map<TrailKey, List<LocationPoint>> pointsByKey = {};
+    final Set<UserID> userIds = {};
 
-    // if (traceLine == null) {
-    //   traceLine = await controller!.addLine(traceLineOptions);
-    // } else {
-    //   await controller!.updateLine(traceLine!, traceLineOptions);
-    // }
+    for (final point in points!) {
+      final key = _makeTrailKey(point.createdBy, point.event);
+      if (!pointsByKey.containsKey(key)) {
+        pointsByKey[key] = [];
+      }
+      pointsByKey[key]!.add(point);
+      userIds.add(point.createdBy);
+    }
 
-    // render trace circle
-    // final traceCircleOptions = CircleOptions(
-    //   geometry: LatLng(points.first.position.lat, points.first.position.lon),
-    //   circleColor: '#00ff00',
-    //   circleRadius: 5.0,
-    //   circleOpacity: 0.25,
-    // );
+    // load user profiles
+    final userProfiles =
+        await ref.read(profilesCacheProvider.notifier).fetchProfiles(userIds);
 
-    // if (traceCircle == null) {
-    //   traceCircle = await controller!.addCircle(traceCircleOptions);
-    // } else {
-    //   await controller!.updateCircle(traceCircle!, traceCircleOptions);
-    // }
+    // abort if controller disposed
+    if (controller == null) return;
 
-    // build segments
-    var segments =
-        MapSegment.subdivide(points, threshold: .0001, maxDistance: .005);
+    // render each user's symbol and trail for each event
+    double minLatitude = 90;
+    double maxLatitude = -90;
+    double minLongitude = 180;
+    double maxLongitude = -180;
 
-    // render segments to lines with faded color based on distance from lead time
-    final earliestMilleseconds = segments.last.earliestMilliseconds;
-    final totalMilliseconds =
-        segments.first.latestMilliseconds - segments.last.earliestMilliseconds;
-    for (var i = 0; i < segments.length; i++) {
-      final segment = segments[i];
+    final List<TrailKey> keysToRemove = [];
+    for (final TrailKey key in pointsByKey.keys) {
+      final List<LocationPoint> keyPoints = pointsByKey[key]!;
 
-      final lineOptions = LineOptions(
-        geometry: segment.latLngList,
-        lineColor: '#ff0000',
-        lineWidth: 5.0,
-        lineOpacity: (segment.midMilliseconds - earliestMilleseconds) /
-            totalMilliseconds, // TODO: calculate based on average time
-      );
+      // erase and skip if there aren't enough points
+      if (keyPoints.length < 2) {
+        keysToRemove.add(key);
+        continue;
+      }
 
-      if (trackLines.length <= i) {
-        trackLines.add(await controller!.addLine(lineOptions));
+      // build trail segments
+      var segments =
+          MapSegment.subdivide(keyPoints, threshold: .0001, maxDistance: .005);
+
+      // render segments to lines with faded color based on distance from lead time
+      if (!trailsLinesByKey.containsKey(key)) {
+        trailsLinesByKey[key] = [];
+      }
+
+      final trailLines = trailsLinesByKey[key]!;
+
+      final earliestMilleseconds = segments.last.earliestMilliseconds;
+      final totalMilliseconds = segments.first.latestMilliseconds -
+          segments.last.earliestMilliseconds;
+      for (var i = 0; i < segments.length; i++) {
+        final segment = segments[i];
+
+        // find min/max lat/lon
+        for (final point in segment.points) {
+          if (point.location.lat < minLatitude) {
+            minLatitude = point.location.lat;
+          }
+          if (point.location.lat > maxLatitude) {
+            maxLatitude = point.location.lat;
+          }
+          if (point.location.lon < minLongitude) {
+            minLongitude = point.location.lon;
+          }
+          if (point.location.lon > maxLongitude) {
+            maxLongitude = point.location.lon;
+          }
+        }
+
+        // build line
+        final lineOptions = LineOptions(
+          geometry: segment.latLngList,
+          lineColor: '#ff0000',
+          lineWidth: 5.0,
+          lineOpacity: (segment.midMilliseconds - earliestMilleseconds) /
+              totalMilliseconds,
+        );
+
+        // render line for segment
+        if (trailLines.length <= i) {
+          trailLines.add(await controller!.addLine(lineOptions));
+        } else {
+          await controller!.updateLine(trailLines[i], lineOptions);
+        }
+      }
+
+      // remove any unused segment lines
+      if (trailLines.length > segments.length) {
+        for (var i = segments.length; i < trailLines.length; i++) {
+          await controller!.removeLine(trailLines[i]);
+        }
+
+        trailLines.removeRange(segments.length, trailLines.length);
+      }
+
+      // render user marker at latest position
+      final userId = keyPoints.first.createdBy;
+      final symbolOptions = SymbolOptions(
+          geometry: LatLng(
+              keyPoints.first.location.lat, keyPoints.first.location.lon),
+          iconImage: 'person-marker',
+          iconSize: kIsWeb ? 0.4 : 0.9,
+          iconAnchor: 'bottom',
+          textField: userProfiles[userId]!.displayName,
+          textColor: '#ffffff',
+          textAnchor: 'top-left',
+          textSize: 14);
+
+      if (symbolsByKey.containsKey(key)) {
+        await controller!.updateSymbol(symbolsByKey[key]!, symbolOptions);
       } else {
-        await controller!.updateLine(trackLines[i], lineOptions);
+        symbolsByKey[key] =
+            await controller!.addSymbol(symbolOptions, {'user': userId});
       }
     }
 
-    // remove unused lines
-    if (trackLines.length > segments.length) {
-      for (var i = segments.length; i < trackLines.length; i++) {
-        await controller!.removeLine(trackLines[i]);
-      }
-
-      trackLines.removeRange(segments.length, trackLines.length);
+    // remove any trails with too few points
+    for (final key in keysToRemove) {
+      pointsByKey.remove(key);
     }
 
-    logger.d({
-      // 'lineString.chain.positions.length': lineString.chain.positions.length,
-      // 'samplePoints.length': samplePoints.length,
-      // 'lineString.length2D()': lineString.length2D(),
-      'segments.length': segments.length,
-      'segments map sum': segments
-          .map((segment) => segment.distance)
-          .reduce((value, element) => value + element),
-      'segments length count': segments
-          .map((segment) => segment.length)
-          .reduce((value, element) => value + element),
-    });
+    // remove any unused symbols
+    for (final key in symbolsByKey.keys.toList()) {
+      if (!pointsByKey.containsKey(key)) {
+        await controller!.removeSymbol(symbolsByKey[key]!);
+        symbolsByKey.remove(key);
+      }
+    }
+
+    for (final key in trailsLinesByKey.keys.toList()) {
+      if (!pointsByKey.containsKey(key)) {
+        for (final line in trailsLinesByKey[key]!) {
+          await controller!.removeLine(line);
+        }
+        trailsLinesByKey.remove(key);
+      }
+    }
+
+    // apply minimum bounds
+    if ((minLatitude - maxLatitude).abs() <= minSinglePointBounds &&
+        (minLongitude - maxLongitude).abs() <= minSinglePointBounds) {
+      // zoom out more from single-point bounds
+      minLatitude -= minSinglePointBounds;
+      maxLatitude += minSinglePointBounds;
+      minLongitude -= minSinglePointBounds;
+      maxLongitude += minSinglePointBounds;
+    } else {
+      final diffLatitude = (maxLatitude - minLatitude).abs();
+      final diffLongitude = (maxLongitude - minLongitude).abs();
+
+      if (diffLatitude < minMultiPointBounds &&
+          diffLongitude < minMultiPointBounds) {
+        // zoom out more from small bounds
+        minLatitude -= minMultiPointBounds - diffLatitude;
+        maxLatitude += minMultiPointBounds - diffLatitude;
+        minLongitude -= minMultiPointBounds - diffLongitude;
+        maxLongitude += minMultiPointBounds - diffLongitude;
+      }
+    }
+
+    // move camera to new bounds unless they're still the defaults
+    if (minLatitude != 90 && minLongitude != 180) {
+      await controller!.animateCamera(CameraUpdate.newLatLngBounds(
+          LatLngBounds(
+              northeast: LatLng(maxLatitude, maxLongitude),
+              southwest: LatLng(minLatitude, minLongitude)),
+          left: 50,
+          right: 50,
+          top: 50,
+          bottom: 50));
+    }
+
+    renderingTrails = false;
   }
 
   @override
@@ -183,13 +278,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           title: const Text('Map'),
         ),
         drawer: const AppDrawer(),
-        floatingActionButton: FloatingActionButton(
-          child: const Icon(Icons.map_outlined),
-          onPressed: () async {
-            final box = await controller?.getVisibleRegion();
-            logger.d({'box': box});
-          },
-        ),
         body: MapLibreMap(
           onMapCreated: _onMapCreated,
           onStyleLoadedCallback: _onStyleLoadedCallback,
