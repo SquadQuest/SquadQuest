@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/logger.dart';
-import 'package:squadquest/router.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
 
@@ -72,7 +72,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     ref.read(splashCompleteProvider.notifier).state = true;
 
     // route to initial screen
-    goInitialLocation();
+    ref.read(routerProvider).goInitialLocation();
   }
 
   @override

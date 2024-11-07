@@ -2,10 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/logger.dart';
-import 'package:squadquest/router.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/theme.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/friends.dart';
@@ -23,7 +22,7 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    final router = ref.watch(routerProvider);
+    final routerService = ref.watch(routerProvider);
 
     // (temporarily)? display any push notification in-app
     ref.listen(firebaseMessagingStreamProvider, (previous, record) {
@@ -104,24 +103,17 @@ class MyApp extends ConsumerWidget {
       theme: appThemeLight,
       darkTheme: appThemeDark,
       themeMode: themeMode,
-      routerConfig: router,
+      routerConfig: routerService.router,
       debugShowCheckedModeBanner: false,
     );
   }
 
   Future<void> goToNotificationRoute(WidgetRef ref, String location) async {
-    final navContext = navigatorKey.currentContext;
-
     logger.t({
       'goToNotificationRoute': {'location': location}
     });
 
-    if (navContext == null) {
-      logger.t('goToNotificationRoute: navigatorKey.currentContext is null');
-      return;
-    }
-
     // otherwise, push the notification route
-    navContext.push(location);
+    ref.read(routerProvider).router.push(location);
   }
 }

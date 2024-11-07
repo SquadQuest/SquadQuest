@@ -9,7 +9,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:squadquest/logger.dart';
-import 'package:squadquest/router.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/firebase_options.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/settings.dart';
