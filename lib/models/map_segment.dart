@@ -1,6 +1,7 @@
 import 'package:geobase/geobase.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:squadquest/models/location_point.dart';
+import 'dart:math';
 
 class MapSegment {
   final List<LocationPoint> points;
@@ -129,10 +130,77 @@ class MapSegment {
     return endIndex >= startIndex + 2 ? endIndex : startIndex;
   }
 
+  static List<LocationPoint> _filterZigZagPoints(
+      List<LocationPoint> points, double radiusThreshold) {
+    if (points.length < 3) return points;
+
+    final result = <LocationPoint>[];
+    int i = 0;
+
+    while (i < points.length) {
+      // Look ahead to find potential zigzag cluster
+      int clusterEnd = i;
+      Position? centroid;
+      bool isZigZag = false;
+
+      // Create a window of points to analyze
+      for (int j = i; j < min(i + 5, points.length); j++) {
+        var windowPoints =
+            points.sublist(i, j + 1).map((p) => p.location).toList();
+        var line = LineString.from(windowPoints);
+        centroid = line.centroid2D();
+
+        if (centroid != null) {
+          // Check if all points in window are within radius of centroid
+          bool allNearCenter = windowPoints.every((point) {
+            var distanceLine = LineString.from([point, centroid!]);
+            return distanceLine.length2D() <= radiusThreshold;
+          });
+
+          if (allNearCenter && windowPoints.length >= 3) {
+            clusterEnd = j;
+            isZigZag = true;
+          } else if (!allNearCenter && isZigZag) {
+            // Stop expanding window once we find points outside radius
+            break;
+          }
+        }
+      }
+
+      if (isZigZag && centroid != null) {
+        // Create a new point at the centroid, using metadata from the newest point
+        var clusterPoints = points.sublist(i, clusterEnd + 1);
+        var avgTime = clusterPoints.fold<int>(0,
+                (sum, point) => sum + point.timestamp.millisecondsSinceEpoch) ~/
+            clusterPoints.length;
+
+        // Use the newest point (first in cluster) as template for metadata
+        var templatePoint = clusterPoints.first;
+        result.add(LocationPoint(
+          id: '${templatePoint.id}_centroid',
+          createdAt: DateTime.now(),
+          createdBy: templatePoint.createdBy,
+          event: templatePoint.event,
+          timestamp: DateTime.fromMillisecondsSinceEpoch(avgTime),
+          location: Geographic(lon: centroid.x, lat: centroid.y),
+        ));
+        i = clusterEnd + 1;
+      } else {
+        result.add(points[i]);
+        i++;
+      }
+    }
+
+    return result;
+  }
+
   static subdivide(List<LocationPoint> points,
       {double threshold = 10 / 111000,
       double? maxDistance,
       double zigzagRadius = 30 / 111000}) {
+    // First filter out zigzag patterns in raw points
+    points = _filterZigZagPoints(points, zigzagRadius);
+
     final segments = <MapSegment>[];
     int currentSegmentStart = 0;
     MapSegment? currentSegment;
