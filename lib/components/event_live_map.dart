@@ -67,11 +67,6 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
   }
 
   @override
-  bool shouldIncludePoint(LocationPoint point) {
-    return point.event == widget.eventId;
-  }
-
-  @override
   Map<String, double> getInitialBounds() {
     final keepRallyPointInView = ref.read(keepRallyPointInViewProvider);
 

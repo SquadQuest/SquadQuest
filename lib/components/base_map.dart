@@ -96,11 +96,6 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
     };
   }
 
-  // Override this to provide custom point filtering
-  bool shouldIncludePoint(LocationPoint point) {
-    return true;
-  }
-
   Future<void> renderTrails([List<LocationPoint>? points]) async {
     if (points != null) {
       this.points = points;
@@ -121,8 +116,6 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
     final Set<UserID> userIds = {};
 
     for (final point in points!) {
-      if (!shouldIncludePoint(point)) continue;
-
       final key = makeTrailKey(point.createdBy, point.event);
       if (!pointsByKey.containsKey(key)) {
         pointsByKey[key] = [];
