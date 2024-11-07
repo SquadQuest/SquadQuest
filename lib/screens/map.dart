@@ -13,6 +13,8 @@ final minMultiPointBoundsProvider = StateProvider<double>((ref) => 100);
 final maxDistanceProvider = StateProvider<double>((ref) => 500);
 final segmentThresholdProvider = StateProvider<double>((ref) => 200);
 final zigzagRadiusProvider = StateProvider<double>((ref) => 30);
+final largeGapThresholdProvider = StateProvider<double>(
+    (ref) => 1000); // New provider for large gap threshold
 final autoCameraEnabledProvider = StateProvider<bool>((ref) => true);
 
 // New providers for filtering toggles
@@ -50,6 +52,11 @@ class _MapScreenState extends BaseMapState<MapScreen> {
   double get zigzagRadius => ref.watch(zigzagRadiusProvider) / 111000;
 
   @override
+  double get largeGapThreshold =>
+      ref.watch(largeGapThresholdProvider) /
+      111000; // New getter for large gap threshold
+
+  @override
   bool get autoCameraEnabled => ref.watch(autoCameraEnabledProvider);
 
   // New getters for filter toggles
@@ -78,6 +85,10 @@ class _MapScreenState extends BaseMapState<MapScreen> {
     ref.listen(maxDistanceProvider, (_, __) => _onThresholdChange());
     ref.listen(segmentThresholdProvider, (_, __) => _onThresholdChange());
     ref.listen(zigzagRadiusProvider, (_, __) => _onThresholdChange());
+    ref.listen(
+        largeGapThresholdProvider,
+        (_, __) =>
+            _onThresholdChange()); // New listener for large gap threshold
     ref.listen(
         pointZigzagFilterEnabledProvider, (_, __) => _onThresholdChange());
     ref.listen(largeGapFilterEnabledProvider, (_, __) => _onThresholdChange());
@@ -257,6 +268,13 @@ class DevMenu extends ConsumerWidget {
             zigzagRadiusProvider,
             0,
             200,
+          ),
+          _buildSlider(
+            ref,
+            'Large Gap Threshold (meters)',
+            largeGapThresholdProvider,
+            0,
+            2000,
           ),
         ],
       ),

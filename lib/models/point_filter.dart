@@ -12,13 +12,13 @@ class PointFilter {
   /// Parameters:
   /// - [points]: The points to filter, in reverse chronological order
   /// - [zigzagRadius]: How close points must be to be considered part of a zigzag pattern
-  /// - [gapThreshold]: Distance threshold for what constitutes a large gap
+  /// - [largeGapThreshold]: Distance threshold that triggers truncation when exceeded
   /// - [enableZigzagFilter]: Whether to detect and compress zigzag patterns
   /// - [enableGapFilter]: Whether to detect and truncate at large gaps
   static List<LocationPoint> filter(
     List<LocationPoint> points, {
     required double zigzagRadius,
-    required double gapThreshold,
+    required double largeGapThreshold,
     bool enableZigzagFilter = true,
     bool enableGapFilter = true,
   }) {
@@ -35,7 +35,7 @@ class PointFilter {
 
         // Create a LineString to measure distance between points
         var line = LineString.from([currentPoint.location, nextPoint.location]);
-        if (line.length2D() > gapThreshold * 5) {
+        if (line.length2D() > largeGapThreshold) {
           // Found a large gap - keep the current point and stop processing
           result.add(currentPoint);
           break;

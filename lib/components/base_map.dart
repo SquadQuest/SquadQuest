@@ -29,6 +29,8 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
   double get maxSegmentDistance => 500 / 111000;
   double get segmentThreshold => 200 / 111000;
   double get zigzagRadius => 30 / 111000;
+  double get largeGapThreshold =>
+      1000 / 111000; // New setting for large gap detection
   bool get autoCameraEnabled => true;
 
   // New filter toggle getters with default values
@@ -159,7 +161,7 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
         var processedPoints = PointFilter.filter(
           keyPoints,
           zigzagRadius: zigzagRadius,
-          gapThreshold: segmentThreshold,
+          largeGapThreshold: largeGapThreshold,
           enableZigzagFilter: pointZigzagFilterEnabled,
           enableGapFilter: largeGapFilterEnabled,
         );
