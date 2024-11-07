@@ -35,6 +35,7 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
   bool get largeGapFilterEnabled => true;
   bool get segmentZigzagFilterEnabled => true;
   bool get solidLineRenderingEnabled => false;
+  bool get disableSegmentingEnabled => false;
 
   MapLibreMapController? controller;
   StreamSubscription? subscription;
@@ -160,8 +161,8 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
       final trailColor = userProfile.effectiveTrailColor;
 
       List<MapSegment> segments;
-      if (solidLineRenderingEnabled) {
-        // Create a single segment with all points when solid line rendering is enabled
+      if (disableSegmentingEnabled) {
+        // Create a single segment with all points when segmenting is disabled
         segments = [MapSegment(keyPoints)];
       } else {
         // Otherwise use normal segmentation with filters

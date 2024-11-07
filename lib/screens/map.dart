@@ -20,6 +20,7 @@ final pointZigzagFilterEnabledProvider = StateProvider<bool>((ref) => true);
 final largeGapFilterEnabledProvider = StateProvider<bool>((ref) => true);
 final segmentZigzagFilterEnabledProvider = StateProvider<bool>((ref) => true);
 final solidLineRenderingEnabledProvider = StateProvider<bool>((ref) => false);
+final disableSegmentingEnabledProvider = StateProvider<bool>((ref) => false);
 
 class MapScreen extends BaseMap {
   const MapScreen({super.key});
@@ -67,6 +68,10 @@ class _MapScreenState extends BaseMapState<MapScreen> {
       ref.watch(solidLineRenderingEnabledProvider);
 
   @override
+  bool get disableSegmentingEnabled =>
+      ref.watch(disableSegmentingEnabledProvider);
+
+  @override
   void initState() {
     super.initState();
     // Set up listeners for threshold changes
@@ -86,6 +91,8 @@ class _MapScreenState extends BaseMapState<MapScreen> {
         segmentZigzagFilterEnabledProvider, (_, __) => _onThresholdChange());
     ref.listenManual(
         solidLineRenderingEnabledProvider, (_, __) => _onThresholdChange());
+    ref.listenManual(
+        disableSegmentingEnabledProvider, (_, __) => _onThresholdChange());
   }
 
   void _onThresholdChange() {
@@ -153,6 +160,7 @@ class DevMenu extends ConsumerWidget {
     final largeGapEnabled = ref.watch(largeGapFilterEnabledProvider);
     final segmentZigzagEnabled = ref.watch(segmentZigzagFilterEnabledProvider);
     final solidLineEnabled = ref.watch(solidLineRenderingEnabledProvider);
+    final disableSegmenting = ref.watch(disableSegmentingEnabledProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -187,7 +195,19 @@ class DevMenu extends ConsumerWidget {
                       value ?? false;
                 },
               ),
-              const Text('Render as Solid Lines'),
+              const Text('Solid Line Rendering'),
+            ],
+          ),
+          Row(
+            children: [
+              Checkbox(
+                value: disableSegmenting,
+                onChanged: (value) {
+                  ref.read(disableSegmentingEnabledProvider.notifier).state =
+                      value ?? false;
+                },
+              ),
+              const Text('Disable Segmenting'),
             ],
           ),
           Row(
