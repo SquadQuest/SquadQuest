@@ -144,7 +144,7 @@ class MapSegment {
       Position? centroid;
       bool isZigZag = false;
 
-      // Create a window of points to analyze, starting with minimum 2 points
+      // First, try to detect a zigzag pattern using a small window (3-5 points)
       for (int j = i + 1; j < min(i + 5, points.length); j++) {
         var windowPoints =
             points.sublist(i, j + 1).map((p) => p.location).toList();
@@ -162,8 +162,18 @@ class MapSegment {
           if (allNearCenter && windowPoints.length >= 3) {
             clusterEnd = j;
             isZigZag = true;
-          } else if (!allNearCenter && isZigZag) {
-            // Stop expanding window once we find points outside radius
+
+            // Once we've found a zigzag pattern, try to extend it
+            // Continue checking subsequent points as long as they stay within radius
+            for (int k = j + 1; k < points.length; k++) {
+              var point = points[k].location;
+              var distanceLine = LineString.from([point, centroid]);
+              if (distanceLine.length2D() <= radiusThreshold) {
+                clusterEnd = k;
+              } else {
+                break;
+              }
+            }
             break;
           }
         }
