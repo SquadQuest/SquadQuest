@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:squadquest/drawer.dart';
+import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/models/location_point.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/components/base_map.dart';
@@ -124,21 +124,16 @@ class _MapScreenState extends BaseMapState<MapScreen> {
   Widget build(BuildContext context) {
     final showDevMenu = ref.watch(developerModeProvider);
 
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Friends Map'),
-          actions: [
-            if (showDevMenu)
-              IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: _showDevMenu,
-              ),
-          ],
-        ),
-        drawer: const AppDrawer(),
-        body: buildMap(),
-      ),
+    return AppScaffold(
+      title: 'Friends Map',
+      actions: [
+        if (showDevMenu)
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _showDevMenu,
+          ),
+      ],
+      body: buildMap(),
     );
   }
 }
