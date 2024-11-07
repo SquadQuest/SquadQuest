@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squadquest/router.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/settings.dart';
@@ -97,9 +97,9 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
         .toList();
 
     // get current screen name
-    final router = ref.watch(routerProvider);
-    final currentScreenName =
-        router.routerDelegate.currentConfiguration.last.route.name;
+    final routerService = ref.watch(routerProvider);
+    final currentScreenName = routerService
+        .router.routerDelegate.currentConfiguration.last.route.name;
 
     return NavigationDrawer(
       selectedIndex: effectiveMenuItems

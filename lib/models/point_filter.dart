@@ -25,23 +25,13 @@ class PointFilter {
     if (points.length < 2) return points;
 
     final result = <LocationPoint>[];
-    int i = 0;
+
+    // Always include the newest point
+    result.add(points.first);
+
+    int i = 1; // Start from second point since we've added the first
 
     while (i < points.length - 1) {
-      // Check for large gaps between consecutive points
-      if (enableGapFilter) {
-        var currentPoint = points[i];
-        var nextPoint = points[i + 1];
-
-        // Create a LineString to measure distance between points
-        var line = LineString.from([currentPoint.location, nextPoint.location]);
-        if (line.length2D() > largeGapThreshold) {
-          // Found a large gap - keep the current point and stop processing
-          result.add(currentPoint);
-          break;
-        }
-      }
-
       // Look for zigzag patterns if enabled
       if (enableZigzagFilter) {
         int clusterEnd = i;
@@ -86,26 +76,49 @@ class PointFilter {
         }
 
         if (isZigZag && centroid != null) {
-          // Create a new point at the centroid, using metadata from the newest point
+          // Create a new point at the centroid, using metadata from the first point in cluster
           var clusterPoints = points.sublist(i, clusterEnd + 1);
-          var avgTime = clusterPoints.fold<int>(
-                  0,
-                  (sum, point) =>
-                      sum + point.timestamp.millisecondsSinceEpoch) ~/
-              clusterPoints.length;
 
-          // Use the newest point (first in cluster) as template for metadata
+          // Use the first point in cluster as template for metadata
           var templatePoint = clusterPoints.first;
-          result.add(LocationPoint(
+          var centroidPoint = LocationPoint(
             id: '${templatePoint.id}_centroid',
             createdAt: DateTime.now(),
             createdBy: templatePoint.createdBy,
             event: templatePoint.event,
-            timestamp: DateTime.fromMillisecondsSinceEpoch(avgTime),
+            timestamp: templatePoint.timestamp,
             location: Geographic(lon: centroid.x, lat: centroid.y),
-          ));
+          );
+
+          // Check for large gap between centroid and next point after cluster
+          if (enableGapFilter && clusterEnd + 1 < points.length) {
+            var nextPoint = points[clusterEnd + 1];
+            var gapLine =
+                LineString.from([centroidPoint.location, nextPoint.location]);
+            if (gapLine.length2D() > largeGapThreshold) {
+              // Found a large gap - add the centroid point and stop processing
+              result.add(centroidPoint);
+              break;
+            }
+          }
+
+          result.add(centroidPoint);
           i = clusterEnd + 1;
           continue;
+        }
+      }
+
+      // Check for large gaps between consecutive points
+      if (enableGapFilter) {
+        var currentPoint = points[i];
+        var nextPoint = points[i + 1];
+
+        // Create a LineString to measure distance between points
+        var line = LineString.from([currentPoint.location, nextPoint.location]);
+        if (line.length2D() > largeGapThreshold) {
+          // Found a large gap - keep the current point and stop processing
+          result.add(currentPoint);
+          break;
         }
       }
 
