@@ -32,6 +32,9 @@ class EventLiveMap extends BaseMap {
 
 class _EventLiveMapState extends BaseMapState<EventLiveMap> {
   @override
+  bool get keepTrailsInView => ref.read(keepFriendsInViewProvider);
+
+  @override
   Future<void> loadAdditionalMarkers() async {
     await controller!.addImage(
         'flag-marker',

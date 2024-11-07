@@ -32,6 +32,7 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
   double get largeGapThreshold =>
       300 / 111000; // New setting for large gap detection
   bool get autoCameraEnabled => true;
+  bool get keepTrailsInView => true;
 
   // New filter toggle getters with default values
   bool get pointZigzagFilterEnabled => true;
@@ -200,18 +201,20 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
           final segment = segments[i];
 
           // find min/max lat/lon
-          for (final point in segment.points) {
-            if (point.location.lat < minLatitude) {
-              minLatitude = point.location.lat;
-            }
-            if (point.location.lat > maxLatitude) {
-              maxLatitude = point.location.lat;
-            }
-            if (point.location.lon < minLongitude) {
-              minLongitude = point.location.lon;
-            }
-            if (point.location.lon > maxLongitude) {
-              maxLongitude = point.location.lon;
+          if (keepTrailsInView) {
+            for (final point in segment.points) {
+              if (point.location.lat < minLatitude) {
+                minLatitude = point.location.lat;
+              }
+              if (point.location.lat > maxLatitude) {
+                maxLatitude = point.location.lat;
+              }
+              if (point.location.lon < minLongitude) {
+                minLongitude = point.location.lon;
+              }
+              if (point.location.lon > maxLongitude) {
+                maxLongitude = point.location.lon;
+              }
             }
           }
 
