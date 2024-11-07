@@ -30,7 +30,7 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
   double get segmentThreshold => 200 / 111000;
   double get zigzagRadius => 30 / 111000;
   double get largeGapThreshold =>
-      1000 / 111000; // New setting for large gap detection
+      300 / 111000; // New setting for large gap detection
   bool get autoCameraEnabled => true;
 
   // New filter toggle getters with default values

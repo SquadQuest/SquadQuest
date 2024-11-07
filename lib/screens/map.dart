@@ -13,8 +13,7 @@ final minMultiPointBoundsProvider = StateProvider<double>((ref) => 100);
 final maxDistanceProvider = StateProvider<double>((ref) => 500);
 final segmentThresholdProvider = StateProvider<double>((ref) => 200);
 final zigzagRadiusProvider = StateProvider<double>((ref) => 30);
-final largeGapThresholdProvider = StateProvider<double>(
-    (ref) => 1000); // New provider for large gap threshold
+final largeGapThresholdProvider = StateProvider<double>((ref) => 300);
 final autoCameraEnabledProvider = StateProvider<bool>((ref) => true);
 
 // New providers for filtering toggles
