@@ -18,7 +18,6 @@ final autoCameraEnabledProvider = StateProvider<bool>((ref) => true);
 // New providers for filtering toggles
 final pointZigzagFilterEnabledProvider = StateProvider<bool>((ref) => true);
 final largeGapFilterEnabledProvider = StateProvider<bool>((ref) => true);
-final segmentZigzagFilterEnabledProvider = StateProvider<bool>((ref) => true);
 final solidLineRenderingEnabledProvider = StateProvider<bool>((ref) => false);
 final disableSegmentingEnabledProvider = StateProvider<bool>((ref) => false);
 
@@ -60,10 +59,6 @@ class _MapScreenState extends BaseMapState<MapScreen> {
   bool get largeGapFilterEnabled => ref.watch(largeGapFilterEnabledProvider);
 
   @override
-  bool get segmentZigzagFilterEnabled =>
-      ref.watch(segmentZigzagFilterEnabledProvider);
-
-  @override
   bool get solidLineRenderingEnabled =>
       ref.watch(solidLineRenderingEnabledProvider);
 
@@ -87,8 +82,6 @@ class _MapScreenState extends BaseMapState<MapScreen> {
         pointZigzagFilterEnabledProvider, (_, __) => _onThresholdChange());
     ref.listenManual(
         largeGapFilterEnabledProvider, (_, __) => _onThresholdChange());
-    ref.listenManual(
-        segmentZigzagFilterEnabledProvider, (_, __) => _onThresholdChange());
     ref.listenManual(
         solidLineRenderingEnabledProvider, (_, __) => _onThresholdChange());
     ref.listenManual(
@@ -158,7 +151,6 @@ class DevMenu extends ConsumerWidget {
     final autoCameraEnabled = ref.watch(autoCameraEnabledProvider);
     final pointZigzagEnabled = ref.watch(pointZigzagFilterEnabledProvider);
     final largeGapEnabled = ref.watch(largeGapFilterEnabledProvider);
-    final segmentZigzagEnabled = ref.watch(segmentZigzagFilterEnabledProvider);
     final solidLineEnabled = ref.watch(solidLineRenderingEnabledProvider);
     final disableSegmenting = ref.watch(disableSegmentingEnabledProvider);
 
@@ -232,18 +224,6 @@ class DevMenu extends ConsumerWidget {
                 },
               ),
               const Text('Large Gap Filter'),
-            ],
-          ),
-          Row(
-            children: [
-              Checkbox(
-                value: segmentZigzagEnabled,
-                onChanged: (value) {
-                  ref.read(segmentZigzagFilterEnabledProvider.notifier).state =
-                      value ?? true;
-                },
-              ),
-              const Text('Segment-level Zigzag Filter'),
             ],
           ),
           const Divider(),

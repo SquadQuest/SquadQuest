@@ -34,7 +34,6 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
   // New filter toggle getters with default values
   bool get pointZigzagFilterEnabled => true;
   bool get largeGapFilterEnabled => true;
-  bool get segmentZigzagFilterEnabled => true;
   bool get solidLineRenderingEnabled => false;
   bool get disableSegmentingEnabled => false;
 
@@ -175,13 +174,11 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
         // Create a single segment with all points when segmenting is disabled
         segments = [MapSegment(processedPoints)];
       } else {
-        // Otherwise use normal segmentation with segment-level zigzag filter
+        // Otherwise use normal segmentation
         segments = MapSegment.subdivide(
           processedPoints,
           threshold: segmentThreshold,
           maxDistance: maxSegmentDistance,
-          zigzagRadius: zigzagRadius,
-          enableSegmentZigzagFilter: segmentZigzagFilterEnabled,
         );
       }
 

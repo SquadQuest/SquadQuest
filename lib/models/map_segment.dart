@@ -49,92 +49,8 @@ class MapSegment {
         assert(points.first.timestamp.isAfter(points.last.timestamp),
             'points must be in reverse chronological order');
 
-  static List<MapSegment> _filterLargeGaps(
-      List<MapSegment> segments, double threshold) {
-    // Look for a segment that indicates a large gap
-    for (int i = 0; i < segments.length; i++) {
-      final segment = segments[i];
-
-      // Check if this segment represents a large gap:
-      // - Has exactly 2 points (no intermediate points)
-      // - Distance is greater than 5x the threshold
-      if (segment.points.length == 2 && segment.distance > threshold * 5) {
-        // Only keep segments newer than this gap
-        return segments.sublist(0, i);
-      }
-    }
-
-    return segments;
-  }
-
-  static List<MapSegment> _compressZigZaggingSegments(
-      List<MapSegment> segments, double radiusThreshold) {
-    if (segments.length < 3) return segments;
-
-    final result = <MapSegment>[];
-    int i = 0;
-
-    while (i < segments.length) {
-      // Try to find a cluster of segments that zig-zag around a point
-      int clusterEnd = _findZigZagClusterEnd(segments, i, radiusThreshold);
-
-      if (clusterEnd > i + 1) {
-        // We found a cluster of zig-zagging segments
-        // Create a new segment from the first point of the first segment (newest)
-        // to the last point of the last segment (oldest) to maintain connectivity
-        result.add(MapSegment([
-          segments[i].points.first,
-          segments[clusterEnd].points.last,
-        ]));
-        i = clusterEnd + 1;
-      } else {
-        // No zig-zagging cluster found, keep the segment as is
-        result.add(segments[i]);
-        i++;
-      }
-    }
-
-    return result;
-  }
-
-  static int _findZigZagClusterEnd(
-      List<MapSegment> segments, int startIndex, double radiusThreshold) {
-    if (startIndex >= segments.length - 2) return startIndex;
-
-    // Calculate centroid using geobase's LineString capabilities
-    var points = <LocationPoint>[];
-    for (int i = startIndex; i < startIndex + 3 && i < segments.length; i++) {
-      points.addAll(segments[i].points);
-    }
-
-    // Create a LineString from all points and get its centroid
-    final allPoints = LineString.from(points.map((p) => p.location).toList());
-    final centroid = allPoints.centroid2D();
-    if (centroid == null) return startIndex;
-
-    // Check how many consecutive segments have all points within the radius
-    int endIndex = startIndex;
-    for (int i = startIndex; i < segments.length; i++) {
-      bool allPointsNearCenter = segments[i].points.every((point) {
-        // Create a LineString between the point and centroid to measure distance
-        final line = LineString.from([point.location, centroid]);
-        return line.length2D() <= radiusThreshold;
-      });
-
-      if (!allPointsNearCenter) break;
-      endIndex = i;
-    }
-
-    // Only consider it a cluster if we found at least 3 segments
-    return endIndex >= startIndex + 2 ? endIndex : startIndex;
-  }
-
   static subdivide(List<LocationPoint> points,
-      {double threshold = 200 / 111000,
-      double? maxDistance,
-      double zigzagRadius = 30 / 111000,
-      bool enableLargeGapFilter = true,
-      bool enableSegmentZigzagFilter = true}) {
+      {double threshold = 200 / 111000, double? maxDistance}) {
     final segments = <MapSegment>[];
     int currentSegmentStart = 0;
     MapSegment? currentSegment;
@@ -172,13 +88,6 @@ class MapSegment {
       distanceSum += currentSegment.distance;
     }
 
-    // Filter out segments behind any large gaps if enabled
-    var filteredSegments =
-        enableLargeGapFilter ? _filterLargeGaps(segments, threshold) : segments;
-
-    // Compress any zig-zagging segments if enabled
-    return enableSegmentZigzagFilter
-        ? _compressZigZaggingSegments(filteredSegments, zigzagRadius)
-        : filteredSegments;
+    return segments;
   }
 }
