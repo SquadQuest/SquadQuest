@@ -30,6 +30,11 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
   double get zigzagRadius => 30 / 111000;
   bool get autoCameraEnabled => true;
 
+  // New filter toggle getters with default values
+  bool get pointZigzagFilterEnabled => true;
+  bool get largeGapFilterEnabled => true;
+  bool get segmentZigzagFilterEnabled => true;
+
   MapLibreMapController? controller;
   StreamSubscription? subscription;
   List<LocationPoint>? points;
@@ -154,6 +159,9 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
         threshold: segmentThreshold,
         maxDistance: maxSegmentDistance,
         zigzagRadius: zigzagRadius,
+        enablePointZigzagFilter: pointZigzagFilterEnabled,
+        enableLargeGapFilter: largeGapFilterEnabled,
+        enableSegmentZigzagFilter: segmentZigzagFilterEnabled,
       );
 
       // render segments to lines with faded color based on distance from lead time

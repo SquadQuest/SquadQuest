@@ -197,9 +197,14 @@ class MapSegment {
   static subdivide(List<LocationPoint> points,
       {double threshold = 10 / 111000,
       double? maxDistance,
-      double zigzagRadius = 30 / 111000}) {
-    // First filter out zigzag patterns in raw points
-    points = _filterZigZagPoints(points, zigzagRadius);
+      double zigzagRadius = 30 / 111000,
+      bool enablePointZigzagFilter = true,
+      bool enableLargeGapFilter = true,
+      bool enableSegmentZigzagFilter = true}) {
+    // First filter out zigzag patterns in raw points if enabled
+    if (enablePointZigzagFilter) {
+      points = _filterZigZagPoints(points, zigzagRadius);
+    }
 
     final segments = <MapSegment>[];
     int currentSegmentStart = 0;
@@ -238,10 +243,13 @@ class MapSegment {
       distanceSum += currentSegment.distance;
     }
 
-    // Filter out segments behind any large gaps
-    var filteredSegments = _filterLargeGaps(segments, threshold);
+    // Filter out segments behind any large gaps if enabled
+    var filteredSegments =
+        enableLargeGapFilter ? _filterLargeGaps(segments, threshold) : segments;
 
-    // Compress any zig-zagging segments
-    return _compressZigZaggingSegments(filteredSegments, zigzagRadius);
+    // Compress any zig-zagging segments if enabled
+    return enableSegmentZigzagFilter
+        ? _compressZigZaggingSegments(filteredSegments, zigzagRadius)
+        : filteredSegments;
   }
 }

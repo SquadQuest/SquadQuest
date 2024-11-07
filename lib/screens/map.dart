@@ -15,6 +15,11 @@ final segmentThresholdProvider = StateProvider<double>((ref) => 10);
 final zigzagRadiusProvider = StateProvider<double>((ref) => 30);
 final autoCameraEnabledProvider = StateProvider<bool>((ref) => true);
 
+// New providers for filtering toggles
+final pointZigzagFilterEnabledProvider = StateProvider<bool>((ref) => true);
+final largeGapFilterEnabledProvider = StateProvider<bool>((ref) => true);
+final segmentZigzagFilterEnabledProvider = StateProvider<bool>((ref) => true);
+
 class MapScreen extends BaseMap {
   const MapScreen({super.key});
 
@@ -44,6 +49,18 @@ class _MapScreenState extends BaseMapState<MapScreen> {
   @override
   bool get autoCameraEnabled => ref.watch(autoCameraEnabledProvider);
 
+  // New getters for filter toggles
+  @override
+  bool get pointZigzagFilterEnabled =>
+      ref.watch(pointZigzagFilterEnabledProvider);
+
+  @override
+  bool get largeGapFilterEnabled => ref.watch(largeGapFilterEnabledProvider);
+
+  @override
+  bool get segmentZigzagFilterEnabled =>
+      ref.watch(segmentZigzagFilterEnabledProvider);
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +72,13 @@ class _MapScreenState extends BaseMapState<MapScreen> {
     ref.listenManual(maxDistanceProvider, (_, __) => _onThresholdChange());
     ref.listenManual(segmentThresholdProvider, (_, __) => _onThresholdChange());
     ref.listenManual(zigzagRadiusProvider, (_, __) => _onThresholdChange());
+    // Add listeners for filter toggles
+    ref.listenManual(
+        pointZigzagFilterEnabledProvider, (_, __) => _onThresholdChange());
+    ref.listenManual(
+        largeGapFilterEnabledProvider, (_, __) => _onThresholdChange());
+    ref.listenManual(
+        segmentZigzagFilterEnabledProvider, (_, __) => _onThresholdChange());
   }
 
   void _onThresholdChange() {
@@ -118,6 +142,9 @@ class DevMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final autoCameraEnabled = ref.watch(autoCameraEnabledProvider);
+    final pointZigzagEnabled = ref.watch(pointZigzagFilterEnabledProvider);
+    final largeGapEnabled = ref.watch(largeGapFilterEnabledProvider);
+    final segmentZigzagEnabled = ref.watch(segmentZigzagFilterEnabledProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -138,6 +165,45 @@ class DevMenu extends ConsumerWidget {
                 },
               ),
               const Text('Auto Camera Enabled'),
+            ],
+          ),
+          const Divider(),
+          const Text('Filtering Options',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              Checkbox(
+                value: pointZigzagEnabled,
+                onChanged: (value) {
+                  ref.read(pointZigzagFilterEnabledProvider.notifier).state =
+                      value ?? true;
+                },
+              ),
+              const Text('Point-level Zigzag Filter'),
+            ],
+          ),
+          Row(
+            children: [
+              Checkbox(
+                value: largeGapEnabled,
+                onChanged: (value) {
+                  ref.read(largeGapFilterEnabledProvider.notifier).state =
+                      value ?? true;
+                },
+              ),
+              const Text('Large Gap Filter'),
+            ],
+          ),
+          Row(
+            children: [
+              Checkbox(
+                value: segmentZigzagEnabled,
+                onChanged: (value) {
+                  ref.read(segmentZigzagFilterEnabledProvider.notifier).state =
+                      value ?? true;
+                },
+              ),
+              const Text('Segment-level Zigzag Filter'),
             ],
           ),
           const Divider(),
