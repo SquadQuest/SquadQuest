@@ -34,6 +34,7 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
   bool get pointZigzagFilterEnabled => true;
   bool get largeGapFilterEnabled => true;
   bool get segmentZigzagFilterEnabled => true;
+  bool get solidLineRenderingEnabled => false;
 
   MapLibreMapController? controller;
   StreamSubscription? subscription;
@@ -153,16 +154,27 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
         continue;
       }
 
-      // build trail segments using configurable threshold and zigzag radius
-      var segments = MapSegment.subdivide(
-        keyPoints,
-        threshold: segmentThreshold,
-        maxDistance: maxSegmentDistance,
-        zigzagRadius: zigzagRadius,
-        enablePointZigzagFilter: pointZigzagFilterEnabled,
-        enableLargeGapFilter: largeGapFilterEnabled,
-        enableSegmentZigzagFilter: segmentZigzagFilterEnabled,
-      );
+      // Get user's trail color
+      final userId = keyPoints.first.createdBy;
+      final userProfile = userProfiles[userId]!;
+      final trailColor = userProfile.effectiveTrailColor;
+
+      List<MapSegment> segments;
+      if (solidLineRenderingEnabled) {
+        // Create a single segment with all points when solid line rendering is enabled
+        segments = [MapSegment(keyPoints)];
+      } else {
+        // Otherwise use normal segmentation with filters
+        segments = MapSegment.subdivide(
+          keyPoints,
+          threshold: segmentThreshold,
+          maxDistance: maxSegmentDistance,
+          zigzagRadius: zigzagRadius,
+          enablePointZigzagFilter: pointZigzagFilterEnabled,
+          enableLargeGapFilter: largeGapFilterEnabled,
+          enableSegmentZigzagFilter: segmentZigzagFilterEnabled,
+        );
+      }
 
       // render segments to lines with faded color based on distance from lead time
       if (!trailsLinesByKey.containsKey(key)) {
@@ -174,11 +186,6 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
       final earliestMilleseconds = segments.last.earliestMilliseconds;
       final totalMilliseconds = segments.first.latestMilliseconds -
           segments.last.earliestMilliseconds;
-
-      // Get user's trail color
-      final userId = keyPoints.first.createdBy;
-      final userProfile = userProfiles[userId]!;
-      final trailColor = userProfile.effectiveTrailColor;
 
       for (var i = 0; i < segments.length; i++) {
         final segment = segments[i];
@@ -204,8 +211,10 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
           geometry: segment.latLngList,
           lineColor: trailColor,
           lineWidth: 5.0,
-          lineOpacity: (segment.midMilliseconds - earliestMilleseconds) /
-              totalMilliseconds,
+          lineOpacity: solidLineRenderingEnabled
+              ? 1.0 // Use full opacity for solid lines
+              : (segment.midMilliseconds - earliestMilleseconds) /
+                  totalMilliseconds,
         );
 
         // render line for segment

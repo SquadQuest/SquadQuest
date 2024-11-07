@@ -19,6 +19,7 @@ final autoCameraEnabledProvider = StateProvider<bool>((ref) => true);
 final pointZigzagFilterEnabledProvider = StateProvider<bool>((ref) => true);
 final largeGapFilterEnabledProvider = StateProvider<bool>((ref) => true);
 final segmentZigzagFilterEnabledProvider = StateProvider<bool>((ref) => true);
+final solidLineRenderingEnabledProvider = StateProvider<bool>((ref) => false);
 
 class MapScreen extends BaseMap {
   const MapScreen({super.key});
@@ -62,6 +63,10 @@ class _MapScreenState extends BaseMapState<MapScreen> {
       ref.watch(segmentZigzagFilterEnabledProvider);
 
   @override
+  bool get solidLineRenderingEnabled =>
+      ref.watch(solidLineRenderingEnabledProvider);
+
+  @override
   void initState() {
     super.initState();
     // Set up listeners for threshold changes
@@ -79,6 +84,8 @@ class _MapScreenState extends BaseMapState<MapScreen> {
         largeGapFilterEnabledProvider, (_, __) => _onThresholdChange());
     ref.listenManual(
         segmentZigzagFilterEnabledProvider, (_, __) => _onThresholdChange());
+    ref.listenManual(
+        solidLineRenderingEnabledProvider, (_, __) => _onThresholdChange());
   }
 
   void _onThresholdChange() {
@@ -145,6 +152,7 @@ class DevMenu extends ConsumerWidget {
     final pointZigzagEnabled = ref.watch(pointZigzagFilterEnabledProvider);
     final largeGapEnabled = ref.watch(largeGapFilterEnabledProvider);
     final segmentZigzagEnabled = ref.watch(segmentZigzagFilterEnabledProvider);
+    final solidLineEnabled = ref.watch(solidLineRenderingEnabledProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -170,6 +178,18 @@ class DevMenu extends ConsumerWidget {
           const Divider(),
           const Text('Filtering Options',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              Checkbox(
+                value: solidLineEnabled,
+                onChanged: (value) {
+                  ref.read(solidLineRenderingEnabledProvider.notifier).state =
+                      value ?? false;
+                },
+              ),
+              const Text('Render as Solid Lines'),
+            ],
+          ),
           Row(
             children: [
               Checkbox(
