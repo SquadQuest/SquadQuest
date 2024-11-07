@@ -299,7 +299,8 @@ class DevMenu extends ConsumerWidget {
                 value: value,
                 min: min,
                 max: max,
-                onChanged: (newValue) {
+                onChanged: (newValue) => {},
+                onChangeEnd: (newValue) {
                   ref.read(provider.notifier).state = newValue;
                 },
               ),
