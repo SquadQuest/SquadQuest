@@ -430,7 +430,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     await ref.read(instancesProvider.notifier).patch(
         instance.id!, {'end_time': DateTime.now().toUtc().toIso8601String()});
 
-    if (context.mounted) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text(
             'Your event has been ended and location sharing will be stopped'),

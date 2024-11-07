@@ -6,8 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
-import 'package:squadquest/router.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/components/pickers/location.dart';
 import 'package:squadquest/components/pickers/photo.dart';
@@ -216,8 +216,12 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
             : 'Event updated!'),
       ));
 
-      final router = ref.read(routerProvider);
-      final routeMatches = router.routerDelegate.currentConfiguration.matches;
+      final routeMatches = ref
+          .read(routerProvider)
+          .router
+          .routerDelegate
+          .currentConfiguration
+          .matches;
       final previousRoute = routeMatches.length > 1
           ? routeMatches[routeMatches.length - 2]
           : null;
@@ -291,6 +295,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         logger.e('Error loading event to edit',
             error: error, stackTrace: stackTrace);
 
+        if (!mounted) return;
+
         context.pop();
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -328,6 +334,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         logger.e('Error loading event to duplicate',
             error: error, stackTrace: stackTrace);
 
+        if (!mounted) return;
+
         context.pop();
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -364,6 +372,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       }).onError((error, stackTrace) {
         logger.e('Error loading Facebook event',
             error: error, stackTrace: stackTrace);
+
+        if (!mounted) return;
 
         context.pop();
 

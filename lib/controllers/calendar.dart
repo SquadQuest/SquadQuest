@@ -70,8 +70,9 @@ class _MobileCalendarController implements CalendarController {
     String timezone = 'UTC';
     try {
       timezone = await FlutterTimezone.getLocalTimezone();
-    } catch (e) {
-      print('Could not get the local timezone');
+    } catch (error, stackTrace) {
+      logger.e('Could not get the local timezone',
+          error: error, stackTrace: stackTrace);
     }
     _currentLocation = getLocation(timezone);
     tz.setLocalLocation(_currentLocation);
