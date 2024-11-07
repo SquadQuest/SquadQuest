@@ -22,8 +22,13 @@ abstract class BaseMap extends ConsumerStatefulWidget {
 }
 
 abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
-  static const minSinglePointBounds = 500 / 111000;
-  static const minMultiPointBounds = 100 / 111000;
+  // Make threshold values configurable through getters
+  double get minSinglePointBounds => 500 / 111000;
+  double get minMultiPointBounds => 100 / 111000;
+  double get maxSegmentDistance => 500 / 111000;
+  double get segmentThreshold => 10 / 111000;
+  double get zigzagRadius => 30 / 111000;
+  bool get autoCameraEnabled => true;
 
   MapLibreMapController? controller;
   StreamSubscription? subscription;
@@ -143,8 +148,13 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
         continue;
       }
 
-      // build trail segments
-      var segments = MapSegment.subdivide(keyPoints, maxDistance: 500 / 111000);
+      // build trail segments using configurable threshold and zigzag radius
+      var segments = MapSegment.subdivide(
+        keyPoints,
+        threshold: segmentThreshold,
+        maxDistance: maxSegmentDistance,
+        zigzagRadius: zigzagRadius,
+      );
 
       // render segments to lines with faded color based on distance from lead time
       if (!trailsLinesByKey.containsKey(key)) {
@@ -266,6 +276,9 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
     required double minLongitude,
     required double maxLongitude,
   }) async {
+    // Skip camera updates if auto camera is disabled
+    if (!autoCameraEnabled) return;
+
     // apply minimum bounds
     if ((minLatitude - maxLatitude).abs() <= minSinglePointBounds &&
         (minLongitude - maxLongitude).abs() <= minSinglePointBounds) {
