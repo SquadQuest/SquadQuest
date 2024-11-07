@@ -271,7 +271,8 @@ class DevMenu extends ConsumerWidget {
                 },
               ),
             ),
-            Text('${value.toStringAsFixed(1)}m'),
+            Text(
+                '${value.toStringAsFixed(1)}m / ${(value / 111000).toStringAsFixed(5)}°'),
           ],
         ),
       ],
