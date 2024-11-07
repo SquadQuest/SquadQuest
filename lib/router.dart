@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +27,10 @@ import 'package:squadquest/models/instance.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
-String _initialLocation = '/';
+// Initialize with platform's initial route if provided
+String _initialLocation = PlatformDispatcher.instance.defaultRouteName != '/'
+    ? PlatformDispatcher.instance.defaultRouteName
+    : '/';
 
 final _router = GoRouter(
   initialLocation: '/splash',
@@ -35,8 +39,7 @@ final _router = GoRouter(
   redirect: _redirect,
   routes: [
     GoRoute(
-      name:
-          'splash', // Optional, add name to your routes. Allows you navigate by name instead of path
+      name: 'splash',
       path: '/splash',
       builder: (context, state) => const SplashScreen(),
     ),
@@ -114,6 +117,7 @@ final _router = GoRouter(
 ProviderRef? _ref;
 final routerProvider = Provider((ref) {
   _ref = ref;
+  logger.d({'Initial platform route': _initialLocation});
   return _router;
 });
 
@@ -130,14 +134,18 @@ Future<String?> _redirect(BuildContext context, GoRouterState state) async {
 
   // save to initial route and return existing location if splash isn't finished
   if (!splashComplete) {
-    _initialLocation = state.uri.toString();
+    // If we have a non-splash route, preserve it
+    if (state.uri.toString() != '/splash') {
+      _initialLocation = state.uri.toString();
+    }
+
     final currentLocation = _router.routerDelegate.currentConfiguration.isEmpty
         ? '/splash'
         : _router.routerDelegate.currentConfiguration.last.matchedLocation;
     logger.d({
       'splash not complete, saving redirect to initialLocation': {
-        'initialLocation': state.uri.toString(),
-        'curretLocation': currentLocation,
+        'initialLocation': _initialLocation,
+        'currentLocation': currentLocation,
       }
     });
     return currentLocation;
