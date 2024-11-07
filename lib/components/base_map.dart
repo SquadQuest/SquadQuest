@@ -9,6 +9,7 @@ import 'package:easy_debounce/easy_debounce.dart';
 
 import 'package:squadquest/models/location_point.dart';
 import 'package:squadquest/models/map_segment.dart';
+import 'package:squadquest/models/point_filter.dart';
 import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/services/profiles_cache.dart';
@@ -160,18 +161,22 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
       final userProfile = userProfiles[userId]!;
       final trailColor = userProfile.effectiveTrailColor;
 
+      // Apply point-level zigzag filtering if enabled
+      var processedPoints = pointZigzagFilterEnabled
+          ? PointFilter.filterZigZag(keyPoints, zigzagRadius)
+          : keyPoints;
+
       List<MapSegment> segments;
       if (disableSegmentingEnabled) {
         // Create a single segment with all points when segmenting is disabled
-        segments = [MapSegment(keyPoints)];
+        segments = [MapSegment(processedPoints)];
       } else {
         // Otherwise use normal segmentation with filters
         segments = MapSegment.subdivide(
-          keyPoints,
+          processedPoints,
           threshold: segmentThreshold,
           maxDistance: maxSegmentDistance,
           zigzagRadius: zigzagRadius,
-          enablePointZigzagFilter: pointZigzagFilterEnabled,
           enableLargeGapFilter: largeGapFilterEnabled,
           enableSegmentZigzagFilter: segmentZigzagFilterEnabled,
         );
