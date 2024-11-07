@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:squadquest/router.dart';
+import 'package:squadquest/services/router.dart';
 
 class ConnectionService {
   static Future<void> showConnectionErrorDialog() {

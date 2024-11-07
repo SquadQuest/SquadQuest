@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/common.dart';
-import 'package:squadquest/router.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
@@ -63,7 +63,7 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
 
     await ref.read(profileProvider.notifier).fetch();
 
-    goInitialLocation(widget.redirect);
+    ref.read(routerProvider).goInitialLocation(widget.redirect);
   }
 
   @override

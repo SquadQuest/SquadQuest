@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:location/location.dart';
 
 import 'package:squadquest/logger.dart';
-import 'package:squadquest/router.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/instances.dart';

@@ -4,10 +4,10 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
-import 'package:squadquest/router.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/components/pickers/photo.dart';
@@ -120,7 +120,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     }
 
     // redirect to next screen
-    goInitialLocation(widget.redirect);
+    ref.read(routerProvider).goInitialLocation(widget.redirect);
   }
 
   void _openColorPicker() {
