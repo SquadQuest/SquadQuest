@@ -51,6 +51,7 @@ class SquadQuestColors extends ThemeExtension<SquadQuestColors> {
   @override
   SquadQuestColors copyWith(
       {Color? locationSharingBottomSheetActiveBackgroundColor,
+      Color? locationSharingBottomSheetAvailableBackgroundColor,
       TextStyle? locationSharingBottomSheetTextStyle}) {
     return SquadQuestColors(
       locationSharingBottomSheetActiveBackgroundColor:

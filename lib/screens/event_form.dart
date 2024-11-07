@@ -295,6 +295,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         logger.e('Error loading event to edit',
             error: error, stackTrace: stackTrace);
 
+        if (!mounted) return;
+
         context.pop();
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -332,6 +334,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         logger.e('Error loading event to duplicate',
             error: error, stackTrace: stackTrace);
 
+        if (!mounted) return;
+
         context.pop();
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -368,6 +372,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       }).onError((error, stackTrace) {
         logger.e('Error loading Facebook event',
             error: error, stackTrace: stackTrace);
+
+        if (!mounted) return;
 
         context.pop();
 
