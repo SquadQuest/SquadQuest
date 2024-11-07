@@ -69,25 +69,35 @@ class _MapScreenState extends BaseMapState<MapScreen> {
       ref.watch(disableSegmentingEnabledProvider);
 
   @override
-  void initState() {
-    super.initState();
-    // Set up listeners for threshold changes
-    ref.listenManual(
-        minSinglePointBoundsProvider, (_, __) => _onThresholdChange());
-    ref.listenManual(
-        minMultiPointBoundsProvider, (_, __) => _onThresholdChange());
-    ref.listenManual(maxDistanceProvider, (_, __) => _onThresholdChange());
-    ref.listenManual(segmentThresholdProvider, (_, __) => _onThresholdChange());
-    ref.listenManual(zigzagRadiusProvider, (_, __) => _onThresholdChange());
-    // Add listeners for filter toggles
-    ref.listenManual(
+  Widget build(BuildContext context) {
+    final showDevMenu = ref.watch(developerModeProvider);
+
+    // Set up listeners for all providers that should trigger trail updates
+    ref.listen(minSinglePointBoundsProvider, (_, __) => _onThresholdChange());
+    ref.listen(minMultiPointBoundsProvider, (_, __) => _onThresholdChange());
+    ref.listen(maxDistanceProvider, (_, __) => _onThresholdChange());
+    ref.listen(segmentThresholdProvider, (_, __) => _onThresholdChange());
+    ref.listen(zigzagRadiusProvider, (_, __) => _onThresholdChange());
+    ref.listen(
         pointZigzagFilterEnabledProvider, (_, __) => _onThresholdChange());
-    ref.listenManual(
-        largeGapFilterEnabledProvider, (_, __) => _onThresholdChange());
-    ref.listenManual(
+    ref.listen(largeGapFilterEnabledProvider, (_, __) => _onThresholdChange());
+    ref.listen(
         solidLineRenderingEnabledProvider, (_, __) => _onThresholdChange());
-    ref.listenManual(
+    ref.listen(
         disableSegmentingEnabledProvider, (_, __) => _onThresholdChange());
+
+    return AppScaffold(
+      title: 'Friends Map',
+      loadMask: _isInitialLoad ? 'Loading map data...' : null,
+      actions: [
+        if (showDevMenu)
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _showDevMenu,
+          ),
+      ],
+      body: buildMap(),
+    );
   }
 
   void _onThresholdChange() {
@@ -125,24 +135,6 @@ class _MapScreenState extends BaseMapState<MapScreen> {
       context: context,
       builder: (context) => const DevMenu(),
       isScrollControlled: true,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final showDevMenu = ref.watch(developerModeProvider);
-
-    return AppScaffold(
-      title: 'Friends Map',
-      loadMask: _isInitialLoad ? 'Loading map data...' : null,
-      actions: [
-        if (showDevMenu)
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _showDevMenu,
-          ),
-      ],
-      body: buildMap(),
     );
   }
 }
