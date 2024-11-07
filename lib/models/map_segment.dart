@@ -137,16 +137,18 @@ class MapSegment {
     final result = <LocationPoint>[];
     int i = 0;
 
-    while (i < points.length) {
+    while (i < points.length - 1) {
+      // Ensure there's always room for at least 2 points
       // Look ahead to find potential zigzag cluster
       int clusterEnd = i;
       Position? centroid;
       bool isZigZag = false;
 
-      // Create a window of points to analyze
-      for (int j = i; j < min(i + 5, points.length); j++) {
+      // Create a window of points to analyze, starting with minimum 2 points
+      for (int j = i + 1; j < min(i + 5, points.length); j++) {
         var windowPoints =
             points.sublist(i, j + 1).map((p) => p.location).toList();
+
         var line = LineString.from(windowPoints);
         centroid = line.centroid2D();
 
@@ -189,6 +191,11 @@ class MapSegment {
         result.add(points[i]);
         i++;
       }
+    }
+
+    // Add the last point if we haven't processed it as part of a zigzag cluster
+    if (i < points.length) {
+      result.add(points[i]);
     }
 
     return result;
