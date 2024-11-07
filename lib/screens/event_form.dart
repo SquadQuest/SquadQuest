@@ -6,8 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
-import 'package:squadquest/router.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/components/pickers/location.dart';
 import 'package:squadquest/components/pickers/photo.dart';
@@ -216,8 +216,12 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
             : 'Event updated!'),
       ));
 
-      final router = ref.read(routerProvider);
-      final routeMatches = router.routerDelegate.currentConfiguration.matches;
+      final routeMatches = ref
+          .read(routerProvider)
+          .router
+          .routerDelegate
+          .currentConfiguration
+          .matches;
       final previousRoute = routeMatches.length > 1
           ? routeMatches[routeMatches.length - 2]
           : null;
