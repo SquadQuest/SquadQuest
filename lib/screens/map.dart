@@ -35,20 +35,20 @@ class _MapScreenState extends BaseMapState<MapScreen> {
   // Convert meters to degrees by dividing by 111000
   @override
   double get minSinglePointBounds =>
-      ref.watch(minSinglePointBoundsProvider) / 111000;
+      ref.read(minSinglePointBoundsProvider) / 111000;
 
   @override
   double get minMultiPointBounds =>
-      ref.watch(minMultiPointBoundsProvider) / 111000;
+      ref.read(minMultiPointBoundsProvider) / 111000;
 
   @override
-  double get maxSegmentDistance => ref.watch(maxDistanceProvider) / 111000;
+  double get maxSegmentDistance => ref.read(maxDistanceProvider) / 111000;
 
   @override
-  double get segmentThreshold => ref.watch(segmentThresholdProvider) / 111000;
+  double get segmentThreshold => ref.read(segmentThresholdProvider) / 111000;
 
   @override
-  double get zigzagRadius => ref.watch(zigzagRadiusProvider) / 111000;
+  double get zigzagRadius => ref.read(zigzagRadiusProvider) / 111000;
 
   @override
   double get largeGapThreshold =>
