@@ -161,23 +161,26 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
       final userProfile = userProfiles[userId]!;
       final trailColor = userProfile.effectiveTrailColor;
 
-      // Apply point-level zigzag filtering if enabled
-      var processedPoints = pointZigzagFilterEnabled
-          ? PointFilter.filterZigZag(keyPoints, zigzagRadius)
-          : keyPoints;
+      // Apply point filtering (zigzag and/or gap)
+      var processedPoints = PointFilter.filter(
+        keyPoints,
+        zigzagRadius: zigzagRadius,
+        gapThreshold: segmentThreshold,
+        enableZigzagFilter: pointZigzagFilterEnabled,
+        enableGapFilter: largeGapFilterEnabled,
+      );
 
       List<MapSegment> segments;
       if (disableSegmentingEnabled) {
         // Create a single segment with all points when segmenting is disabled
         segments = [MapSegment(processedPoints)];
       } else {
-        // Otherwise use normal segmentation with filters
+        // Otherwise use normal segmentation with segment-level zigzag filter
         segments = MapSegment.subdivide(
           processedPoints,
           threshold: segmentThreshold,
           maxDistance: maxSegmentDistance,
           zigzagRadius: zigzagRadius,
-          enableLargeGapFilter: largeGapFilterEnabled,
           enableSegmentZigzagFilter: segmentZigzagFilterEnabled,
         );
       }
