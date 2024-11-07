@@ -166,6 +166,12 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
           enableGapFilter: largeGapFilterEnabled,
         );
 
+        // erase and skip if there aren't enough processed points
+        if (processedPoints.length < 2) {
+          keysToRemove.add(key);
+          continue;
+        }
+
         List<MapSegment> segments;
         if (disableSegmentingEnabled) {
           // Create a single segment with all points when segmenting is disabled
