@@ -29,6 +29,8 @@ class MapScreen extends BaseMap {
 }
 
 class _MapScreenState extends BaseMapState<MapScreen> {
+  bool _isInitialLoad = true;
+
   // Convert meters to degrees by dividing by 111000
   @override
   double get minSinglePointBounds =>
@@ -109,6 +111,12 @@ class _MapScreenState extends BaseMapState<MapScreen> {
               data.map(LocationPoint.fromMap).toList();
 
           renderTrails(points);
+
+          if (_isInitialLoad && mounted) {
+            setState(() {
+              _isInitialLoad = false;
+            });
+          }
         });
   }
 
@@ -126,6 +134,7 @@ class _MapScreenState extends BaseMapState<MapScreen> {
 
     return AppScaffold(
       title: 'Friends Map',
+      loadMask: _isInitialLoad ? 'Loading map data...' : null,
       actions: [
         if (showDevMenu)
           IconButton(
