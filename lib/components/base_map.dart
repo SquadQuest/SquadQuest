@@ -96,194 +96,197 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
     };
   }
 
-  Future<void> renderTrails([List<LocationPoint>? points]) async {
-    if (points != null) {
-      this.points = points;
+  Future<void> renderTrails([List<LocationPoint>? newPoints]) async {
+    if (newPoints != null) {
+      points = newPoints;
     }
 
-    EasyDebounce.debounce(
-        'render-trails', const Duration(milliseconds: 100), doRenderTrails);
+    // Use debounce to prevent too frequent updates
+    EasyDebounce.debounce('render-trails', const Duration(milliseconds: 100),
+        () => doRenderTrails());
   }
 
   Future<void> doRenderTrails() async {
-    if (renderingTrails || points == null) {
+    if (renderingTrails || points == null || !mounted) {
       return;
     }
     renderingTrails = true;
 
-    // group points by user and event
-    final Map<TrailKey, List<LocationPoint>> pointsByKey = {};
-    final Set<UserID> userIds = {};
+    try {
+      // group points by user and event
+      final Map<TrailKey, List<LocationPoint>> pointsByKey = {};
+      final Set<UserID> userIds = {};
 
-    for (final point in points!) {
-      final key = makeTrailKey(point.createdBy, point.event);
-      if (!pointsByKey.containsKey(key)) {
-        pointsByKey[key] = [];
-      }
-      pointsByKey[key]!.add(point);
-      userIds.add(point.createdBy);
-    }
-
-    // load user profiles
-    final userProfiles =
-        await ref.read(profilesCacheProvider.notifier).fetchProfiles(userIds);
-
-    // abort if controller disposed
-    if (controller == null) return;
-
-    // get initial bounds
-    var bounds = getInitialBounds();
-    double minLatitude = bounds['minLatitude']!;
-    double maxLatitude = bounds['maxLatitude']!;
-    double minLongitude = bounds['minLongitude']!;
-    double maxLongitude = bounds['maxLongitude']!;
-
-    final List<TrailKey> keysToRemove = [];
-    for (final TrailKey key in pointsByKey.keys) {
-      final List<LocationPoint> keyPoints = pointsByKey[key]!;
-
-      // erase and skip if there aren't enough points
-      if (keyPoints.length < 2) {
-        keysToRemove.add(key);
-        continue;
+      for (final point in points!) {
+        final key = makeTrailKey(point.createdBy, point.event);
+        if (!pointsByKey.containsKey(key)) {
+          pointsByKey[key] = [];
+        }
+        pointsByKey[key]!.add(point);
+        userIds.add(point.createdBy);
       }
 
-      // Get user's trail color
-      final userId = keyPoints.first.createdBy;
-      final userProfile = userProfiles[userId]!;
-      final trailColor = userProfile.effectiveTrailColor;
+      // load user profiles
+      final userProfiles =
+          await ref.read(profilesCacheProvider.notifier).fetchProfiles(userIds);
 
-      // Apply point filtering (zigzag and/or gap)
-      var processedPoints = PointFilter.filter(
-        keyPoints,
-        zigzagRadius: zigzagRadius,
-        gapThreshold: segmentThreshold,
-        enableZigzagFilter: pointZigzagFilterEnabled,
-        enableGapFilter: largeGapFilterEnabled,
-      );
+      // abort if controller disposed
+      if (controller == null || !mounted) return;
 
-      List<MapSegment> segments;
-      if (disableSegmentingEnabled) {
-        // Create a single segment with all points when segmenting is disabled
-        segments = [MapSegment(processedPoints)];
-      } else {
-        // Otherwise use normal segmentation
-        segments = MapSegment.subdivide(
-          processedPoints,
-          threshold: segmentThreshold,
-          maxDistance: maxSegmentDistance,
-        );
-      }
+      // get initial bounds
+      var bounds = getInitialBounds();
+      double minLatitude = bounds['minLatitude']!;
+      double maxLatitude = bounds['maxLatitude']!;
+      double minLongitude = bounds['minLongitude']!;
+      double maxLongitude = bounds['maxLongitude']!;
 
-      // render segments to lines with faded color based on distance from lead time
-      if (!trailsLinesByKey.containsKey(key)) {
-        trailsLinesByKey[key] = [];
-      }
+      final List<TrailKey> keysToRemove = [];
+      for (final TrailKey key in pointsByKey.keys) {
+        final List<LocationPoint> keyPoints = pointsByKey[key]!;
 
-      final trailLines = trailsLinesByKey[key]!;
-
-      final earliestMilleseconds = segments.last.earliestMilliseconds;
-      final totalMilliseconds = segments.first.latestMilliseconds -
-          segments.last.earliestMilliseconds;
-
-      for (var i = 0; i < segments.length; i++) {
-        final segment = segments[i];
-
-        // find min/max lat/lon
-        for (final point in segment.points) {
-          if (point.location.lat < minLatitude) {
-            minLatitude = point.location.lat;
-          }
-          if (point.location.lat > maxLatitude) {
-            maxLatitude = point.location.lat;
-          }
-          if (point.location.lon < minLongitude) {
-            minLongitude = point.location.lon;
-          }
-          if (point.location.lon > maxLongitude) {
-            maxLongitude = point.location.lon;
-          }
+        // erase and skip if there aren't enough points
+        if (keyPoints.length < 2) {
+          keysToRemove.add(key);
+          continue;
         }
 
-        // build line
-        final lineOptions = LineOptions(
-          geometry: segment.latLngList,
-          lineColor: trailColor,
-          lineWidth: 5.0,
-          lineOpacity: solidLineRenderingEnabled
-              ? 1.0 // Use full opacity for solid lines
-              : (segment.midMilliseconds - earliestMilleseconds) /
-                  totalMilliseconds,
+        // Get user's trail color
+        final userId = keyPoints.first.createdBy;
+        final userProfile = userProfiles[userId]!;
+        final trailColor = userProfile.effectiveTrailColor;
+
+        // Apply point filtering (zigzag and/or gap)
+        var processedPoints = PointFilter.filter(
+          keyPoints,
+          zigzagRadius: zigzagRadius,
+          gapThreshold: segmentThreshold,
+          enableZigzagFilter: pointZigzagFilterEnabled,
+          enableGapFilter: largeGapFilterEnabled,
         );
 
-        // render line for segment
-        if (trailLines.length <= i) {
-          trailLines.add(await controller!.addLine(lineOptions));
+        List<MapSegment> segments;
+        if (disableSegmentingEnabled) {
+          // Create a single segment with all points when segmenting is disabled
+          segments = [MapSegment(processedPoints)];
         } else {
-          await controller!.updateLine(trailLines[i], lineOptions);
+          // Otherwise use normal segmentation
+          segments = MapSegment.subdivide(
+            processedPoints,
+            threshold: segmentThreshold,
+            maxDistance: maxSegmentDistance,
+          );
+        }
+
+        // render segments to lines with faded color based on distance from lead time
+        if (!trailsLinesByKey.containsKey(key)) {
+          trailsLinesByKey[key] = [];
+        }
+
+        final trailLines = trailsLinesByKey[key]!;
+
+        final earliestMilleseconds = segments.last.earliestMilliseconds;
+        final totalMilliseconds = segments.first.latestMilliseconds -
+            segments.last.earliestMilliseconds;
+
+        for (var i = 0; i < segments.length; i++) {
+          final segment = segments[i];
+
+          // find min/max lat/lon
+          for (final point in segment.points) {
+            if (point.location.lat < minLatitude) {
+              minLatitude = point.location.lat;
+            }
+            if (point.location.lat > maxLatitude) {
+              maxLatitude = point.location.lat;
+            }
+            if (point.location.lon < minLongitude) {
+              minLongitude = point.location.lon;
+            }
+            if (point.location.lon > maxLongitude) {
+              maxLongitude = point.location.lon;
+            }
+          }
+
+          // build line
+          final lineOptions = LineOptions(
+            geometry: segment.latLngList,
+            lineColor: trailColor,
+            lineWidth: 5.0,
+            lineOpacity: solidLineRenderingEnabled
+                ? 1.0 // Use full opacity for solid lines
+                : (segment.midMilliseconds - earliestMilleseconds) /
+                    totalMilliseconds,
+          );
+
+          // render line for segment
+          if (trailLines.length <= i) {
+            trailLines.add(await controller!.addLine(lineOptions));
+          } else {
+            await controller!.updateLine(trailLines[i], lineOptions);
+          }
+        }
+
+        // remove any unused segment lines
+        if (trailLines.length > segments.length) {
+          for (var i = segments.length; i < trailLines.length; i++) {
+            await controller!.removeLine(trailLines[i]);
+          }
+
+          trailLines.removeRange(segments.length, trailLines.length);
+        }
+
+        // render user marker at latest position
+        final symbolOptions = SymbolOptions(
+            geometry: LatLng(
+                keyPoints.first.location.lat, keyPoints.first.location.lon),
+            iconImage: 'person-marker',
+            iconSize: kIsWeb ? 0.4 : 0.9,
+            iconAnchor: 'bottom',
+            iconColor: trailColor,
+            textField: userProfiles[userId]!.displayName,
+            textColor: trailColor,
+            textAnchor: 'top-left',
+            textSize: 14);
+
+        if (symbolsByKey.containsKey(key)) {
+          await controller!.updateSymbol(symbolsByKey[key]!, symbolOptions);
+        } else {
+          symbolsByKey[key] =
+              await controller!.addSymbol(symbolOptions, {'user': userId});
         }
       }
 
-      // remove any unused segment lines
-      if (trailLines.length > segments.length) {
-        for (var i = segments.length; i < trailLines.length; i++) {
-          await controller!.removeLine(trailLines[i]);
+      // remove any trails with too few points
+      for (final key in keysToRemove) {
+        pointsByKey.remove(key);
+      }
+
+      // remove any unused symbols
+      for (final key in symbolsByKey.keys.toList()) {
+        if (!pointsByKey.containsKey(key)) {
+          await controller!.removeSymbol(symbolsByKey[key]!);
+          symbolsByKey.remove(key);
         }
-
-        trailLines.removeRange(segments.length, trailLines.length);
       }
 
-      // render user marker at latest position
-      final symbolOptions = SymbolOptions(
-          geometry: LatLng(
-              keyPoints.first.location.lat, keyPoints.first.location.lon),
-          iconImage: 'person-marker',
-          iconSize: kIsWeb ? 0.4 : 0.9,
-          iconAnchor: 'bottom',
-          iconColor: trailColor,
-          textField: userProfiles[userId]!.displayName,
-          textColor: trailColor,
-          textAnchor: 'top-left',
-          textSize: 14);
-
-      if (symbolsByKey.containsKey(key)) {
-        await controller!.updateSymbol(symbolsByKey[key]!, symbolOptions);
-      } else {
-        symbolsByKey[key] =
-            await controller!.addSymbol(symbolOptions, {'user': userId});
-      }
-    }
-
-    // remove any trails with too few points
-    for (final key in keysToRemove) {
-      pointsByKey.remove(key);
-    }
-
-    // remove any unused symbols
-    for (final key in symbolsByKey.keys.toList()) {
-      if (!pointsByKey.containsKey(key)) {
-        await controller!.removeSymbol(symbolsByKey[key]!);
-        symbolsByKey.remove(key);
-      }
-    }
-
-    for (final key in trailsLinesByKey.keys.toList()) {
-      if (!pointsByKey.containsKey(key)) {
-        for (final line in trailsLinesByKey[key]!) {
-          await controller!.removeLine(line);
+      for (final key in trailsLinesByKey.keys.toList()) {
+        if (!pointsByKey.containsKey(key)) {
+          for (final line in trailsLinesByKey[key]!) {
+            await controller!.removeLine(line);
+          }
+          trailsLinesByKey.remove(key);
         }
-        trailsLinesByKey.remove(key);
       }
+
+      await updateMapBounds(
+        minLatitude: minLatitude,
+        maxLatitude: maxLatitude,
+        minLongitude: minLongitude,
+        maxLongitude: maxLongitude,
+      );
+    } finally {
+      renderingTrails = false;
     }
-
-    await updateMapBounds(
-      minLatitude: minLatitude,
-      maxLatitude: maxLatitude,
-      minLongitude: minLongitude,
-      maxLongitude: maxLongitude,
-    );
-
-    renderingTrails = false;
   }
 
   Future<void> updateMapBounds({
