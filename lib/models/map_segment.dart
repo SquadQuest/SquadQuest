@@ -195,7 +195,7 @@ class MapSegment {
   }
 
   static subdivide(List<LocationPoint> points,
-      {double threshold = 10 / 111000,
+      {double threshold = 200 / 111000,
       double? maxDistance,
       double zigzagRadius = 30 / 111000,
       bool enablePointZigzagFilter = true,

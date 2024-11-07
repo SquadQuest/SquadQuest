@@ -26,7 +26,7 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
   double get minSinglePointBounds => 500 / 111000;
   double get minMultiPointBounds => 100 / 111000;
   double get maxSegmentDistance => 500 / 111000;
-  double get segmentThreshold => 10 / 111000;
+  double get segmentThreshold => 200 / 111000;
   double get zigzagRadius => 30 / 111000;
   bool get autoCameraEnabled => true;
 

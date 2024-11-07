@@ -11,7 +11,7 @@ import 'package:squadquest/controllers/settings.dart';
 final minSinglePointBoundsProvider = StateProvider<double>((ref) => 500);
 final minMultiPointBoundsProvider = StateProvider<double>((ref) => 100);
 final maxDistanceProvider = StateProvider<double>((ref) => 500);
-final segmentThresholdProvider = StateProvider<double>((ref) => 10);
+final segmentThresholdProvider = StateProvider<double>((ref) => 200);
 final zigzagRadiusProvider = StateProvider<double>((ref) => 30);
 final autoCameraEnabledProvider = StateProvider<bool>((ref) => true);
 
@@ -273,7 +273,7 @@ class DevMenu extends ConsumerWidget {
             'Segment Threshold (meters)',
             segmentThresholdProvider,
             0,
-            100,
+            500,
           ),
           _buildSlider(
             ref,
