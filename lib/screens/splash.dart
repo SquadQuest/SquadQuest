@@ -56,7 +56,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final timeDiff = now - _initTime;
 
     if (timeDiff < _minSplashTime) {
-      await Future.delayed(Duration(milliseconds: timeDiff));
+      await Future.delayed(Duration(milliseconds: _minSplashTime - timeDiff));
     }
     logger.d('_continueLoading.waited');
 
