@@ -121,35 +121,30 @@ class RouterService {
 
   Future<String?> _redirect(BuildContext context, GoRouterState state) async {
     final splashComplete = ref.read(splashCompleteProvider);
-    final session = ref.read(authControllerProvider);
 
-    // continue if route is login, verify or splash
-    if (state.topRoute?.name == 'login' ||
-        state.topRoute?.name == 'verify' ||
-        state.topRoute?.name == 'splash') {
+    // Always allow splash screen
+    if (state.topRoute?.name == 'splash') {
       return null;
     }
 
-    // save to initial route and return existing location if splash isn't finished
+    // If splash isn't complete, save the intended destination and redirect to splash
     if (!splashComplete) {
-      // If we have a non-splash route, preserve it
-      if (state.uri.toString() != '/splash') {
+      // Save non-splash routes for later navigation
+      if (state.uri.toString() != '/splash' && state.uri.toString() != '') {
         _initialLocation = state.uri.toString();
+        logger.d('Saving deep link to initialLocation: $_initialLocation');
       }
+      return '/splash';
+    }
 
-      final currentLocation =
-          state.uri.toString() == '' ? '/splash' : state.matchedLocation;
-      logger.d({
-        'splash not complete, saving redirect to initialLocation': {
-          'initialLocation': _initialLocation,
-          'currentLocation': currentLocation,
-        }
-      });
-      return currentLocation;
+    // After splash, handle auth-specific redirects
+    if (state.topRoute?.name == 'login' || state.topRoute?.name == 'verify') {
+      return null;
     }
 
     logger.d('processing redirect to ${state.uri.toString()}');
 
+    final session = ref.read(authControllerProvider);
     // continue if user is authenticated
     if (session != null) {
       return null;
