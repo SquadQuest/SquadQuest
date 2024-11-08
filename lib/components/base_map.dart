@@ -184,6 +184,12 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
             threshold: segmentThreshold,
             maxDistance: maxSegmentDistance,
           );
+
+          // erase and skip if there aren't any segments
+          if (segments.isEmpty) {
+            keysToRemove.add(key);
+            continue;
+          }
         }
 
         // render segments to lines with faded color based on distance from lead time
