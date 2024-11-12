@@ -20,7 +20,7 @@ final instancesProvider =
         InstancesController.new);
 
 final eventDetailsProvider = FutureProvider.autoDispose
-    .family<Instance, InstanceID>((ref, instanceId) async {
+    .family<Instance?, InstanceID>((ref, instanceId) async {
   final instancesController = ref.read(instancesProvider.notifier);
   return instancesController.getById(instanceId);
 });
@@ -52,7 +52,7 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
 
       // invalidate event details providers
       for (final instance in instances) {
-        final instanceProvider = eventDetailsProvider(instance.id!);
+        final instanceProvider = eventDetailsProvider(instance.id);
         if (ref.exists(instanceProvider)) {
           ref.invalidate(instanceProvider);
         }
@@ -78,17 +78,21 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     final profilesCache = ref.read(profilesCacheProvider.notifier);
     final topicsCache = ref.read(topicsCacheProvider.notifier);
 
-    // populate profile data
-    await profilesCache
-        .populateData(data, [(idKey: 'created_by', modelKey: 'created_by')]);
-
-    // populate topic data
-    await topicsCache.populateData(data, [(idKey: 'topic', modelKey: 'topic')]);
-
-    return data.map(Instance.fromMap).toList();
+    return safeHydrateList<Instance>(
+      data: data,
+      populateData: (records) async {
+        // populate profile and topic data
+        await profilesCache.populateData(
+            records, [(idKey: 'created_by', modelKey: 'created_by')]);
+        await topicsCache
+            .populateData(records, [(idKey: 'topic', modelKey: 'topic')]);
+      },
+      fromMap: Instance.fromMap,
+      context: 'Instance',
+    );
   }
 
-  Future<Instance> getById(InstanceID id) async {
+  Future<Instance?> getById(InstanceID id) async {
     final List<Instance>? loadedInstances =
         state.hasValue ? state.asData!.value : null;
 
@@ -108,46 +112,60 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
       final data =
           await supabase.from('instances').select().eq('id', id).single();
 
-      return (await hydrate([data])).first;
+      final instances = await hydrate([data]);
+      return instances.isEmpty ? null : instances.first;
     } catch (error) {
-      throw 'Could not load instance with ID $id';
+      logger.e('Could not load instance with ID $id', error: error);
+      return null;
     }
   }
 
-  Future<Instance> save(Instance instance) async {
+  Future<Instance?> save(Instance instance) async {
     final supabase = ref.read(supabaseClientProvider);
 
     final Map instanceData = instance.toMap();
 
     // if topic is blank but the instance had a topic model, it's a phantom we need to upsert first
     if (instanceData['topic'] == null && instance.topic != null) {
-      final Topic insertedTopic =
+      final Topic? insertedTopic =
           await ref.read(topicsProvider.notifier).save(instance.topic!);
 
-      instanceData['topic'] = insertedTopic.id;
+      if (insertedTopic != null) {
+        instanceData['topic'] = insertedTopic.id;
+      }
     }
 
-    // create event instance
-    final savedData =
-        await supabase.from('instances').upsert(instanceData).select().single();
+    try {
+      // create event instance
+      final savedData = await supabase
+          .from('instances')
+          .upsert(instanceData)
+          .select()
+          .single();
 
-    final savedInstance = (await hydrate([savedData])).first;
+      final instances = await hydrate([savedData]);
+      if (instances.isEmpty) return null;
+      final savedInstance = instances.first;
 
-    // update loaded instances with newly created one
-    if (state.hasValue && state.value != null) {
-      state = AsyncValue.data(updateListWithRecord<Instance>(state.value!,
-          (existing) => existing.id == savedInstance.id, savedInstance));
+      // update loaded instances with newly created one
+      if (state.hasValue && state.value != null) {
+        state = AsyncValue.data(updateListWithRecord<Instance>(state.value!,
+            (existing) => existing.id == savedInstance.id, savedInstance));
+      }
+
+      // create rsvp
+      await ref
+          .read(rsvpsProvider.notifier)
+          .save(savedInstance.id, InstanceMemberStatus.yes);
+
+      return savedInstance;
+    } catch (error) {
+      logger.e('Error saving instance', error: error);
+      return null;
     }
-
-    // create rsvp
-    await ref
-        .read(rsvpsProvider.notifier)
-        .save(savedInstance.id!, InstanceMemberStatus.yes);
-
-    return savedInstance;
   }
 
-  Future<Instance> patch(InstanceID id, Map<String, dynamic> patchData) async {
+  Future<Instance?> patch(InstanceID id, Map<String, dynamic> patchData) async {
     logger.i({'instance:patch': patchData});
 
     try {
@@ -159,7 +177,9 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
           .select()
           .single();
 
-      final updatedInstance = (await hydrate([updatedData])).first;
+      final instances = await hydrate([updatedData]);
+      if (instances.isEmpty) return null;
+      final updatedInstance = instances.first;
 
       // update loaded instances with newly created one
       if (state.hasValue && state.value != null) {
@@ -170,15 +190,21 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
       return updatedInstance;
     } catch (error) {
       loggerWithStack.e({'error patching instance': error});
-      rethrow;
+      return null;
     }
   }
 
-  Future<Instance> fetchFacebookEventData(String facebookUrl) async {
-    final supabase = ref.read(supabaseClientProvider);
-    final response = await supabase.functions.invoke('scrape-facebook-event',
-        method: HttpMethod.get, queryParameters: {'url': facebookUrl});
+  Future<Instance?> fetchFacebookEventData(String facebookUrl) async {
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      final response = await supabase.functions.invoke('scrape-facebook-event',
+          method: HttpMethod.get, queryParameters: {'url': facebookUrl});
 
-    return Instance.fromMap(response.data);
+      final instances = await hydrate([response.data]);
+      return instances.isEmpty ? null : instances.first;
+    } catch (error) {
+      logger.e('Error fetching Facebook event data', error: error);
+      return null;
+    }
   }
 }

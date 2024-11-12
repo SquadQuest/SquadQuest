@@ -4,7 +4,82 @@ import 'package:flutter/services.dart';
 import 'package:flutter_multi_formatter/formatters/phone_input_enums.dart';
 import 'package:flutter_multi_formatter/formatters/phone_input_formatter.dart';
 import 'package:http/http.dart' as http;
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:squadquest/logger.dart';
+
+/// Interface that defines the contract for models that can be created from maps
+abstract class Hydratable {
+  Map<String, dynamic> toMap();
+}
+
+/// Safely hydrates a list of records, skipping any that fail to deserialize
+/// Returns successfully hydrated records while logging failures to Sentry
+Future<List<T>> safeHydrateList<T>({
+  required List<Map<String, dynamic>> data,
+  required Future<void> Function(List<Map<String, dynamic>>) populateData,
+  required T Function(Map<String, dynamic>) fromMap,
+  String? context,
+}) async {
+  try {
+    // First populate any related data needed for deserialization
+    await populateData(data);
+
+    // Then safely deserialize each record
+    final results = <T>[];
+    for (final record in data) {
+      try {
+        results.add(fromMap(record));
+      } catch (error, stackTrace) {
+        // Log the error with context about which record failed
+        final String errorContext = context ?? T.toString();
+        logger.e('Failed to deserialize $errorContext record',
+            error: error, stackTrace: stackTrace);
+        await Sentry.captureException(
+          error,
+          stackTrace: stackTrace,
+          hint: Hint.withMap({
+            'context': 'Failed to deserialize $errorContext record',
+            'record': record,
+          }),
+        );
+        // Skip this record but continue processing others
+        continue;
+      }
+    }
+    return results;
+  } catch (error, stackTrace) {
+    // Log any errors in the population step
+    logger.e('Failed to populate data for hydration',
+        error: error, stackTrace: stackTrace);
+    await Sentry.captureException(
+      error,
+      stackTrace: stackTrace,
+      hint: Hint.withMap({
+        'context': 'Failed to populate data for ${T.toString()} hydration',
+      }),
+    );
+    rethrow;
+  }
+}
+
+/// Safely hydrates a single record
+/// Returns null if deserialization fails, while logging the failure to Sentry
+Future<T?> safeHydrateSingle<T>({
+  required Map<String, dynamic> data,
+  required Future<void> Function(List<Map<String, dynamic>>) populateData,
+  required T Function(Map<String, dynamic>) fromMap,
+  String? context,
+}) async {
+  final results = await safeHydrateList<T>(
+    data: [data],
+    populateData: populateData,
+    fromMap: fromMap,
+    context: context,
+  );
+  return results.isEmpty ? null : results.first;
+}
 
 /// Remove non-digits from the phone number
 String normalizePhone(String phone) {

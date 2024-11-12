@@ -3,6 +3,7 @@ import 'package:geobase/coordinates.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:open_location_code/open_location_code.dart' as pluscode;
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/topic.dart';
 
@@ -35,46 +36,24 @@ Map<InstanceMemberStatus, Icon> rsvpIcons = {
   InstanceMemberStatus.omw: const Icon(Icons.run_circle_outlined),
 };
 
-class Instance {
-  Instance(
-      {this.id,
-      this.createdAt,
-      this.createdBy,
-      this.createdById,
-      this.updatedAt,
-      this.status = InstanceStatus.live,
-      required this.startTimeMin,
-      required this.startTimeMax,
-      this.endTime,
-      this.topic,
-      this.topicId,
-      required this.title,
-      required this.visibility,
-      required this.locationDescription,
-      this.rallyPoint,
-      this.link,
-      this.notes,
-      this.bannerPhoto})
-      : assert(
-            (id != null &&
-                    createdAt != null &&
-                    (createdBy != null || createdById != null)) ||
-                (id == null && createdAt == null && createdBy == null),
-            'id, createdAt, and createdBy must be all null or all non-null'),
-        assert(
-            createdById == null ||
-                createdBy == null ||
-                createdBy.id == createdById,
-            'createdBy.id and createdById must match if both are set'),
-        assert(topic == null || topicId == null || topic.id == topicId,
+/// Base class for all instances
+abstract class Instance implements Hydratable {
+  Instance({
+    required this.startTimeMin,
+    required this.startTimeMax,
+    this.endTime,
+    this.topic,
+    this.topicId,
+    required this.title,
+    required this.visibility,
+    required this.locationDescription,
+    this.rallyPoint,
+    this.link,
+    this.notes,
+    this.bannerPhoto,
+  }) : assert(topic == null || topicId == null || topic.id == topicId,
             'topic.id and topicId must match if both are set');
 
-  final InstanceID? id;
-  final DateTime? createdAt;
-  final UserProfile? createdBy;
-  final UserID? createdById;
-  final DateTime? updatedAt;
-  final InstanceStatus status;
   final DateTime startTimeMin;
   final DateTime startTimeMax;
   final DateTime? endTime;
@@ -97,12 +76,132 @@ class Instance {
               pluscode.LatLng(rallyPoint!.lat, rallyPoint!.lon))
           .toString();
 
-  factory Instance.fromMap(Map<String, dynamic> map) {
+  InstanceTimeGroup getTimeGroup([DateTime? now]) {
+    now ??= DateTime.now();
+
+    if (startTimeMin.isAfter(now)) {
+      return InstanceTimeGroup.upcoming;
+    }
+
+    if ((endTime != null && endTime!.isBefore(now)) ||
+        startTimeMax.isBefore(now.subtract(const Duration(hours: 12)))) {
+      return InstanceTimeGroup.past;
+    }
+
+    return InstanceTimeGroup.current;
+  }
+
+  @override
+  String toString() {
+    return 'Instance{title: $title}';
+  }
+}
+
+/// Represents a draft instance being created
+class DraftInstance extends Instance {
+  DraftInstance({
+    required super.startTimeMin,
+    required super.startTimeMax,
+    super.endTime,
+    super.topic,
+    super.topicId,
+    required super.title,
+    required super.visibility,
+    required super.locationDescription,
+    super.rallyPoint,
+    super.link,
+    super.notes,
+    super.bannerPhoto,
+  });
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      'status': InstanceStatus.live.name,
+      'start_time_min': startTimeMin.toUtc().toIso8601String(),
+      'start_time_max': startTimeMax.toUtc().toIso8601String(),
+      'end_time': endTime?.toUtc().toIso8601String(),
+      'topic': topic?.id ?? topicId,
+      'title': title,
+      'visibility': visibility.name,
+      'location_description': locationDescription,
+      'rally_point': rallyPoint == null
+          ? null
+          : 'POINT(${rallyPoint!.lon} ${rallyPoint!.lat})',
+      'link': link?.toString(),
+      'notes': notes,
+      'banner_photo': bannerPhoto?.toString(),
+    };
+  }
+}
+
+/// Represents a persisted instance with all required fields
+class PersistedInstance extends Instance {
+  PersistedInstance({
+    required this.id,
+    required this.createdAt,
+    required this.createdBy,
+    this.createdById,
+    this.updatedAt,
+    required this.status,
+    required super.startTimeMin,
+    required super.startTimeMax,
+    super.endTime,
+    super.topic,
+    super.topicId,
+    required super.title,
+    required super.visibility,
+    required super.locationDescription,
+    super.rallyPoint,
+    super.link,
+    super.notes,
+    super.bannerPhoto,
+  }) : assert(
+            createdById == null ||
+                createdBy == null ||
+                createdBy.id == createdById,
+            'createdBy.id and createdById must match if both are set');
+
+  final InstanceID id;
+  final DateTime createdAt;
+  final UserProfile createdBy;
+  final UserID? createdById;
+  final DateTime? updatedAt;
+  final InstanceStatus status;
+
+  static PersistedInstance fromMap(Map<String, dynamic> map) {
+    // Validate required fields for persisted instances
+    if (!map.containsKey('id')) {
+      throw FormatException('Missing required field: id');
+    }
+    if (!map.containsKey('created_at')) {
+      throw FormatException('Missing required field: created_at');
+    }
+    if (!map.containsKey('created_by')) {
+      throw FormatException('Missing required field: created_by');
+    }
+    if (!map.containsKey('title')) {
+      throw FormatException('Missing required field: title');
+    }
+    if (!map.containsKey('location_description')) {
+      throw FormatException('Missing required field: location_description');
+    }
+    if (!map.containsKey('start_time_min')) {
+      throw FormatException('Missing required field: start_time_min');
+    }
+    if (!map.containsKey('start_time_max')) {
+      throw FormatException('Missing required field: start_time_max');
+    }
+
     final createdByModel = map['created_by'] is UserProfile
         ? map['created_by']
         : map['created_by'] is Map
             ? UserProfile.fromMap(map['created_by'])
             : null;
+
+    if (createdByModel == null) {
+      throw FormatException('Invalid created_by data');
+    }
 
     final topicModel = map['topic'] is Topic
         ? map['topic']
@@ -116,15 +215,11 @@ class Instance {
             .substring(6, map['rally_point_text'].length - 1)
             .split(' ');
 
-    return Instance(
-      id: map['id'] as InstanceID?,
-      createdAt: map['created_at'] == null
-          ? null
-          : DateTime.parse(map['created_at']).toLocal(),
+    return PersistedInstance(
+      id: map['id'] as InstanceID,
+      createdAt: DateTime.parse(map['created_at']).toLocal(),
       createdBy: createdByModel,
-      createdById: createdByModel == null
-          ? map['created_by'] as UserID?
-          : createdByModel.id,
+      createdById: createdByModel.id,
       updatedAt: map['updated_at'] == null
           ? null
           : DateTime.parse(map['updated_at']).toLocal(),
@@ -132,6 +227,7 @@ class Instance {
           ? InstanceStatus.live
           : InstanceStatus.values.firstWhere(
               (e) => e.name == map['status'],
+              orElse: () => InstanceStatus.live,
             ),
       startTimeMin: DateTime.parse(map['start_time_min']).toLocal(),
       startTimeMax: DateTime.parse(map['start_time_max']).toLocal(),
@@ -145,6 +241,7 @@ class Instance {
           ? InstanceVisibility.friends
           : InstanceVisibility.values.firstWhere(
               (e) => e.name == map['visibility'],
+              orElse: () => InstanceVisibility.friends,
             ),
       locationDescription: map['location_description'] as String,
       rallyPoint: map['rally_point_text'] == null
@@ -158,8 +255,12 @@ class Instance {
     );
   }
 
+  @override
   Map<String, dynamic> toMap() {
     final data = {
+      'id': id,
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'created_by': createdBy.id,
       'status': status.name,
       'start_time_min': startTimeMin.toUtc().toIso8601String(),
       'start_time_max': startTimeMax.toUtc().toIso8601String(),
@@ -176,10 +277,6 @@ class Instance {
       'banner_photo': bannerPhoto?.toString(),
     };
 
-    if (id != null) {
-      data['id'] = id!;
-    }
-
     if (updatedAt != null) {
       data['updated_at'] = updatedAt!.toUtc().toIso8601String();
     }
@@ -189,30 +286,15 @@ class Instance {
 
   @override
   String toString() {
-    return 'Instance{id: $id, title: $title}';
-  }
-
-  InstanceTimeGroup getTimeGroup([DateTime? now]) {
-    now ??= DateTime.now();
-
-    if (startTimeMin.isAfter(now)) {
-      return InstanceTimeGroup.upcoming;
-    }
-
-    if ((endTime != null && endTime!.isBefore(now)) ||
-        startTimeMax.isBefore(now.subtract(const Duration(hours: 12)))) {
-      return InstanceTimeGroup.past;
-    }
-
-    return InstanceTimeGroup.current;
+    return 'PersistedInstance{id: $id, title: $title}';
   }
 }
 
-class InstanceMember {
+class InstanceMember implements Hydratable {
   InstanceMember({
-    this.id,
-    this.createdAt,
-    this.createdBy,
+    required this.id,
+    required this.createdAt,
+    required this.createdBy,
     this.createdById,
     this.instance,
     this.instanceId,
@@ -220,12 +302,6 @@ class InstanceMember {
     this.memberId,
     required this.status,
   })  : assert(
-            (id != null &&
-                    createdAt != null &&
-                    (createdBy != null || createdById != null)) ||
-                (id == null && createdAt == null && createdBy == null),
-            'id, createdAt, and createdBy must be all null or all non-null'),
-        assert(
             createdById == null ||
                 createdBy == null ||
                 createdBy.id == createdById,
@@ -236,26 +312,44 @@ class InstanceMember {
         assert(member == null || memberId == null || member.id == memberId,
             'member.id and memberId must match if both are set');
 
-  final InstanceID? id;
-  final DateTime? createdAt;
-  final UserProfile? createdBy;
+  final InstanceID id;
+  final DateTime createdAt;
+  final UserProfile createdBy;
   final UserID? createdById;
-  final Instance? instance;
+  final PersistedInstance? instance;
   final InstanceID? instanceId;
   final UserProfile? member;
   final UserID? memberId;
   final InstanceMemberStatus status;
 
-  factory InstanceMember.fromMap(Map<String, dynamic> map) {
+  static InstanceMember fromMap(Map<String, dynamic> map) {
+    if (!map.containsKey('id')) {
+      throw FormatException('Missing required field: id');
+    }
+    if (!map.containsKey('created_at')) {
+      throw FormatException('Missing required field: created_at');
+    }
+    if (!map.containsKey('created_by')) {
+      throw FormatException('Missing required field: created_by');
+    }
+    if (!map.containsKey('status')) {
+      throw FormatException('Missing required field: status');
+    }
+
     final createdByModel = map['created_by'] is UserProfile
         ? map['created_by']
         : map['created_by'] is Map
             ? UserProfile.fromMap(map['created_by'])
             : null;
-    final instanceModel = map['instance'] is Instance
+
+    if (createdByModel == null) {
+      throw FormatException('Invalid created_by data');
+    }
+
+    final instanceModel = map['instance'] is PersistedInstance
         ? map['instance']
         : map['instance'] is Map
-            ? Instance.fromMap(map['instance'])
+            ? PersistedInstance.fromMap(map['instance'])
             : null;
     final memberModel = map['member'] is UserProfile
         ? map['member']
@@ -267,33 +361,30 @@ class InstanceMember {
       id: map['id'] as InstanceMemberID,
       createdAt: DateTime.parse(map['created_at']).toLocal(),
       createdBy: createdByModel,
-      createdById: createdByModel == null
-          ? map['created_by'] as UserID
-          : createdByModel.id,
+      createdById: createdByModel.id,
       instance: instanceModel,
       instanceId: instanceModel == null
-          ? map['instance'] as InstanceID
+          ? map['instance'] as InstanceID?
           : instanceModel.id,
       member: memberModel,
-      memberId: memberModel == null ? map['member'] as UserID : memberModel.id,
+      memberId: memberModel == null ? map['member'] as UserID? : memberModel.id,
       status: InstanceMemberStatus.values.firstWhere(
         (e) => e.name == map['status'],
+        orElse: () => InstanceMemberStatus.invited,
       ),
     );
   }
 
+  @override
   Map<String, dynamic> toMap() {
-    final data = {
+    return {
+      'id': id,
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'created_by': createdBy.id,
       'instance': instance?.id ?? instanceId,
       'member': member?.id ?? memberId,
       'status': status.name,
     };
-
-    if (id != null) {
-      data['id'] = id!;
-    }
-
-    return data;
   }
 
   @override
