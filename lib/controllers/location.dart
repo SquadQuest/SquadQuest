@@ -4,7 +4,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:location/location.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
+    as bg;
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/router.dart';
@@ -17,7 +18,7 @@ final locationControllerProvider = Provider<LocationController>((ref) {
   return LocationController(ref);
 });
 
-final locationStreamProvider = StreamProvider<LocationData>((ref) {
+final locationStreamProvider = StreamProvider<bg.Location>((ref) {
   final locationController = ref.watch(locationControllerProvider);
   return locationController.stream;
 });
@@ -34,40 +35,43 @@ class LocationController {
   bool _startingTracking = false;
   bool tracking = false;
 
-  StreamSubscription? _streamSubscription;
   final List<InstanceID> _trackingInstanceIds = [];
+  bg.Location? _lastLocation;
 
-  late Location _location;
-  bool _serviceEnabled = false;
-  bool _backgroundEnabled = false;
-  PermissionStatus? _permissionGranted;
-  LocationData? _lastLocation;
-
-  final _streamController = StreamController<LocationData>.broadcast();
-  Stream<LocationData> get stream => _streamController.stream;
+  final _streamController = StreamController<bg.Location>.broadcast();
+  Stream<bg.Location> get stream => _streamController.stream;
 
   LocationController(this.ref) {
     _init();
   }
 
   void _init() async {
-    _location = Location();
-    _location.changeNotificationOptions(
-        channelName: 'Location Sharing',
-        onTapBringToFront: true,
-        iconName: 'ic_stat_person_pin_circle',
-        title: 'SquadQuest is tracking your location',
-        subtitle: 'Friends going to the same event can see where you are',
-        description: 'Tracks stored for 3 days');
+    // Configure background geolocation
+    await bg.BackgroundGeolocation.ready(bg.Config(
+        desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+        distanceFilter: 5, // meters
+        stopOnTerminate: false,
+        startOnBoot: true,
+        debug: false,
+        logLevel: bg.Config.LOG_LEVEL_VERBOSE,
+        notification: bg.Notification(
+          title: "SquadQuest is tracking your location",
+          text: "Friends going to the same event can see where you are",
+          channelName: 'Location Sharing',
+          smallIcon: "ic_stat_person_pin_circle",
+        ),
+        backgroundPermissionRationale: bg.PermissionRationale(
+            title: "Allow SquadQuest to access location in background?",
+            message:
+                "SquadQuest needs background location access to show your location to friends during events.",
+            positiveAction: "Allow",
+            negativeAction: "Cancel")));
 
-    _serviceEnabled = await _location.serviceEnabled();
-    _permissionGranted = await _location.hasPermission();
-
-    logger.d({
-      'LocationController._init': {
-        'serviceEnabled': _serviceEnabled,
-        'permissionGranted': _permissionGranted,
-      }
+    // Listen for location updates
+    bg.BackgroundGeolocation.onLocation((bg.Location location) {
+      _onLocationChanged(location);
+    }, (bg.LocationError error) {
+      logger.e("BackgroundGeolocation error: $error");
     });
 
     // listen for changes to events to stop tracking automatically
@@ -141,55 +145,32 @@ class LocationController {
     ref.read(locationSharingProvider.notifier).state = null;
 
     try {
-      // start tracking location
-      logger.d('LocationController.startTracking');
-      if (!_serviceEnabled) {
-        _serviceEnabled = await _location.requestService();
-        if (!_serviceEnabled) {
-          return;
-        }
+      // Request permissions and check state
+      final state = await bg.BackgroundGeolocation.requestPermission();
+
+      if (state != bg.ProviderChangeEvent.AUTHORIZATION_STATUS_ALWAYS ||
+          state != bg.ProviderChangeEvent.AUTHORIZATION_STATUS_WHEN_IN_USE) {
+        logger.d('Location tracking not authorized: $state');
+        _startingTracking = false;
+        ref.read(locationSharingProvider.notifier).state = false;
+        return;
       }
 
-      if (_permissionGranted == PermissionStatus.denied) {
-        _permissionGranted = await _location.requestPermission();
-        if (_permissionGranted != PermissionStatus.granted) {
-          return;
-        }
-      }
+      // Start tracking
+      await bg.BackgroundGeolocation.start();
 
-      // this call can only be made after permission is granted
-      _location.changeSettings(
-          interval: 5000,
-          distanceFilter:
-              5); // sample location every 5 seconds if distance is at least 5 meters
+      tracking = true;
+      ref.read(locationSharingProvider.notifier).state = true;
 
-      _backgroundEnabled = await _location.enableBackgroundMode(enable: true);
+      logger.d('Location tracking started successfully');
     } catch (error) {
       loggerWithStack.e(error);
+      _startingTracking = false;
+      ref.read(locationSharingProvider.notifier).state = false;
+      return;
     }
 
-    _streamSubscription =
-        _location.onLocationChanged.listen(_onLocationChanged);
-
-    logger.d({
-      'serviceEnabled': _serviceEnabled,
-      'permissionGranted': _permissionGranted,
-      'backgroundEnabled': _backgroundEnabled,
-      'lastLocation': _lastLocation
-    });
-
     _startingTracking = false;
-    tracking =
-        _serviceEnabled && _permissionGranted == PermissionStatus.granted;
-    ref.read(locationSharingProvider.notifier).state = tracking;
-
-    // force an initial location fetch but don't wait for it
-    _location.getLocation().then((initialLocation) {
-      logger.d(
-          'LocationController.startTracking -> initial location fetched: $initialLocation');
-    });
-
-    logger.d('LocationController.startTracking -> finished');
   }
 
   Future<void> stopTracking([InstanceID? instanceId]) async {
@@ -209,12 +190,7 @@ class LocationController {
     logger.d('LocationController.stopTracking');
 
     if (tracking) {
-      await _streamSubscription?.cancel();
-      try {
-        await _location.enableBackgroundMode(enable: false);
-      } catch (error) {
-        loggerWithStack.e(error);
-      }
+      await bg.BackgroundGeolocation.stop();
       tracking = false;
       ref.read(locationSharingProvider.notifier).state = false;
     }
@@ -222,22 +198,23 @@ class LocationController {
     logger.d('LocationController.stopTracking -> finished');
   }
 
-  void _onLocationChanged(LocationData currentLocation) async {
-    logger.t({'_onLocationChanged': currentLocation});
+  void _onLocationChanged(bg.Location location) async {
+    logger.t({'_onLocationChanged': location.toMap()});
 
-    _lastLocation = currentLocation;
+    _lastLocation = location;
 
     // generate records for each active event
     final insertData = _trackingInstanceIds.map((instanceId) {
-      // TODO: save more of the available data?
       return {
         'event': instanceId,
-        'timestamp':
-            DateTime.fromMillisecondsSinceEpoch(currentLocation.time!.toInt())
-                .toUtc()
-                .toIso8601String(),
+        'timestamp': DateTime.fromMillisecondsSinceEpoch(
+                location.timestamp != null
+                    ? int.parse(location.timestamp!)
+                    : DateTime.now().millisecondsSinceEpoch)
+            .toUtc()
+            .toIso8601String(),
         'location':
-            'POINT(${currentLocation.longitude} ${currentLocation.latitude})',
+            'POINT(${location.coords.longitude} ${location.coords.latitude})',
       };
     }).toList();
 
@@ -250,7 +227,7 @@ class LocationController {
     }
 
     // broadcast on stream
-    _streamController.add(currentLocation);
+    _streamController.add(location);
   }
 
   Future<bool?> _showPrompt() {

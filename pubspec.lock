@@ -94,6 +94,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.11.0"
+  background_fetch:
+    dependency: transitive
+    description:
+      name: background_fetch
+      sha256: e9f26ae54d88310b7ac2a68f2f9fcee0081a4d5f11100f233a70702021e7ac4f
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.7"
   badges:
     dependency: "direct main"
     description:
@@ -412,6 +420,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_background_geolocation:
+    dependency: "direct main"
+    description:
+      name: flutter_background_geolocation
+      sha256: cd1262dadcc3f940a033304df47c380a5222d743c03eba98b0acfcf7c6f7b44e
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.16.3"
   flutter_colorpicker:
     dependency: "direct main"
     description:
@@ -806,30 +822,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
-  location:
-    dependency: "direct main"
-    description:
-      name: location
-      sha256: ee57923720163324416ce0306b701db6d845d2c1a3bf44d25b607cbddbaa3973
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.0.1"
-  location_platform_interface:
-    dependency: transitive
-    description:
-      name: location_platform_interface
-      sha256: "1e535ccc8b4a9612de4e4319871136b45d2b5d1fb0c2a8bf99687242bf7ca5f7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.0"
-  location_web:
-    dependency: transitive
-    description:
-      name: location_web
-      sha256: e6435cfd175b0f6e94d6fdc43c104d13cec7e27b21a8cee00bd9516a3d6a4c81
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.4"
   logger:
     dependency: "direct main"
     description:
