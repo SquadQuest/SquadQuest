@@ -50,6 +50,23 @@ abstract interface class CalendarController {
   Future<void> deleteEvent(Instance instance);
 }
 
+/// Data needed for calendar operations
+class _CalendarOperation {
+  final Instance instance;
+  final InstanceMember? subscription;
+  final bool isDelete;
+  final String timezone;
+  final DeviceCalendarPlugin calendar;
+
+  _CalendarOperation({
+    required this.instance,
+    this.subscription,
+    required this.isDelete,
+    required this.timezone,
+    required this.calendar,
+  });
+}
+
 /// {@macro calendar_controller}
 class _MobileCalendarController implements CalendarController {
   static const defaultCalendarAccountName = "SquadQuest";
@@ -59,23 +76,21 @@ class _MobileCalendarController implements CalendarController {
 
   final DeviceCalendarPlugin _calendar = DeviceCalendarPlugin();
   bool? _permissionGranted;
-
-  Location _currentLocation = getLocation('UTC');
+  String _currentTimezone = 'UTC';
 
   _MobileCalendarController() {
-    _checkCurrentLocation();
+    _initializeTimezone();
   }
 
-  Future _checkCurrentLocation() async {
-    String timezone = 'UTC';
+  Future<void> _initializeTimezone() async {
     try {
-      timezone = await FlutterTimezone.getLocalTimezone();
+      _currentTimezone = await FlutterTimezone.getLocalTimezone();
     } catch (error, stackTrace) {
       logger.e('Could not get the local timezone',
           error: error, stackTrace: stackTrace);
     }
-    _currentLocation = getLocation(timezone);
-    tz.setLocalLocation(_currentLocation);
+    final location = getLocation(_currentTimezone);
+    tz.setLocalLocation(location);
   }
 
   @override
@@ -88,75 +103,139 @@ class _MobileCalendarController implements CalendarController {
     return (await _calendar.requestPermissions()).data ?? false;
   }
 
+  /// Handles calendar operations in a separate isolate to prevent UI blocking
+  Future<void> _performCalendarOperation(_CalendarOperation op) async {
+    final location = getLocation(op.timezone);
+
+    try {
+      // Get or create calendar
+      final calendars = await op.calendar.retrieveCalendars();
+      String? calendarId;
+
+      final foundCalendar = calendars.data?.firstWhereOrNull(
+        (Calendar c) =>
+            c.isReadOnly == false &&
+            (c.name?.contains(defaultCalendarName) == true ||
+                c.accountName?.contains(defaultCalendarAccountName) == true),
+      );
+
+      if (foundCalendar != null) {
+        calendarId = foundCalendar.id!;
+      } else {
+        final newCalendar = await op.calendar.createCalendar(
+          defaultCalendarName,
+          localAccountName: defaultCalendarAccountName,
+          calendarColor: Colors.orange,
+        );
+
+        if (!newCalendar.hasErrors) {
+          calendarId = newCalendar.data!;
+        }
+      }
+
+      if (calendarId == null) return;
+
+      if (op.isDelete) {
+        // Handle deletion
+        final existingEvent = await _findExistingEvent(
+            op.calendar, calendarId, op.instance, location);
+        if (existingEvent != null) {
+          await op.calendar.deleteEvent(calendarId, existingEvent);
+        }
+      } else {
+        // Handle creation/update
+        final existingEventId = await _findExistingEvent(
+            op.calendar, calendarId, op.instance, location);
+
+        final user = op.subscription?.member;
+        final event = op.instance;
+        final eventCreatorId = (event.createdBy?.id ?? event.createdById);
+
+        await op.calendar.createOrUpdateEvent(Event(
+          calendarId,
+          eventId: existingEventId,
+          title: event.title,
+          location: event.locationDescription,
+          description:
+              "${event.notes}\n\nSquadQuest event: https://squadquest.app/events/${event.id!}",
+          start: TZDateTime.from(event.startTimeMin, location),
+          end: TZDateTime.from(event.startTimeMax, location),
+          reminders: [
+            Reminder(minutes: 60),
+          ],
+          status: switch (event.status) {
+            InstanceStatus.draft => null,
+            InstanceStatus.live => EventStatus.Confirmed,
+            InstanceStatus.canceled => EventStatus.Canceled,
+          },
+          attendees: [
+            if (op.subscription != null && user != null)
+              _UserAttendee.fromUser(
+                user,
+                eventCreatorId == user.id,
+                op.subscription!.status,
+              )
+          ],
+        ));
+      }
+    } catch (e, stack) {
+      logger.e('Calendar operation failed', error: e, stackTrace: stack);
+      rethrow; // Ensure the error is propagated
+    }
+  }
+
+  static Future<String?> _findExistingEvent(DeviceCalendarPlugin calendar,
+      String calendarId, Instance instance, Location location) async {
+    final events = await calendar.retrieveEvents(
+      calendarId,
+      RetrieveEventsParams(
+        startDate: instance.startTimeMin.subtract(const Duration(days: 1)),
+        endDate: instance.endTime?.add(const Duration(days: 1)) ??
+            instance.startTimeMin.add(const Duration(days: 60)),
+      ),
+    );
+
+    if (events.hasErrors || events.data?.isEmpty == true) {
+      return null;
+    }
+
+    return events.data
+        ?.firstWhereOrNull(
+          (element) => element.description?.contains(instance.id!) == true,
+        )
+        ?.eventId;
+  }
+
   @override
   Future<void> upsertEvent({
     required Instance instance,
     required InstanceMember? subscription,
   }) async {
     logger.d('CalendarController.upsertEvent');
-    _permissionGranted = await requestPermission();
 
+    // Check permissions in the main isolate first
+    _permissionGranted = await requestPermission();
     if (_permissionGranted != true) {
       logger.d('CalendarController.upsertEvent -> permission not granted');
       return;
     }
 
-    final calendarId = await _getCalendar();
-    final existingEvent = await _getEventIdByInstance(calendarId, instance);
+    try {
+      // Run the calendar operation
+      await _performCalendarOperation(_CalendarOperation(
+        instance: instance,
+        subscription: subscription,
+        isDelete: false,
+        timezone: _currentTimezone,
+        calendar: _calendar,
+      ));
 
-    final user = subscription?.member;
-    final event = instance;
-    final eventCreatorId = (instance.createdBy?.id ?? instance.createdById);
-
-    final result = await _calendar.createOrUpdateEvent(Event(
-      calendarId,
-      eventId: existingEvent,
-      title: event.title,
-      location: event.locationDescription,
-      description:
-          "${event.notes}\n\nSquadQuest event: https://squadquest.app/events/${instance.id!}",
-      start: TZDateTime.from(event.startTimeMin, _currentLocation),
-      // endTime is a fuzzy concept right now that only gets set sometimes after an event is over
-      // -- in the future we may enable setting it ahead of time while creating an event
-      // allDay: event.endTime == null,
-      // end: event.endTime != null
-      //     ? TZDateTime.from(event.endTime!, _currentLocation)
-      //     : TZDateTime(
-      //         _currentLocation,
-      //         startTime.year,
-      //         startTime.month,
-      //         startTime.day,
-      //       ), // besides the nullality, this parameter is required
-      // for now, use the startTimeMax as the end—this indicates the range of time for "showing up"
-      end: TZDateTime.from(event.startTimeMax, _currentLocation),
-      reminders: [
-        Reminder(minutes: 60),
-      ],
-      status: switch (event.status) {
-        InstanceStatus.draft => null,
-        InstanceStatus.live => EventStatus.Confirmed,
-        InstanceStatus.canceled => EventStatus.Canceled,
-      },
-      attendees: [
-        if (subscription != null && user != null)
-          _UserAttendee.fromUser(
-            user,
-            eventCreatorId == user.id,
-            subscription.status,
-          )
-      ],
-    ));
-
-    if (result?.hasErrors == true) {
-      logger.e(
-          'CalendarController.upsertEvent: errors=\n${result?.errors.map((e) => e.errorMessage).join('\n')}');
-      return;
+      logger.d('CalendarController.upsertEvent -> finished');
+    } catch (e, stack) {
+      logger.e('CalendarController.upsertEvent failed',
+          error: e, stackTrace: stack);
+      rethrow;
     }
-
-    _showEvent(result!.data);
-
-    logger.d('CalendarController.upsertEvent -> finished');
-    return;
   }
 
   @override
@@ -169,126 +248,20 @@ class _MobileCalendarController implements CalendarController {
       return;
     }
 
-    final calendarId = await _getCalendar();
+    try {
+      // Run the deletion
+      await _performCalendarOperation(_CalendarOperation(
+        instance: instance,
+        isDelete: true,
+        timezone: _currentTimezone,
+        calendar: _calendar,
+      ));
 
-    final existingEventId = await _getEventIdByInstance(calendarId, instance);
-
-    if (existingEventId == null) {
-      logger.d('CalendarController.deleteEvent -> no event found');
-      return;
-    }
-
-    final result = await _calendar.deleteEvent(calendarId, existingEventId);
-
-    if (result.hasErrors == true) {
-      logger.e(
-          'CalendarController.deleteEvent: errors=\n${result.errors.map((e) => e.errorMessage).join('\n')}');
-      return;
-    }
-
-    logger.d('CalendarController.deleteEvent -> finished');
-    return;
-  }
-
-  /// Returns the eventId of the event that matches the instance or null if no match
-  /// is found.
-  Future<String?> _getEventIdByInstance(
-      String calendarId, Instance instance) async {
-    final event = await _calendar.retrieveEvents(
-      calendarId,
-      RetrieveEventsParams(
-        startDate: instance.startTimeMin.subtract(const Duration(days: 1)),
-        endDate: instance.endTime?.add(const Duration(days: 1)) ??
-            instance.startTimeMin.add(const Duration(days: 60)),
-      ),
-    );
-
-    if (event.hasErrors) {
-      logger.e(
-          'CalendarController._getEventIdByInstance: errors=\n${event.errors.map((e) => e.errorMessage).join('\n')}');
-      return null;
-    }
-
-    if (event.data?.isNotEmpty != true) {
-      return null;
-    }
-
-    return event.data
-        ?.firstWhereOrNull(
-          (element) => element.description?.contains(instance.id!) == true,
-        )
-        ?.eventId;
-  }
-
-  /// Returns the calendarId for creating or updating an event. If no calendar
-  /// exists, a new one is created.
-  Future<String> _getCalendar() async {
-    final calendars = await _calendar.retrieveCalendars();
-
-    final foundCalendar = calendars.data?.firstWhereOrNull(
-      (Calendar c) =>
-          c.isReadOnly == false &&
-          (c.name?.contains(defaultCalendarName) == true ||
-              c.accountName?.contains(defaultCalendarAccountName) == true),
-    );
-
-    if (foundCalendar != null) {
-      return foundCalendar.id!;
-    } else {
-      final newCalendar = await _calendar.createCalendar(
-        defaultCalendarName,
-        localAccountName: defaultCalendarAccountName,
-        calendarColor: Colors.orange,
-      );
-
-      if (newCalendar.hasErrors) {
-        throw newCalendar.errors.first.errorMessage;
-      }
-      return newCalendar.data!;
-    }
-  }
-
-  void _showEvent(String? data) async {
-    if (data == null) {
-      return;
-    }
-
-    final event = await _calendar.retrieveEvents(
-      await _getCalendar(),
-      RetrieveEventsParams(eventIds: [data]),
-    );
-
-    if (event.hasErrors) {
-      logger.e(
-          'CalendarController._showEvent: errors=\n${event.errors.map((e) => e.errorMessage).join('\n')}');
-      return;
-    }
-
-    if (event.data?.isNotEmpty == true) {
-      final eventData = event.data!.first;
-      logger.i(
-        'CalendarController._showEvent: event=\n'
-        'id=${eventData.eventId}\n'
-        'calendarId=${eventData.calendarId}\n'
-        'title=${eventData.title}\n'
-        'description=${eventData.description}\n'
-        'start=${eventData.start}\n'
-        'end=${eventData.end}\n'
-        'location=${eventData.location}\n'
-        'attendees=${eventData.attendees?.map(
-              (e) => "\n"
-                  "\tname=${e?.name}\n"
-                  "\temailAddress=${e?.emailAddress}\n"
-                  "\trole=${e?.role}\n"
-                  "\tisCurrentUser=${e?.isCurrentUser}\n"
-                  "\tisOrganiser=${e?.isOrganiser}\n"
-                  "\tandroidAttendeeDetails=${e?.androidAttendeeDetails?.attendanceStatus?.enumToString}\n"
-                  "\tiosAttendeeDetails=${e?.iosAttendeeDetails?.attendanceStatus?.enumToString}\n",
-            ).join('\n')}\n'
-        'reminders=${eventData.reminders}\n'
-        'status=${eventData.status}\n'
-        'allDay=${eventData.allDay}\n',
-      );
+      logger.d('CalendarController.deleteEvent -> finished');
+    } catch (e, stack) {
+      logger.e('CalendarController.deleteEvent failed',
+          error: e, stackTrace: stack);
+      rethrow;
     }
   }
 }
