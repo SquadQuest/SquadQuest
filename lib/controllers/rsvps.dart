@@ -46,12 +46,12 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   }
 
   Future<InstanceMember?> save(
-      InstanceID instanceId, InstanceMemberStatus? status) async {
+      Instance instance, InstanceMemberStatus? status) async {
     final supabase = ref.read(supabaseClientProvider);
 
     try {
       final response = await supabase.functions.invoke('rsvp',
-          body: {'instance_id': instanceId, 'status': status?.name});
+          body: {'instance_id': instance.id, 'status': status?.name});
 
       final instanceMember = response.data['status'] == null
           ? null
@@ -63,11 +63,23 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
           updateListWithRecord<InstanceMember>(
             state.value!,
             (existing) =>
-                existing.instanceId == instanceId &&
+                existing.instanceId == instance.id &&
                 existing.memberId == supabase.auth.currentUser!.id,
             instanceMember,
           ),
         );
+      }
+
+      // Handle calendar sync
+      if (ref.read(calendarWritingEnabledProvider)) {
+        if (instanceMember != null) {
+          await CalendarController.instance.upsertEvent(
+            subscription: instanceMember,
+            instance: instance,
+          );
+        } else {
+          await CalendarController.instance.deleteEvent(instance);
+        }
       }
 
       return instanceMember;
@@ -120,40 +132,6 @@ class InstanceRsvpsController
 
   void _onData(List<Map<String, dynamic>> data) async {
     final rsvpsController = ref.read(rsvpsProvider.notifier);
-
     state = AsyncValue.data(await rsvpsController.hydrate(data));
-  }
-
-  Future<InstanceMember?> save(
-    InstanceMemberStatus? status,
-    Instance instance,
-  ) async {
-    final supabase = ref.read(supabaseClientProvider);
-    final rsvpsController = ref.read(rsvpsProvider.notifier);
-
-    final savedRsvp = await rsvpsController.save(instanceId, status);
-
-    // update loaded rsvps with created/updated one
-    if (state.hasValue && state.value != null) {
-      state = AsyncValue.data(updateListWithRecord<InstanceMember>(
-          state.value!,
-          (existing) =>
-              existing.instanceId == instanceId &&
-              existing.memberId == supabase.auth.currentUser!.id,
-          savedRsvp));
-    }
-
-    if (ref.read(calendarWritingEnabledProvider)) {
-      if (savedRsvp != null) {
-        await CalendarController.instance.upsertEvent(
-          subscription: savedRsvp,
-          instance: instance,
-        );
-      } else {
-        await CalendarController.instance.deleteEvent(instance);
-      }
-    }
-
-    return savedRsvp;
   }
 }

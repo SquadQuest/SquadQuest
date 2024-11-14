@@ -139,10 +139,10 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
           (existing) => existing.id == savedInstance.id, savedInstance));
     }
 
-    // create rsvp
+    // create rsvp with calendar sync
     await ref
         .read(rsvpsProvider.notifier)
-        .save(savedInstance.id!, InstanceMemberStatus.yes);
+        .save(savedInstance, InstanceMemberStatus.yes);
 
     return savedInstance;
   }

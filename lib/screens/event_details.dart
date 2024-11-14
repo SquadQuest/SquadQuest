@@ -149,10 +149,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   Future<void> _saveRsvp(
       InstanceMemberStatus? status, Instance instance) async {
     try {
-      final eventRsvpsController =
-          ref.read(rsvpsPerEventProvider(widget.instanceId).notifier);
-
-      final savedRsvp = await eventRsvpsController.save(status, instance);
+      final rsvpsController = ref.read(rsvpsProvider.notifier);
+      final savedRsvp = await rsvpsController.save(instance, status);
 
       logger
           .i('EventDetailsScreen._saveRsvp: status=$status, saved=$savedRsvp');
@@ -160,9 +158,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
       // start or stop tracking
       final locationController = ref.read(locationControllerProvider);
       if (status == InstanceMemberStatus.omw) {
-        await locationController.startTracking(widget.instanceId);
+        await locationController.startTracking(instance.id!);
       } else {
-        await locationController.stopTracking(widget.instanceId);
+        await locationController.stopTracking(instance.id!);
       }
 
       if (_rsvpSnackbar != null) {
