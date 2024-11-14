@@ -8,7 +8,6 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/controllers/instances.dart';
-import 'package:squadquest/components/event_live_map.dart';
 
 class EventDetailsMap extends ConsumerStatefulWidget {
   final Instance event;
@@ -29,43 +28,29 @@ class EventDetailsMap extends ConsumerStatefulWidget {
 class _EventDetailsMapState extends ConsumerState<EventDetailsMap> {
   MapLibreMapController? _controller;
 
-  Future<void> _showLiveMap() async {
-    return showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        enableDrag: false,
-        builder: (BuildContext context) => EventLiveMap(
-            eventId: widget.instanceId,
-            rallyPoint: widget.event.rallyPointLatLng));
+  void _onMapCreated(MapLibreMapController controller) {
+    _controller = controller;
   }
 
-  Future<void> _setupMap() async {
-    if (_controller == null) return;
+  void _onStyleLoaded(Instance event) async {
+    await _controller!.addImage(
+        'flag-marker',
+        (await rootBundle.load('assets/symbols/flag-marker.png'))
+            .buffer
+            .asUint8List());
 
-    try {
-      // Add flag marker image
-      await _controller!.addImage(
-          'flag-marker',
-          (await rootBundle.load('assets/symbols/flag-marker.png'))
-              .buffer
-              .asUint8List());
-
-      // Add rally point if exists
-      if (widget.event.rallyPoint != null) {
-        final latLng =
-            LatLng(widget.event.rallyPoint!.lat, widget.event.rallyPoint!.lon);
-        await _controller!.addSymbol(
-          SymbolOptions(
-            geometry: latLng,
-            iconImage: 'flag-marker',
-            iconSize: kIsWeb ? 0.125 : 0.25,
-            iconAnchor: 'bottom-left',
-          ),
-        );
-        await _controller!.animateCamera(CameraUpdate.newLatLng(latLng));
-      }
-    } catch (e) {
-      debugPrint('Error setting up map: $e');
+    // Add rally point if exists
+    if (event.rallyPoint != null) {
+      final latLng = LatLng(event.rallyPoint!.lat, event.rallyPoint!.lon);
+      await _controller!.addSymbol(
+        SymbolOptions(
+          geometry: latLng,
+          iconImage: 'flag-marker',
+          iconSize: kIsWeb ? 0.125 : 0.25,
+          iconAnchor: 'bottom-left',
+        ),
+      );
+      await _controller!.animateCamera(CameraUpdate.newLatLng(latLng));
     }
   }
 
@@ -88,10 +73,8 @@ class _EventDetailsMapState extends ConsumerState<EventDetailsMap> {
             MapLibreMap(
               styleString:
                   'https://api.maptiler.com/maps/08847b31-fc27-462a-b87e-2e8d8a700529/style.json?key=XYHvSt2RxwZPOxjSj98n',
-              onMapCreated: (controller) {
-                _controller = controller;
-              },
-              onStyleLoadedCallback: _setupMap,
+              onMapCreated: _onMapCreated,
+              onStyleLoadedCallback: () => _onStyleLoaded(widget.event),
               gestureRecognizers: null,
               dragEnabled: false,
               compassEnabled: false,
@@ -133,7 +116,7 @@ class _EventDetailsMapState extends ConsumerState<EventDetailsMap> {
               error: (_, __) => const SizedBox.shrink(),
             ),
             InkWell(
-              onTap: _showLiveMap,
+              onTap: widget.onShowRallyPointMap,
             )
           ],
         ),
