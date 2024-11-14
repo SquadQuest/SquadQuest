@@ -1,19 +1,19 @@
 import 'dart:async';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/friend.dart';
-import 'package:squadquest/models/user.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/components/event_rally_map.dart';
 import 'package:squadquest/components/friends_list.dart';
+import 'package:squadquest/components/event_live_map.dart';
 
 import 'event_details/providers.dart';
 import 'event_details/map.dart';
@@ -89,6 +89,15 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     }
   }
 
+  Future<void> _showLiveMap(Instance event) async {
+    return showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        enableDrag: false,
+        builder: (BuildContext context) => EventLiveMap(
+            eventId: widget.instanceId, rallyPoint: event.rallyPointLatLng));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -148,7 +157,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             currentUserId: session?.user.id,
             myRsvpStatus: myRsvpStatus,
             onShowRallyPointMap: () => _showRallyPointMap(eventAsync.value!),
-            onShowLiveMap: () {},
+            onShowLiveMap: () => _showLiveMap(eventAsync.value!),
           ),
       ],
       floatingActionButton: FloatingActionButton(
