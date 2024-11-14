@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/friend.dart';
+import 'package:squadquest/models/user.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
@@ -31,6 +33,8 @@ class EventDetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
+  late Timer _refreshEventPointsTimer;
+
   void _sendInvitations(List<InstanceMember> excludeRsvps) async {
     final inviteUserIds = await showModalBottomSheet<List<String>>(
         context: context,
@@ -83,6 +87,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             'Rally point ${updatedRallyPoint == null ? 'cleared' : 'updated'}!'),
       ));
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // listen for location updates
+    _refreshEventPointsTimer = Timer.periodic(const Duration(seconds: 60),
+        (Timer t) => ref.invalidate(eventPointsProvider(widget.instanceId)));
+  }
+
+  @override
+  void dispose() {
+    _refreshEventPointsTimer.cancel();
+    super.dispose();
   }
 
   @override
