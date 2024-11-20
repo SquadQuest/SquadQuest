@@ -399,6 +399,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visibility = ref.watch(_visibilityProvider);
+
     return AppScaffold(
       title: _editingInstance.when(
         data: (Instance? instance) =>
@@ -434,6 +436,12 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      FormVisibilityPicker(
+                          labelText: 'Visibility for event',
+                          valueProvider: _visibilityProvider),
+                      const SizedBox(
+                        height: 24,
+                      ),
                       TextFormField(
                         autofocus: autoFocusField == AutoFocusField.title,
                         textInputAction: TextInputAction.done,
@@ -449,7 +457,12 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                         },
                         controller: _titleController,
                       ),
-                      FormTopicPicker(valueProvider: _topicProvider),
+                      if (visibility != InstanceVisibility.private) ...[
+                        const SizedBox(
+                          height: 24,
+                        ),
+                        FormTopicPicker(valueProvider: _topicProvider),
+                      ],
                       const SizedBox(
                         height: 24,
                       ),
@@ -507,12 +520,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                         controller: _locationDescriptionController,
                       ),
                       const SizedBox(height: 24),
-                      FormVisibilityPicker(
-                          labelText: 'Visibility of this posting',
-                          valueProvider: _visibilityProvider),
-                      const SizedBox(
-                        height: 24,
-                      ),
                       TextFormField(
                         textInputAction: TextInputAction.done,
                         autofillHints: const [AutofillHints.url],
