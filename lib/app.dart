@@ -100,6 +100,16 @@ class MyApp extends ConsumerWidget {
             case 'rsvp':
               goToNotificationRoute(ref, '/events/${data['event']['id']}');
             case 'invitation':
+              // Write to calendar when invitation notification is opened
+              if (ref.read(calendarWritingEnabledProvider)) {
+                final instance = Instance.fromMap(data['event']);
+                final subscription = InstanceMember.fromMap(data['invitation']);
+
+                CalendarController.instance.upsertEvent(
+                  instance: instance,
+                  subscription: subscription,
+                );
+              }
               goToNotificationRoute(
                   ref, '/events/${data['invitation']['instance']}');
             case 'friend-request-received':
