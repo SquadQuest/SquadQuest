@@ -309,6 +309,11 @@
 						LastSwiftMigration = 1100;
 					};
 				};
+				SystemCapabilities = {
+					com.apple.BackgroundModes = {
+						enabled = 1;
+					};
+				};
 			};
 			buildConfigurationList = 97C146E91CF9000F007C117D /* Build configuration list for PBXProject "Runner" */;
 			compatibilityVersion = "Xcode 9.3";

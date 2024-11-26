@@ -9,6 +9,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/router.dart';
@@ -24,6 +25,40 @@ import 'package:squadquest/interop/set_handler.stub.dart'
 export 'package:firebase_messaging/firebase_messaging.dart' show RemoteMessage;
 
 typedef FirebaseStreamRecord = ({String type, RemoteMessage message});
+
+const String backgroundCalendarTask = 'squadquest.calendar.write';
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    try {
+      switch (task) {
+        case backgroundCalendarTask:
+          if (inputData != null) {
+            final prefs = await SharedPreferences.getInstance();
+            final calendarWritingEnabled =
+                prefs.getString('calendarWritingEnabled') == 'true';
+
+            if (calendarWritingEnabled) {
+              final instance = Instance.fromMap(jsonDecode(inputData['event']));
+              final subscription =
+                  InstanceMember.fromMap(jsonDecode(inputData['invitation']));
+
+              await CalendarController.instance.upsertEvent(
+                instance: instance,
+                subscription: subscription,
+              );
+            }
+          }
+          break;
+      }
+      return true;
+    } catch (error) {
+      logger.e('Background task failed', error: error);
+      return false;
+    }
+  });
+}
 
 final firebaseAppProvider = Provider<FirebaseApp>((_) {
   throw UnimplementedError();
@@ -49,6 +84,11 @@ Future<FirebaseApp> buildFirebaseApp() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Initialize Workmanager for background tasks
+  if (!kIsWeb) {
+    await Workmanager().initialize(callbackDispatcher);
+  }
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   return app;
@@ -72,19 +112,35 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         message.data['json'] == null ? {} : jsonDecode(message.data['json']);
 
     try {
-      // Check if calendar writing is enabled
-      final prefs = await SharedPreferences.getInstance();
-      final calendarWritingEnabled =
-          prefs.getString('calendarWritingEnabled') == 'true';
-
-      if (calendarWritingEnabled) {
-        final instance = Instance.fromMap(data['event']);
-        final subscription = InstanceMember.fromMap(data['invitation']);
-
-        await CalendarController.instance.upsertEvent(
-          instance: instance,
-          subscription: subscription,
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        // On iOS, schedule a background task for calendar writing
+        await Workmanager().registerOneOffTask(
+          'calendar_write_${message.messageId}',
+          backgroundCalendarTask,
+          inputData: {
+            'event': jsonEncode(data['event']),
+            'invitation': jsonEncode(data['invitation']),
+          },
+          constraints: Constraints(
+            networkType: NetworkType.connected,
+            requiresBatteryNotLow: false,
+          ),
         );
+      } else {
+        // On Android, write directly in background handler
+        final prefs = await SharedPreferences.getInstance();
+        final calendarWritingEnabled =
+            prefs.getString('calendarWritingEnabled') == 'true';
+
+        if (calendarWritingEnabled) {
+          final instance = Instance.fromMap(data['event']);
+          final subscription = InstanceMember.fromMap(data['invitation']);
+
+          await CalendarController.instance.upsertEvent(
+            instance: instance,
+            subscription: subscription,
+          );
+        }
       }
     } catch (error) {
       logger.e('Error writing calendar event in background', error: error);

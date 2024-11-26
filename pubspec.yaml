@@ -68,6 +68,11 @@ dependencies:
   timezone: ^0.9.4
   badges: ^3.1.2
   flutter_exit_app: ^1.1.4
+  workmanager:
+    git:
+      url: https://github.com/fluttercommunity/flutter_workmanager.git
+      ref: b783000
+
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
