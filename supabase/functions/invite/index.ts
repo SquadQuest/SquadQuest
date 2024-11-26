@@ -141,7 +141,7 @@ serve(async (request) => {
           body:
             `${insertedInvitation.created_by.first_name} ${insertedInvitation.created_by.last_name} has invited you!`,
           url: `https://squadquest.app/events/${event.id}`,
-          payload: { invitation: insertedInvitation },
+          payload: { invitation: insertedInvitation, event },
           collapseKey: "invitation",
         });
       } catch (error) {
