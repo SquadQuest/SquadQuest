@@ -154,7 +154,11 @@ class _MobileCalendarController implements CalendarController {
         await op.calendar.createOrUpdateEvent(Event(
           calendarId,
           eventId: existingEventId,
-          title: event.title,
+          title: switch (op.subscription!.status) {
+            InstanceMemberStatus.maybe => '[maybe] ${event.title}',
+            InstanceMemberStatus.invited => '[invited] ${event.title}',
+            _ => event.title,
+          },
           location: event.locationDescription,
           description:
               "${event.notes}\n\nSquadQuest event: https://squadquest.app/events/${event.id!}",
@@ -163,10 +167,30 @@ class _MobileCalendarController implements CalendarController {
           reminders: [
             Reminder(minutes: 60),
           ],
+          availability: switch (op.subscription!.status) {
+            InstanceMemberStatus.omw => Availability.Busy,
+            InstanceMemberStatus.yes => Availability.Busy,
+            InstanceMemberStatus.maybe => Availability.Free,
+            InstanceMemberStatus.no => Availability.Free,
+            InstanceMemberStatus.invited => Availability.Free,
+          },
           status: switch (event.status) {
-            InstanceStatus.draft => null,
-            InstanceStatus.live => EventStatus.Confirmed,
+            InstanceStatus.draft => EventStatus.Tentative,
             InstanceStatus.canceled => EventStatus.Canceled,
+            InstanceStatus.live
+                when (op.subscription!.status == InstanceMemberStatus.omw) =>
+              EventStatus.Confirmed,
+            InstanceStatus.live
+                when (op.subscription!.status == InstanceMemberStatus.yes) =>
+              EventStatus.Confirmed,
+            InstanceStatus.live
+                when (op.subscription!.status == InstanceMemberStatus.maybe) =>
+              EventStatus.Confirmed,
+            InstanceStatus.live
+                when (op.subscription!.status ==
+                    InstanceMemberStatus.invited) =>
+              EventStatus.Confirmed,
+            _ => EventStatus.None,
           },
           attendees: [
             if (op.subscription != null && user != null)
