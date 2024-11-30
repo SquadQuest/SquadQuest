@@ -259,8 +259,8 @@ packages:
     description:
       path: "."
       ref: develop
-      resolved-ref: "6a9733c35fb693a5fad93ad641886e393a64de11"
-      url: "https://github.com/builttoroam/device_calendar"
+      resolved-ref: f4ecba6d2d5ad13cf8a315940062168756d1e276
+      url: "https://github.com/JarvusInnovations/device_calendar"
     source: git
     version: "4.3.1"
   dio:

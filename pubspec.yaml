@@ -58,7 +58,7 @@ dependencies:
   flutter_timezone: ^3.0.1
   device_calendar:
     git:
-      url: https://github.com/builttoroam/device_calendar
+      url: https://github.com/JarvusInnovations/device_calendar
       ref: develop
   sentry_flutter: ^8.9.0
   dio: ^5.7.0
