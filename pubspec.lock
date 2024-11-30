@@ -38,6 +38,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.11.3"
+  any_syntax_highlighter:
+    dependency: transitive
+    description:
+      name: any_syntax_highlighter
+      sha256: "9afce8a45ae6eaf2a64ce6a93f0d4b3730cb9ff80506aefec30efb17f332a7f1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.13"
   app_links:
     dependency: transitive
     description:
@@ -86,6 +94,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.6.0"
+  art_buttons_kh:
+    dependency: transitive
+    description:
+      name: art_buttons_kh
+      sha256: f06a3bf2e27856ff3d4c7bb650b517168dfab66e78014ddf78d3669cd2f5ca60
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.7"
   async:
     dependency: transitive
     description:
@@ -263,6 +279,14 @@ packages:
       url: "https://github.com/JarvusInnovations/device_calendar"
     source: git
     version: "4.3.1"
+  device_frame_plus:
+    dependency: transitive
+    description:
+      name: device_frame_plus
+      sha256: "6b68d43a30a08465f86f33592ac60efcd1499979ef1310fbe3445d94f367297b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.2+1"
   dio:
     dependency: "direct main"
     description:
@@ -295,6 +319,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.5"
+  fading_edge_scrollview:
+    dependency: transitive
+    description:
+      name: fading_edge_scrollview
+      sha256: "1f84fe3ea8e251d00d5735e27502a6a250e4aa3d3b330d3fdcb475af741464ef"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.1"
   fake_async:
     dependency: transitive
     description:
@@ -598,6 +630,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "14.3.0"
+  google_fonts:
+    dependency: transitive
+    description:
+      name: google_fonts
+      sha256: "2776c66b3e97c6cdd58d1bd3281548b074b64f1fd5c8f82391f7456e38849567"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.5"
   gotrue:
     dependency: transitive
     description:
@@ -726,6 +766,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.1+1"
+  inspector:
+    dependency: transitive
+    description:
+      name: inspector
+      sha256: "40ba0ac1c819c85139bfec9d1e283804581a8985c91f19d00e93212cf29226b1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   intl:
     dependency: "direct main"
     description:
@@ -918,6 +966,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.6"
+  modal_bottom_sheet:
+    dependency: transitive
+    description:
+      name: modal_bottom_sheet
+      sha256: eac66ef8cb0461bf069a38c5eb0fa728cee525a531a8304bd3f7b2185407c67e
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
+  nested:
+    dependency: transitive
+    description:
+      name: nested
+      sha256: "03bac4c528c64c95c722ec99280375a6f2fc708eec17c7b3f07253b626cd2a20"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   open_location_code:
     dependency: "direct main"
     description:
@@ -1078,6 +1142,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  provider:
+    dependency: transitive
+    description:
+      name: provider
+      sha256: c8a055ee5ce3fd98d6fc872478b03823ffdb448699c6ebdbbc71d59b596fd48c
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.2"
   pub_semver:
     dependency: transitive
     description:
@@ -1267,6 +1339,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  storybook_toolkit:
+    dependency: "direct dev"
+    description:
+      name: storybook_toolkit
+      sha256: dc531a47c6cf4a8cf7b1ef1ab4f8051dfe7ee779479fd04624ff38b2571bc9a1
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.2"
   stream_channel:
     dependency: transitive
     description:
@@ -1443,6 +1523,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.1"
+  vader_popup:
+    dependency: transitive
+    description:
+      name: vader_popup
+      sha256: c140b6efe4bbcc7d3a0e3482687f5c34a4ffc33f921e07ab33cf4201db09a996
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.2+1"
   vector_math:
     dependency: transitive
     description:
