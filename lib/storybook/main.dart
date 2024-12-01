@@ -91,47 +91,47 @@ class StorybookApp extends StatelessWidget {
 
             // Home Screen
             Story(
-              name: 'Home/Main v1',
+              name: 'Redesign/Home/Main v1',
               description: 'Improved home screen with modern event filtering',
               builder: (context) => const HomeScreenV1(),
             ),
             Story(
-              name: 'Home/Main v2',
+              name: 'Redesign/Home/Main v2',
               description: 'With additional event details',
               builder: (context) => const HomeScreenV2(),
             ),
 
             // Event screens
             Story(
-              name: 'Events/Create Event',
+              name: 'Redesign/Events/Create Event',
               description:
                   'Improved event creation form with better organization',
               builder: (context) => const CreateEventScreen(),
             ),
             Story(
-              name: 'Events/Event Details',
+              name: 'Redesign/Events/Event Details',
               description: 'Improved event details screen with modern layout',
               builder: (context) => const EventDetailsScreen(),
             ),
             Story(
-              name: 'Events/RSVP Interactions',
+              name: 'Redesign/Events/RSVP Interactions',
               description: 'Interactive demo of RSVP and menu interactions',
               builder: (context) => const RsvpInteractionsScreen(),
             ),
             Story(
-              name: 'Events/Event Chat',
+              name: 'Redesign/Events/Event Chat',
               description: 'Improved event chat with modern messaging features',
               builder: (context) => const EventChatScreen(),
             ),
 
-            // Profile screens
+            // Profile & Settings screens
             Story(
-              name: 'Profile/Create Profile',
+              name: 'Redesign/Profile/Create Profile',
               description: 'Initial profile setup with welcome message',
               builder: (context) => const EditProfileScreen(isNewProfile: true),
             ),
             Story(
-              name: 'Profile/Edit Profile',
+              name: 'Redesign/Profile/Edit Profile',
               description: 'Profile editing for existing users',
               builder: (context) =>
                   const EditProfileScreen(isNewProfile: false),
@@ -139,19 +139,19 @@ class StorybookApp extends StatelessWidget {
 
             // Friends screens
             Story(
-              name: 'Friends/Friends List',
+              name: 'Redesign/Friends/Friends List',
               description: 'Improved friends list with requests and status',
               builder: (context) => const FriendsListScreen(),
             ),
 
             // Topics screens
             Story(
-              name: 'Topics/Topics List v1',
+              name: 'Redesign/Topics/Topics List v1',
               description: 'Improved topics browser with grid layout',
               builder: (context) => const TopicsListScreenV1(),
             ),
             Story(
-              name: 'Topics/Topics List v2',
+              name: 'Redesign/Topics/Topics List v2',
               description: 'With search',
               builder: (context) => const TopicsListScreenV2(),
             ),
