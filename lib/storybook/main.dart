@@ -22,6 +22,7 @@ import 'package:squadquest/storybook/screens/topics/topics_list.v1.dart';
 import 'package:squadquest/storybook/screens/topics/topics_list.v2.dart';
 import 'package:squadquest/storybook/screens/home/home_screen.v1.dart';
 import 'package:squadquest/storybook/screens/home/home_screen.v2.dart';
+import 'package:squadquest/storybook/screens/settings/settings_screen.dart';
 
 import 'mocks.dart';
 
@@ -135,6 +136,12 @@ class StorybookApp extends StatelessWidget {
               description: 'Profile editing for existing users',
               builder: (context) =>
                   const EditProfileScreen(isNewProfile: false),
+            ),
+            Story(
+              name: 'Redesign/Profile/Settings',
+              description:
+                  'Redesigned settings with modern layout and grouping',
+              builder: (context) => const SettingsScreen(),
             ),
 
             // Friends screens
