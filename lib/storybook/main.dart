@@ -16,6 +16,7 @@ import 'package:squadquest/storybook/screens/events/create_event.dart';
 import 'package:squadquest/storybook/screens/events/event_details.dart';
 import 'package:squadquest/storybook/screens/events/rsvp_interactions.dart';
 import 'package:squadquest/storybook/screens/events/event_chat.dart';
+import 'package:squadquest/storybook/screens/events/attendees_demo.dart';
 import 'package:squadquest/storybook/screens/profile/edit_profile.dart';
 import 'package:squadquest/storybook/screens/friends/friends_list.dart';
 import 'package:squadquest/storybook/screens/topics/topics_list.v1.dart';
@@ -132,6 +133,11 @@ class StorybookApp extends StatelessWidget {
               name: 'Redesign/Events/Event Chat',
               description: 'Improved event chat with modern messaging features',
               builder: (context) => const EventChatScreen(),
+            ),
+            Story(
+              name: 'Redesign/Events/Attendees List',
+              description: 'Attendee list with search and filtering',
+              builder: (context) => const AttendeesDemoScreen(),
             ),
 
             // Profile & Settings screens
