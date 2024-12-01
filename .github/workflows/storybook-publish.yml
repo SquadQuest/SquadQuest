@@ -33,6 +33,9 @@ jobs:
       - name: Get depedencies
         run: fvm flutter pub get
 
+      - name: Generate .env
+        run: touch .env
+
       - name: Build storybook for web
         run: fvm flutter build web --dart-define=PRODUCTION_LOGGING=true --target=lib/storybook/main.dart
 
