@@ -8,6 +8,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
 jobs:
   storybook-publish:
     runs-on: ubuntu-latest
