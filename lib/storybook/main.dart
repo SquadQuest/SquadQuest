@@ -48,13 +48,6 @@ class StorybookApp extends StatelessWidget {
             ),
           ),
           stories: [
-            // Home Screen
-            Story(
-              name: 'Home/Main',
-              description: 'Improved home screen with modern event filtering',
-              builder: (context) => const HomeScreen(),
-            ),
-
             // Real screens with mock data
             Story(
               name: 'Existing Screens/Topics Screen',
@@ -92,6 +85,13 @@ class StorybookApp extends StatelessWidget {
               description:
                   'Banner you might see on screens if you denied notification permission',
               builder: (context) => const MockScreenWithNotificationBanner(),
+            ),
+
+            // Home Screen
+            Story(
+              name: 'Home/Main',
+              description: 'Improved home screen with modern event filtering',
+              builder: (context) => const HomeScreen(),
             ),
 
             // Event screens
