@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:squadquest/storybook/components/modals/share_modal.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
+
+  void _showShareModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const ShareModal(),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -104,6 +112,12 @@ class AppDrawer extends ConsumerWidget {
                       label: 'Find Friends',
                       route: 'map',
                     ),
+                    _DrawerItem(
+                      icon: Icons.share_outlined,
+                      selectedIcon: Icons.share,
+                      label: 'Share SquadQuest',
+                      onTap: () => _showShareModal(context),
+                    ),
                   ],
                 ),
                 _buildSection(
@@ -196,8 +210,11 @@ class AppDrawer extends ConsumerWidget {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 28),
       onTap: () {
-        // Handle navigation
         Navigator.pop(context);
+        item.onTap?.call();
+        if (item.route != null) {
+          // Handle navigation
+        }
       },
     );
   }
@@ -221,7 +238,6 @@ class AppDrawer extends ConsumerWidget {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         onTap: () {
-          // Handle sign out
           Navigator.pop(context);
         },
       ),
@@ -245,14 +261,16 @@ class _DrawerItem {
   final IconData icon;
   final IconData selectedIcon;
   final String label;
-  final String route;
+  final String? route;
+  final VoidCallback? onTap;
   final bool isSelected;
 
   const _DrawerItem({
     required this.icon,
     required this.selectedIcon,
     required this.label,
-    required this.route,
+    this.route,
+    this.onTap,
     this.isSelected = false,
   });
 }
