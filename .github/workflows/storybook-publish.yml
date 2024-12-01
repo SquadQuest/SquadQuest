@@ -1,0 +1,45 @@
+name: 'Storybook: Publish'
+
+on:
+  push:
+    branches: [ develop ]
+
+
+jobs:
+  builds-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Flutter Version Management CLI
+        uses: flutter-actions/setup-fvm@v1
+
+      - name: Install Flutter SDK
+        run: fvm install
+
+      - name: Activate Flutter SDK
+        run: fvm use --skip-pub-get
+
+      - name: Get depedencies
+        run: fvm flutter pub get
+
+      - name: Build storybook for web
+        run: fvm flutter build web --dart-define=PRODUCTION_LOGGING=true --target=lib/storybook/main.dart
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+            service_account: 'storybook-github-action@squadquest-d8665.iam.gserviceaccount.com'
+            workload_identity_provider: 'projects/902139539375/locations/global/workloadIdentityPools/github/providers/storybook-github-actions'
+
+      - uses: 'google-github-actions/upload-cloud-storage@v2'
+        with:
+            path: 'build/web'
+            destination: 'storybook.squadquest.app'
+            parent: false
