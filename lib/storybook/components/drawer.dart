@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:squadquest/storybook/components/modals/share_modal.dart';
 
 class AppDrawer extends ConsumerWidget {
@@ -10,6 +11,13 @@ class AppDrawer extends ConsumerWidget {
       context: context,
       builder: (context) => const ShareModal(),
     );
+  }
+
+  void _openDiscord() async {
+    final uri = Uri.parse('https://discord.gg/4b3d2zpSWY');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
   }
 
   @override
@@ -147,6 +155,18 @@ class AppDrawer extends ConsumerWidget {
                       selectedIcon: Icons.settings,
                       label: 'Settings',
                       route: 'settings',
+                    ),
+                  ],
+                ),
+                _buildSection(
+                  context,
+                  title: 'Community',
+                  items: [
+                    _DrawerItem(
+                      icon: Icons.discord,
+                      selectedIcon: Icons.discord,
+                      label: 'Join Discord',
+                      onTap: _openDiscord,
                     ),
                   ],
                 ),
