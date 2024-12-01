@@ -19,6 +19,7 @@ import 'package:squadquest/storybook/screens/events/event_chat.dart';
 import 'package:squadquest/storybook/screens/profile/edit_profile.dart';
 import 'package:squadquest/storybook/screens/friends/friends_list.dart';
 import 'package:squadquest/storybook/screens/topics/topics_list.dart';
+import 'package:squadquest/storybook/screens/home/home_screen.dart';
 
 import 'mocks.dart';
 
@@ -47,6 +48,13 @@ class StorybookApp extends StatelessWidget {
             ),
           ),
           stories: [
+            // Home Screen
+            Story(
+              name: 'Home/Main',
+              description: 'Improved home screen with modern event filtering',
+              builder: (context) => const HomeScreen(),
+            ),
+
             // Real screens with mock data
             Story(
               name: 'Existing Screens/Topics Screen',
