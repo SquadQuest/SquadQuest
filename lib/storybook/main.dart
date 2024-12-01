@@ -17,6 +17,7 @@ import 'package:squadquest/storybook/screens/events/event_details.dart';
 import 'package:squadquest/storybook/screens/events/rsvp_interactions.dart';
 import 'package:squadquest/storybook/screens/events/event_chat.dart';
 import 'package:squadquest/storybook/screens/profile/edit_profile.dart';
+import 'package:squadquest/storybook/screens/friends/friends_list.dart';
 
 import 'mocks.dart';
 
@@ -118,6 +119,13 @@ class StorybookApp extends StatelessWidget {
               description: 'Profile editing for existing users',
               builder: (context) =>
                   const EditProfileScreen(isNewProfile: false),
+            ),
+
+            // Friends screens
+            Story(
+              name: 'Friends/Friends List',
+              description: 'Improved friends list with requests and status',
+              builder: (context) => const FriendsListScreen(),
             ),
           ],
         ));
