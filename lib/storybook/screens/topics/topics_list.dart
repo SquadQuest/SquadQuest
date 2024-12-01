@@ -11,125 +11,77 @@ class TopicsListScreen extends ConsumerStatefulWidget {
 }
 
 class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
-  late List<_MockTopic> subscribedTopics;
-  late List<_MockTopic> suggestedTopics;
-  _MockTopic? movingTopic;
-  bool isSubscribing = false;
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
 
-  // Grid layout constants
-  static const double gridSpacing = 16.0;
-  static const double cardAspectRatio = 1.5;
-  static const int crossAxisCount = 2;
+  // Mock topics data
+  final List<_MockTopic> _subscribedTopics = [
+    _MockTopic(
+      name: 'Board Games',
+      description: 'Strategy, party games, and tabletop fun',
+      events: 5,
+      isSubscribed: true,
+    ),
+    _MockTopic(
+      name: 'Hiking',
+      description: 'Trail adventures and outdoor exploration',
+      events: 3,
+      isSubscribed: true,
+    ),
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    subscribedTopics = [
-      _MockTopic(
-        id: '1',
-        name: 'Board Games',
-        events: 5,
-        isSubscribed: true,
-      ),
-      _MockTopic(
-        id: '2',
-        name: 'Hiking',
-        events: 3,
-        isSubscribed: true,
-      ),
-      _MockTopic(
-        id: '3',
-        name: 'Photography',
-        events: 2,
-        isSubscribed: true,
-      ),
-    ];
+  final List<_MockTopic> _suggestedTopics = [
+    _MockTopic(
+      name: 'Photography',
+      description: 'Capture moments and share techniques',
+      events: 2,
+      isSubscribed: false,
+    ),
+    _MockTopic(
+      name: 'Book Club',
+      description: 'Read and discuss together',
+      events: 1,
+      isSubscribed: false,
+    ),
+  ];
 
-    suggestedTopics = [
-      _MockTopic(
-        id: '4',
-        name: 'Rock Climbing',
-        events: 4,
-        isSubscribed: false,
-      ),
-      _MockTopic(
-        id: '5',
-        name: 'Movie Nights',
-        events: 2,
-        isSubscribed: false,
-      ),
-      _MockTopic(
-        id: '6',
-        name: 'Book Club',
-        events: 1,
-        isSubscribed: false,
-      ),
-      _MockTopic(
-        id: '7',
-        name: 'Cooking',
-        events: 3,
-        isSubscribed: false,
-      ),
-      _MockTopic(
-        id: '8',
-        name: 'Cycling',
-        events: 2,
-        isSubscribed: false,
-      ),
-      _MockTopic(
-        id: '9',
-        name: 'Art Gallery',
-        events: 1,
-        isSubscribed: false,
-      ),
-    ];
-  }
+  // Additional topics only shown in search
+  final List<_MockTopic> _allTopics = [
+    _MockTopic(
+      name: 'Cooking',
+      description: 'Share recipes and cook together',
+      events: 8,
+      isSubscribed: false,
+    ),
+    _MockTopic(
+      name: 'Language Exchange',
+      description: 'Practice languages with native speakers',
+      events: 4,
+      isSubscribed: false,
+    ),
+    _MockTopic(
+      name: 'Movie Nights',
+      description: 'Watch and discuss films together',
+      events: 6,
+      isSubscribed: false,
+    ),
+    _MockTopic(
+      name: 'Tech Talks',
+      description: 'Share knowledge and learn new technologies',
+      events: 3,
+      isSubscribed: false,
+    ),
+  ];
 
-  double _calculateGridHeight(int itemCount, double availableWidth) {
-    if (itemCount == 0) return 0;
-
-    final cardWidth = (availableWidth - gridSpacing) / crossAxisCount;
-    final cardHeight = cardWidth / cardAspectRatio;
-    final rowCount = (itemCount / crossAxisCount).ceil();
-
-    return rowCount * cardHeight + (rowCount - 1) * gridSpacing;
-  }
-
-  void _toggleSubscription(_MockTopic topic) async {
-    setState(() {
-      movingTopic = topic;
-      isSubscribing = !topic.isSubscribed;
-    });
-
-    // Wait for hero animation to start
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    final newTopic = _MockTopic(
-      id: topic.id,
-      name: topic.name,
-      events: topic.events,
-      isSubscribed: !topic.isSubscribed,
-    );
-
-    setState(() {
-      if (!topic.isSubscribed) {
-        // Remove from suggested
-        suggestedTopics.remove(topic);
-        // Add to subscribed
-        subscribedTopics.add(newTopic);
-      } else {
-        // Remove from subscribed
-        subscribedTopics.remove(topic);
-        // Add to suggested
-        suggestedTopics.add(newTopic);
-      }
-    });
-
-    // Reset moving state after animation
-    await Future.delayed(const Duration(milliseconds: 300));
-    setState(() {
-      movingTopic = null;
-    });
+  List<_MockTopic> get _searchResults {
+    if (_searchQuery.isEmpty) return [];
+    final query = _searchQuery.toLowerCase();
+    return [..._subscribedTopics, ..._suggestedTopics, ..._allTopics]
+        .where((topic) {
+      return topic.name.toLowerCase().contains(query) ||
+          topic.description.toLowerCase().contains(query);
+    }).toList();
   }
 
   @override
@@ -142,255 +94,256 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
 
     return AppScaffold(
       title: 'Topics',
+      actions: [
+        IconButton(
+          icon: Icon(_isSearching ? Icons.close : Icons.search),
+          onPressed: () {
+            setState(() {
+              _isSearching = !_isSearching;
+              if (!_isSearching) {
+                _searchQuery = '';
+                _searchController.clear();
+              }
+            });
+          },
+        ),
+      ],
       body: Column(
         children: [
           // Search Bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Find Your Interests',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Subscribe to topics you\'re interested in to discover relevant events',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                ),
-                const SizedBox(height: 16),
-                SearchBar(
-                  hintText: 'Search topics...',
-                  leading: const Icon(Icons.search),
-                  padding: const MaterialStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 16),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: _isSearching ? 72 : 0,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _isSearching ? 1.0 : 0.0,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Search topics...',
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.search),
                   ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
                 ),
-              ],
+              ),
             ),
           ),
 
-          // Topics List
+          // Content
           Expanded(
-            child: showEmptyState
-                ? _buildEmptyState(context)
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final availableWidth =
-                          constraints.maxWidth - 32; // Padding
-                      final subscribedHeight = _calculateGridHeight(
-                          subscribedTopics.length, availableWidth);
-                      final suggestedHeight = _calculateGridHeight(
-                          suggestedTopics.length, availableWidth);
-
-                      return ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          // Subscribed Topics
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    'My Topics',
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primaryContainer,
-                                      borderRadius: BorderRadius.circular(12),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _isSearching && _searchQuery.isNotEmpty
+                  ? _buildSearchResults()
+                  : showEmptyState
+                      ? _buildEmptyState(context)
+                      : CustomScrollView(
+                          slivers: [
+                            // My Topics Section
+                            SliverPadding(
+                              padding: const EdgeInsets.all(16),
+                              sliver: SliverToBoxAdapter(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'My Topics',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            _subscribedTopics.length.toString(),
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimaryContainer,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    child: Text(
-                                      subscribedTopics.length.toString(),
-                                      style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimaryContainer,
+                                    const SizedBox(height: 16),
+                                    if (_subscribedTopics.isEmpty)
+                                      _buildEmptySection(
+                                        context,
+                                        icon: Icons.interests_outlined,
+                                        title: 'No Topics Yet',
+                                        description:
+                                            'Subscribe to topics you\'re interested in to discover relevant events',
+                                      )
+                                    else
+                                      _buildTopicGrid(
+                                        context,
+                                        topics: _subscribedTopics,
                                       ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                height: subscribedHeight,
-                                curve: Curves.easeInOut,
-                                child: _buildTopicGrid(
-                                  context,
-                                  topics: subscribedTopics,
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 32),
+                            ),
 
-                          // Suggested Topics
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Suggested Topics',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: 16),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                height: suggestedHeight,
-                                curve: Curves.easeInOut,
-                                child: _buildTopicGrid(
-                                  context,
-                                  topics: suggestedTopics,
+                            // Suggested Topics Section
+                            SliverPadding(
+                              padding: const EdgeInsets.all(16),
+                              sliver: SliverToBoxAdapter(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Suggested Topics',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    if (_suggestedTopics.isEmpty)
+                                      _buildEmptySection(
+                                        context,
+                                        icon: Icons.recommend,
+                                        title: 'No Suggestions Yet',
+                                        description:
+                                            'Check back later for personalized topic suggestions',
+                                      )
+                                    else
+                                      _buildTopicGrid(
+                                        context,
+                                        topics: _suggestedTopics,
+                                      ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                            ),
+                          ],
+                        ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTopicGrid(
-    BuildContext context, {
-    required List<_MockTopic> topics,
-  }) {
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        mainAxisSpacing: gridSpacing,
-        crossAxisSpacing: gridSpacing,
-        childAspectRatio: cardAspectRatio,
-      ),
-      itemCount: topics.length,
-      itemBuilder: (context, index) {
-        final topic = topics[index];
-        final isMoving = movingTopic?.id == topic.id;
-
-        return Hero(
-          tag: 'topic-${topic.id}',
-          flightShuttleBuilder: (
-            BuildContext flightContext,
-            Animation<double> animation,
-            HeroFlightDirection flightDirection,
-            BuildContext fromHeroContext,
-            BuildContext toHeroContext,
-          ) {
-            return AnimatedBuilder(
-              animation: animation,
-              builder: (context, child) {
-                return Material(
-                  color: Colors.transparent,
-                  child: _buildTopicCard(
-                    context,
-                    topic,
-                    isMoving: true,
-                    opacity: isSubscribing
-                        ? flightDirection == HeroFlightDirection.push
-                            ? animation.value
-                            : 1 - animation.value
-                        : flightDirection == HeroFlightDirection.push
-                            ? 1 - animation.value
-                            : animation.value,
+  Widget _buildSearchResults() {
+    final results = _searchResults;
+    if (results.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Topics Found',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try a different search term',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
-                );
-              },
-            );
-          },
-          child: _buildTopicCard(
-            context,
-            topic,
-            isMoving: isMoving,
-            opacity: isMoving ? 0.0 : 1.0,
+            ),
+          ],
+        ),
+      );
+    }
+
+    final subscribedResults =
+        results.where((topic) => topic.isSubscribed).toList();
+    final unsubscribedResults =
+        results.where((topic) => !topic.isSubscribed).toList();
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (subscribedResults.isNotEmpty) ...[
+          Text(
+            'My Topics',
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-        );
-      },
+          const SizedBox(height: 16),
+          _buildTopicGrid(context, topics: subscribedResults),
+        ],
+        if (unsubscribedResults.isNotEmpty) ...[
+          if (subscribedResults.isNotEmpty) const SizedBox(height: 32),
+          Text(
+            'Available Topics',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 16),
+          _buildTopicGrid(context, topics: unsubscribedResults),
+        ],
+      ],
     );
   }
 
-  Widget _buildTopicCard(
-    BuildContext context,
-    _MockTopic topic, {
-    bool isMoving = false,
-    double opacity = 1.0,
+  Widget _buildEmptySection(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String description,
   }) {
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 300),
-      opacity: opacity,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: isMoving ? null : () => _toggleSubscription(topic),
-          child: Stack(
-            children: [
-              // Topic Content
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      topic.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${topic.events} events',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const Spacer(),
-                    if (topic.isSubscribed)
-                      Chip(
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        label: const Text('Subscribed'),
-                        avatar: const Icon(Icons.check, size: 16),
-                      ),
-                  ],
-                ),
-              ),
-
-              // Subscribe Button
-              if (!topic.isSubscribed)
-                Positioned(
-                  right: 4,
-                  top: 4,
-                  child: IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed:
-                        isMoving ? null : () => _toggleSubscription(topic),
-                  ),
-                ),
-            ],
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 48,
+            color: Theme.of(context).colorScheme.primary,
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              description,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -426,17 +379,89 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
       ),
     );
   }
+
+  Widget _buildTopicGrid(
+    BuildContext context, {
+    required List<_MockTopic> topics,
+  }) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 1.5,
+      ),
+      itemCount: topics.length,
+      itemBuilder: (context, index) {
+        final topic = topics[index];
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {},
+            child: Stack(
+              children: [
+                // Topic Content
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        topic.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        topic.description,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Spacer(),
+                      if (topic.isSubscribed)
+                        Chip(
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          label: const Text('Subscribed'),
+                          avatar: const Icon(Icons.check, size: 16),
+                        ),
+                    ],
+                  ),
+                ),
+
+                // Subscribe Button
+                if (!topic.isSubscribed)
+                  Positioned(
+                    right: 4,
+                    top: 4,
+                    child: IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () {},
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _MockTopic {
-  final String id;
   final String name;
+  final String description;
   final int events;
   final bool isSubscribed;
 
   _MockTopic({
-    required this.id,
     required this.name,
+    required this.description,
     required this.events,
     required this.isSubscribed,
   });
