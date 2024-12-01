@@ -16,6 +16,11 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
   _MockTopic? movingTopic;
   bool isSubscribing = false;
 
+  // Grid layout constants
+  static const double gridSpacing = 16.0;
+  static const double cardAspectRatio = 1.5;
+  static const int crossAxisCount = 2;
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +83,16 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
         isSubscribed: false,
       ),
     ];
+  }
+
+  double _calculateGridHeight(int itemCount, double availableWidth) {
+    if (itemCount == 0) return 0;
+
+    final cardWidth = (availableWidth - gridSpacing) / crossAxisCount;
+    final cardHeight = cardWidth / cardAspectRatio;
+    final rowCount = (itemCount / crossAxisCount).ceil();
+
+    return rowCount * cardHeight + (rowCount - 1) * gridSpacing;
   }
 
   void _toggleSubscription(_MockTopic topic) async {
@@ -172,82 +187,87 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
           Expanded(
             child: showEmptyState
                 ? _buildEmptyState(context)
-                : ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // Subscribed Topics
-                      AnimatedSize(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  'My Topics',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primaryContainer,
-                                    borderRadius: BorderRadius.circular(12),
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final availableWidth =
+                          constraints.maxWidth - 32; // Padding
+                      final subscribedHeight = _calculateGridHeight(
+                          subscribedTopics.length, availableWidth);
+                      final suggestedHeight = _calculateGridHeight(
+                          suggestedTopics.length, availableWidth);
+
+                      return ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          // Subscribed Topics
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'My Topics',
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
                                   ),
-                                  child: Text(
-                                    subscribedTopics.length.toString(),
-                                    style: TextStyle(
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
                                       color: Theme.of(context)
                                           .colorScheme
-                                          .onPrimaryContainer,
+                                          .primaryContainer,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      subscribedTopics.length.toString(),
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimaryContainer,
+                                      ),
                                     ),
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                height: subscribedHeight,
+                                curve: Curves.easeInOut,
+                                child: _buildTopicGrid(
+                                  context,
+                                  topics: subscribedTopics,
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
-                              child: _buildTopicGrid(
-                                key: ValueKey(subscribedTopics.length),
-                                context,
-                                topics: subscribedTopics,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
+                            ],
+                          ),
+                          const SizedBox(height: 32),
 
-                      // Suggested Topics
-                      AnimatedSize(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Suggested Topics',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 16),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
-                              child: _buildTopicGrid(
-                                key: ValueKey(suggestedTopics.length),
-                                context,
-                                topics: suggestedTopics,
+                          // Suggested Topics
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Suggested Topics',
+                                style: Theme.of(context).textTheme.titleMedium,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                              const SizedBox(height: 16),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                height: suggestedHeight,
+                                curve: Curves.easeInOut,
+                                child: _buildTopicGrid(
+                                  context,
+                                  topics: suggestedTopics,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
           ),
         ],
@@ -258,17 +278,14 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
   Widget _buildTopicGrid(
     BuildContext context, {
     required List<_MockTopic> topics,
-    Key? key,
   }) {
     return GridView.builder(
-      key: key,
-      shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 1.5,
+        crossAxisCount: crossAxisCount,
+        mainAxisSpacing: gridSpacing,
+        crossAxisSpacing: gridSpacing,
+        childAspectRatio: cardAspectRatio,
       ),
       itemCount: topics.length,
       itemBuilder: (context, index) {
