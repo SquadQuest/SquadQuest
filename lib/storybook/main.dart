@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:storybook_toolkit/storybook_toolkit.dart';
 
-import 'package:squadquest/models/topic.dart';
-import 'package:squadquest/models/topic_member.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/topic_memberships.dart';
 import 'package:squadquest/controllers/settings.dart';
@@ -13,90 +11,14 @@ import 'package:squadquest/storybook/screens/onboarding/welcome.dart';
 import 'package:squadquest/storybook/screens/onboarding/home.dart';
 import 'package:squadquest/storybook/screens/onboarding/permission_notification.dart';
 import 'package:squadquest/storybook/screens/onboarding/permission_banner.dart';
+import 'package:squadquest/storybook/screens/onboarding/friend_finder.dart';
+import 'package:squadquest/storybook/screens/events/create_event.dart';
+import 'package:squadquest/storybook/screens/events/event_details.dart';
+import 'package:squadquest/storybook/screens/events/rsvp_interactions.dart';
+import 'package:squadquest/storybook/screens/events/event_chat.dart';
+import 'package:squadquest/storybook/screens/profile/edit_profile.dart';
 
-// Mock Auth Controller
-class MockAuthController extends AuthController {
-  @override
-  Session? build() => Session(
-        accessToken: 'mock-token',
-        tokenType: 'bearer',
-        user: User(
-          id: 'mock-user-id',
-          appMetadata: {},
-          userMetadata: {},
-          aud: 'authenticated',
-          createdAt: DateTime.now().toIso8601String(),
-        ),
-      );
-}
-
-// Mock Topic Memberships Controller
-class MockTopicMembershipsController extends TopicMembershipsController {
-  @override
-  Future<List<MyTopicMembership>> build() async {
-    return [
-      MyTopicMembership(
-        topic: Topic(
-          id: 'topic1',
-          name: 'Hiking',
-        ),
-        subscribed: true,
-        events: 5,
-      ),
-      MyTopicMembership(
-        topic: Topic(
-          id: 'topic2',
-          name: 'Photography',
-        ),
-        subscribed: false,
-        events: 3,
-      ),
-      MyTopicMembership(
-        topic: Topic(
-          id: 'topic3',
-          name: 'Board Games',
-        ),
-        subscribed: true,
-        events: 2,
-      ),
-      MyTopicMembership(
-        topic: Topic(
-          id: 'topic4',
-          name: 'Rock Climbing',
-        ),
-        subscribed: false,
-        events: 0,
-      ),
-      MyTopicMembership(
-        topic: Topic(
-          id: 'topic5',
-          name: 'Movie Nights',
-        ),
-        subscribed: false,
-        events: 1,
-      ),
-      MyTopicMembership(
-        topic: Topic(
-          id: 'topic6',
-          name: 'Cooking',
-        ),
-        subscribed: false,
-        events: 0,
-      ),
-    ];
-  }
-
-  @override
-  Future<MyTopicMembership> saveSubscribed(
-      MyTopicMembership topicMembership, bool subscribed) async {
-    // Mock implementation that just returns the updated membership
-    return MyTopicMembership(
-      topic: topicMembership.topic,
-      subscribed: subscribed,
-      events: topicMembership.events,
-    );
-  }
-}
+import 'mocks.dart';
 
 void main() {
   runApp(const ProviderScope(child: StorybookApp()));
@@ -150,10 +72,52 @@ class StorybookApp extends StatelessWidget {
               ),
             ),
             Story(
+              name: 'Onboarding/Friend Finder',
+              description:
+                  'Help users connect with friends already using the app',
+              builder: (context) => const FriendFinderScreen(),
+            ),
+            Story(
               name: 'Onboarding/Notification Banner',
               description:
                   'Banner you might see on screens if you denied notification permission',
               builder: (context) => const MockScreenWithNotificationBanner(),
+            ),
+
+            // Event screens
+            Story(
+              name: 'Events/Create Event',
+              description:
+                  'Improved event creation form with better organization',
+              builder: (context) => const CreateEventScreen(),
+            ),
+            Story(
+              name: 'Events/Event Details',
+              description: 'Improved event details screen with modern layout',
+              builder: (context) => const EventDetailsScreen(),
+            ),
+            Story(
+              name: 'Events/RSVP Interactions',
+              description: 'Interactive demo of RSVP and menu interactions',
+              builder: (context) => const RsvpInteractionsScreen(),
+            ),
+            Story(
+              name: 'Events/Event Chat',
+              description: 'Improved event chat with modern messaging features',
+              builder: (context) => const EventChatScreen(),
+            ),
+
+            // Profile screens
+            Story(
+              name: 'Profile/Create Profile',
+              description: 'Initial profile setup with welcome message',
+              builder: (context) => const EditProfileScreen(isNewProfile: true),
+            ),
+            Story(
+              name: 'Profile/Edit Profile',
+              description: 'Profile editing for existing users',
+              builder: (context) =>
+                  const EditProfileScreen(isNewProfile: false),
             ),
           ],
         ));
