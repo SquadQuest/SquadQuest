@@ -16,14 +16,14 @@ enum EventFilter {
   const EventFilter(this.label, this.description);
 }
 
-class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreenV1 extends ConsumerStatefulWidget {
+  const HomeScreenV1({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreenV1> createState() => _HomeScreenV1State();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenV1State extends ConsumerState<HomeScreenV1> {
   EventFilter selectedFilter = EventFilter.all;
   bool _isTransitioning = false;
   bool _isSearching = false;

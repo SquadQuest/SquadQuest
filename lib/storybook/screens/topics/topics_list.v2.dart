@@ -7,10 +7,10 @@ class TopicsListScreenV2 extends ConsumerStatefulWidget {
   const TopicsListScreenV2({super.key});
 
   @override
-  ConsumerState<TopicsListScreenV2> createState() => _TopicsListScreenStateV2();
+  ConsumerState<TopicsListScreenV2> createState() => _TopicsListScreenV2State();
 }
 
-class _TopicsListScreenStateV2 extends ConsumerState<TopicsListScreenV2> {
+class _TopicsListScreenV2State extends ConsumerState<TopicsListScreenV2> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
   _MockTopic? _movingTopic;

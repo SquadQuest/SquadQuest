@@ -7,10 +7,10 @@ class TopicsListScreenV1 extends ConsumerStatefulWidget {
   const TopicsListScreenV1({super.key});
 
   @override
-  ConsumerState<TopicsListScreenV1> createState() => _TopicsListScreenStateV1();
+  ConsumerState<TopicsListScreenV1> createState() => _TopicsListScreenV1State();
 }
 
-class _TopicsListScreenStateV1 extends ConsumerState<TopicsListScreenV1> {
+class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
   late List<_MockTopic> subscribedTopics;
   late List<_MockTopic> suggestedTopics;
   _MockTopic? movingTopic;
