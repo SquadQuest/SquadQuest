@@ -11,7 +11,6 @@ class TopicsListScreen extends ConsumerStatefulWidget {
 }
 
 class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
-  bool _isSearching = false;
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
@@ -84,6 +83,23 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
     }).toList();
   }
 
+  void _toggleSubscription(_MockTopic topic) {
+    setState(() {
+      if (topic.isSubscribed) {
+        // Remove from subscribed
+        _subscribedTopics.remove(topic);
+        // Add to suggested
+        _suggestedTopics.add(topic.copyWith(isSubscribed: false));
+      } else {
+        // Remove from suggested or search results
+        _suggestedTopics.remove(topic);
+        _allTopics.remove(topic);
+        // Add to subscribed
+        _subscribedTopics.add(topic.copyWith(isSubscribed: true));
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final showEmptyState = context.knobs.boolean(
@@ -94,34 +110,38 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
 
     return AppScaffold(
       title: 'Topics',
-      actions: [
-        IconButton(
-          icon: Icon(_isSearching ? Icons.close : Icons.search),
-          onPressed: () {
-            setState(() {
-              _isSearching = !_isSearching;
-              if (!_isSearching) {
-                _searchQuery = '';
-                _searchController.clear();
-              }
-            });
-          },
-        ),
-      ],
       body: Column(
         children: [
           // Search Bar
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: _isSearching ? 72 : 0,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 200),
-              opacity: _isSearching ? 1.0 : 0.0,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Find Your Interests',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Subscribe to topics you\'re interested in to discover relevant events',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
                   controller: _searchController,
-                  autofocus: true,
                   decoration: InputDecoration(
                     hintText: 'Search topics...',
                     filled: true,
@@ -138,7 +158,7 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
                     });
                   },
                 ),
-              ),
+              ],
             ),
           ),
 
@@ -146,7 +166,7 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              child: _isSearching && _searchQuery.isNotEmpty
+              child: _searchQuery.isNotEmpty
                   ? _buildSearchResults()
                   : showEmptyState
                       ? _buildEmptyState(context)
@@ -399,7 +419,7 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
         return Card(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () {},
+            onTap: () => _toggleSubscription(topic),
             child: Stack(
               children: [
                 // Topic Content
@@ -441,7 +461,7 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
                     top: 4,
                     child: IconButton(
                       icon: const Icon(Icons.add),
-                      onPressed: () {},
+                      onPressed: () => _toggleSubscription(topic),
                     ),
                   ),
               ],
@@ -465,4 +485,18 @@ class _MockTopic {
     required this.events,
     required this.isSubscribed,
   });
+
+  _MockTopic copyWith({
+    String? name,
+    String? description,
+    int? events,
+    bool? isSubscribed,
+  }) {
+    return _MockTopic(
+      name: name ?? this.name,
+      description: description ?? this.description,
+      events: events ?? this.events,
+      isSubscribed: isSubscribed ?? this.isSubscribed,
+    );
+  }
 }
