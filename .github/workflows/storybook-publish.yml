@@ -6,7 +6,7 @@ on:
 
 
 jobs:
-  builds-publish:
+  storybook-publish:
     runs-on: ubuntu-latest
 
     steps:
