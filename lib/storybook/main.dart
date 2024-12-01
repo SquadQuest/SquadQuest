@@ -114,7 +114,13 @@ class StorybookApp extends StatelessWidget {
               .overrideWith(MockTopicMembershipsController.new),
         ],
         child: Storybook(
-          enableLayout: true,
+          plugins: initializePlugins(
+            initialDeviceFrameData: (
+              isFrameVisible: true,
+              device: Devices.ios.iPhone12ProMax,
+              orientation: Orientation.portrait
+            ),
+          ),
           stories: [
             Story(
               name: 'Notification Permission Screen',
