@@ -25,6 +25,157 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   EventFilter selectedFilter = EventFilter.all;
+  bool _isTransitioning = false;
+
+  // Mock data for different filters
+  final Map<EventFilter, List<_MockEventSection>> _filterContent = {
+    EventFilter.all: [
+      _MockEventSection(
+        title: 'Happening Now',
+        icon: Icons.play_circle,
+        events: [
+          _MockEvent(
+            title: 'Board Game Night',
+            time: 'Started 30m ago',
+            location: 'Game Knight Lounge',
+            attendees: 8,
+            isLive: true,
+          ),
+        ],
+      ),
+      _MockEventSection(
+        title: 'Coming Up',
+        icon: Icons.upcoming,
+        events: [
+          _MockEvent(
+            title: 'Weekend Hike',
+            time: 'Tomorrow at 9:00 AM',
+            location: 'Forest Park',
+            attendees: 5,
+          ),
+          _MockEvent(
+            title: 'Photography Walk',
+            time: 'Saturday at 4:00 PM',
+            location: 'Waterfront Park',
+            attendees: 12,
+          ),
+        ],
+      ),
+    ],
+    EventFilter.pending: [
+      _MockEventSection(
+        title: 'Needs Response',
+        icon: Icons.schedule,
+        events: [
+          _MockEvent(
+            title: 'Movie Marathon',
+            time: 'Next Friday at 7:00 PM',
+            location: 'Sarah\'s Place',
+            attendees: 6,
+          ),
+          _MockEvent(
+            title: 'Bike Ride',
+            time: 'Sunday at 10:00 AM',
+            location: 'Waterfront Park',
+            attendees: 4,
+          ),
+        ],
+      ),
+    ],
+    EventFilter.going: [
+      _MockEventSection(
+        title: 'This Week',
+        icon: Icons.event,
+        events: [
+          _MockEvent(
+            title: 'Book Club Meeting',
+            time: 'Thursday at 6:00 PM',
+            location: 'Powell\'s Books',
+            attendees: 8,
+          ),
+        ],
+      ),
+      _MockEventSection(
+        title: 'Later',
+        icon: Icons.calendar_month,
+        events: [
+          _MockEvent(
+            title: 'Art Gallery Opening',
+            time: 'Next Month',
+            location: 'Downtown Gallery',
+            attendees: 15,
+          ),
+        ],
+      ),
+    ],
+    EventFilter.hosting: [
+      _MockEventSection(
+        title: 'Active Events',
+        icon: Icons.event_available,
+        events: [
+          _MockEvent(
+            title: 'Weekly Game Night',
+            time: 'Every Thursday',
+            location: 'Community Center',
+            attendees: 10,
+          ),
+        ],
+      ),
+      _MockEventSection(
+        title: 'Past Events',
+        icon: Icons.history,
+        events: [
+          _MockEvent(
+            title: 'Movie Night',
+            time: 'Last Week',
+            location: 'Living Room Cinema',
+            attendees: 15,
+            isPast: true,
+          ),
+        ],
+      ),
+    ],
+    EventFilter.discover: [
+      _MockEventSection(
+        title: 'Recommended',
+        icon: Icons.recommend,
+        events: [
+          _MockEvent(
+            title: 'Community Picnic',
+            time: 'Next Saturday',
+            location: 'Laurelhurst Park',
+            attendees: 25,
+          ),
+          _MockEvent(
+            title: 'Local Music Night',
+            time: 'Friday at 8:00 PM',
+            location: 'The Firkin Tavern',
+            attendees: 30,
+          ),
+        ],
+      ),
+    ],
+  };
+
+  void _changeFilter(EventFilter newFilter) async {
+    if (newFilter == selectedFilter) return;
+
+    setState(() {
+      _isTransitioning = true;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 150));
+
+    setState(() {
+      selectedFilter = newFilter;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 150));
+
+    setState(() {
+      _isTransitioning = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +184,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       initial: false,
       description: 'Toggle friend requests banner',
     );
+
+    final sections = _filterContent[selectedFilter] ?? [];
 
     return AppScaffold(
       title: 'SquadQuest',
@@ -127,7 +280,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               label: Text(filter.label),
                               onSelected: (selected) {
                                 if (selected) {
-                                  setState(() => selectedFilter = filter);
+                                  _changeFilter(filter);
                                 }
                               },
                               avatar: isSelected
@@ -151,148 +304,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ],
-        body: CustomScrollView(
-          slivers: [
-            // Happening Now Section
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.play_circle,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onPrimaryContainer,
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: animation.drive(
+                  Tween(
+                    begin: const Offset(0.0, 0.1),
+                    end: Offset.zero,
+                  ).chain(CurveTween(curve: Curves.easeOut)),
+                ),
+                child: child,
+              ),
+            );
+          },
+          child: _isTransitioning
+              ? const SizedBox.shrink()
+              : CustomScrollView(
+                  key: ValueKey(selectedFilter),
+                  slivers: [
+                    for (final section in sections)
+                      SliverPadding(
+                        padding: const EdgeInsets.all(16),
+                        sliver: SliverToBoxAdapter(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primaryContainer,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      section.icon,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimaryContainer,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    section.title,
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              ...section.events.map((event) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: _buildEventCard(
+                                      context,
+                                      title: event.title,
+                                      time: event.time,
+                                      location: event.location,
+                                      attendees: event.attendees,
+                                      isLive: event.isLive,
+                                      isPast: event.isPast,
+                                    ),
+                                  )),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Happening Now',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildEventCard(
-                      context,
-                      title: 'Board Game Night',
-                      time: 'Started 30m ago',
-                      location: 'Game Knight Lounge',
-                      attendees: 8,
-                      isLive: true,
-                    ),
+                      ),
                   ],
                 ),
-              ),
-            ),
-
-            // Coming Up Section
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .secondaryContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.upcoming,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSecondaryContainer,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Coming Up',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildEventCard(
-                      context,
-                      title: 'Weekend Hike',
-                      time: 'Tomorrow at 9:00 AM',
-                      location: 'Forest Park',
-                      attendees: 5,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildEventCard(
-                      context,
-                      title: 'Photography Walk',
-                      time: 'Saturday at 4:00 PM',
-                      location: 'Waterfront Park',
-                      attendees: 12,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Past Events Section
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).colorScheme.tertiaryContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.history,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onTertiaryContainer,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Past Events',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildEventCard(
-                      context,
-                      title: 'Movie Night',
-                      time: 'Yesterday at 7:00 PM',
-                      location: 'Living Room Cinema',
-                      attendees: 15,
-                      isPast: true,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -457,4 +542,34 @@ class _FilterHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _FilterHeaderDelegate oldDelegate) {
     return oldDelegate.child != child || oldDelegate.height != height;
   }
+}
+
+class _MockEventSection {
+  final String title;
+  final IconData icon;
+  final List<_MockEvent> events;
+
+  _MockEventSection({
+    required this.title,
+    required this.icon,
+    required this.events,
+  });
+}
+
+class _MockEvent {
+  final String title;
+  final String time;
+  final String location;
+  final int attendees;
+  final bool isLive;
+  final bool isPast;
+
+  _MockEvent({
+    required this.title,
+    required this.time,
+    required this.location,
+    required this.attendees,
+    this.isLive = false,
+    this.isPast = false,
+  });
 }
