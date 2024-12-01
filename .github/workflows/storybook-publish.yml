@@ -40,6 +40,9 @@ jobs:
       - name: Generate .env
         run: touch .env
 
+      - name: Replace index.html with storybook-index.html
+        run: mv web/storybook-index.html web/index.html
+
       - name: Build storybook for web
         run: fvm flutter build web --dart-define=PRODUCTION_LOGGING=true --target=lib/storybook/main.dart
 
