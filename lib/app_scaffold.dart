@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/drawer.dart';
 import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/components/sheets/location_sharing.dart';
 import 'package:squadquest/models/instance.dart';
 
@@ -44,27 +45,32 @@ class AppScaffold extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authControllerProvider);
+    final isStorybook = ref.watch(storybookModeProvider);
 
     // calculate added padding for measured bottom sheet height
     final padding = EdgeInsets.only(
-        bottom: showLocationSharingSheet
+        bottom: !isStorybook && showLocationSharingSheet
             ? ref.watch(_bottomPaddingProvider) ?? 0
             : 0);
 
     // update bottom padding after each rebuild...
-    SchedulerBinding.instance
-        .addPostFrameCallback((_) => _updateBottomPadding(ref));
+    if (!isStorybook) {
+      SchedulerBinding.instance
+          .addPostFrameCallback((_) => _updateBottomPadding(ref));
+    }
 
     return Scaffold(
         appBar: AppBar(
           title: Text(title, style: titleStyle),
           actions: actions,
         ),
-        drawer: session == null
+        drawer: isStorybook
             ? null
-            : showDrawer ?? !context.canPop()
-                ? const AppDrawer()
-                : null,
+            : session == null
+                ? null
+                : showDrawer ?? !context.canPop()
+                    ? const AppDrawer()
+                    : null,
         floatingActionButtonLocation: floatingActionButtonLocation,
         floatingActionButton: floatingActionButton == null
             ? null
@@ -102,7 +108,7 @@ class AppScaffold extends ConsumerWidget {
                   ]),
             ),
           ],
-          if (showLocationSharingSheet)
+          if (!isStorybook && showLocationSharingSheet)
             Positioned(
                 bottom: 0,
                 left: 0,
