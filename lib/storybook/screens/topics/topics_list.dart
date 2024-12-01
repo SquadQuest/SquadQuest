@@ -13,6 +13,8 @@ class TopicsListScreen extends ConsumerStatefulWidget {
 class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
+  _MockTopic? _movingTopic;
+  bool _isSubscribing = false;
 
   // Mock topics data
   final List<_MockTopic> _subscribedTopics = [
@@ -83,7 +85,15 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
     }).toList();
   }
 
-  void _toggleSubscription(_MockTopic topic) {
+  void _toggleSubscription(_MockTopic topic) async {
+    setState(() {
+      _movingTopic = topic;
+      _isSubscribing = !topic.isSubscribed;
+    });
+
+    // Wait for hero animation to start
+    await Future.delayed(const Duration(milliseconds: 100));
+
     setState(() {
       if (topic.isSubscribed) {
         // Remove from subscribed
@@ -97,6 +107,12 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
         // Add to subscribed
         _subscribedTopics.add(topic.copyWith(isSubscribed: true));
       }
+    });
+
+    // Reset moving state after animation
+    await Future.delayed(const Duration(milliseconds: 300));
+    setState(() {
+      _movingTopic = null;
     });
   }
 
@@ -416,59 +432,110 @@ class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
       itemCount: topics.length,
       itemBuilder: (context, index) {
         final topic = topics[index];
-        return Card(
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => _toggleSubscription(topic),
-            child: Stack(
-              children: [
-                // Topic Content
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        topic.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        topic.description,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Spacer(),
-                      if (topic.isSubscribed)
-                        Chip(
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          label: const Text('Subscribed'),
-                          avatar: const Icon(Icons.check, size: 16),
-                        ),
-                    ],
-                  ),
-                ),
+        final isMoving = _movingTopic?.name == topic.name;
 
-                // Subscribe Button
-                if (!topic.isSubscribed)
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: () => _toggleSubscription(topic),
-                    ),
+        return Hero(
+          tag: 'topic-${topic.name}',
+          flightShuttleBuilder: (
+            BuildContext flightContext,
+            Animation<double> animation,
+            HeroFlightDirection flightDirection,
+            BuildContext fromHeroContext,
+            BuildContext toHeroContext,
+          ) {
+            return AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) {
+                return Material(
+                  color: Colors.transparent,
+                  child: _buildTopicCard(
+                    context,
+                    topic,
+                    isMoving: true,
+                    opacity: _isSubscribing
+                        ? flightDirection == HeroFlightDirection.push
+                            ? animation.value
+                            : 1 - animation.value
+                        : flightDirection == HeroFlightDirection.push
+                            ? 1 - animation.value
+                            : animation.value,
                   ),
-              ],
-            ),
+                );
+              },
+            );
+          },
+          child: _buildTopicCard(
+            context,
+            topic,
+            isMoving: isMoving,
+            opacity: isMoving ? 0.0 : 1.0,
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTopicCard(
+    BuildContext context,
+    _MockTopic topic, {
+    bool isMoving = false,
+    double opacity = 1.0,
+  }) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: opacity,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: isMoving ? null : () => _toggleSubscription(topic),
+          child: Stack(
+            children: [
+              // Topic Content
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      topic.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      topic.description,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    if (topic.isSubscribed)
+                      Chip(
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        label: const Text('Subscribed'),
+                        avatar: const Icon(Icons.check, size: 16),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Subscribe Button
+              if (!topic.isSubscribed)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed:
+                        isMoving ? null : () => _toggleSubscription(topic),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
