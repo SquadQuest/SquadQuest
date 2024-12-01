@@ -21,6 +21,12 @@ class CreateEventScreen extends ConsumerWidget {
       description: 'Toggle photo upload state',
     );
 
+    final useFilledStyle = context.knobs.boolean(
+      label: 'Use filled style',
+      initial: false,
+      description: 'Toggle filled style for form fields',
+    );
+
     return AppScaffold(
       title: 'Create Event',
       body: CustomScrollView(
@@ -123,7 +129,7 @@ class CreateEventScreen extends ConsumerWidget {
                               labelText: 'Event Title',
                               hintText: 'What\'s happening?',
                               prefixIcon: const Icon(Icons.event),
-                              filled: true,
+                              filled: useFilledStyle,
                               fillColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceVariant
@@ -135,7 +141,7 @@ class CreateEventScreen extends ConsumerWidget {
                             decoration: InputDecoration(
                               labelText: 'Activity Type',
                               prefixIcon: const Icon(Icons.category),
-                              filled: true,
+                              filled: useFilledStyle,
                               fillColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceVariant
@@ -274,7 +280,7 @@ class CreateEventScreen extends ConsumerWidget {
                               labelText: 'Location Name',
                               hintText: 'e.g., Central Park, Joe\'s Coffee',
                               prefixIcon: const Icon(Icons.place),
-                              filled: true,
+                              filled: useFilledStyle,
                               fillColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceVariant
@@ -344,7 +350,7 @@ class CreateEventScreen extends ConsumerWidget {
                               hintText: 'Add any important details...',
                               alignLabelWithHint: true,
                               prefixIcon: const Icon(Icons.description),
-                              filled: true,
+                              filled: useFilledStyle,
                               fillColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceVariant
@@ -357,7 +363,7 @@ class CreateEventScreen extends ConsumerWidget {
                               labelText: 'Event Link (optional)',
                               hintText: 'https://',
                               prefixIcon: const Icon(Icons.link),
-                              filled: true,
+                              filled: useFilledStyle,
                               fillColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceVariant

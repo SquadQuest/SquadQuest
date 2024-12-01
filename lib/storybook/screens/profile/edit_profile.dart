@@ -25,6 +25,12 @@ class EditProfileScreen extends ConsumerWidget {
       description: 'Toggle photo upload state',
     );
 
+    final useFilledStyle = context.knobs.boolean(
+      label: 'Use filled style',
+      initial: false,
+      description: 'Toggle filled style for form fields',
+    );
+
     final selectedColor = context.knobs.options(
       label: 'Trail Color',
       options: [
@@ -212,7 +218,7 @@ class EditProfileScreen extends ConsumerWidget {
                               labelText: 'First Name',
                               hintText: 'Enter your first name',
                               prefixIcon: const Icon(Icons.person_outline),
-                              filled: true,
+                              filled: useFilledStyle,
                               fillColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceVariant
@@ -225,7 +231,7 @@ class EditProfileScreen extends ConsumerWidget {
                               labelText: 'Last Name',
                               hintText: 'Enter your last name',
                               prefixIcon: const Icon(Icons.person_outline),
-                              filled: true,
+                              filled: useFilledStyle,
                               fillColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceVariant
