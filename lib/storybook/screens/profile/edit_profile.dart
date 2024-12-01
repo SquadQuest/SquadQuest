@@ -19,6 +19,35 @@ class EditProfileScreen extends ConsumerWidget {
       description: 'Toggle profile photo state',
     );
 
+    final isUploading = context.knobs.boolean(
+      label: 'Is uploading photo',
+      initial: false,
+      description: 'Toggle photo upload state',
+    );
+
+    final selectedColor = context.knobs.options(
+      label: 'Trail Color',
+      options: [
+        Option(
+          label: 'Blue',
+          value: Colors.blue,
+        ),
+        Option(
+          label: 'Green',
+          value: Colors.green,
+        ),
+        Option(
+          label: 'Purple',
+          value: Colors.purple,
+        ),
+        Option(
+          label: 'Orange',
+          value: Colors.orange,
+        ),
+      ],
+      initial: Colors.blue,
+    );
+
     return AppScaffold(
       title: isNewProfile ? 'Create Profile' : 'Edit Profile',
       body: CustomScrollView(
@@ -35,8 +64,13 @@ class EditProfileScreen extends ConsumerWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.8, 1.0],
                       colors: [
                         Theme.of(context).colorScheme.primaryContainer,
+                        Theme.of(context)
+                            .colorScheme
+                            .primaryContainer
+                            .withOpacity(0.5),
                         Theme.of(context).scaffoldBackgroundColor,
                       ],
                     ),
@@ -56,6 +90,15 @@ class EditProfileScreen extends ConsumerWidget {
                                       backgroundImage: NetworkImage(
                                           'https://picsum.photos/200'),
                                     ),
+                                    if (isUploading)
+                                      Positioned.fill(
+                                        child: CircularProgressIndicator(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          strokeWidth: 6,
+                                        ),
+                                      ),
                                     Positioned(
                                       right: 0,
                                       bottom: 0,
@@ -83,6 +126,15 @@ class EditProfileScreen extends ConsumerWidget {
                                           .surfaceVariant,
                                       child: const Icon(Icons.person, size: 64),
                                     ),
+                                    if (isUploading)
+                                      Positioned.fill(
+                                        child: CircularProgressIndicator(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          strokeWidth: 6,
+                                        ),
+                                      ),
                                     Positioned(
                                       right: 0,
                                       bottom: 0,
@@ -147,31 +199,65 @@ class EditProfileScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'Basic Information',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'First Name',
                               hintText: 'Enter your first name',
-                              prefixIcon: Icon(Icons.person_outline),
+                              prefixIcon: const Icon(Icons.person_outline),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceVariant
+                                  .withOpacity(0.3),
                             ),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Last Name',
                               hintText: 'Enter your last name',
-                              prefixIcon: Icon(Icons.person_outline),
+                              prefixIcon: const Icon(Icons.person_outline),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceVariant
+                                  .withOpacity(0.3),
                             ),
                           ),
                           const SizedBox(height: 16),
-                          const Text(
-                            'Your last name will only be visible to confirmed friends',
-                            style: TextStyle(
-                              fontStyle: FontStyle.italic,
-                              fontSize: 12,
-                            ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Your last name will only be visible to confirmed friends',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -188,7 +274,12 @@ class EditProfileScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'Appearance',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                           const SizedBox(height: 16),
                           ListTile(
@@ -199,11 +290,18 @@ class EditProfileScreen extends ConsumerWidget {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.blue,
+                                color: selectedColor,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: Theme.of(context).dividerColor,
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: selectedColor.withOpacity(0.4),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
                               ),
                             ),
                             onTap: () {},
@@ -215,9 +313,16 @@ class EditProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 32),
 
                   // Submit Button
-                  FilledButton(
-                    onPressed: () {},
-                    child: Text(isNewProfile ? 'Get Started' : 'Save'),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: () {},
+                      child: Text(
+                        isNewProfile ? 'Get Started' : 'Save Changes',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
                   ),
                 ],
               ),
