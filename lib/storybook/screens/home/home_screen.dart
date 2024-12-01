@@ -26,6 +26,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   EventFilter selectedFilter = EventFilter.all;
   bool _isTransitioning = false;
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
 
   // Mock data for different filters
   final Map<EventFilter, List<_MockEventSection>> _filterContent = {
@@ -157,6 +160,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ],
   };
 
+  // Mock search results
+  final List<_MockEvent> _allEvents = [
+    _MockEvent(
+      title: 'Board Game Night',
+      time: 'Started 30m ago',
+      location: 'Game Knight Lounge',
+      attendees: 8,
+      isLive: true,
+    ),
+    _MockEvent(
+      title: 'Weekend Hike',
+      time: 'Tomorrow at 9:00 AM',
+      location: 'Forest Park',
+      attendees: 5,
+    ),
+    _MockEvent(
+      title: 'Photography Walk',
+      time: 'Saturday at 4:00 PM',
+      location: 'Waterfront Park',
+      attendees: 12,
+    ),
+    _MockEvent(
+      title: 'Movie Marathon',
+      time: 'Next Friday at 7:00 PM',
+      location: 'Sarah\'s Place',
+      attendees: 6,
+    ),
+    _MockEvent(
+      title: 'Book Club Meeting',
+      time: 'Thursday at 6:00 PM',
+      location: 'Powell\'s Books',
+      attendees: 8,
+    ),
+    _MockEvent(
+      title: 'Weekly Game Night',
+      time: 'Every Thursday',
+      location: 'Community Center',
+      attendees: 10,
+    ),
+    _MockEvent(
+      title: 'Movie Night',
+      time: 'Last Week',
+      location: 'Living Room Cinema',
+      attendees: 15,
+      isPast: true,
+    ),
+  ];
+
+  List<_MockEvent> get _searchResults {
+    if (_searchQuery.isEmpty) return [];
+    final query = _searchQuery.toLowerCase();
+    return _allEvents.where((event) {
+      return event.title.toLowerCase().contains(query) ||
+          event.location.toLowerCase().contains(query);
+    }).toList();
+  }
+
   void _changeFilter(EventFilter newFilter) async {
     if (newFilter == selectedFilter) return;
 
@@ -189,202 +249,352 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return AppScaffold(
       title: 'SquadQuest',
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          // Friend Requests Banner
-          if (showFriendRequests)
-            SliverToBoxAdapter(
-              child: Container(
+      actions: [
+        IconButton(
+          icon: Icon(_isSearching ? Icons.close : Icons.search),
+          onPressed: () {
+            setState(() {
+              _isSearching = !_isSearching;
+              if (!_isSearching) {
+                _searchQuery = '';
+                _searchController.clear();
+              }
+            });
+          },
+        ),
+      ],
+      body: Column(
+        children: [
+          // Search Bar
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: _isSearching ? 72 : 0,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _isSearching ? 1.0 : 0.0,
+              child: Padding(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.tertiary,
-                      Theme.of(context).colorScheme.tertiaryContainer,
-                    ],
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Search events...',
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.search),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onTertiary
-                            .withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.person_add,
-                        color: Theme.of(context).colorScheme.onTertiary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'New Friend Requests',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onTertiary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Sarah and Mike want to be friends',
-                            style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onTertiary
-                                  .withOpacity(0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onTertiary,
-                      ),
-                      child: const Text('View'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          // Filter Chips
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _FilterHeaderDelegate(
-              child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Row(
-                        children: EventFilter.values.map((filter) {
-                          final isSelected = selectedFilter == filter;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              selected: isSelected,
-                              label: Text(filter.label),
-                              onSelected: (selected) {
-                                if (selected) {
-                                  _changeFilter(filter);
-                                }
-                              },
-                              avatar: isSelected
-                                  ? const Icon(Icons.check, size: 18)
-                                  : null,
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      child: Text(
-                        selectedFilter.description,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
                 ),
               ),
             ),
           ),
-        ],
-        body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (Widget child, Animation<double> animation) {
-            return FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: animation.drive(
-                  Tween(
-                    begin: const Offset(0.0, 0.1),
-                    end: Offset.zero,
-                  ).chain(CurveTween(curve: Curves.easeOut)),
-                ),
-                child: child,
-              ),
-            );
-          },
-          child: _isTransitioning
-              ? const SizedBox.shrink()
-              : CustomScrollView(
-                  key: ValueKey(selectedFilter),
-                  slivers: [
-                    for (final section in sections)
-                      SliverPadding(
-                        padding: const EdgeInsets.all(16),
-                        sliver: SliverToBoxAdapter(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+
+          // Search Results or Main Content
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _isSearching && _searchQuery.isNotEmpty
+                  ? _buildSearchResults()
+                  : NestedScrollView(
+                      key: const ValueKey('main_content'),
+                      headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                        if (showFriendRequests)
+                          SliverToBoxAdapter(
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Theme.of(context).colorScheme.tertiary,
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .tertiaryContainer,
+                                  ],
+                                ),
+                              ),
+                              child: Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
                                       color: Theme.of(context)
                                           .colorScheme
-                                          .primaryContainer,
-                                      borderRadius: BorderRadius.circular(8),
+                                          .onTertiary
+                                          .withOpacity(0.1),
+                                      shape: BoxShape.circle,
                                     ),
                                     child: Icon(
-                                      section.icon,
+                                      Icons.person_add,
                                       color: Theme.of(context)
                                           .colorScheme
-                                          .onPrimaryContainer,
+                                          .onTertiary,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    section.title,
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'New Friend Requests',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onTertiary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Sarah and Mike want to be friends',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onTertiary
+                                                .withOpacity(0.8),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {},
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .onTertiary,
+                                    ),
+                                    child: const Text('View'),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 16),
-                              ...section.events.map((event) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 16),
-                                    child: _buildEventCard(
-                                      context,
-                                      title: event.title,
-                                      time: event.time,
-                                      location: event.location,
-                                      attendees: event.attendees,
-                                      isLive: event.isLive,
-                                      isPast: event.isPast,
+                            ),
+                          ),
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _FilterHeaderDelegate(
+                            child: Container(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 16, 16, 0),
+                                    child: Row(
+                                      children:
+                                          EventFilter.values.map((filter) {
+                                        final isSelected =
+                                            selectedFilter == filter;
+                                        return Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 8),
+                                          child: FilterChip(
+                                            selected: isSelected,
+                                            label: Text(filter.label),
+                                            onSelected: (selected) {
+                                              if (selected) {
+                                                _changeFilter(filter);
+                                              }
+                                            },
+                                            avatar: isSelected
+                                                ? const Icon(Icons.check,
+                                                    size: 18)
+                                                : null,
+                                          ),
+                                        );
+                                      }).toList(),
                                     ),
-                                  )),
-                            ],
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 8, 16, 16),
+                                    child: Text(
+                                      selectedFilter.description,
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
+                      ],
+                      body: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder:
+                            (Widget child, Animation<double> animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: animation.drive(
+                                Tween(
+                                  begin: const Offset(0.0, 0.1),
+                                  end: Offset.zero,
+                                ).chain(CurveTween(curve: Curves.easeOut)),
+                              ),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: _isTransitioning
+                            ? const SizedBox.shrink()
+                            : CustomScrollView(
+                                key: ValueKey(selectedFilter),
+                                slivers: [
+                                  for (final section in sections)
+                                    SliverPadding(
+                                      padding: const EdgeInsets.all(16),
+                                      sliver: SliverToBoxAdapter(
+                                        child: _buildSection(
+                                          context,
+                                          title: section.title,
+                                          icon: section.icon,
+                                          events: section.events,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                       ),
-                  ],
-                ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _isSearching
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () {},
+              icon: const Icon(Icons.add),
+              label: const Text('Create Event'),
+            ),
+    );
+  }
+
+  Widget _buildSearchResults() {
+    final results = _searchResults;
+    if (results.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No events found',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try a different search term',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+            ),
+          ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        icon: const Icon(Icons.add),
-        label: const Text('Create Event'),
-      ),
+      );
+    }
+
+    final liveEvents = results.where((event) => event.isLive).toList();
+    final upcomingEvents =
+        results.where((event) => !event.isLive && !event.isPast).toList();
+    final pastEvents = results.where((event) => event.isPast).toList();
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (liveEvents.isNotEmpty)
+          _buildSection(
+            context,
+            title: 'Live Now',
+            icon: Icons.play_circle,
+            events: liveEvents,
+          ),
+        if (upcomingEvents.isNotEmpty) ...[
+          if (liveEvents.isNotEmpty) const SizedBox(height: 24),
+          _buildSection(
+            context,
+            title: 'Upcoming',
+            icon: Icons.upcoming,
+            events: upcomingEvents,
+          ),
+        ],
+        if (pastEvents.isNotEmpty) ...[
+          if (liveEvents.isNotEmpty || upcomingEvents.isNotEmpty)
+            const SizedBox(height: 24),
+          _buildSection(
+            context,
+            title: 'Past',
+            icon: Icons.history,
+            events: pastEvents,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSection(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required List<_MockEvent> events,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ...events.map((event) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildEventCard(
+                context,
+                title: event.title,
+                time: event.time,
+                location: event.location,
+                attendees: event.attendees,
+                isLive: event.isLive,
+                isPast: event.isPast,
+              ),
+            )),
+      ],
     );
   }
 
