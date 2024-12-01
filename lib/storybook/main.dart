@@ -123,25 +123,25 @@ class StorybookApp extends StatelessWidget {
           ),
           stories: [
             Story(
-              name: 'Notification Permission Screen',
+              name: 'Existing Screns/Topics Screen',
+              builder: (context) => const TopicsScreen(),
+            ),
+            Story(
+              name: 'Onboarding/Notification Permission Screen',
               builder: (context) => const NotificationPermissionScreen(),
             ),
             Story(
-              name: 'Welcome Screen',
+              name: 'Onboarding/Welcome Screen',
               builder: (context) => const WelcomeScreen(),
             ),
             Story(
-              name: 'Home Onboarding Screen',
+              name: 'Onboarding/Home Onboarding Screen',
               builder: (context) => HomeOnboardingScreen(
                 selectedTopics: {'topic1', 'topic2', 'topic3'},
               ),
             ),
             Story(
-              name: 'Topics Screen',
-              builder: (context) => const TopicsScreen(),
-            ),
-            Story(
-              name: 'Activity Feed with Notification Banner',
+              name: 'Onboarding/Activity Feed with Notification Banner',
               builder: (context) => const MockScreenWithNotificationBanner(),
             ),
           ],
