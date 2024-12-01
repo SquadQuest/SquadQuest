@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:storybook_toolkit/storybook_toolkit.dart';
 import 'package:squadquest/screens/topics.dart';
+import 'package:squadquest/screens/welcome.dart';
+import 'package:squadquest/screens/home_onboarding.dart';
+import 'package:squadquest/screens/notification_permission.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/models/topic_member.dart';
 import 'package:squadquest/controllers/auth.dart';
@@ -55,6 +57,30 @@ class MockTopicMembershipsController extends TopicMembershipsController {
         subscribed: true,
         events: 2,
       ),
+      MyTopicMembership(
+        topic: Topic(
+          id: 'topic4',
+          name: 'Rock Climbing',
+        ),
+        subscribed: false,
+        events: 0,
+      ),
+      MyTopicMembership(
+        topic: Topic(
+          id: 'topic5',
+          name: 'Movie Nights',
+        ),
+        subscribed: false,
+        events: 1,
+      ),
+      MyTopicMembership(
+        topic: Topic(
+          id: 'topic6',
+          name: 'Cooking',
+        ),
+        subscribed: false,
+        events: 0,
+      ),
     ];
   }
 
@@ -79,20 +105,34 @@ class StorybookApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Storybook(
-      stories: [
-        Story(
-            name: 'Topics Screen',
-            builder: (context) => ProviderScope(
-                  overrides: [
-                    authControllerProvider.overrideWith(MockAuthController.new),
-                    topicMembershipsProvider
-                        .overrideWith(MockTopicMembershipsController.new),
-                    storybookModeProvider.overrideWith((ref) => true),
-                  ],
-                  child: const TopicsScreen(),
-                )),
-      ],
-    );
+    return ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(MockAuthController.new),
+          storybookModeProvider.overrideWith((ref) => true),
+          topicMembershipsProvider
+              .overrideWith(MockTopicMembershipsController.new),
+        ],
+        child: Storybook(
+          stories: [
+            Story(
+              name: 'Notification Permission Screen',
+              builder: (context) => const NotificationPermissionScreen(),
+            ),
+            Story(
+              name: 'Welcome Screen',
+              builder: (context) => const WelcomeScreen(),
+            ),
+            Story(
+              name: 'Home Onboarding Screen',
+              builder: (context) => HomeOnboardingScreen(
+                selectedTopics: {'topic1', 'topic2', 'topic3'},
+              ),
+            ),
+            Story(
+              name: 'Topics Screen',
+              builder: (context) => const TopicsScreen(),
+            ),
+          ],
+        ));
   }
 }
