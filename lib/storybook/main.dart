@@ -18,6 +18,7 @@ import 'package:squadquest/storybook/screens/events/rsvp_interactions.dart';
 import 'package:squadquest/storybook/screens/events/event_chat.dart';
 import 'package:squadquest/storybook/screens/profile/edit_profile.dart';
 import 'package:squadquest/storybook/screens/friends/friends_list.dart';
+import 'package:squadquest/storybook/screens/topics/topics_list.dart';
 
 import 'mocks.dart';
 
@@ -126,6 +127,13 @@ class StorybookApp extends StatelessWidget {
               name: 'Friends/Friends List',
               description: 'Improved friends list with requests and status',
               builder: (context) => const FriendsListScreen(),
+            ),
+
+            // Topics screens
+            Story(
+              name: 'Topics/Topics List',
+              description: 'Improved topics browser with grid layout',
+              builder: (context) => const TopicsListScreen(),
             ),
           ],
         ));
