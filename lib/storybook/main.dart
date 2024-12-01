@@ -23,6 +23,7 @@ import 'package:squadquest/storybook/screens/topics/topics_list.v2.dart';
 import 'package:squadquest/storybook/screens/home/home_screen.v1.dart';
 import 'package:squadquest/storybook/screens/home/home_screen.v2.dart';
 import 'package:squadquest/storybook/screens/settings/settings_screen.dart';
+import 'package:squadquest/storybook/screens/drawer/drawer_demo.dart';
 
 import 'mocks.dart';
 
@@ -88,6 +89,14 @@ class StorybookApp extends StatelessWidget {
               description:
                   'Banner you might see on screens if you denied notification permission',
               builder: (context) => const MockScreenWithNotificationBanner(),
+            ),
+
+            // Navigation
+            Story(
+              name: 'Redesign/Navigation/Drawer',
+              description:
+                  'Redesigned navigation drawer with modern layout and grouping',
+              builder: (context) => const DrawerDemoScreen(),
             ),
 
             // Home Screen
