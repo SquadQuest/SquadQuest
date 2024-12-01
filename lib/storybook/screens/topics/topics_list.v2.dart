@@ -3,14 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:storybook_toolkit/storybook_toolkit.dart';
 import 'package:squadquest/app_scaffold.dart';
 
-class TopicsListScreen extends ConsumerStatefulWidget {
-  const TopicsListScreen({super.key});
+class TopicsListScreenV2 extends ConsumerStatefulWidget {
+  const TopicsListScreenV2({super.key});
 
   @override
-  ConsumerState<TopicsListScreen> createState() => _TopicsListScreenState();
+  ConsumerState<TopicsListScreenV2> createState() => _TopicsListScreenStateV2();
 }
 
-class _TopicsListScreenState extends ConsumerState<TopicsListScreen> {
+class _TopicsListScreenStateV2 extends ConsumerState<TopicsListScreenV2> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
   _MockTopic? _movingTopic;

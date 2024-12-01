@@ -18,7 +18,8 @@ import 'package:squadquest/storybook/screens/events/rsvp_interactions.dart';
 import 'package:squadquest/storybook/screens/events/event_chat.dart';
 import 'package:squadquest/storybook/screens/profile/edit_profile.dart';
 import 'package:squadquest/storybook/screens/friends/friends_list.dart';
-import 'package:squadquest/storybook/screens/topics/topics_list.dart';
+import 'package:squadquest/storybook/screens/topics/topics_list.v1.dart';
+import 'package:squadquest/storybook/screens/topics/topics_list.v2.dart';
 import 'package:squadquest/storybook/screens/home/home_screen.dart';
 
 import 'mocks.dart';
@@ -139,9 +140,14 @@ class StorybookApp extends StatelessWidget {
 
             // Topics screens
             Story(
-              name: 'Topics/Topics List',
+              name: 'Topics/Topics List v1',
               description: 'Improved topics browser with grid layout',
-              builder: (context) => const TopicsListScreen(),
+              builder: (context) => const TopicsListScreenV1(),
+            ),
+            Story(
+              name: 'Topics/Topics List v2',
+              description: 'With search',
+              builder: (context) => const TopicsListScreenV2(),
             ),
           ],
         ));
