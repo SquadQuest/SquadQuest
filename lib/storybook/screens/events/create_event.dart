@@ -15,6 +15,12 @@ class CreateEventScreen extends ConsumerWidget {
       description: 'Toggle banner photo state',
     );
 
+    final isUploading = context.knobs.boolean(
+      label: 'Is uploading photo',
+      initial: false,
+      description: 'Toggle photo upload state',
+    );
+
     return AppScaffold(
       title: 'Create Event',
       body: CustomScrollView(
@@ -23,40 +29,70 @@ class CreateEventScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: hasBannerPhoto
-                  ? Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.network(
-                          'https://picsum.photos/800/400',
-                          fit: BoxFit.cover,
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: IconButton.filledTonal(
-                            onPressed: () {},
-                            icon: const Icon(Icons.edit),
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 56,
-                          child: IconButton.filledTonal(
-                            onPressed: () {},
-                            icon: const Icon(Icons.delete),
-                          ),
-                        ),
-                      ],
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (hasBannerPhoto)
+                    Image.network(
+                      'https://picsum.photos/800/400',
+                      fit: BoxFit.cover,
                     )
-                  : Container(
+                  else
+                    Container(
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surfaceVariant,
                       ),
-                      child: const Center(
-                        child: Icon(Icons.add_photo_alternate, size: 48),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Add Cover Photo',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                          ),
+                        ],
                       ),
                     ),
+                  if (isUploading)
+                    Container(
+                      color: Colors.black26,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.primary,
+                          strokeWidth: 6,
+                        ),
+                      ),
+                    ),
+                  if (hasBannerPhoto)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Row(
+                        children: [
+                          IconButton.filledTonal(
+                            onPressed: () {},
+                            icon: const Icon(Icons.delete),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton.filledTonal(
+                            onPressed: () {},
+                            icon: const Icon(Icons.edit),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
 
@@ -76,21 +112,34 @@ class CreateEventScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'Basic Information',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Event Title',
                               hintText: 'What\'s happening?',
-                              prefixIcon: Icon(Icons.event),
+                              prefixIcon: const Icon(Icons.event),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceVariant
+                                  .withOpacity(0.3),
                             ),
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Activity Type',
-                              prefixIcon: Icon(Icons.category),
+                              prefixIcon: const Icon(Icons.category),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceVariant
+                                  .withOpacity(0.3),
                             ),
                             items: const [
                               DropdownMenuItem(
@@ -119,27 +168,84 @@ class CreateEventScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'When',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 16),
                           ListTile(
-                            leading: const Icon(Icons.calendar_today),
+                            leading: Icon(
+                              Icons.calendar_today,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                             title: const Text('Date'),
-                            trailing: const Text('Select'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Select',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ],
+                            ),
                             onTap: () {},
                           ),
                           const Divider(),
                           ListTile(
-                            leading: const Icon(Icons.access_time),
+                            leading: Icon(
+                              Icons.access_time,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                             title: const Text('Start Time'),
-                            trailing: const Text('Select'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Select',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ],
+                            ),
                             onTap: () {},
                           ),
                           const Divider(),
                           ListTile(
-                            leading: const Icon(Icons.access_time),
+                            leading: Icon(
+                              Icons.access_time,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                             title: const Text('End Time'),
-                            trailing: const Text('Select'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Select',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ],
+                            ),
                             onTap: () {},
                           ),
                         ],
@@ -157,26 +263,57 @@ class CreateEventScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'Where',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Location Name',
                               hintText: 'e.g., Central Park, Joe\'s Coffee',
-                              prefixIcon: Icon(Icons.place),
+                              prefixIcon: const Icon(Icons.place),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceVariant
+                                  .withOpacity(0.3),
                             ),
                           ),
                           const SizedBox(height: 16),
                           Container(
                             height: 120,
                             decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context).colorScheme.surfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceVariant
+                                  .withOpacity(0.3),
                               borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
                             ),
-                            child: const Center(
-                              child: Text('Select on Map'),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.map,
+                                    size: 32,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Select on Map',
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -194,23 +331,37 @@ class CreateEventScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'Additional Details',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
                             maxLines: 3,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Description',
                               hintText: 'Add any important details...',
-                              prefixIcon: Icon(Icons.description),
+                              alignLabelWithHint: true,
+                              prefixIcon: const Icon(Icons.description),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceVariant
+                                  .withOpacity(0.3),
                             ),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Event Link (optional)',
                               hintText: 'https://',
-                              prefixIcon: Icon(Icons.link),
+                              prefixIcon: const Icon(Icons.link),
+                              filled: true,
+                              fillColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceVariant
+                                  .withOpacity(0.3),
                             ),
                           ),
                         ],
@@ -228,29 +379,59 @@ class CreateEventScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'Who Can See This?',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           RadioListTile<InstanceVisibility>(
                             title: const Text('Public'),
-                            subtitle:
-                                const Text('Anyone can discover this event'),
+                            subtitle: Text(
+                              'Anyone can discover this event',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
                             value: InstanceVisibility.public,
                             groupValue: InstanceVisibility.public,
                             onChanged: (value) {},
                           ),
                           RadioListTile<InstanceVisibility>(
                             title: const Text('Friends Only'),
-                            subtitle: const Text(
-                                'Only your friends will see this event'),
+                            subtitle: Text(
+                              'Only your friends will see this event',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
                             value: InstanceVisibility.friends,
                             groupValue: InstanceVisibility.public,
                             onChanged: (value) {},
                           ),
                           RadioListTile<InstanceVisibility>(
                             title: const Text('Private'),
-                            subtitle: const Text(
-                                'Only people you invite will see this event'),
+                            subtitle: Text(
+                              'Only people you invite will see this event',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
                             value: InstanceVisibility.private,
                             groupValue: InstanceVisibility.public,
                             onChanged: (value) {},
@@ -262,9 +443,16 @@ class CreateEventScreen extends ConsumerWidget {
                   const SizedBox(height: 32),
 
                   // Submit Button
-                  FilledButton(
-                    onPressed: () {},
-                    child: const Text('Create Event'),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: () {},
+                      child: const Text(
+                        'Create Event',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 32),
                 ],
