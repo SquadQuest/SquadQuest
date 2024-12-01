@@ -32,9 +32,64 @@
 
   <title>Storybook: SquadQuest</title>
   <link rel="manifest" href="manifest.json">
+
+  <style type="text/css">
+    body {
+      background-color: #141218;
+    }
+
+    #loading-container {
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    #loading-spinner {
+      border: 16px solid #555;
+      border-radius: 50%;
+      border-left: 16px solid white;
+      width: 100px;
+      height: 100px;
+      -webkit-animation: spin 1s linear infinite;
+      animation: spin 1s linear infinite;
+    }
+
+    body.loading #loading-container {
+      display: flex;
+    }
+
+    @-webkit-keyframes spin {
+      0% {
+        -webkit-transform: rotate(0deg);
+      }
+
+      100% {
+        -webkit-transform: rotate(360deg);
+      }
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <div id="loading-container">
+    <div id="loading-spinner"></div>
+  </div>
+
   <script>
     {{flutter_bootstrap_js}}
   </script>
