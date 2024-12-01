@@ -5,6 +5,7 @@ import 'package:squadquest/screens/topics.dart';
 import 'package:squadquest/screens/welcome.dart';
 import 'package:squadquest/screens/home_onboarding.dart';
 import 'package:squadquest/screens/notification_permission.dart';
+import 'package:squadquest/screens/mock_screen_with_notification_banner.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/models/topic_member.dart';
 import 'package:squadquest/controllers/auth.dart';
@@ -113,6 +114,7 @@ class StorybookApp extends StatelessWidget {
               .overrideWith(MockTopicMembershipsController.new),
         ],
         child: Storybook(
+          enableLayout: true,
           stories: [
             Story(
               name: 'Notification Permission Screen',
@@ -131,6 +133,10 @@ class StorybookApp extends StatelessWidget {
             Story(
               name: 'Topics Screen',
               builder: (context) => const TopicsScreen(),
+            ),
+            Story(
+              name: 'Activity Feed with Notification Banner',
+              builder: (context) => const MockScreenWithNotificationBanner(),
             ),
           ],
         ));
