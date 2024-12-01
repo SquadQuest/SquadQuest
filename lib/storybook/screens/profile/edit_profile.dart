@@ -26,10 +26,11 @@ class EditProfileScreen extends ConsumerWidget {
           // Profile Photo Section
           SliverToBoxAdapter(
             child: Stack(
+              clipBehavior: Clip.none,
               alignment: Alignment.bottomCenter,
               children: [
                 Container(
-                  height: 200,
+                  height: isNewProfile ? 280 : 180,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -41,88 +42,90 @@ class EditProfileScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                Column(
-                  children: [
-                    const SizedBox(height: 32),
-                    Stack(
-                      children: [
-                        hasProfilePhoto
-                            ? Stack(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 64,
-                                    backgroundImage: NetworkImage(
-                                        'https://picsum.photos/200'),
-                                  ),
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primaryContainer,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        onPressed: () {},
+                Positioned(
+                  top: 36,
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          hasProfilePhoto
+                              ? Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 64,
+                                      backgroundImage: NetworkImage(
+                                          'https://picsum.photos/200'),
+                                    ),
+                                    Positioned(
+                                      right: 0,
+                                      bottom: 0,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primaryContainer,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: IconButton(
+                                          icon: const Icon(Icons.edit),
+                                          onPressed: () {},
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              )
-                            : Stack(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 64,
-                                    backgroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .surfaceVariant,
-                                    child: const Icon(Icons.person, size: 64),
-                                  ),
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.camera_alt,
-                                        color: Colors.white,
-                                        size: 20,
+                                  ],
+                                )
+                              : Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 64,
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceVariant,
+                                      child: const Icon(Icons.person, size: 64),
+                                    ),
+                                    Positioned(
+                                      right: 0,
+                                      bottom: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.camera_alt,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
+                        ],
+                      ),
+                      if (isNewProfile) ...[
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Welcome to SquadQuest!',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            'Tell us a bit about yourself to get started',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ],
-                    ),
-                    if (isNewProfile) ...[
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Welcome to SquadQuest!',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Text(
-                          'Tell us a bit about yourself to get started',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -130,7 +133,7 @@ class EditProfileScreen extends ConsumerWidget {
 
           // Form Content
           SliverPadding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
             sliver: SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
