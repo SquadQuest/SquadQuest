@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// TODO: when adding future settings, use e.g. setBool instead of setString for everything
+
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError();
 });
@@ -24,6 +26,8 @@ final developerModeProvider = StateProvider<bool>((ref) {
   final developerMode = prefs.getString('developerMode') ?? 'false';
   return developerMode == 'true';
 });
+
+final storybookModeProvider = StateProvider<bool>((ref) => false);
 
 final locationSharingEnabledProvider = StateProvider<bool?>((ref) {
   final prefs = ref.read(sharedPreferencesProvider);
