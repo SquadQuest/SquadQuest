@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:storybook_toolkit/storybook_toolkit.dart';
-import 'package:squadquest/screens/topics.dart';
-import 'package:squadquest/screens/welcome.dart';
-import 'package:squadquest/screens/home_onboarding.dart';
-import 'package:squadquest/screens/notification_permission.dart';
-import 'package:squadquest/screens/mock_screen_with_notification_banner.dart';
+
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/models/topic_member.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/topic_memberships.dart';
 import 'package:squadquest/controllers/settings.dart';
-import 'package:squadquest/services/supabase.dart';
+
+import 'package:squadquest/screens/topics.dart';
+import 'package:squadquest/storybook/screens/onboarding/welcome.dart';
+import 'package:squadquest/storybook/screens/onboarding/home.dart';
+import 'package:squadquest/storybook/screens/onboarding/permission_notification.dart';
+import 'package:squadquest/storybook/screens/onboarding/permission_banner.dart';
 
 // Mock Auth Controller
 class MockAuthController extends AuthController {
@@ -122,26 +123,36 @@ class StorybookApp extends StatelessWidget {
             ),
           ),
           stories: [
+            // Real screens with mock data
             Story(
-              name: 'Existing Screns/Topics Screen',
+              name: 'Existing Screens/Topics Screen',
+              description: 'The real topics screen with mock data',
               builder: (context) => const TopicsScreen(),
             ),
+
+            // Mock onboarding screens
             Story(
-              name: 'Onboarding/Notification Permission Screen',
-              builder: (context) => const NotificationPermissionScreen(),
-            ),
-            Story(
-              name: 'Onboarding/Welcome Screen',
+              name: 'Onboarding/Welcome',
+              description: 'An introductory screen you might see before login',
               builder: (context) => const WelcomeScreen(),
             ),
             Story(
-              name: 'Onboarding/Home Onboarding Screen',
+              name: 'Onboarding/Notification Permission',
+              description:
+                  'An information-only notification permission precursor',
+              builder: (context) => const NotificationPermissionScreen(),
+            ),
+            Story(
+              name: 'Onboarding/Home',
+              description: 'A simplified home screen concept',
               builder: (context) => HomeOnboardingScreen(
                 selectedTopics: {'topic1', 'topic2', 'topic3'},
               ),
             ),
             Story(
-              name: 'Onboarding/Activity Feed with Notification Banner',
+              name: 'Onboarding/Notification Banner',
+              description:
+                  'Banner you might see on screens if you denied notification permission',
               builder: (context) => const MockScreenWithNotificationBanner(),
             ),
           ],
