@@ -80,7 +80,7 @@ class EventDetailsV2Screen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildRsvpStat(
                         context,
@@ -105,6 +105,12 @@ class EventDetailsV2Screen extends ConsumerWidget {
                         count: 2,
                         label: 'No',
                         color: Theme.of(context).colorScheme.error,
+                      ),
+                      _buildRsvpStat(
+                        context,
+                        count: 5,
+                        label: 'Invited',
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ],
                   ),
