@@ -3,6 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:storybook_toolkit/storybook_toolkit.dart';
 import 'package:squadquest/app_scaffold.dart';
 
+enum TopicState {
+  none,
+  following,
+  subscribed,
+}
+
 class TopicsListScreenV1 extends ConsumerStatefulWidget {
   const TopicsListScreenV1({super.key});
 
@@ -15,6 +21,7 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
   late List<_MockTopic> suggestedTopics;
   _MockTopic? movingTopic;
   bool isSubscribing = false;
+  bool showHelpBanner = true;
 
   // Grid layout constants
   static const double gridSpacing = 16.0;
@@ -29,19 +36,19 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
         id: '1',
         name: 'Board Games',
         events: 5,
-        isSubscribed: true,
+        state: TopicState.subscribed,
       ),
       _MockTopic(
         id: '2',
         name: 'Hiking',
         events: 3,
-        isSubscribed: true,
+        state: TopicState.subscribed,
       ),
       _MockTopic(
         id: '3',
         name: 'Photography',
         events: 2,
-        isSubscribed: true,
+        state: TopicState.following,
       ),
     ];
 
@@ -50,37 +57,31 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
         id: '4',
         name: 'Rock Climbing',
         events: 4,
-        isSubscribed: false,
       ),
       _MockTopic(
         id: '5',
         name: 'Movie Nights',
         events: 2,
-        isSubscribed: false,
       ),
       _MockTopic(
         id: '6',
         name: 'Book Club',
         events: 1,
-        isSubscribed: false,
       ),
       _MockTopic(
         id: '7',
         name: 'Cooking',
         events: 3,
-        isSubscribed: false,
       ),
       _MockTopic(
         id: '8',
         name: 'Cycling',
         events: 2,
-        isSubscribed: false,
       ),
       _MockTopic(
         id: '9',
         name: 'Art Gallery',
         events: 1,
-        isSubscribed: false,
       ),
     ];
   }
@@ -95,33 +96,46 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
     return rowCount * cardHeight + (rowCount - 1) * gridSpacing;
   }
 
-  void _toggleSubscription(_MockTopic topic) async {
+  void _toggleSubscription(_MockTopic topic, bool useThreeStateMode) async {
+    final nextState = useThreeStateMode
+        ? switch (topic.state) {
+            TopicState.none => TopicState.following,
+            TopicState.following => TopicState.subscribed,
+            TopicState.subscribed => TopicState.none,
+          }
+        : topic.isSubscribed
+            ? TopicState.none
+            : TopicState.subscribed;
+
     setState(() {
       movingTopic = topic;
-      isSubscribing = !topic.isSubscribed;
+      isSubscribing = nextState != TopicState.none;
     });
 
     // Wait for hero animation to start
     await Future.delayed(const Duration(milliseconds: 100));
 
-    final newTopic = _MockTopic(
-      id: topic.id,
-      name: topic.name,
-      events: topic.events,
-      isSubscribed: !topic.isSubscribed,
-    );
+    final newTopic = topic.copyWith(state: nextState);
 
     setState(() {
-      if (!topic.isSubscribed) {
-        // Remove from suggested
-        suggestedTopics.remove(topic);
-        // Add to subscribed
-        subscribedTopics.add(newTopic);
-      } else {
+      if (nextState == TopicState.none) {
         // Remove from subscribed
         subscribedTopics.remove(topic);
         // Add to suggested
         suggestedTopics.add(newTopic);
+      } else {
+        // Remove from suggested if it's there
+        if (suggestedTopics.contains(topic)) {
+          final index = suggestedTopics.indexOf(topic);
+          suggestedTopics.removeAt(index);
+        }
+        // Update in subscribed if it's there, otherwise add it
+        final index = subscribedTopics.indexWhere((t) => t.id == topic.id);
+        if (index != -1) {
+          subscribedTopics[index] = newTopic;
+        } else {
+          subscribedTopics.add(newTopic);
+        }
       }
     });
 
@@ -140,10 +154,49 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
       description: 'Toggle between empty and populated states',
     );
 
+    final useThreeStateMode = context.knobs.boolean(
+      label: 'Use three-state mode',
+      initial: false,
+      description:
+          'Toggle between two-state (subscribed/none) and three-state (subscribed/following/none) modes',
+    );
+
     return AppScaffold(
       title: 'Topics',
       body: Column(
         children: [
+          // Help Banner
+          if (useThreeStateMode && showHelpBanner)
+            Material(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'You can now follow topics to see updates without notifications, or subscribe to get notified of new events. Tap a topic to cycle through states.',
+                        style: TextStyle(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() => showHelpBanner = false),
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Search Bar
           Container(
             padding: const EdgeInsets.all(16),
@@ -239,6 +292,7 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
                                 child: _buildTopicGrid(
                                   context,
                                   topics: subscribedTopics,
+                                  useThreeStateMode: useThreeStateMode,
                                 ),
                               ),
                             ],
@@ -261,6 +315,7 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
                                 child: _buildTopicGrid(
                                   context,
                                   topics: suggestedTopics,
+                                  useThreeStateMode: useThreeStateMode,
                                 ),
                               ),
                             ],
@@ -278,6 +333,7 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
   Widget _buildTopicGrid(
     BuildContext context, {
     required List<_MockTopic> topics,
+    required bool useThreeStateMode,
   }) {
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
@@ -309,6 +365,7 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
                   child: _buildTopicCard(
                     context,
                     topic,
+                    useThreeStateMode: useThreeStateMode,
                     isMoving: true,
                     opacity: isSubscribing
                         ? flightDirection == HeroFlightDirection.push
@@ -325,6 +382,7 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
           child: _buildTopicCard(
             context,
             topic,
+            useThreeStateMode: useThreeStateMode,
             isMoving: isMoving,
             opacity: isMoving ? 0.0 : 1.0,
           ),
@@ -336,6 +394,7 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
   Widget _buildTopicCard(
     BuildContext context,
     _MockTopic topic, {
+    required bool useThreeStateMode,
     bool isMoving = false,
     double opacity = 1.0,
   }) {
@@ -345,7 +404,9 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: isMoving ? null : () => _toggleSubscription(topic),
+          onTap: isMoving
+              ? null
+              : () => _toggleSubscription(topic, useThreeStateMode),
           child: Stack(
             children: [
               // Topic Content
@@ -367,25 +428,59 @@ class _TopicsListScreenV1State extends ConsumerState<TopicsListScreenV1> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const Spacer(),
-                    if (topic.isSubscribed)
+                    if (topic.state != TopicState.none)
                       Chip(
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        label: const Text('Subscribed'),
-                        avatar: const Icon(Icons.check, size: 16),
+                        label: Text(
+                          useThreeStateMode
+                              ? (topic.state == TopicState.subscribed
+                                  ? 'Subscribed'
+                                  : 'Following')
+                              : 'Subscribed',
+                        ),
+                        avatar: Icon(
+                          useThreeStateMode
+                              ? (topic.state == TopicState.subscribed
+                                  ? Icons.notifications_active
+                                  : Icons.remove_red_eye)
+                              : Icons.check,
+                          size: 16,
+                        ),
+                        backgroundColor: useThreeStateMode
+                            ? (topic.state == TopicState.subscribed
+                                ? Theme.of(context).colorScheme.primaryContainer
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer)
+                            : Theme.of(context).colorScheme.primaryContainer,
+                        labelStyle: TextStyle(
+                          color: useThreeStateMode
+                              ? (topic.state == TopicState.subscribed
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer)
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                        ),
                       ),
                   ],
                 ),
               ),
 
-              // Subscribe Button
-              if (!topic.isSubscribed)
+              // Toggle Button
+              if (topic.state == TopicState.none)
                 Positioned(
                   right: 4,
                   top: 4,
                   child: IconButton(
                     icon: const Icon(Icons.add),
-                    onPressed:
-                        isMoving ? null : () => _toggleSubscription(topic),
+                    onPressed: isMoving
+                        ? null
+                        : () => _toggleSubscription(topic, useThreeStateMode),
                   ),
                 ),
             ],
@@ -432,12 +527,24 @@ class _MockTopic {
   final String id;
   final String name;
   final int events;
-  final bool isSubscribed;
+  final TopicState state;
 
   _MockTopic({
     required this.id,
     required this.name,
     required this.events,
-    required this.isSubscribed,
+    this.state = TopicState.none,
   });
+
+  bool get isSubscribed => state == TopicState.subscribed;
+  bool get isFollowing => state == TopicState.following;
+
+  _MockTopic copyWith({TopicState? state}) {
+    return _MockTopic(
+      id: id,
+      name: name,
+      events: events,
+      state: state ?? this.state,
+    );
+  }
 }
