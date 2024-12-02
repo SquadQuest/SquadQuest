@@ -84,15 +84,15 @@ class EventDetailsV2Screen extends ConsumerWidget {
                     children: [
                       _buildRsvpStat(
                         context,
-                        count: 18,
-                        label: 'Going',
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      _buildRsvpStat(
-                        context,
                         count: 3,
                         label: 'On My Way',
                         color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                      _buildRsvpStat(
+                        context,
+                        count: 18,
+                        label: 'Going',
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       _buildRsvpStat(
                         context,
