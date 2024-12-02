@@ -141,6 +141,8 @@ class EventDetailsV2Screen extends ConsumerWidget {
                 name: 'Emma Wilson',
                 imageUrl: 'https://i.pravatar.cc/300?u=emma',
                 subtitle: '2 minutes away',
+                isCurrentUser: true,
+                rsvpNote: 'Can\'t wait! I\'ll help set up the tables.',
               ),
               _Attendee(
                 name: 'James Lee',
@@ -165,12 +167,13 @@ class EventDetailsV2Screen extends ConsumerWidget {
               _Attendee(
                 name: 'Alex Rivera',
                 imageUrl: 'https://i.pravatar.cc/300?u=alex',
-                subtitle: 'Bringing snacks',
+                subtitle: 'Friend',
+                rsvpNote: 'Bringing snacks and drinks!',
               ),
               _Attendee(
                 name: 'Taylor Swift',
                 imageUrl: 'https://i.pravatar.cc/300?u=taylor',
-                subtitle: 'Bringing drinks',
+                subtitle: 'Friend of Sarah',
               ),
             ],
             color: Theme.of(context).colorScheme.primary,
@@ -184,12 +187,13 @@ class EventDetailsV2Screen extends ConsumerWidget {
               _Attendee(
                 name: 'Chris Brown',
                 imageUrl: 'https://i.pravatar.cc/300?u=chris',
-                subtitle: 'Will confirm by Thursday',
+                subtitle: 'Friend',
+                rsvpNote: 'Will confirm by Thursday - waiting on work schedule',
               ),
               _Attendee(
                 name: 'Diana Prince',
                 imageUrl: 'https://i.pravatar.cc/300?u=diana',
-                subtitle: 'Checking schedule',
+                subtitle: 'Friend of Alex',
               ),
             ],
             color: Theme.of(context).colorScheme.secondary,
@@ -203,7 +207,8 @@ class EventDetailsV2Screen extends ConsumerWidget {
               _Attendee(
                 name: 'Bruce Wayne',
                 imageUrl: 'https://i.pravatar.cc/300?u=bruce',
-                subtitle: 'Out of town',
+                subtitle: 'Friend',
+                rsvpNote: 'Out of town for business',
               ),
             ],
             color: Theme.of(context).colorScheme.error,
@@ -318,8 +323,8 @@ class EventDetailsV2Screen extends ConsumerWidget {
                   ],
                 ),
               ),
-              ...attendees
-                  .map((attendee) => _buildAttendeeItem(context, attendee)),
+              ...attendees.map(
+                  (attendee) => _buildAttendeeItem(context, attendee, color)),
             ],
           ),
         ),
@@ -327,37 +332,98 @@ class EventDetailsV2Screen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAttendeeItem(BuildContext context, _Attendee attendee) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundImage: NetworkImage(attendee.imageUrl),
+  Widget _buildAttendeeItem(
+      BuildContext context, _Attendee attendee, Color sectionColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: attendee.isCurrentUser
+            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+            : null,
       ),
-      title: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(attendee.name),
-          if (attendee.isHost) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Host',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimary,
+          ListTile(
+            leading: CircleAvatar(
+              backgroundImage: NetworkImage(attendee.imageUrl),
+            ),
+            title: Row(
+              children: [
+                Text(attendee.name),
+                if (attendee.isCurrentUser) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: Text(
+                      'You',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                    ),
+                  ),
+                ],
+                if (attendee.isHost) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: sectionColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Host',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.surface,
+                          ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            subtitle: Text(attendee.subtitle),
+          ),
+          if (attendee.rsvpNote != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(72, 0, 16, 16),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceVariant
+                      .withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.format_quote,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        attendee.rsvpNote!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
         ],
-      ),
-      subtitle: Text(
-        attendee.subtitle,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
       ),
     );
   }
@@ -368,11 +434,15 @@ class _Attendee {
   final String imageUrl;
   final String subtitle;
   final bool isHost;
+  final bool isCurrentUser;
+  final String? rsvpNote;
 
   const _Attendee({
     required this.name,
     required this.imageUrl,
     required this.subtitle,
     this.isHost = false,
+    this.isCurrentUser = false,
+    this.rsvpNote,
   });
 }
