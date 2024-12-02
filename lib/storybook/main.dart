@@ -16,6 +16,7 @@ import 'package:squadquest/storybook/screens/events/create_event.dart';
 import 'package:squadquest/storybook/screens/events/event_details.dart';
 import 'package:squadquest/storybook/screens/events/event_details.v2.dart';
 import 'package:squadquest/storybook/screens/events/rsvp_interactions.dart';
+import 'package:squadquest/storybook/screens/events/rsvp_interactions.v2.dart';
 import 'package:squadquest/storybook/screens/events/event_chat.dart';
 import 'package:squadquest/storybook/screens/events/attendees_demo.dart';
 import 'package:squadquest/storybook/screens/profile/edit_profile.dart';
@@ -131,9 +132,14 @@ class StorybookApp extends StatelessWidget {
               builder: (context) => const EventDetailsV2Screen(),
             ),
             Story(
-              name: 'Redesign/Events/RSVP Interactions',
+              name: 'Redesign/Events/RSVP Interactions v1',
               description: 'Interactive demo of RSVP and menu interactions',
               builder: (context) => const RsvpInteractionsScreen(),
+            ),
+            Story(
+              name: 'Redesign/Events/RSVP Interactions v2',
+              description: 'RSVP flow with optional notes',
+              builder: (context) => const RsvpInteractionsV2Screen(),
             ),
             Story(
               name: 'Redesign/Events/Event Chat',
