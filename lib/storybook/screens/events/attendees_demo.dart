@@ -1,23 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:storybook_toolkit/storybook_toolkit.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/storybook/components/modals/attendees_modal.dart';
 
 class AttendeesDemoScreen extends ConsumerWidget {
   const AttendeesDemoScreen({super.key});
 
-  void _showAttendeesModal(BuildContext context) {
+  void _showAttendeesModal(BuildContext context,
+      {required bool showFriendButtons}) {
     showDialog(
       context: context,
-      builder: (context) => const DefaultTabController(
+      builder: (context) => DefaultTabController(
         length: 2,
-        child: AttendeesModal(),
+        child: AttendeesModal(showFriendButtons: showFriendButtons),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final showFriendButtons = context.knobs.boolean(
+      label: 'Show friend buttons',
+      initial: false,
+      description: 'Toggle friend request buttons in attendee list',
+    );
+
     return AppScaffold(
       title: 'Event Details',
       body: CustomScrollView(
@@ -93,7 +101,10 @@ class AttendeesDemoScreen extends ConsumerWidget {
                                 ),
                               ),
                               TextButton(
-                                onPressed: () => _showAttendeesModal(context),
+                                onPressed: () => _showAttendeesModal(
+                                  context,
+                                  showFriendButtons: showFriendButtons,
+                                ),
                                 child: const Text('See All'),
                               ),
                             ],

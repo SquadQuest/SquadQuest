@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AttendeesModal extends ConsumerWidget {
-  const AttendeesModal({super.key});
+  final bool showFriendButtons;
+
+  const AttendeesModal({
+    super.key,
+    this.showFriendButtons = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -84,6 +89,7 @@ class AttendeesModal extends ConsumerWidget {
                         subtitle: 'Host • Friend',
                         imageUrl: 'https://i.pravatar.cc/300?u=sarah',
                         isHost: true,
+                        showFriendButton: false,
                       ),
                       _buildAttendeeItem(
                         context,
@@ -97,12 +103,14 @@ class AttendeesModal extends ConsumerWidget {
                         name: 'Emma Wilson',
                         subtitle: 'Mutual friend with Sarah',
                         imageUrl: 'https://i.pravatar.cc/300?u=emma',
+                        showFriendButton: showFriendButtons,
                       ),
                       _buildAttendeeItem(
                         context,
                         name: 'James Lee',
                         subtitle: 'Friend of friend',
                         imageUrl: 'https://i.pravatar.cc/300?u=james',
+                        showFriendButton: showFriendButtons,
                       ),
                     ],
                   ),
@@ -123,6 +131,7 @@ class AttendeesModal extends ConsumerWidget {
                         name: 'Taylor Swift',
                         subtitle: 'Mutual friend with Mike',
                         imageUrl: 'https://i.pravatar.cc/300?u=taylor',
+                        showFriendButton: showFriendButtons,
                       ),
                     ],
                   ),
@@ -141,7 +150,7 @@ class AttendeesModal extends ConsumerWidget {
     required String subtitle,
     required String imageUrl,
     bool isHost = false,
-    bool showFriendButton = true,
+    bool showFriendButton = false,
   }) {
     return ListTile(
       leading: CircleAvatar(
