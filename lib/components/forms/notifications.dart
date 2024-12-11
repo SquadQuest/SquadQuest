@@ -4,7 +4,12 @@ import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/models/user.dart';
 
 class NotificationOptions extends ConsumerStatefulWidget {
-  const NotificationOptions({super.key});
+  final bool showDetails;
+
+  const NotificationOptions({
+    super.key,
+    this.showDetails = false,
+  });
 
   @override
   ConsumerState<NotificationOptions> createState() =>
@@ -12,6 +17,28 @@ class NotificationOptions extends ConsumerStatefulWidget {
 }
 
 class _NotificationOptionsState extends ConsumerState<NotificationOptions> {
+  Widget _buildNotificationTile({
+    required NotificationType type,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool enabled,
+    required Function(bool) onChanged,
+  }) {
+    return ListTile(
+      title: Text(title),
+      subtitle: widget.showDetails ? Text(subtitle) : null,
+      leading: Icon(
+        icon,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      trailing: Switch(
+        value: enabled,
+        onChanged: onChanged,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider);
@@ -19,108 +46,115 @@ class _NotificationOptionsState extends ConsumerState<NotificationOptions> {
 
     return Column(
       children: [
-        CheckboxListTile(
-          title: const Text('Friend Requests'),
-          subtitle: const Text(
-              'When someone who already knows your phone number requests to be your friend on SquadQuest'),
-          value: profile.value?.enabledNotifications
+        _buildNotificationTile(
+          type: NotificationType.friendRequest,
+          title: 'Friend Requests',
+          subtitle:
+              'When someone who already knows your phone number requests to be your friend on SquadQuest',
+          icon: Icons.person_add_outlined,
+          enabled: profile.value?.enabledNotifications
                   .contains(NotificationType.friendRequest) ??
               false,
-          onChanged: (bool? enabled) async {
+          onChanged: (enabled) async {
             await profileController.setNotificationEnabled(
-                NotificationType.friendRequest, enabled!);
+                NotificationType.friendRequest, enabled);
           },
-          secondary: const Icon(Icons.people),
         ),
-        CheckboxListTile(
-          title: const Text('Event Invitations'),
-          subtitle: const Text('When a friend invites you to an event'),
-          value: profile.value?.enabledNotifications
+        _buildNotificationTile(
+          type: NotificationType.eventInvitation,
+          title: 'Event Invitations',
+          subtitle: 'When a friend invites you to an event',
+          icon: Icons.mail_outlined,
+          enabled: profile.value?.enabledNotifications
                   .contains(NotificationType.eventInvitation) ??
               false,
-          onChanged: (bool? enabled) async {
+          onChanged: (enabled) async {
             await profileController.setNotificationEnabled(
-                NotificationType.eventInvitation, enabled!);
+                NotificationType.eventInvitation, enabled);
           },
-          secondary: const Icon(Icons.mail),
         ),
-        CheckboxListTile(
-          title: const Text('Event Changes'),
-          subtitle: const Text(
-              'When an event you\'ve RSVPd to has a key detail changed or is canceled'),
-          value: profile.value?.enabledNotifications
+        _buildNotificationTile(
+          type: NotificationType.eventChange,
+          title: 'Event Changes',
+          subtitle:
+              'When an event you\'ve RSVPd to has a key detail changed or is canceled',
+          icon: Icons.update_outlined,
+          enabled: profile.value?.enabledNotifications
                   .contains(NotificationType.eventChange) ??
               false,
-          onChanged: (bool? enabled) async {
+          onChanged: (enabled) async {
             await profileController.setNotificationEnabled(
-                NotificationType.eventChange, enabled!);
+                NotificationType.eventChange, enabled);
           },
-          secondary: const Icon(Icons.edit_calendar),
         ),
-        CheckboxListTile(
-          title: const Text('New Friends Event'),
-          subtitle: const Text(
-              'When a new friends-only event is posted by one of your friends to a topic you subscribe to'),
-          value: profile.value?.enabledNotifications
+        _buildNotificationTile(
+          type: NotificationType.friendsEventPosted,
+          title: 'New Friends Event',
+          subtitle:
+              'When a new friends-only event is posted by one of your friends to a topic you subscribe to',
+          icon: Icons.group_outlined,
+          enabled: profile.value?.enabledNotifications
                   .contains(NotificationType.friendsEventPosted) ??
               false,
-          onChanged: (bool? enabled) async {
+          onChanged: (enabled) async {
             await profileController.setNotificationEnabled(
-                NotificationType.friendsEventPosted, enabled!);
+                NotificationType.friendsEventPosted, enabled);
           },
-          secondary: const Icon(Icons.event),
         ),
-        CheckboxListTile(
-          title: const Text('New Public Event'),
-          subtitle: const Text(
-              'When a new public event is posted to a topic you subscribe to'),
-          value: profile.value?.enabledNotifications
+        _buildNotificationTile(
+          type: NotificationType.publicEventPosted,
+          title: 'New Public Event',
+          subtitle:
+              'When a new public event is posted to a topic you subscribe to',
+          icon: Icons.event_available_outlined,
+          enabled: profile.value?.enabledNotifications
                   .contains(NotificationType.publicEventPosted) ??
               false,
-          onChanged: (bool? enabled) async {
+          onChanged: (enabled) async {
             await profileController.setNotificationEnabled(
-                NotificationType.publicEventPosted, enabled!);
+                NotificationType.publicEventPosted, enabled);
           },
-          secondary: const Icon(Icons.event),
         ),
-        CheckboxListTile(
-          title: const Text('Guest RSVPs'),
-          subtitle: const Text(
-              'When someone changes their RSVP status to an event you posted'),
-          value: profile.value?.enabledNotifications
+        _buildNotificationTile(
+          type: NotificationType.guestRsvp,
+          title: 'Guest RSVPs',
+          subtitle:
+              'When someone changes their RSVP status to an event you posted',
+          icon: Icons.how_to_reg_outlined,
+          enabled: profile.value?.enabledNotifications
                   .contains(NotificationType.guestRsvp) ??
               false,
-          onChanged: (bool? enabled) async {
+          onChanged: (enabled) async {
             await profileController.setNotificationEnabled(
-                NotificationType.guestRsvp, enabled!);
+                NotificationType.guestRsvp, enabled);
           },
-          secondary: const Icon(Icons.mail),
         ),
-        CheckboxListTile(
-          title: const Text('Friends OMW'),
-          subtitle: const Text(
-              'When a friend is on their way to an event you RSVPd to'),
-          value: profile.value?.enabledNotifications
+        _buildNotificationTile(
+          type: NotificationType.friendOnTheWay,
+          title: 'Friends OMW',
+          subtitle: 'When a friend is on their way to an event you RSVPd to',
+          icon: Icons.directions_run_outlined,
+          enabled: profile.value?.enabledNotifications
                   .contains(NotificationType.friendOnTheWay) ??
               false,
-          onChanged: (bool? enabled) async {
+          onChanged: (enabled) async {
             await profileController.setNotificationEnabled(
-                NotificationType.friendOnTheWay, enabled!);
+                NotificationType.friendOnTheWay, enabled);
           },
-          secondary: const Icon(Icons.run_circle_outlined),
         ),
-        CheckboxListTile(
-          title: const Text('Event Chat'),
-          subtitle: const Text(
-              'When a message gets posted to chat in an event you RSVPd to'),
-          value: profile.value?.enabledNotifications
+        _buildNotificationTile(
+          type: NotificationType.eventMessage,
+          title: 'Event Chat',
+          subtitle:
+              'When a message gets posted to chat in an event you RSVPd to',
+          icon: Icons.chat_outlined,
+          enabled: profile.value?.enabledNotifications
                   .contains(NotificationType.eventMessage) ??
               false,
-          onChanged: (bool? enabled) async {
+          onChanged: (enabled) async {
             await profileController.setNotificationEnabled(
-                NotificationType.eventMessage, enabled!);
+                NotificationType.eventMessage, enabled);
           },
-          secondary: const Icon(Icons.message),
         ),
       ],
     );
