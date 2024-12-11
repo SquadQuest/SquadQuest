@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/models/user.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -14,15 +15,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _locationSharing = false;
   bool _calendarSync = false;
   bool _developerMode = false;
+  bool _showNotificationDetails = false;
   ThemeMode _themeMode = ThemeMode.system;
 
-  // Mock notification settings
-  final Map<String, bool> _notificationSettings = {
-    'Event reminders': true,
-    'Friend requests': true,
-    'Event chat messages': false,
-    'Event updates': true,
-    'New events from friends': true,
+  // Mock notification settings using the NotificationType enum
+  final Set<NotificationType> _enabledNotifications = {
+    NotificationType.friendRequest,
+    NotificationType.eventInvitation,
+    NotificationType.eventChange,
   };
 
   @override
@@ -108,22 +108,80 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildSection(
             title: 'Notifications',
             icon: Icons.notifications_outlined,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Show Details',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                ),
+                const SizedBox(width: 8),
+                Switch(
+                  value: _showNotificationDetails,
+                  onChanged: (value) {
+                    setState(() => _showNotificationDetails = value);
+                  },
+                ),
+              ],
+            ),
             children: [
-              ..._notificationSettings.entries.map((entry) => _buildSettingTile(
-                    title: entry.key,
-                    leading: Icon(
-                      _getNotificationIcon(entry.key),
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    trailing: Switch(
-                      value: entry.value,
-                      onChanged: (value) {
-                        setState(() {
-                          _notificationSettings[entry.key] = value;
-                        });
-                      },
-                    ),
-                  )),
+              _buildNotificationTile(
+                type: NotificationType.friendRequest,
+                title: 'Friend Requests',
+                subtitle:
+                    'When someone who already knows your phone number requests to be your friend',
+                icon: Icons.person_add_outlined,
+              ),
+              _buildNotificationTile(
+                type: NotificationType.eventInvitation,
+                title: 'Event Invitations',
+                subtitle: 'When a friend invites you to an event',
+                icon: Icons.mail_outlined,
+              ),
+              _buildNotificationTile(
+                type: NotificationType.eventChange,
+                title: 'Event Changes',
+                subtitle:
+                    'When an event you\'ve RSVPd to has a key detail changed or is canceled',
+                icon: Icons.update_outlined,
+              ),
+              _buildNotificationTile(
+                type: NotificationType.friendsEventPosted,
+                title: 'New Friends Event',
+                subtitle:
+                    'When a new friends-only event is posted by one of your friends to a topic you subscribe to',
+                icon: Icons.group_outlined,
+              ),
+              _buildNotificationTile(
+                type: NotificationType.publicEventPosted,
+                title: 'New Public Event',
+                subtitle:
+                    'When a new public event is posted to a topic you subscribe to',
+                icon: Icons.event_available_outlined,
+              ),
+              _buildNotificationTile(
+                type: NotificationType.guestRsvp,
+                title: 'Guest RSVPs',
+                subtitle:
+                    'When someone changes their RSVP status to an event you posted',
+                icon: Icons.how_to_reg_outlined,
+              ),
+              _buildNotificationTile(
+                type: NotificationType.friendOnTheWay,
+                title: 'Friends OMW',
+                subtitle:
+                    'When a friend is on their way to an event you RSVPd to',
+                icon: Icons.directions_run_outlined,
+              ),
+              _buildNotificationTile(
+                type: NotificationType.eventMessage,
+                title: 'Event Chat',
+                subtitle:
+                    'When a message gets posted to chat in an event you RSVPd to',
+                icon: Icons.chat_outlined,
+              ),
             ],
           ),
           _buildSection(
@@ -193,6 +251,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String title,
     required IconData icon,
     required List<Widget> children,
+    Widget? trailing,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,6 +273,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       fontWeight: FontWeight.bold,
                     ),
               ),
+              if (trailing != null) ...[
+                const Spacer(),
+                trailing,
+              ],
             ],
           ),
         ),
@@ -265,20 +328,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  IconData _getNotificationIcon(String setting) {
-    switch (setting) {
-      case 'Event reminders':
-        return Icons.event_available_outlined;
-      case 'Friend requests':
-        return Icons.person_add_outlined;
-      case 'Event chat messages':
-        return Icons.chat_outlined;
-      case 'Event updates':
-        return Icons.update_outlined;
-      case 'New events from friends':
-        return Icons.group_outlined;
-      default:
-        return Icons.notifications_outlined;
-    }
+  Widget _buildNotificationTile({
+    required NotificationType type,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    return _buildSettingTile(
+      title: title,
+      subtitle: _showNotificationDetails ? subtitle : null,
+      leading: Icon(
+        icon,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      trailing: Switch(
+        value: _enabledNotifications.contains(type),
+        onChanged: (enabled) {
+          setState(() {
+            if (enabled) {
+              _enabledNotifications.add(type);
+            } else {
+              _enabledNotifications.remove(type);
+            }
+          });
+        },
+      ),
+    );
   }
 }
