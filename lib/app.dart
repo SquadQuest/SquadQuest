@@ -9,9 +9,11 @@ import 'package:squadquest/theme.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/controllers/location.dart';
+import 'package:squadquest/controllers/calendar.dart';
 import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/models/user.dart';
+import 'package:squadquest/models/instance.dart';
 
 class MyApp extends ConsumerWidget {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
@@ -61,6 +63,16 @@ class MyApp extends ConsumerWidget {
               ref
                   .read(locationControllerProvider)
                   .stopTracking(data['event']['id']);
+            case 'invitation':
+              if (ref.read(calendarWritingEnabledProvider)) {
+                final instance = Instance.fromMap(data['event']);
+                final subscription = InstanceMember.fromMap(data['invitation']);
+
+                CalendarController.instance.upsertEvent(
+                  instance: instance,
+                  subscription: subscription,
+                );
+              }
           }
           // (temporarily)? display any push notification in-app
           _scaffoldKey.currentState?.showSnackBar(SnackBar(
@@ -88,6 +100,16 @@ class MyApp extends ConsumerWidget {
             case 'rsvp':
               goToNotificationRoute(ref, '/events/${data['event']['id']}');
             case 'invitation':
+              // Write to calendar when invitation notification is opened
+              if (ref.read(calendarWritingEnabledProvider)) {
+                final instance = Instance.fromMap(data['event']);
+                final subscription = InstanceMember.fromMap(data['invitation']);
+
+                CalendarController.instance.upsertEvent(
+                  instance: instance,
+                  subscription: subscription,
+                );
+              }
               goToNotificationRoute(
                   ref, '/events/${data['invitation']['instance']}');
             case 'friend-request-received':

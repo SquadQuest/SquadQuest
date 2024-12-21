@@ -72,7 +72,8 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
 
       // Handle calendar sync
       if (ref.read(calendarWritingEnabledProvider)) {
-        if (instanceMember != null) {
+        if (instanceMember != null &&
+            instanceMember.status != InstanceMemberStatus.no) {
           await CalendarController.instance.upsertEvent(
             subscription: instanceMember,
             instance: instance,

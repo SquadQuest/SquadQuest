@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Flutter: Storybook",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "args": [
+                "--target=lib/storybook/main.dart",
+                "--device-id=macos"
+            ]
+        },
+        {
             "name": "Flutter",
             "type": "dart",
             "request": "launch",

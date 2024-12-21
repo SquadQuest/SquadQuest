@@ -199,7 +199,8 @@ class Instance {
       return InstanceTimeGroup.upcoming;
     }
 
-    if ((endTime != null && endTime!.isBefore(now)) ||
+    if (status == InstanceStatus.canceled ||
+        (endTime != null && endTime!.isBefore(now)) ||
         startTimeMax.isBefore(now.subtract(const Duration(hours: 12)))) {
       return InstanceTimeGroup.past;
     }

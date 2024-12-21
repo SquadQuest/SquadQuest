@@ -28,5 +28,26 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Sync event RSVPs to calendar</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Search your contacts to send friend requests and invite friends to events</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Shares your location with friends during an event</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Shares your location with friends during an event</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Shares your location with friends during an event</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Select photos to upload for your profile and events</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>location</string>
+		<string>processing</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

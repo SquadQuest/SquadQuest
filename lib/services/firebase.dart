@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,13 +8,16 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/router.dart';
 import 'package:squadquest/firebase_options.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/controllers/calendar.dart';
 import 'package:squadquest/components/forms/notifications.dart';
+import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/interop/set_handler.stub.dart'
     if (dart.library.html) 'package:squadquest/interop/set_handler.web.dart';
 
@@ -61,6 +65,31 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       'notification-body': message.notification?.body,
     }
   });
+
+  // Handle invitation notifications in background
+  if (message.data['notificationType'] == 'invitation') {
+    final data =
+        message.data['json'] == null ? {} : jsonDecode(message.data['json']);
+
+    try {
+      // Check if calendar writing is enabled
+      final prefs = await SharedPreferences.getInstance();
+      final calendarWritingEnabled =
+          prefs.getString('calendarWritingEnabled') == 'true';
+
+      if (calendarWritingEnabled) {
+        final instance = Instance.fromMap(data['event']);
+        final subscription = InstanceMember.fromMap(data['invitation']);
+
+        await CalendarController.instance.upsertEvent(
+          instance: instance,
+          subscription: subscription,
+        );
+      }
+    } catch (error) {
+      logger.e('Error writing calendar event in background', error: error);
+    }
+  }
 }
 
 class FirebaseMessagingService {
