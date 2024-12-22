@@ -89,7 +89,11 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
         result = asYouTypeFormatter.inputDigit(digits[i]);
       }
 
-      _internalController.text = result;
+      _internalController.value = TextEditingValue(
+        text: result,
+        selection:
+            TextSelection.fromPosition(TextPosition(offset: result.length)),
+      );
     }
 
     // update state
