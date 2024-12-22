@@ -152,6 +152,8 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
         IntlPhoneField(
           key: _phoneFieldKey,
           controller: _internalController,
+          autofocus: widget.autofocus,
+          readOnly: !widget.enabled,
           disableLengthCheck: true,
           inputFormatters: [
             FilteringTextInputFormatter.deny(RegExp(r'[^+\(\) 0-9\-]')),
