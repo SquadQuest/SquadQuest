@@ -162,6 +162,9 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
           onCountryChanged: (country) {
             _selectedCountry = country;
           },
+          onSubmitted: widget.enabled && widget.onSubmitted != null
+              ? (value) => widget.onSubmitted!(value)
+              : null,
           validator: (fieldValue) {
             try {
               PhoneNumber number =
