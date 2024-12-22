@@ -1,47 +1,22 @@
 import 'dart:io';
 
-import 'package:flutter/services.dart';
-import 'package:flutter_multi_formatter/formatters/phone_input_enums.dart';
-import 'package:flutter_multi_formatter/formatters/phone_input_formatter.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dlibphonenumber/dlibphonenumber.dart';
 
-/// Remove non-digits from the phone number
 String normalizePhone(String phone) {
-  phone = phone.replaceAll(RegExp(r'[^\d]'), '');
-
-  // assume north american prefix
-  if (phone.length == 10 && phone[0] != '1') {
-    phone = '1$phone';
-  }
-
-  return phone;
+  PhoneNumber number = PhoneNumberUtil.instance.parse(phone, 'US');
+  return PhoneNumberUtil.instance.format(number, PhoneNumberFormat.e164);
 }
 
 String formatPhone(String phone) {
-  final normalized = normalizePhone(phone);
-
-  final countryCode = (PhoneCodes.getCountryDataByPhone(normalized) ??
-      PhoneCodes.getPhoneCountryDataByCountryCode("US"))!;
-
-  final codeRegex = RegExp(r"\+*" + countryCode.internalPhoneCode!);
-
-  final phoneNumberWithoutCountry = normalized.startsWith(codeRegex)
-      ? normalized.replaceFirst(codeRegex, '')
-      : normalized;
-
-  return formatAsPhoneNumber(
-    phoneNumberWithoutCountry,
-    allowEndlessPhone: true,
-    defaultCountryCode: countryCode.countryCode,
-    invalidPhoneAction: InvalidPhoneAction.ShowUnformatted,
-  )!;
-  // null-safety `!` ensured by the above enum value [InvalidPhoneAction.ShowUnformatted]
+  try {
+    PhoneNumber number = PhoneNumberUtil.instance.parse(phone, 'US');
+    return PhoneNumberUtil.instance.format(number, PhoneNumberFormat.national);
+  } catch (error) {
+    return phone;
+  }
 }
-
-/// Deny any non-digit (and some phone number related) characters from the input
-final phoneInputFilter =
-    FilteringTextInputFormatter.deny(RegExp(r'[^+\(\) 0-9\-]'));
 
 List<T> updateListWithRecord<T>(List<T> list, bool Function(T) where, T? record,
     {bool prepend = false}) {

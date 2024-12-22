@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/profile.dart';
@@ -240,7 +241,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       case AddFriendMethod.contacts:
         contact = await _showContactPicker();
         if (contact != null) {
-          phone = contact.phones.first.number;
+          try {
+            phone = normalizePhone(contact.phones.first.number);
+          } catch (error) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(
+                    'Could not parse phone nuber: ${contact.phones.first.number}'),
+              ));
+              return;
+            }
+          }
         }
     }
 
