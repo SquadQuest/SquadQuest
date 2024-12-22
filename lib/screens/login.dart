@@ -36,7 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       submitted = true;
     });
 
-    final phone = normalizePhone(_phoneController.text);
+    final phone = _phoneController.text;
     log('Sending login code via SMS to $phone');
 
     try {

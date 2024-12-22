@@ -50,7 +50,7 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
 
     try {
       final response = await supabase.functions.invoke('send-friend-request',
-          body: {'phone': normalizePhone(phone), ...extra ?? {}});
+          body: {'phone': phone, ...extra ?? {}});
 
       if (response.data['invited'] == true) {
         return null;

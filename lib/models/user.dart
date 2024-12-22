@@ -113,6 +113,9 @@ class UserProfile {
           unparsedNotifications.add(type);
         }
       }
+    } else {
+      // default to all types enabled
+      parsedNotifications.addAll(NotificationType.values);
     }
 
     return UserProfile(
