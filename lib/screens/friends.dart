@@ -147,28 +147,40 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           ...requests.map((friend) {
             final requester = friend.requester!;
             return ListTile(
+              visualDensity: VisualDensity(vertical: 0),
               leading: CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 child: Text(requester.firstName[0]),
               ),
               title: Text('${requester.firstName} ${requester.lastName}'),
               subtitle: Text(
-                  '${friend.mutualFriendCount} mutual friends • ${_requestDateFormat.format(friend.createdAt!)}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () =>
-                        _respondFriendRequest(context, friend, false),
-                    child: const Text('Ignore'),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: () =>
-                        _respondFriendRequest(context, friend, true),
-                    child: const Text('Accept'),
-                  ),
-                ],
+                  '${_requestDateFormat.format(friend.createdAt!)}\n${friend.mutualFriendCount} mutual friends'),
+              trailing: SizedBox(
+                width: 100,
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    FilledButton(
+                      onPressed: () =>
+                          _respondFriendRequest(context, friend, true),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size.fromHeight(32),
+                      ),
+                      child: const Text('Accept'),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          _respondFriendRequest(context, friend, false),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size.fromHeight(32),
+                      ),
+                      child: const Text('Ignore'),
+                    ),
+                  ],
+                ),
               ),
             );
           }),
