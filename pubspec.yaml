@@ -69,6 +69,7 @@ dependencies:
   flutter_exit_app: ^1.1.4
   intl_phone_field2: ^3.3.4
   dlibphonenumber: ^1.1.29
+  pinput: ^5.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
