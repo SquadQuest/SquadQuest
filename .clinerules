@@ -6,3 +6,7 @@
     - `lib/storybook/components` contains shared elements for new screens
     - `lib/storybook/original_screens` archives original screen designs as new designs are implemented
     - `lib/storybook/main.dart` contains the navigation menu for the storybook interface—all screens need to be registered here
+
+## Debugging and testing
+
+- When debugging the app with the macos platform, you can take screenshots to see what the screen looks like with this command: `uvx screenshot squadquest --filename .scratch/macos-screenshot.png`
