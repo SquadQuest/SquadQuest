@@ -146,40 +146,60 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           ),
           ...requests.map((friend) {
             final requester = friend.requester!;
-            return ListTile(
-              visualDensity: VisualDensity(vertical: 0),
-              leading: CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                child: Text(requester.firstName[0]),
+            return Dismissible(
+              key: Key('friend-request-${friend.id}'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 16),
+                color: Theme.of(context).colorScheme.errorContainer,
+                child: Text(
+                  'Decline',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-              title: Text('${requester.firstName} ${requester.lastName}'),
-              subtitle: Text(
-                  '${_requestDateFormat.format(friend.createdAt!)}\n${friend.mutualFriendCount} mutual friends'),
-              trailing: SizedBox(
-                width: 100,
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    FilledButton(
-                      onPressed: () =>
-                          _respondFriendRequest(context, friend, true),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: const Size.fromHeight(32),
-                      ),
-                      child: const Text('Accept'),
-                    ),
-                    TextButton(
-                      onPressed: () =>
-                          _respondFriendRequest(context, friend, false),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: const Size.fromHeight(32),
-                      ),
-                      child: const Text('Ignore'),
-                    ),
-                  ],
+              confirmDismiss: (direction) {
+                return showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                          title: Text(
+                              'Are you sure you want to decline your friend request from ${requester.displayName}?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('No'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Yes'),
+                            )
+                          ],
+                        ));
+              },
+              onDismissed: (direction) {
+                _respondFriendRequest(context, friend, false);
+              },
+              child: ListTile(
+                visualDensity: VisualDensity(vertical: 0),
+                leading: CircleAvatar(
+                  foregroundImage: requester.photo == null
+                      ? null
+                      : NetworkImage(requester.photo.toString()),
+                  backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+                  child: Text(requester.firstName[0]),
+                ),
+                title: Text(requester.displayName),
+                subtitle: Text(
+                    '${_requestDateFormat.format(friend.createdAt!)}\n${friend.mutualFriendCount} mutual friends'),
+                trailing: FilledButton(
+                  onPressed: () => _respondFriendRequest(context, friend, true),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  child: const Text('Accept'),
                 ),
               ),
             );
@@ -219,10 +239,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           leading: Stack(
             children: [
               CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                backgroundImage: profile.photo != null
+                foregroundImage: profile.photo != null
                     ? NetworkImage(profile.photo!.toString())
                     : null,
+                backgroundColor: Theme.of(context).colorScheme.inversePrimary,
                 child:
                     profile.photo == null ? Text(profile.firstName[0]) : null,
               ),
@@ -256,10 +276,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           //         : Theme.of(context).textTheme.bodySmall?.color,
           //   ),
           // ),
-          trailing: IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
+          // trailing: IconButton(
+          //   icon: const Icon(Icons.more_vert),
+          //   onPressed: () {},
+          // ),
           onTap: () {
             context
                 .pushNamed('profile-view', pathParameters: {'id': profile.id});
