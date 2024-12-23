@@ -2,17 +2,20 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:geobase/coordinates.dart';
 
 class MapPreview extends StatefulWidget {
   final Geographic location;
+  final bool showMarker;
   final VoidCallback? onTap;
   final String? overlayText;
 
   const MapPreview({
     super.key,
     required this.location,
+    this.showMarker = true,
     this.onTap,
     this.overlayText,
   });
@@ -23,7 +26,7 @@ class MapPreview extends StatefulWidget {
 
 class _MapPreviewState extends State<MapPreview> {
   MapLibreMapController? _mapController;
-  Symbol? _locationSymbol;
+  Symbol? _markerSymbol;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +42,16 @@ class _MapPreviewState extends State<MapPreview> {
                 iconImage: 'flag-marker',
                 iconSize: kIsWeb ? 0.125 : 0.25,
                 iconAnchor: 'bottom-left'));
+          },
+          onStyleLoadedCallback: () async {
+            await _mapController!.addImage(
+                'flag-marker',
+                (await rootBundle.load('assets/symbols/flag-marker.png'))
+                    .buffer
+                    .asUint8List());
+
+            // add rally point
+            await refresh();
           },
 
           // disable all interaction
@@ -93,5 +106,40 @@ class _MapPreviewState extends State<MapPreview> {
         ),
       ],
     );
+  }
+
+  @override
+  void didUpdateWidget(MapPreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.location != oldWidget.location ||
+        widget.showMarker != oldWidget.showMarker) {
+      refresh();
+    }
+  }
+
+  Future<void> refresh() async {
+    final latLng = LatLng(widget.location.lat, widget.location.lon);
+
+    await _mapController!.animateCamera(CameraUpdate.newLatLng(latLng));
+
+    if (widget.showMarker) {
+      final options = SymbolOptions(
+          geometry: latLng,
+          iconImage: 'flag-marker',
+          iconSize: kIsWeb ? 0.125 : 0.25,
+          iconAnchor: 'bottom-left');
+
+      if (_markerSymbol == null) {
+        _markerSymbol = await _mapController!.addSymbol(options);
+      } else {
+        await _mapController!.updateSymbol(_markerSymbol!, options);
+      }
+    } else {
+      if (_markerSymbol != null) {
+        await _mapController!.removeSymbol(_markerSymbol!);
+        _markerSymbol = null;
+      }
+    }
   }
 }

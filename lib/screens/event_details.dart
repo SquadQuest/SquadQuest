@@ -561,9 +561,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                             Consumer(builder: (_, ref, child) {
                               final eventPointsAsync = ref.watch(
                                   eventPointsProvider(widget.instanceId));
-                              final mapCenter =
-                                  eventPointsAsync.value?.centroid ??
-                                      event.rallyPoint;
+                              final mapCenter = event.rallyPoint ??
+                                  eventPointsAsync.value?.centroid;
 
                               if (mapCenter == null) {
                                 return const SizedBox.shrink();
@@ -575,6 +574,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                   aspectRatio: 1,
                                   child: MapPreview(
                                     location: mapCenter,
+                                    showMarker: event.rallyPoint != null,
                                     onTap: _showLiveMap,
                                     overlayText: eventPointsAsync.when(
                                       data: (eventPoints) => eventPoints !=
