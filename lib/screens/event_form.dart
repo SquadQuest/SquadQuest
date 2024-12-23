@@ -190,12 +190,20 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     try {
       final instancesController = ref.read(instancesProvider.notifier);
 
+      // For private events with no topic, use the default misc.hangout topic
+      Topic? topic = ref.read(_topicProvider);
+
+      if (visibility == InstanceVisibility.private &&
+          (topic == null || topic.isNull)) {
+        topic = defaultPrivateTopic;
+      }
+
       final Instance draftInstance = Instance(
           id: _editingInstance.value?.id,
           createdAt: _editingInstance.value?.createdAt,
           createdBy: _editingInstance.value?.createdBy,
           title: _titleController.text.trim(),
-          topic: ref.read(_topicProvider),
+          topic: topic,
           startTimeMin: startDateTimeMin,
           startTimeMax: startDateTimeMax,
           visibility: visibility,
@@ -450,18 +458,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
               ? 'Posting event...'
               : 'Saving event...'
           : loadMask,
-      actions: [
-        if (!submitted && !_editingInstance.isLoading && loadMask == null)
-          TextButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-            ),
-            onPressed: () => _submitEvent(context),
-            child: Text(isNewEvent ? 'Post' : 'Save',
-                style: const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold)),
-          ),
-      ],
       showLocationSharingSheet: false,
       body: _editingInstance.when(
         error: (error, __) => Center(child: Text(error.toString())),
@@ -493,8 +489,9 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                           }
                           return Container(
                             decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context).colorScheme.surfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -592,7 +589,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Basic Info Section
+                      // Who Section
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(16),
@@ -600,7 +597,32 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Basic Information',
+                                'Who',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+                              FormVisibilityPicker(
+                                labelText: '',
+                                valueProvider: _visibilityProvider,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // What Section
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'What',
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleMedium
@@ -614,7 +636,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                 decoration: InputDecoration(
                                   labelText: 'Event Title',
                                   hintText: 'What\'s happening?',
-                                  prefixIcon: const Icon(Icons.event),
+                                  prefixIcon: const Icon(Icons.title),
                                   filled: true,
                                   fillColor: Theme.of(context)
                                       .colorScheme
@@ -630,14 +652,65 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                 controller: _titleController,
                               ),
                               const SizedBox(height: 16),
-                              FormTopicPicker(valueProvider: _topicProvider),
+                              Consumer(
+                                builder: (context, ref, _) {
+                                  final visibility =
+                                      ref.watch(_visibilityProvider);
+                                  return FormTopicPicker(
+                                    valueProvider: _topicProvider,
+                                    required: visibility !=
+                                        InstanceVisibility.private,
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                textInputAction: TextInputAction.done,
+                                autofillHints: const [AutofillHints.url],
+                                keyboardType: TextInputType.url,
+                                decoration: InputDecoration(
+                                  labelText: 'Event Link (optional)',
+                                  hintText: 'https://',
+                                  prefixIcon: const Icon(Icons.link),
+                                  filled: true,
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                      .withAlpha(80),
+                                ),
+                                controller: _linkController,
+                                validator: (value) {
+                                  if (value != null &&
+                                      value.isNotEmpty &&
+                                      !_urlRegex.hasMatch(value)) {
+                                    return 'Link must start with http:// or https://';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  labelText: 'Description (optional)',
+                                  hintText: 'Add any important details...',
+                                  alignLabelWithHint: true,
+                                  prefixIcon: const Icon(Icons.description),
+                                  filled: true,
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                      .withAlpha(80),
+                                ),
+                                controller: _notesController,
+                              ),
                             ],
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
 
-                      // Date & Time Section
+                      // When Section
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(16),
@@ -947,7 +1020,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Location Section
+                      // Where Section
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(16),
@@ -1009,7 +1082,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                               ),
                                               const SizedBox(height: 8),
                                               Text(
-                                                'Select on Map',
+                                                'Select on Map (optional)',
                                                 style: TextStyle(
                                                   color: Theme.of(context)
                                                       .colorScheme
@@ -1039,7 +1112,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'Please enter location description';
+                                    return 'Please enter location descrption';
                                   }
                                   return null;
                                 },
@@ -1051,90 +1124,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Details Section
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Additional Details',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                maxLines: 3,
-                                decoration: InputDecoration(
-                                  labelText: 'Description',
-                                  hintText: 'Add any important details...',
-                                  alignLabelWithHint: true,
-                                  prefixIcon: const Icon(Icons.description),
-                                  filled: true,
-                                  fillColor: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withAlpha(80),
-                                ),
-                                controller: _notesController,
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                textInputAction: TextInputAction.done,
-                                autofillHints: const [AutofillHints.url],
-                                keyboardType: TextInputType.url,
-                                decoration: InputDecoration(
-                                  labelText: 'Event Link (optional)',
-                                  hintText: 'https://',
-                                  prefixIcon: const Icon(Icons.link),
-                                  filled: true,
-                                  fillColor: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withAlpha(80),
-                                ),
-                                controller: _linkController,
-                                validator: (value) {
-                                  if (value != null &&
-                                      value.isNotEmpty &&
-                                      !_urlRegex.hasMatch(value)) {
-                                    return 'Link must start with http:// or https://';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Visibility Section
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Who Can See This?',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              FormVisibilityPicker(
-                                labelText: '',
-                                valueProvider: _visibilityProvider,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                       const SizedBox(height: 32),
 
                       // Submit Button
@@ -1142,7 +1131,11 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                         width: double.infinity,
                         height: 48,
                         child: FilledButton(
-                          onPressed: () => _submitEvent(context),
+                          onPressed: submitted ||
+                                  _editingInstance.isLoading ||
+                                  loadMask != null
+                              ? null
+                              : () => _submitEvent(context),
                           child: Text(
                             isNewEvent ? 'Create Event' : 'Save Changes',
                             style: const TextStyle(fontSize: 16),

@@ -1,5 +1,10 @@
 typedef TopicID = String;
 
+final defaultPrivateTopic = Topic(
+  id: '12df1321-1c0a-4f9d-85aa-4a235a36d3a8',
+  name: 'misc.hangout',
+);
+
 class Topic {
   Topic({
     required this.id,
@@ -8,6 +13,9 @@ class Topic {
 
   final TopicID? id;
   final String name;
+
+  bool get isNull => id == null && name.isEmpty;
+  bool get isNotNull => !isNull;
 
   factory Topic.fromMap(Map<String, dynamic> map) {
     return Topic(
