@@ -285,6 +285,25 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         : null;
   }
 
+  Future<void> _showRallyPointPicker() async {
+    Geographic? newValue = await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      enableDrag: false,
+      isDismissible: false,
+      builder: (BuildContext context) => EventRallyMap(
+        initialRallyPoint: ref.read(_locationProvider),
+        onPlaceSelect: (placeName) {
+          if (_locationDescriptionController.text.isEmpty) {
+            _locationDescriptionController.text = placeName;
+          }
+        },
+      ),
+    );
+
+    ref.read(_locationProvider.notifier).state = newValue;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -945,6 +964,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                               const SizedBox(height: 16),
                               Container(
                                 height: 120,
+                                clipBehavior: Clip.antiAlias,
                                 decoration: BoxDecoration(
                                   color: Theme.of(context)
                                       .colorScheme
@@ -956,77 +976,26 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                         Theme.of(context).colorScheme.outline,
                                   ),
                                 ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: InkWell(
-                                    onTap: () async {
-                                      Geographic? newValue =
-                                          await showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        enableDrag: false,
-                                        isDismissible: false,
-                                        builder: (BuildContext context) =>
-                                            EventRallyMap(
-                                          initialRallyPoint:
-                                              ref.read(_locationProvider),
-                                          onPlaceSelect: (placeName) {
-                                            if (_locationDescriptionController
-                                                .text.isEmpty) {
-                                              _locationDescriptionController
-                                                  .text = placeName;
-                                            }
-                                          },
+                                child: Consumer(
+                                  builder: (context, ref, _) {
+                                    final location =
+                                        ref.watch(_locationProvider);
+
+                                    if (location != null) {
+                                      return ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: MapPreview(
+                                          location: location,
+                                          onTap: _showRallyPointPicker,
                                         ),
                                       );
+                                    }
 
-                                      if (newValue != null) {
-                                        ref
-                                            .read(_locationProvider.notifier)
-                                            .state = newValue;
-                                      }
-                                    },
-                                    child: Consumer(
-                                      builder: (context, ref, _) {
-                                        final location =
-                                            ref.watch(_locationProvider);
-                                        if (location != null) {
-                                          return MapPreview(
-                                            location: location,
-                                            onTap: () async {
-                                              Geographic? newValue =
-                                                  await showModalBottomSheet(
-                                                context: context,
-                                                isScrollControlled: true,
-                                                enableDrag: false,
-                                                isDismissible: false,
-                                                builder:
-                                                    (BuildContext context) =>
-                                                        EventRallyMap(
-                                                  initialRallyPoint: ref
-                                                      .read(_locationProvider),
-                                                  onPlaceSelect: (placeName) {
-                                                    if (_locationDescriptionController
-                                                        .text.isEmpty) {
-                                                      _locationDescriptionController
-                                                          .text = placeName;
-                                                    }
-                                                  },
-                                                ),
-                                              );
-
-                                              if (newValue != null) {
-                                                ref
-                                                    .read(_locationProvider
-                                                        .notifier)
-                                                    .state = newValue;
-                                              }
-                                            },
-                                          );
-                                        }
-                                        return Center(
+                                    return Material(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: InkWell(
+                                        onTap: _showRallyPointPicker,
+                                        child: Center(
                                           child: Column(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
@@ -1049,10 +1018,10 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                               ),
                                             ],
                                           ),
-                                        );
-                                      },
-                                    ),
-                                  ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                               const SizedBox(height: 16),
