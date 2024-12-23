@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -5,6 +8,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:logger/logger.dart';
+import 'package:device_preview/device_preview.dart';
 
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/supabase.dart';
@@ -79,8 +83,16 @@ void main() async {
       options.attachViewHierarchy = true;
     },
     appRunner: () => runApp(UncontrolledProviderScope(
-      container: container,
-      child: MyApp(),
-    )),
+        container: container,
+        child: DevicePreview(
+          enabled: !kIsWeb && Platform.isMacOS,
+          defaultDevice: Devices.ios.iPhoneSE,
+          backgroundColor: Colors.black87,
+          builder: (context) => MyApp(),
+          tools: const [
+            DeviceSection(),
+            SystemSection(),
+          ],
+        ))),
   );
 }
