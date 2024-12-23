@@ -18,6 +18,7 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/components/pickers/location.dart';
 import 'package:squadquest/components/event_rally_map.dart';
+import 'package:squadquest/components/map_preview.dart';
 import 'package:squadquest/components/pickers/visibility.dart';
 import 'package:squadquest/components/pickers/topic.dart';
 
@@ -991,15 +992,37 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                         final location =
                                             ref.watch(_locationProvider);
                                         if (location != null) {
-                                          return Center(
-                                            child: Text(
-                                              'Location Selected',
-                                              style: TextStyle(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
-                                              ),
-                                            ),
+                                          return MapPreview(
+                                            location: location,
+                                            onTap: () async {
+                                              Geographic? newValue =
+                                                  await showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                enableDrag: false,
+                                                isDismissible: false,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        EventRallyMap(
+                                                  initialRallyPoint: ref
+                                                      .read(_locationProvider),
+                                                  onPlaceSelect: (placeName) {
+                                                    if (_locationDescriptionController
+                                                        .text.isEmpty) {
+                                                      _locationDescriptionController
+                                                          .text = placeName;
+                                                    }
+                                                  },
+                                                ),
+                                              );
+
+                                              if (newValue != null) {
+                                                ref
+                                                    .read(_locationProvider
+                                                        .notifier)
+                                                    .state = newValue;
+                                              }
+                                            },
                                           );
                                         }
                                         return Center(
