@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -615,39 +616,195 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 16),
-                              FormDatePicker(
-                                labelText: 'Date',
-                                initialValue: startDate,
-                                firstDate: isNewEvent ||
-                                        instance?.startTimeMax
-                                                .isAfter(DateTime.now()) ==
-                                            true
-                                    ? null
-                                    : instance?.startTimeMin,
-                                onChanged: (DateTime date) {
-                                  setState(() {
-                                    startDate = date;
-                                  });
-                                },
-                              ),
-                              FormTimePicker(
-                                labelText: 'Earliest time to meet up at',
-                                valueProvider: _startTimeMinProvider,
-                                onChanged: (TimeOfDay time) {
-                                  if (!startTimeMaxSet) {
-                                    ref
-                                        .read(_startTimeMaxProvider.notifier)
-                                        .state = _plusMinutes(time, 15);
+                              ListTile(
+                                leading: Icon(
+                                  Icons.calendar_today,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                title: const Text('Date'),
+                                subtitle: Text(
+                                  startDate != null
+                                      ? DateFormat.yMd().format(startDate!)
+                                      : 'Select a date',
+                                  style: startDate == null
+                                      ? Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant)
+                                      : null,
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Select',
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ],
+                                ),
+                                onTap: () async {
+                                  final newDate = await showDatePicker(
+                                    context: context,
+                                    initialDate: startDate ?? DateTime.now(),
+                                    firstDate: isNewEvent ||
+                                            instance?.startTimeMax
+                                                    .isAfter(DateTime.now()) ==
+                                                true
+                                        ? DateTime.now()
+                                        : instance!.startTimeMin,
+                                    lastDate: DateTime.now()
+                                        .add(const Duration(days: 365)),
+                                  );
+                                  if (newDate != null) {
+                                    setState(() {
+                                      startDate = newDate;
+                                    });
                                   }
                                 },
                               ),
-                              FormTimePicker(
-                                labelText: 'Latest time to meet up by',
-                                valueProvider: _startTimeMaxProvider,
-                                onChanged: (TimeOfDay time) {
-                                  setState(() {
-                                    startTimeMaxSet = true;
-                                  });
+                              const Divider(),
+                              Consumer(
+                                builder: (context, ref, _) {
+                                  final startTime =
+                                      ref.watch(_startTimeMinProvider);
+                                  return ListTile(
+                                    leading: Icon(
+                                      Icons.access_time,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                                    title: const Text('Start Time'),
+                                    subtitle: Text(
+                                      startTime != null
+                                          ? MaterialLocalizations.of(context)
+                                              .formatTimeOfDay(startTime)
+                                          : 'Select a time',
+                                      style: startTime == null
+                                          ? Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant)
+                                          : null,
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Select',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.chevron_right,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                      ],
+                                    ),
+                                    onTap: () async {
+                                      final newTime = await showTimePicker(
+                                        context: context,
+                                        initialTime:
+                                            startTime ?? TimeOfDay.now(),
+                                      );
+                                      if (newTime != null) {
+                                        ref
+                                            .read(
+                                                _startTimeMinProvider.notifier)
+                                            .state = newTime;
+                                        if (!startTimeMaxSet) {
+                                          ref
+                                                  .read(_startTimeMaxProvider
+                                                      .notifier)
+                                                  .state =
+                                              _plusMinutes(newTime, 15);
+                                        }
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                              const Divider(),
+                              Consumer(
+                                builder: (context, ref, _) {
+                                  final endTime =
+                                      ref.watch(_startTimeMaxProvider);
+                                  return ListTile(
+                                    leading: Icon(
+                                      Icons.access_time,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                                    title: const Text('End Time'),
+                                    subtitle: Text(
+                                      endTime != null
+                                          ? MaterialLocalizations.of(context)
+                                              .formatTimeOfDay(endTime)
+                                          : 'Select a time',
+                                      style: endTime == null
+                                          ? Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant)
+                                          : null,
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Select',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.chevron_right,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                      ],
+                                    ),
+                                    onTap: () async {
+                                      final newTime = await showTimePicker(
+                                        context: context,
+                                        initialTime: endTime ?? TimeOfDay.now(),
+                                      );
+                                      if (newTime != null) {
+                                        ref
+                                            .read(
+                                                _startTimeMaxProvider.notifier)
+                                            .state = newTime;
+                                        setState(() {
+                                          startTimeMaxSet = true;
+                                        });
+                                      }
+                                    },
+                                  );
                                 },
                               ),
                             ],
