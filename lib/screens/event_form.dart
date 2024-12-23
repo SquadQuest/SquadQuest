@@ -599,8 +599,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                   filled: true,
                                   fillColor: Theme.of(context)
                                       .colorScheme
-                                      .surfaceVariant
-                                      .withOpacity(0.3),
+                                      .surfaceContainerHighest
+                                      .withAlpha(80),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -1064,8 +1064,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                   filled: true,
                                   fillColor: Theme.of(context)
                                       .colorScheme
-                                      .surfaceVariant
-                                      .withOpacity(0.3),
+                                      .surfaceContainerHighest
+                                      .withAlpha(80),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -1106,8 +1106,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                   filled: true,
                                   fillColor: Theme.of(context)
                                       .colorScheme
-                                      .surfaceVariant
-                                      .withOpacity(0.3),
+                                      .surfaceContainerHighest
+                                      .withAlpha(80),
                                 ),
                                 controller: _notesController,
                               ),
@@ -1123,8 +1123,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                   filled: true,
                                   fillColor: Theme.of(context)
                                       .colorScheme
-                                      .surfaceVariant
-                                      .withOpacity(0.3),
+                                      .surfaceContainerHighest
+                                      .withAlpha(80),
                                 ),
                                 controller: _linkController,
                                 validator: (value) {

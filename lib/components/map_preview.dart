@@ -75,7 +75,7 @@ class _MapPreviewState extends State<MapPreview> {
             left: 0,
             right: 0,
             child: Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withAlpha(130),
               child: Text(
                 widget.overlayText!,
                 style: const TextStyle(fontSize: 12),

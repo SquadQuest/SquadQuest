@@ -654,7 +654,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                               padding: const EdgeInsets.all(5),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.primaryContainer
-                                    .withOpacity(.25),
+                                    .withAlpha(65),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: InkWell(
