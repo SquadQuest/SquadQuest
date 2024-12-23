@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -10,7 +11,8 @@ import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/router.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/components/pickers/location.dart';
-import 'package:squadquest/components/pickers/photo.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/components/pickers/date.dart';
@@ -402,7 +404,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     return AppScaffold(
       title: _editingInstance.when(
         data: (Instance? instance) =>
-            isNewEvent ? 'Post an event' : 'Edit event',
+            isNewEvent ? 'Create Event' : 'Edit Event',
         loading: () => '',
         error: (_, __) => 'Error loading event',
       ),
@@ -425,128 +427,394 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       ],
       showLocationSharingSheet: false,
       body: _editingInstance.when(
-          error: (error, __) => Center(child: Text(error.toString())),
-          loading: () => const SizedBox.shrink(),
-          data: (Instance? instance) => SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+        error: (error, __) => Center(child: Text(error.toString())),
+        loading: () => const SizedBox.shrink(),
+        data: (Instance? instance) => Form(
+          key: _formKey,
+          child: CustomScrollView(
+            slivers: [
+              // Banner Photo Section
+              SliverToBoxAdapter(
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      TextFormField(
-                        autofocus: autoFocusField == AutoFocusField.title,
-                        textInputAction: TextInputAction.done,
-                        decoration: const InputDecoration(
-                          // prefixIcon: Icon(Icons.flag),
-                          labelText: 'Title for event',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter event title';
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final bannerPhoto = ref.watch(_bannerPhotoProvider);
+                          if (bannerPhoto != null) {
+                            return kIsWeb || !bannerPhoto.isScheme('file')
+                                ? Image.network(
+                                    bannerPhoto.toString(),
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    File(bannerPhoto.path),
+                                    fit: BoxFit.cover,
+                                  );
                           }
-                          return null;
-                        },
-                        controller: _titleController,
-                      ),
-                      FormTopicPicker(valueProvider: _topicProvider),
-                      const SizedBox(
-                        height: 24,
-                      ),
-                      FormDatePicker(
-                          labelText: 'Date to meet up on',
-                          initialValue: startDate,
-                          firstDate: isNewEvent ||
-                                  instance!.startTimeMax.isAfter(DateTime.now())
-                              ? null
-                              : instance.startTimeMin,
-                          onChanged: (DateTime date) {
-                            setState(() {
-                              startDate = date;
-                            });
-                          }),
-                      FormTimePicker(
-                          labelText: 'Earliest time to meet up at',
-                          valueProvider: _startTimeMinProvider,
-                          onChanged: (TimeOfDay time) {
-                            if (!startTimeMaxSet) {
-                              ref.read(_startTimeMaxProvider.notifier).state =
-                                  _plusMinutes(time, 15);
-                            }
-                          }),
-                      FormTimePicker(
-                          labelText: 'Latest time to meet up by',
-                          valueProvider: _startTimeMaxProvider,
-                          onChanged: (TimeOfDay time) {
-                            setState(() {
-                              startTimeMaxSet = true;
-                            });
-                          }),
-                      const SizedBox(
-                        height: 24,
-                      ),
-                      FormLocationPicker(
-                          valueProvider: _locationProvider,
-                          onPlaceSelect: (placeName) {
-                            if (_locationDescriptionController.text.isEmpty) {
-                              _locationDescriptionController.text = placeName;
-                            }
-                          }),
-                      TextFormField(
-                        textInputAction: TextInputAction.done,
-                        decoration: const InputDecoration(
-                          // prefixIcon: Icon(Icons.pin_drop),
-                          labelText: 'Description of location',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter location descrption';
-                          }
-                          return null;
-                        },
-                        controller: _locationDescriptionController,
-                      ),
-                      const SizedBox(height: 24),
-                      FormVisibilityPicker(
-                          labelText: 'Visibility of this posting',
-                          valueProvider: _visibilityProvider),
-                      const SizedBox(
-                        height: 24,
-                      ),
-                      TextFormField(
-                        textInputAction: TextInputAction.done,
-                        autofillHints: const [AutofillHints.url],
-                        keyboardType: TextInputType.url,
-                        decoration: const InputDecoration(
-                          labelText: 'Event link (optional)',
-                        ),
-                        controller: _linkController,
-                        validator: (value) {
-                          if (value != null &&
-                              value.isNotEmpty &&
-                              !_urlRegex.hasMatch(value)) {
-                            return 'Link must start with http:// or https://';
-                          }
-                          return null;
+                          return Container(
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).colorScheme.surfaceVariant,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate,
+                                  size: 48,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Add Cover Photo',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          );
                         },
                       ),
-                      TextFormField(
-                        // textInputAction: TextInputAction.done,
-                        keyboardType: TextInputType.multiline,
-                        decoration: const InputDecoration(
-                          labelText: 'Event notes (optional)',
-                        ),
-                        maxLines: 5,
-                        controller: _notesController,
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final bannerPhoto = ref.watch(_bannerPhotoProvider);
+                          if (bannerPhoto != null) {
+                            return Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Row(
+                                children: [
+                                  IconButton.filledTonal(
+                                    onPressed: () {
+                                      ref
+                                          .read(_bannerPhotoProvider.notifier)
+                                          .state = null;
+                                    },
+                                    icon: const Icon(Icons.delete),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton.filledTonal(
+                                    onPressed: () async {
+                                      final pickedFile = await ImagePicker()
+                                          .pickImage(
+                                              source: ImageSource.gallery);
+                                      if (pickedFile != null) {
+                                        ref
+                                                .read(_bannerPhotoProvider.notifier)
+                                                .state =
+                                            kIsWeb
+                                                ? Uri.parse(pickedFile.path)
+                                                : File(pickedFile.path).uri;
+                                      }
+                                    },
+                                    icon: const Icon(Icons.edit),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return Positioned.fill(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  final pickedFile = await ImagePicker()
+                                      .pickImage(source: ImageSource.gallery);
+                                  if (pickedFile != null) {
+                                    ref
+                                            .read(_bannerPhotoProvider.notifier)
+                                            .state =
+                                        kIsWeb
+                                            ? Uri.parse(pickedFile.path)
+                                            : File(pickedFile.path).uri;
+                                  }
+                                },
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 32),
-                      FormPhotoPicker(
-                          labelText: 'Event banner photo',
-                          valueProvider: _bannerPhotoProvider)
                     ],
                   ),
                 ),
-              )),
+              ),
+
+              // Form Content
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Basic Info Section
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Basic Information',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                autofocus:
+                                    autoFocusField == AutoFocusField.title,
+                                textInputAction: TextInputAction.done,
+                                decoration: InputDecoration(
+                                  labelText: 'Event Title',
+                                  hintText: 'What\'s happening?',
+                                  prefixIcon: const Icon(Icons.event),
+                                  filled: true,
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant
+                                      .withOpacity(0.3),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter event title';
+                                  }
+                                  return null;
+                                },
+                                controller: _titleController,
+                              ),
+                              const SizedBox(height: 16),
+                              FormTopicPicker(valueProvider: _topicProvider),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Date & Time Section
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'When',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 16),
+                              FormDatePicker(
+                                labelText: 'Date',
+                                initialValue: startDate,
+                                firstDate: isNewEvent ||
+                                        instance?.startTimeMax
+                                                .isAfter(DateTime.now()) ==
+                                            true
+                                    ? null
+                                    : instance?.startTimeMin,
+                                onChanged: (DateTime date) {
+                                  setState(() {
+                                    startDate = date;
+                                  });
+                                },
+                              ),
+                              FormTimePicker(
+                                labelText: 'Earliest time to meet up at',
+                                valueProvider: _startTimeMinProvider,
+                                onChanged: (TimeOfDay time) {
+                                  if (!startTimeMaxSet) {
+                                    ref
+                                        .read(_startTimeMaxProvider.notifier)
+                                        .state = _plusMinutes(time, 15);
+                                  }
+                                },
+                              ),
+                              FormTimePicker(
+                                labelText: 'Latest time to meet up by',
+                                valueProvider: _startTimeMaxProvider,
+                                onChanged: (TimeOfDay time) {
+                                  setState(() {
+                                    startTimeMaxSet = true;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Location Section
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Where',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 16),
+                              FormLocationPicker(
+                                valueProvider: _locationProvider,
+                                onPlaceSelect: (placeName) {
+                                  if (_locationDescriptionController
+                                      .text.isEmpty) {
+                                    _locationDescriptionController.text =
+                                        placeName;
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                textInputAction: TextInputAction.done,
+                                decoration: InputDecoration(
+                                  labelText: 'Location Name',
+                                  hintText: 'e.g., Central Park, Joe\'s Coffee',
+                                  prefixIcon: const Icon(Icons.place),
+                                  filled: true,
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant
+                                      .withOpacity(0.3),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter location description';
+                                  }
+                                  return null;
+                                },
+                                controller: _locationDescriptionController,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Details Section
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Additional Details',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  labelText: 'Description',
+                                  hintText: 'Add any important details...',
+                                  alignLabelWithHint: true,
+                                  prefixIcon: const Icon(Icons.description),
+                                  filled: true,
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant
+                                      .withOpacity(0.3),
+                                ),
+                                controller: _notesController,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                textInputAction: TextInputAction.done,
+                                autofillHints: const [AutofillHints.url],
+                                keyboardType: TextInputType.url,
+                                decoration: InputDecoration(
+                                  labelText: 'Event Link (optional)',
+                                  hintText: 'https://',
+                                  prefixIcon: const Icon(Icons.link),
+                                  filled: true,
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant
+                                      .withOpacity(0.3),
+                                ),
+                                controller: _linkController,
+                                validator: (value) {
+                                  if (value != null &&
+                                      value.isNotEmpty &&
+                                      !_urlRegex.hasMatch(value)) {
+                                    return 'Link must start with http:// or https://';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Visibility Section
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Who Can See This?',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+                              FormVisibilityPicker(
+                                labelText: '',
+                                valueProvider: _visibilityProvider,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Submit Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: FilledButton(
+                          onPressed: () => _submitEvent(context),
+                          child: Text(
+                            isNewEvent ? 'Create Event' : 'Save Changes',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
