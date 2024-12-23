@@ -958,8 +958,9 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                 ),
                                 child: Material(
                                   color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  clipBehavior: Clip.antiAlias,
                                   child: InkWell(
-                                    borderRadius: BorderRadius.circular(12),
                                     onTap: () async {
                                       Geographic? newValue =
                                           await showModalBottomSheet(
