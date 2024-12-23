@@ -1,26 +1,25 @@
 import 'dart:io';
 import 'dart:developer';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/router.dart';
 import 'package:squadquest/services/supabase.dart';
-import 'package:squadquest/components/pickers/location.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter/foundation.dart';
+import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
-import 'package:squadquest/components/pickers/date.dart';
-import 'package:squadquest/components/pickers/time.dart';
+import 'package:squadquest/components/pickers/location.dart';
+import 'package:squadquest/components/event_rally_map.dart';
 import 'package:squadquest/components/pickers/visibility.dart';
 import 'package:squadquest/components/pickers/topic.dart';
-import 'package:squadquest/controllers/instances.dart';
 
 enum AutoFocusField { title, topic }
 
@@ -943,15 +942,94 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 16),
-                              FormLocationPicker(
-                                valueProvider: _locationProvider,
-                                onPlaceSelect: (placeName) {
-                                  if (_locationDescriptionController
-                                      .text.isEmpty) {
-                                    _locationDescriptionController.text =
-                                        placeName;
-                                  }
-                                },
+                              Container(
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                      .withAlpha(80),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
+                                  ),
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: () async {
+                                      Geographic? newValue =
+                                          await showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        enableDrag: false,
+                                        isDismissible: false,
+                                        builder: (BuildContext context) =>
+                                            EventRallyMap(
+                                          initialRallyPoint:
+                                              ref.read(_locationProvider),
+                                          onPlaceSelect: (placeName) {
+                                            if (_locationDescriptionController
+                                                .text.isEmpty) {
+                                              _locationDescriptionController
+                                                  .text = placeName;
+                                            }
+                                          },
+                                        ),
+                                      );
+
+                                      if (newValue != null) {
+                                        ref
+                                            .read(_locationProvider.notifier)
+                                            .state = newValue;
+                                      }
+                                    },
+                                    child: Consumer(
+                                      builder: (context, ref, _) {
+                                        final location =
+                                            ref.watch(_locationProvider);
+                                        if (location != null) {
+                                          return Center(
+                                            child: Text(
+                                              'Location Selected',
+                                              style: TextStyle(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        return Center(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.map,
+                                                size: 32,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Select on Map',
+                                                style: TextStyle(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
