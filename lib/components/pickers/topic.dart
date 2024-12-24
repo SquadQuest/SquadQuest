@@ -72,7 +72,7 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
 
     _focusNode.addListener(() {
       if (!_focusNode.hasFocus) {
-        _onTextSaved(_textController.text.toLowerCase());
+        _onTextSaved(_textController.text);
       }
     });
   }
