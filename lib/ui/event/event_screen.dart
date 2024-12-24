@@ -5,18 +5,20 @@ import 'package:collection/collection.dart';
 
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/user.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/screens/chat.dart';
 
-import 'widgets/event_live_map.dart';
 import '../core/widgets/rally_point_map.dart';
+import 'widgets/event_live_map.dart';
 import 'widgets/event_banner.dart';
 import 'widgets/event_quick_actions.dart';
 import 'widgets/event_info.dart';
 import 'widgets/event_attendees.dart';
 import 'widgets/event_rsvp_sheet.dart';
+import 'widgets/event_invite_sheet.dart';
 
 class EventScreen extends ConsumerStatefulWidget {
   final InstanceID eventId;
@@ -242,12 +244,39 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                         const SizedBox(height: 24),
 
                         // Attendees Header
-                        const Text(
-                          'Attendees',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Attendees',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                final eventRsvps = ref
+                                        .read(rsvpsPerEventProvider(
+                                            widget.eventId))
+                                        .value ??
+                                    [];
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (context) => EventInviteSheet(
+                                    eventId: widget.eventId,
+                                    excludeUsers: eventRsvps
+                                        .map((rsvp) => rsvp.memberId)
+                                        .whereType<UserID>()
+                                        .toList(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.person_add),
+                              label: const Text('Invite Friends'),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                       ],

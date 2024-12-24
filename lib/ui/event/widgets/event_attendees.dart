@@ -198,7 +198,7 @@ class EventAttendees extends ConsumerWidget {
             child: Padding(
               padding: EdgeInsets.all(32),
               child: Text(
-                'No one has RSVPed to this event yet. Be the first! And then invite your friends with the button below.',
+                'No one has RSVPed to this event yet. Be the first!',
                 style: TextStyle(fontSize: 20),
               ),
             ),
