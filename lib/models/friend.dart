@@ -20,6 +20,7 @@ class Friend {
     this.requesterId,
     this.requestee,
     this.requesteeId,
+    this.mutualFriendCount = 0,
     required this.status,
   });
 
@@ -30,6 +31,7 @@ class Friend {
   final UserID? requesterId;
   final UserProfile? requestee;
   final UserID? requesteeId;
+  final int mutualFriendCount;
   final FriendStatus status;
 
   UserProfile? getOtherProfile(UserID userId) {
@@ -71,6 +73,7 @@ class Friend {
       requesteeId: requesteeModel == null
           ? map['requestee'] as UserID
           : requesteeModel.id,
+      mutualFriendCount: map['mutual_friend_count'] as int? ?? 0,
       status: FriendStatus.values.firstWhere(
         (e) => e.name == map['status'],
       ),
@@ -82,6 +85,7 @@ class Friend {
       'requester': requester?.id ?? requesterId,
       'requestee': requestee?.id ?? requesteeId,
       'status': status.name,
+      'mutual_friend_count': mutualFriendCount,
     };
 
     if (id != null) {

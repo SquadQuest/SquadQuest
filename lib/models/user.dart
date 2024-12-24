@@ -26,6 +26,8 @@ class UserProfile {
       required this.enabledNotifications,
       this.trailColor,
       this.mutuals,
+      // this.lastSeenAt,
+      // this.currentActivity,
       this.unparsedNotifications = const {}});
 
   final UserID id;
@@ -39,6 +41,8 @@ class UserProfile {
   final String? trailColor;
   final Set<NotificationType> enabledNotifications;
   final List<UserID>? mutuals;
+  // final DateTime? lastSeenAt;
+  // final String? currentActivity;
   final Set<String> unparsedNotifications;
 
   String get fullName => '$firstName $lastName';
@@ -134,6 +138,10 @@ class UserProfile {
       unparsedNotifications: unparsedNotifications,
       mutuals:
           map['mutuals'] == null ? null : List<UserID>.from(map['mutuals']),
+      // lastSeenAt: map['last_seen_at'] == null
+      //     ? null
+      //     : DateTime.parse(map['last_seen_at']).toLocal(),
+      // currentActivity: map['current_activity'],
     );
   }
 
@@ -154,6 +162,8 @@ class UserProfile {
       'enabled_notifications_v2': enabledNotificationsFull,
       'photo': photo?.toString(),
       'trail_color': trailColor,
+      // 'last_seen_at': lastSeenAt?.toUtc().toIso8601String(),
+      // 'current_activity': currentActivity,
     };
   }
 

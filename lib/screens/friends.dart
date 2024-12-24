@@ -2,8 +2,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grouped_list/grouped_list.dart';
-import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 
 import 'package:squadquest/common.dart';
 import 'package:squadquest/logger.dart';
@@ -14,17 +12,9 @@ import 'package:squadquest/services/contacts.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/models/friend.dart';
-import 'package:squadquest/components/tiles/profile.dart';
+// import 'package:squadquest/components/tiles/profile.dart';
 import 'package:squadquest/components/phone_number_field.dart';
 import 'package:squadquest/components/contacts_list.dart';
-
-final _statusGroupOrder = {
-  FriendStatus.requested: 0,
-  FriendStatus.accepted: 1,
-  FriendStatus.declined: 2,
-};
-
-enum AddFriendMethod { number, contacts }
 
 class FriendsScreen extends ConsumerStatefulWidget {
   const FriendsScreen({super.key});
@@ -35,7 +25,269 @@ class FriendsScreen extends ConsumerStatefulWidget {
 
 class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   static final _requestDateFormat = DateFormat('MMM d, h:mm a');
-  final _fabKey = GlobalKey<ExpandableFabState>();
+
+  Future<void> _showAddFriendDialog() async {
+    final method = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add Friend'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.phone),
+                title: const Text('By Phone Number'),
+                onTap: () {
+                  Navigator.of(context).pop('phone');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.contacts),
+                title: const Text('From Contacts'),
+                onTap: () {
+                  Navigator.of(context).pop('contacts');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (method == null) return;
+
+    if (!mounted) return;
+
+    if (method == 'phone') {
+      _sendFriendRequest(context, AddFriendMethod.number);
+    } else {
+      _sendFriendRequest(context, AddFriendMethod.contacts);
+    }
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 64,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'No Friends Yet',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Add friends to plan activities together and see what they\'re up to!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: _showAddFriendDialog,
+              icon: const Icon(Icons.person_add),
+              label: const Text('Add Your First Friend'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRequestsSection(BuildContext context, List<Friend> requests) {
+    if (requests.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            title: Row(
+              children: [
+                Text(
+                  'Friend Requests',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    requests.length.toString(),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...requests.map((friend) {
+            final requester = friend.requester!;
+            return Dismissible(
+              key: Key('friend-request-${friend.id}'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 16),
+                color: Theme.of(context).colorScheme.errorContainer,
+                child: Text(
+                  'Decline',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              confirmDismiss: (direction) {
+                return showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                          title: Text(
+                              'Are you sure you want to decline your friend request from ${requester.displayName}?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('No'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Yes'),
+                            )
+                          ],
+                        ));
+              },
+              onDismissed: (direction) {
+                _respondFriendRequest(context, friend, false);
+              },
+              child: ListTile(
+                visualDensity: VisualDensity(vertical: 0),
+                leading: CircleAvatar(
+                  foregroundImage: requester.photo == null
+                      ? null
+                      : NetworkImage(requester.photo.toString()),
+                  backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+                  child: Text(requester.firstName[0]),
+                ),
+                title: Text(requester.displayName),
+                subtitle: Text(
+                    '${_requestDateFormat.format(friend.createdAt!)}\n${friend.mutualFriendCount} mutual friends'),
+                trailing: FilledButton(
+                  onPressed: () => _respondFriendRequest(context, friend, true),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  child: const Text('Accept'),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFriendsList(BuildContext context, List<Friend> friends) {
+    return Column(
+      children: friends.map((friend) {
+        final profile =
+            friend.getOtherProfile(ref.read(authControllerProvider)!.user.id)!;
+
+        // TODO: Uncomment when backend is ready
+        // final isOnline = profile.lastSeenAt != null &&
+        //     DateTime.now().difference(profile.lastSeenAt!) <
+        //         const Duration(minutes: 5);
+        // String status;
+        // if (isOnline) {
+        //   status = profile.currentActivity ?? 'Online';
+        // } else if (profile.lastSeenAt != null) {
+        //   final difference = DateTime.now().difference(profile.lastSeenAt!);
+        //   if (difference.inMinutes < 60) {
+        //     status = 'Last seen ${difference.inMinutes}m ago';
+        //   } else if (difference.inHours < 24) {
+        //     status = 'Last seen ${difference.inHours}h ago';
+        //   } else {
+        //     status = 'Last seen ${difference.inDays}d ago';
+        //   }
+        // } else {
+        //   status = 'Offline';
+        // }
+
+        return ListTile(
+          leading: Stack(
+            children: [
+              CircleAvatar(
+                foregroundImage: profile.photo != null
+                    ? NetworkImage(profile.photo!.toString())
+                    : null,
+                backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+                child:
+                    profile.photo == null ? Text(profile.firstName[0]) : null,
+              ),
+              // TODO: Uncomment when backend is ready
+              // if (isOnline)
+              //   Positioned(
+              //     right: 0,
+              //     bottom: 0,
+              //     child: Container(
+              //       width: 12,
+              //       height: 12,
+              //       decoration: BoxDecoration(
+              //         color: Colors.green,
+              //         border: Border.all(
+              //           color: Theme.of(context).scaffoldBackgroundColor,
+              //           width: 2,
+              //         ),
+              //         borderRadius: BorderRadius.circular(6),
+              //       ),
+              //     ),
+              //   ),
+            ],
+          ),
+          title: Text('${profile.firstName} ${profile.lastName}'),
+          // TODO: Uncomment when backend is ready
+          // subtitle: Text(
+          //   status,
+          //   style: TextStyle(
+          //     color: isOnline
+          //         ? Theme.of(context).colorScheme.primary
+          //         : Theme.of(context).textTheme.bodySmall?.color,
+          //   ),
+          // ),
+          // trailing: IconButton(
+          //   icon: const Icon(Icons.more_vert),
+          //   onPressed: () {},
+          // ),
+          onTap: () {
+            context
+                .pushNamed('profile-view', pathParameters: {'id': profile.id});
+          },
+        );
+      }).toList(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,191 +299,90 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     }
 
     return AppScaffold(
-      title: 'Buddy List',
-      floatingActionButtonLocation: ExpandableFab.location,
-      floatingActionButton: ExpandableFab(
-        key: _fabKey,
-        type: ExpandableFabType.up,
-        distance: 80,
-        childrenAnimation: ExpandableFabAnimation.none,
-        overlayStyle: ExpandableFabOverlayStyle(
-          color: Colors.black.withOpacity(0.75),
-          blur: 5,
-        ),
-        openButtonBuilder: RotateFloatingActionButtonBuilder(
-          child: const Icon(Icons.add_reaction),
-        ),
-        closeButtonBuilder: DefaultFloatingActionButtonBuilder(
-          child: const Icon(Icons.close),
-        ),
-        children: [
-          Row(
-            children: [
-              const Text('By Phone Number'),
-              const SizedBox(width: 20),
-              FloatingActionButton(
-                heroTag: null,
-                onPressed: () =>
-                    _sendFriendRequest(context, AddFriendMethod.number),
-                child: const Icon(Icons.pin_outlined),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              const Text('Search Contacts'),
-              const SizedBox(width: 20),
-              FloatingActionButton(
-                heroTag: null,
-                onPressed: () =>
-                    _sendFriendRequest(context, AddFriendMethod.contacts),
-                child: const Icon(Icons.search),
-              ),
-            ],
-          ),
-        ],
-      ),
+      title: 'Friends',
       body: RefreshIndicator(
         onRefresh: () async {
           return ref.read(friendsProvider.notifier).refresh();
         },
         child: friendsList.when(
-            data: (friends) => Stack(children: [
-                  if (friends.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Text(
-                        'You have no friends yet! Get a friend to join SquadQuest and then send a request via their phone number with the button below.',
-                        style: TextStyle(fontSize: 20),
-                      ),
+          data: (friends) {
+            if (friends.isEmpty) {
+              return _buildEmptyState(context);
+            }
+
+            final requests = friends
+                .where((f) =>
+                    f.status == FriendStatus.requested &&
+                    f.requestee?.id == session.user.id)
+                .toList();
+            final acceptedFriends = friends
+                .where((f) => f.status == FriendStatus.accepted)
+                .toList();
+
+            return CustomScrollView(
+              slivers: [
+                // Friend Requests Section
+                SliverToBoxAdapter(
+                  child: _buildRequestsSection(context, requests),
+                ),
+
+                // Friends List Section
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Friends',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const Spacer(),
+                            FilledButton.icon(
+                              onPressed: _showAddFriendDialog,
+                              icon: const Icon(Icons.person_add),
+                              label: const Text('Add Friend'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildFriendsList(context, acceptedFriends),
+                      ],
                     ),
-                  GroupedListView(
-                    elements: friends,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    useStickyGroupSeparators: true,
-                    // floatingHeader: true,
-                    stickyHeaderBackgroundColor:
-                        Theme.of(context).scaffoldBackgroundColor,
-                    groupBy: (Friend friend) => friend.status,
-                    groupComparator: (group1, group2) {
-                      return _statusGroupOrder[group1]!
-                          .compareTo(_statusGroupOrder[group2]!);
-                    },
-                    groupSeparatorBuilder: (FriendStatus group) => Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          switch (group) {
-                            FriendStatus.requested => 'Request pending',
-                            FriendStatus.accepted => 'My Buddies',
-                            FriendStatus.declined => 'Declined',
-                          },
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 18),
-                        )),
-                    itemBuilder: (context, friend) {
-                      final friendProfile =
-                          friend.getOtherProfile(session.user.id);
-                      return ProfileTile(
-                          profile: friendProfile!,
-                          onTap: friend.status == FriendStatus.accepted ||
-                                  (friend.status == FriendStatus.requested &&
-                                      friend.requestee!.id == session.user.id)
-                              ? () {
-                                  context.pushNamed('profile-view',
-                                      pathParameters: {'id': friendProfile.id});
-                                }
-                              : null,
-                          subtitle: switch (friend.status) {
-                            FriendStatus.requested => switch (
-                                  friend.requester!.id == session.user.id) {
-                                true => Text(
-                                    'Request sent ${_requestDateFormat.format(friend.createdAt!)}'),
-                                false => Text(
-                                    'Request received ${_requestDateFormat.format(friend.createdAt!)}'),
-                              },
-                            FriendStatus.accepted => null,
-                            FriendStatus.declined =>
-                              const Text('Request declined'),
-                          },
-                          trailing: friend.status == FriendStatus.requested &&
-                                  friend.requestee?.id == session.user.id
-                              ? IconButton.filledTonal(
-                                  icon: const Icon(Icons.next_plan_outlined),
-                                  onPressed: () =>
-                                      _respondFriendRequest(context, friend),
-                                )
-                              : friendStatusIcons[friend.status]);
-                    },
-                    itemComparator: (friend1, friend2) =>
-                        friend2.createdAt!.compareTo(friend1.createdAt!),
-                  )
-                ]),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) => Center(child: Text('Error: $error'))),
+                  ),
+                ),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stackTrace) => Center(child: Text('Error: $error')),
+        ),
       ),
     );
   }
 
-  void _respondFriendRequest(context, Friend friend) async {
-    final bool? action = await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Respond to friend request'),
-            content: Text(
-                'Do you want to accept or decline the friend request from ${friend.requester!.firstName} ${friend.requester!.lastName}?'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(null);
-                },
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(false);
-                },
-                child: const Text('Decline'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(true);
-                },
-                child: const Text('Accept'),
-              ),
-            ],
-          );
-        });
-
-    if (action == null) {
-      // dialog cancelled
-      return;
-    }
-
+  void _respondFriendRequest(
+      BuildContext context, Friend friend, bool accept) async {
     try {
       await ref.read(friendsProvider.notifier).respondToFriendRequest(
-          friend, action ? FriendStatus.accepted : FriendStatus.declined);
+          friend, accept ? FriendStatus.accepted : FriendStatus.declined);
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            accept ? 'Friend request accepted!' : 'Friend request declined'),
+      ));
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Failed to respond to friend request:\n\n$error'),
       ));
-      return;
     }
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content:
-          Text(action ? 'Friend request accepted!' : 'Friend request declined'),
-    ));
   }
 
   void _sendFriendRequest(BuildContext context, AddFriendMethod method) async {
-    final fabState = _fabKey.currentState;
-    if (fabState != null && fabState.isOpen) {
-      fabState.toggle();
-    }
-
     String? phone;
     Contact? contact;
 
@@ -427,3 +578,5 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         });
   }
 }
+
+enum AddFriendMethod { number, contacts }

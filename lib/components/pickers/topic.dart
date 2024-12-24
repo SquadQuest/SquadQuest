@@ -11,6 +11,7 @@ class FormTopicPicker extends ConsumerStatefulWidget {
   final Topic? initialValue;
   final StateProvider<Topic?>? valueProvider;
   final ValueChanged<Topic>? onChanged;
+  final bool required;
 
   const FormTopicPicker({
     super.key,
@@ -18,6 +19,7 @@ class FormTopicPicker extends ConsumerStatefulWidget {
     this.initialValue,
     this.valueProvider,
     this.onChanged,
+    this.required = true,
   });
 
   @override
@@ -26,6 +28,7 @@ class FormTopicPicker extends ConsumerStatefulWidget {
 
 class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
   StateProvider<Topic?>? _valueProvider;
+  final _formFieldKey = GlobalKey<FormFieldState>();
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
   Topic? _activeTopic;
@@ -91,6 +94,7 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
       },
       builder: (context, controller, focusNode) {
         return TextFormField(
+          key: _formFieldKey,
           onSaved: _onTextSaved,
           controller: controller,
           focusNode: focusNode,
@@ -99,11 +103,19 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
           inputFormatters: [
             FilteringTextInputFormatter.deny(RegExp(r'[^a-z\.0-9\-]'))
           ],
-          decoration: const InputDecoration(
-            labelText: 'Topic for event',
+          decoration: InputDecoration(
+            labelText: widget.required
+                ? 'Topic for event'
+                : 'Topic for event (optional)',
+            prefixIcon: const Icon(Icons.category),
+            filled: true,
+            fillColor: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withAlpha(80),
           ),
           validator: (value) {
-            if (value == null || value.isEmpty) {
+            if (widget.required && (value == null || value.isEmpty)) {
               return 'Please select or enter a topic';
             }
             return null;
@@ -154,5 +166,14 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
       },
       onSelected: _onValueChanged,
     );
+  }
+
+  @override
+  void didUpdateWidget(FormTopicPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.required != oldWidget.required) {
+      _formFieldKey.currentState?.validate();
+    }
   }
 }
