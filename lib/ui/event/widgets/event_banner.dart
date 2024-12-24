@@ -1,22 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:squadquest/models/instance.dart';
+
 class EventBanner extends StatelessWidget {
-  final String title;
-  final DateTime startTimeMin;
-  final DateTime startTimeMax;
-  final String location;
-  final String imageUrl;
-  final bool isCancelled;
+  final Instance event;
 
   const EventBanner({
     super.key,
-    required this.title,
-    required this.startTimeMin,
-    required this.startTimeMax,
-    required this.location,
-    required this.imageUrl,
-    this.isCancelled = false,
+    required this.event,
   });
 
   @override
@@ -29,10 +21,11 @@ class EventBanner extends StatelessWidget {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-            ),
+            if (event.bannerPhoto != null)
+              Image.network(
+                event.bannerPhoto.toString(),
+                fit: BoxFit.cover,
+              ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -53,13 +46,14 @@ class EventBanner extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    title,
+                    event.title,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      decoration:
-                          isCancelled ? TextDecoration.lineThrough : null,
+                      decoration: event.status == InstanceStatus.canceled
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -72,7 +66,7 @@ class EventBanner extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '${DateFormat('E, MMM d').format(startTimeMin)} • Starts ${DateFormat('h:mm a').format(startTimeMin)}-${DateFormat('h:mm a').format(startTimeMax)}',
+                        '${DateFormat('E, MMM d').format(event.startTimeMin)} • Starts ${DateFormat('h:mm a').format(event.startTimeMin)}-${DateFormat('h:mm a').format(event.startTimeMax)}',
                         style: TextStyle(
                           color: Colors.white.withAlpha(230),
                           fontSize: 14,
@@ -90,7 +84,7 @@ class EventBanner extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        location,
+                        event.locationDescription,
                         style: TextStyle(
                           color: Colors.white.withAlpha(230),
                           fontSize: 14,
