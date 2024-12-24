@@ -126,15 +126,6 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
           padding: EdgeInsets.all(16),
           child:
               Text('No existing topics found, but you can create a new one!')),
-      decorationBuilder: (context, child) {
-        return Material(
-          type: MaterialType.card,
-          elevation: 5,
-          surfaceTintColor: Colors.amber,
-          child: child,
-        );
-      },
-      constraints: BoxConstraints(maxHeight: 500),
       itemBuilder: (context, topic) {
         int? matchIndex;
 
