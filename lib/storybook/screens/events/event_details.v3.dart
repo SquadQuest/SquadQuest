@@ -2,12 +2,160 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:storybook_toolkit/storybook_toolkit.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/models/instance.dart';
 
-class EventDetailsV3Screen extends ConsumerWidget {
+class EventDetailsV3Screen extends ConsumerStatefulWidget {
   const EventDetailsV3Screen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EventDetailsV3Screen> createState() =>
+      _EventDetailsV3ScreenState();
+}
+
+class _EventDetailsV3ScreenState extends ConsumerState<EventDetailsV3Screen> {
+  InstanceMemberStatus? _selectedStatus;
+  String _note = '';
+  final _noteController = TextEditingController();
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  void _showRsvpSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'RSVP to Board Game Night',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildRsvpOption(
+                  status: InstanceMemberStatus.omw,
+                  icon: Icons.directions_run,
+                  title: "I'm on my way!",
+                  subtitle: "Let others know you're heading there",
+                ),
+                _buildRsvpOption(
+                  status: InstanceMemberStatus.yes,
+                  icon: Icons.check_circle,
+                  title: "I'm going",
+                  subtitle: "You'll get updates about this event",
+                ),
+                _buildRsvpOption(
+                  status: InstanceMemberStatus.maybe,
+                  icon: Icons.help,
+                  title: "Maybe",
+                  subtitle: "You'll still get updates about this event",
+                ),
+                _buildRsvpOption(
+                  status: InstanceMemberStatus.no,
+                  icon: Icons.cancel,
+                  title: "Can't make it",
+                  subtitle: "You won't get further updates",
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Add a Note (Optional)',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _noteController,
+                        decoration: InputDecoration(
+                          hintText:
+                              'e.g., "Bringing snacks!" or "Running late"',
+                          filled: true,
+                          fillColor: Theme.of(context)
+                              .colorScheme
+                              .surfaceVariant
+                              .withOpacity(0.3),
+                        ),
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
+                ),
+                if (_selectedStatus != null) ...[
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedStatus = null;
+                        _note = '';
+                        _noteController.clear();
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Remove RSVP"),
+                  ),
+                ],
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRsvpOption({
+    required InstanceMemberStatus status,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final isSelected = _selectedStatus == status;
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isSelected ? Theme.of(context).colorScheme.primary : null,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? Theme.of(context).colorScheme.primary : null,
+          fontWeight: isSelected ? FontWeight.bold : null,
+        ),
+      ),
+      subtitle: Text(subtitle),
+      trailing: isSelected ? const Icon(Icons.check) : null,
+      onTap: () {
+        setState(() {
+          _selectedStatus = status;
+          _note = _noteController.text;
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isCancelled = context.knobs.boolean(
       label: 'Event is cancelled',
       initial: false,
@@ -24,6 +172,12 @@ class EventDetailsV3Screen extends ConsumerWidget {
       label: 'Show end time',
       initial: true,
       description: 'Show optional end time for event',
+    );
+
+    final showMap = context.knobs.boolean(
+      label: 'Show map preview',
+      initial: false,
+      description: 'Show the location map preview',
     );
 
     return AppScaffold(
@@ -169,7 +323,7 @@ class EventDetailsV3Screen extends ConsumerWidget {
                             shape: const CircleBorder(),
                             clipBehavior: Clip.hardEdge,
                             child: InkWell(
-                              onTap: () {},
+                              onTap: _showRsvpSheet,
                               child: Container(
                                 width: 64,
                                 height: 64,
@@ -184,18 +338,40 @@ class EventDetailsV3Screen extends ConsumerWidget {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(
-                                      Icons.check_circle_outline,
+                                    Icon(
+                                      _selectedStatus == null
+                                          ? Icons.check_circle_outline
+                                          : _selectedStatus ==
+                                                  InstanceMemberStatus.omw
+                                              ? Icons.directions_run
+                                              : _selectedStatus ==
+                                                      InstanceMemberStatus.yes
+                                                  ? Icons.check_circle
+                                                  : _selectedStatus ==
+                                                          InstanceMemberStatus
+                                                              .maybe
+                                                      ? Icons.help
+                                                      : Icons.cancel,
                                       size: 24,
+                                      color: _selectedStatus != null
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : null,
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      'RSVP',
+                                      _selectedStatus?.name.toUpperCase() ??
+                                          'RSVP',
                                       style: TextStyle(
                                         fontSize: 10,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface,
+                                        color: _selectedStatus != null
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
                                       ),
                                     ),
                                   ],
@@ -291,6 +467,53 @@ class EventDetailsV3Screen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 24),
+
+                      if (showMap)
+                        AspectRatio(
+                          aspectRatio: 2,
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 24),
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).colorScheme.surfaceVariant,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.map, size: 32),
+                            ),
+                          ),
+                        ),
+
+                      if (_note.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceVariant
+                                .withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.note_alt, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Your Note',
+                                    style:
+                                        Theme.of(context).textTheme.titleSmall,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(_note),
+                            ],
+                          ),
+                        ),
 
                       if (showBulletin)
                         Container(
