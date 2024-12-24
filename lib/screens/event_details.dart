@@ -531,14 +531,28 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                         .format(event.startTimeMin)),
                                   ),
                                   ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    minVerticalPadding: 3,
-                                    minTileHeight: 0,
-                                    leading: const Icon(Icons.timelapse),
-                                    title: Text(
-                                        '${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
-                                    subtitle: const Text('Meet up between'),
-                                  ),
+                                      contentPadding: EdgeInsets.zero,
+                                      minVerticalPadding: 3,
+                                      minTileHeight: 0,
+                                      leading: const Icon(Icons.timelapse),
+                                      title: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                                '${eventTimeFormat.format(event.startTimeMin)}–${eventTimeFormat.format(event.startTimeMax)}'),
+                                            if (event.endTime != null)
+                                              Text(eventTimeFormat
+                                                  .format(event.endTime!)),
+                                          ]),
+                                      subtitle: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Meet up between'),
+                                            if (event.endTime != null)
+                                              const Text('Ends at'),
+                                          ])),
                                   if (event.topic != null) ...[
                                     ListTile(
                                       contentPadding: EdgeInsets.zero,
