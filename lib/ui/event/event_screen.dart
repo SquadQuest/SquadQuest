@@ -33,9 +33,7 @@ class EventScreen extends ConsumerStatefulWidget {
 }
 
 class _EventScreenState extends ConsumerState<EventScreen> {
-  String _note = '';
-
-  InstanceMemberStatus? _getCurrentRsvpStatus(String userId) {
+  InstanceMemberStatus? _getCurrentRsvpStatus(UserID userId) {
     final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(widget.eventId));
     if (!eventRsvpsAsync.hasValue) return null;
 
@@ -160,8 +158,9 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       context: context,
       isScrollControlled: true,
       builder: (context) => EventRsvpSheet(
+        event: event,
         selectedStatus: myRsvp?.status,
-        note: _note,
+        // note: _note,
         onStatusSelected: (status, note) {
           _saveRsvp(status, event);
         },

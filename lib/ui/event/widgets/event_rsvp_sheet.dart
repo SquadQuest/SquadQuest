@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+
 import 'package:squadquest/models/instance.dart';
 
 class EventRsvpSheet extends StatefulWidget {
+  final Instance event;
   final InstanceMemberStatus? selectedStatus;
-  final String note;
+  // final String note;
   final Function(InstanceMemberStatus status, String note) onStatusSelected;
   final VoidCallback onRemoveRsvp;
 
   const EventRsvpSheet({
     super.key,
+    required this.event,
     this.selectedStatus,
-    required this.note,
+    // required this.note,
     required this.onStatusSelected,
     required this.onRemoveRsvp,
   });
@@ -20,19 +23,19 @@ class EventRsvpSheet extends StatefulWidget {
 }
 
 class _EventRsvpSheetState extends State<EventRsvpSheet> {
-  late final TextEditingController _noteController;
+  // late final TextEditingController _noteController;
   late InstanceMemberStatus? _selectedStatus;
 
   @override
   void initState() {
     super.initState();
-    _noteController = TextEditingController(text: widget.note);
+    // _noteController = TextEditingController(text: widget.note);
     _selectedStatus = widget.selectedStatus;
   }
 
   @override
   void dispose() {
-    _noteController.dispose();
+    // _noteController.dispose();
     super.dispose();
   }
 
@@ -58,7 +61,7 @@ class _EventRsvpSheetState extends State<EventRsvpSheet> {
       subtitle: Text(subtitle),
       trailing: isSelected ? const Icon(Icons.check) : null,
       onTap: () {
-        widget.onStatusSelected(status, _noteController.text);
+        widget.onStatusSelected(status, ''); // _noteController.text
         Navigator.pop(context);
       },
     );
@@ -77,14 +80,14 @@ class _EventRsvpSheetState extends State<EventRsvpSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'RSVP to Board Game Night',
+              Text(
+                'RSVP to ${widget.event.title}',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
               _buildRsvpOption(
                 status: InstanceMemberStatus.omw,
                 icon: Icons.directions_run,
@@ -109,35 +112,35 @@ class _EventRsvpSheetState extends State<EventRsvpSheet> {
                 title: "Can't make it",
                 subtitle: "You won't get further updates",
               ),
-              const SizedBox(height: 16),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Add a Note (Optional)',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _noteController,
-                      decoration: InputDecoration(
-                        hintText: 'e.g., "Bringing snacks!" or "Running late"',
-                        filled: true,
-                        fillColor: Theme.of(context)
-                            .colorScheme
-                            .surfaceVariant
-                            .withOpacity(0.3),
-                      ),
-                      maxLines: 2,
-                    ),
-                  ],
-                ),
-              ),
+              // const SizedBox(height: 16),
+              // const Divider(),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(vertical: 16),
+              //   child: Column(
+              //     crossAxisAlignment: CrossAxisAlignment.start,
+              //     children: [
+              //       Text(
+              //         'Add a Note (Optional)',
+              //         style: TextStyle(
+              //           color: Theme.of(context).colorScheme.onSurfaceVariant,
+              //         ),
+              //       ),
+              //       const SizedBox(height: 8),
+              //       TextFormField(
+              //         controller: _noteController,
+              //         decoration: InputDecoration(
+              //           hintText: 'e.g., "Bringing snacks!" or "Running late"',
+              //           filled: true,
+              //           fillColor: Theme.of(context)
+              //               .colorScheme
+              //               .surfaceVariant
+              //               .withOpacity(0.3),
+              //         ),
+              //         maxLines: 2,
+              //       ),
+              //     ],
+              //   ),
+              // ),
               if (widget.selectedStatus != null) ...[
                 const SizedBox(height: 16),
                 TextButton(
@@ -148,7 +151,7 @@ class _EventRsvpSheetState extends State<EventRsvpSheet> {
                   child: const Text("Remove RSVP"),
                 ),
               ],
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
             ],
           ),
         ),
