@@ -144,6 +144,43 @@ class EventDetailsV3Screen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
 
+                  // Event Info section
+                  _buildSection(
+                    title: 'Event Info',
+                    child: Column(
+                      children: [
+                        _buildInfoRow(
+                          context,
+                          icon: Icons.person,
+                          label: 'Posted by',
+                          value: 'Sarah Chen',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildInfoRow(
+                          context,
+                          icon: Icons.schedule,
+                          label: 'Time',
+                          value: '7:00 PM - 10:00 PM',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildInfoRow(
+                          context,
+                          icon: Icons.visibility,
+                          label: 'Visibility',
+                          value: 'Friends Only',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildInfoRow(
+                          context,
+                          icon: Icons.category,
+                          label: 'Topic',
+                          value: 'Board Games',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
                   // Detailed attendee sections from v2
                   const Text(
                     'Attendees',
@@ -354,6 +391,49 @@ class EventDetailsV3Screen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 14,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
