@@ -164,11 +164,41 @@ class EventDetailsV3Screen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildQuickAction(
-                            context: context,
-                            icon: Icons.check_circle_outline,
-                            label: 'Going',
+                          InkWell(
                             onTap: () {},
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 4.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.check_circle_outline,
+                                        size: 28,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'RSVP',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                           _buildQuickAction(
                             context: context,
@@ -371,34 +401,6 @@ class EventDetailsV3Screen extends ConsumerWidget {
 
           const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
         ],
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: FilledButton(
-                onPressed: () {},
-                child: const Text('RSVP'),
-              ),
-            ),
-            const SizedBox(width: 16),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.more_vert),
-            ),
-          ],
-        ),
       ),
     );
   }
