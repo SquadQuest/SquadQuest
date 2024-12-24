@@ -61,7 +61,7 @@ class EventDetailsV3Screen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Friday, March 15 • 7:00 PM',
+                              'Friday, March 15 • Starts 7:00-7:30 PM',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
                                 fontSize: 14,
@@ -160,7 +160,8 @@ class EventDetailsV3Screen extends ConsumerWidget {
                           context,
                           icon: Icons.schedule,
                           label: 'Time',
-                          value: '7:00 PM - 10:00 PM',
+                          value: 'Starts between 7:00-7:30 PM',
+                          secondaryValue: 'Ends around 10:00 PM',
                         ),
                         const SizedBox(height: 16),
                         _buildInfoRow(
@@ -399,6 +400,7 @@ class EventDetailsV3Screen extends ConsumerWidget {
     required IconData icon,
     required String label,
     required String value,
+    String? secondaryValue,
   }) {
     return Row(
       children: [
@@ -424,12 +426,27 @@ class EventDetailsV3Screen extends ConsumerWidget {
                 fontSize: 14,
               ),
             ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (secondaryValue != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    secondaryValue,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
