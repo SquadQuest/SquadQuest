@@ -33,6 +33,32 @@ class EventScreen extends ConsumerStatefulWidget {
 }
 
 class _EventScreenState extends ConsumerState<EventScreen> {
+  late ScrollController scrollController;
+  bool isBannerCollapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    scrollController = ScrollController()
+      ..addListener(() {
+        if (scrollController.offset >
+                eventBannerExpandedHeight - kToolbarHeight &&
+            !isBannerCollapsed) {
+          setState(() => isBannerCollapsed = true);
+        } else if (scrollController.offset <=
+                eventBannerExpandedHeight - kToolbarHeight &&
+            isBannerCollapsed) {
+          setState(() => isBannerCollapsed = false);
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
   InstanceMemberStatus? _getCurrentRsvpStatus(UserID userId) {
     final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(widget.eventId));
     if (!eventRsvpsAsync.hasValue) return null;
@@ -181,16 +207,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text(error.toString())),
         data: (event) => CustomScrollView(
+          controller: scrollController,
           slivers: [
             // Banner with event details overlay
             EventBanner(
-              title: event.title,
-              startTimeMin: event.startTimeMin,
-              startTimeMax: event.startTimeMax,
-              location: event.locationDescription,
-              imageUrl: event.bannerPhoto?.toString() ??
-                  'https://picsum.photos/800/400',
-              isCancelled: event.status == InstanceStatus.canceled,
+              event: event,
+              isCollapsed: isBannerCollapsed,
             ),
 
             // Content

@@ -3,20 +3,29 @@ import 'package:intl/intl.dart';
 
 import 'package:squadquest/models/instance.dart';
 
+const eventBannerExpandedHeight = 200.0;
+
 class EventBanner extends StatelessWidget {
   final Instance event;
+  final bool isCollapsed;
 
   const EventBanner({
     super.key,
     required this.event,
+    required this.isCollapsed,
   });
 
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: 200.0,
+      expandedHeight: eventBannerExpandedHeight,
       floating: false,
       pinned: true,
+      title: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: isCollapsed ? 1.0 : 0.0,
+        child: Text(event.title),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
