@@ -1,21 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/models/user.dart';
 
 class EventInfo extends StatelessWidget {
-  final String description;
-  final String host;
-  final String startTime;
-  final String? endTime;
-  final String visibility;
-  final String topic;
+  final String? description;
+  final UserProfile host;
+  final DateTime startTimeMin;
+  final DateTime startTimeMax;
+  final DateTime? endTime;
+  final InstanceVisibility visibility;
+  final Topic? topic;
 
   const EventInfo({
     super.key,
-    required this.description,
+    this.description,
     required this.host,
-    required this.startTime,
+    required this.startTimeMin,
+    required this.startTimeMax,
     this.endTime,
     required this.visibility,
-    required this.topic,
+    this.topic,
   });
 
   @override
@@ -25,10 +32,12 @@ class EventInfo extends StatelessWidget {
       children: [
         _buildSection(
           title: 'About',
-          child: Text(
-            description,
-            style: const TextStyle(fontSize: 16),
-          ),
+          child: description != null && description!.trim().isNotEmpty
+              ? Text(
+                  description!,
+                  style: const TextStyle(fontSize: 16),
+                )
+              : const SizedBox.shrink(),
         ),
         const SizedBox(height: 24),
         _buildSection(
@@ -39,29 +48,36 @@ class EventInfo extends StatelessWidget {
                 context,
                 icon: Icons.person,
                 label: 'Posted by',
-                value: host,
+                value: host.displayName,
               ),
               const SizedBox(height: 16),
               _buildInfoRow(
                 context,
                 icon: Icons.schedule,
                 label: 'Time',
-                value: 'Starts between $startTime',
-                secondaryValue: endTime != null ? 'Ends around $endTime' : null,
+                value:
+                    'Starts between ${DateFormat('h:mm a').format(startTimeMin)}-${DateFormat('h:mm a').format(startTimeMax)}',
+                secondaryValue: endTime != null
+                    ? 'Ends around ${DateFormat('h:mm a').format(endTime!)}'
+                    : null,
               ),
               const SizedBox(height: 16),
               _buildInfoRow(
                 context,
                 icon: Icons.visibility,
                 label: 'Visibility',
-                value: visibility,
+                value: switch (visibility) {
+                  InstanceVisibility.private => 'Private event',
+                  InstanceVisibility.friends => 'Friends-only event',
+                  InstanceVisibility.public => 'Public event',
+                },
               ),
               const SizedBox(height: 16),
               _buildInfoRow(
                 context,
                 icon: Icons.category,
                 label: 'Topic',
-                value: topic,
+                value: topic?.name ?? '',
               ),
             ],
           ),

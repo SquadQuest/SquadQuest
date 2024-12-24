@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class EventBanner extends StatelessWidget {
   final String title;
-  final String date;
-  final String startTime;
+  final DateTime startTimeMin;
+  final DateTime startTimeMax;
   final String location;
   final String imageUrl;
   final bool isCancelled;
@@ -11,8 +12,8 @@ class EventBanner extends StatelessWidget {
   const EventBanner({
     super.key,
     required this.title,
-    required this.date,
-    required this.startTime,
+    required this.startTimeMin,
+    required this.startTimeMax,
     required this.location,
     required this.imageUrl,
     this.isCancelled = false,
@@ -39,7 +40,7 @@ class EventBanner extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withOpacity(0.7),
+                    Colors.black.withAlpha(180),
                   ],
                 ),
               ),
@@ -71,9 +72,9 @@ class EventBanner extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '$date • Starts $startTime',
+                        '${DateFormat('E, MMM d').format(startTimeMin)} • Starts ${DateFormat('h:mm a').format(startTimeMin)}-${DateFormat('h:mm a').format(startTimeMax)}',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withAlpha(230),
                           fontSize: 14,
                         ),
                       ),
@@ -91,7 +92,7 @@ class EventBanner extends StatelessWidget {
                       Text(
                         location,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withAlpha(230),
                           fontSize: 14,
                         ),
                       ),
