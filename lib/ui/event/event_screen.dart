@@ -280,6 +280,41 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               onHostAction: _handleHostAction,
             ),
 
+            // Canceled Banner
+            if (event.status == InstanceStatus.canceled)
+              SliverToBoxAdapter(
+                child: Container(
+                  color: Colors.red.withOpacity(0.1),
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cancel_outlined, color: Colors.red),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'This event has been cancelled',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Contact the host for more information',
+                              style: TextStyle(
+                                color: Colors.red.withAlpha(200),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
             // Content
             SliverToBoxAdapter(
               child: Column(

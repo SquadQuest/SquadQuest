@@ -30,7 +30,12 @@ class EventBanner extends StatelessWidget {
       title: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
         opacity: isCollapsed ? 1.0 : 0.0,
-        child: Text(event.title),
+        child: Text(event.title,
+            style: TextStyle(
+              decoration: event.status == InstanceStatus.canceled
+                  ? TextDecoration.lineThrough
+                  : null,
+            )),
       ),
       actions: [
         if (event.createdById == currentUserId) ...[
