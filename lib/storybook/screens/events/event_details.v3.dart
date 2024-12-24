@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:storybook_toolkit/storybook_toolkit.dart';
 import 'package:squadquest/app_scaffold.dart';
 
 class EventDetailsV3Screen extends ConsumerWidget {
@@ -7,8 +8,29 @@ class EventDetailsV3Screen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isCancelled = context.knobs.boolean(
+      label: 'Event is cancelled',
+      initial: false,
+      description: 'Show event in cancelled state',
+    );
+
+    final showBulletin = context.knobs.boolean(
+      label: 'Show host bulletin',
+      initial: false,
+      description: 'Show the latest pinned message from host',
+    );
+
+    final showEndTime = context.knobs.boolean(
+      label: 'Show end time',
+      initial: true,
+      description: 'Show optional end time for event',
+    );
+
     return AppScaffold(
       title: 'Board Game Night',
+      titleStyle: isCancelled
+          ? const TextStyle(decoration: TextDecoration.lineThrough)
+          : null,
       body: CustomScrollView(
         slivers: [
           // Banner Image with Overlay
@@ -45,10 +67,12 @@ class EventDetailsV3Screen extends ConsumerWidget {
                       children: [
                         Text(
                           'Board Game Night',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
+                            decoration:
+                                isCancelled ? TextDecoration.lineThrough : null,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -97,102 +121,194 @@ class EventDetailsV3Screen extends ConsumerWidget {
 
           // Content
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Quick Actions from v1
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildQuickAction(
-                        context: context,
-                        icon: Icons.check_circle_outline,
-                        label: 'Going',
-                        onTap: () {},
-                      ),
-                      _buildQuickAction(
-                        context: context,
-                        icon: Icons.map_outlined,
-                        label: 'Map',
-                        onTap: () {},
-                      ),
-                      _buildQuickAction(
-                        context: context,
-                        icon: Icons.share_outlined,
-                        label: 'Share',
-                        onTap: () {},
-                      ),
-                      _buildQuickAction(
-                        context: context,
-                        icon: Icons.chat_bubble_outline,
-                        label: 'Chat',
-                        onTap: () {},
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // About section from v1
-                  _buildSection(
-                    title: 'About',
-                    child: const Text(
-                      'Join us for a night of strategy and fun! We\'ll have a variety of games available, from quick party games to longer strategy games. Beginners welcome! Food and drinks available for purchase.',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Event Info section
-                  _buildSection(
-                    title: 'Event Info',
-                    child: Column(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isCancelled)
+                  Container(
+                    color: Colors.red.withOpacity(0.1),
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
                       children: [
-                        _buildInfoRow(
-                          context,
-                          icon: Icons.person,
-                          label: 'Posted by',
-                          value: 'Sarah Chen',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildInfoRow(
-                          context,
-                          icon: Icons.schedule,
-                          label: 'Time',
-                          value: 'Starts between 7:00-7:30 PM',
-                          secondaryValue: 'Ends around 10:00 PM',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildInfoRow(
-                          context,
-                          icon: Icons.visibility,
-                          label: 'Visibility',
-                          value: 'Friends Only',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildInfoRow(
-                          context,
-                          icon: Icons.category,
-                          label: 'Topic',
-                          value: 'Board Games',
+                        const Icon(Icons.cancel_outlined, color: Colors.red),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'This event has been cancelled',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Contact the host for more information',
+                                style: TextStyle(
+                                  color: Colors.red.withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Detailed attendee sections from v2
-                  const Text(
-                    'Attendees',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                if (showBulletin)
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.push_pin,
+                              size: 20,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Latest Update from Host',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'We\'ll be in the back room, look for the SquadQuest sign!',
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '2 hours ago',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer
+                                .withOpacity(0.7),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                ],
-              ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Quick Actions from v1
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildQuickAction(
+                            context: context,
+                            icon: Icons.check_circle_outline,
+                            label: 'Going',
+                            onTap: () {},
+                          ),
+                          _buildQuickAction(
+                            context: context,
+                            icon: Icons.map_outlined,
+                            label: 'Map',
+                            onTap: () {},
+                          ),
+                          _buildQuickAction(
+                            context: context,
+                            icon: Icons.share_outlined,
+                            label: 'Share',
+                            onTap: () {},
+                          ),
+                          _buildQuickAction(
+                            context: context,
+                            icon: Icons.chat_bubble_outline,
+                            label: 'Chat',
+                            onTap: () {},
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // About section from v1
+                      _buildSection(
+                        title: 'About',
+                        child: const Text(
+                          'Join us for a night of strategy and fun! We\'ll have a variety of games available, from quick party games to longer strategy games. Beginners welcome! Food and drinks available for purchase.',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Event Info section
+                      _buildSection(
+                        title: 'Event Info',
+                        child: Column(
+                          children: [
+                            _buildInfoRow(
+                              context,
+                              icon: Icons.person,
+                              label: 'Posted by',
+                              value: 'Sarah Chen',
+                            ),
+                            const SizedBox(height: 16),
+                            _buildInfoRow(
+                              context,
+                              icon: Icons.schedule,
+                              label: 'Time',
+                              value: 'Starts between 7:00-7:30 PM',
+                              secondaryValue:
+                                  showEndTime ? 'Ends around 10:00 PM' : null,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildInfoRow(
+                              context,
+                              icon: Icons.visibility,
+                              label: 'Visibility',
+                              value: 'Friends Only',
+                            ),
+                            const SizedBox(height: 16),
+                            _buildInfoRow(
+                              context,
+                              icon: Icons.category,
+                              label: 'Topic',
+                              value: 'Board Games',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Detailed attendee sections from v2
+                      const Text(
+                        'Attendees',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 
