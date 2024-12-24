@@ -22,8 +22,6 @@ import 'package:squadquest/components/map_preview.dart';
 import 'package:squadquest/components/pickers/visibility.dart';
 import 'package:squadquest/components/pickers/topic.dart';
 
-enum AutoFocusField { title, topic }
-
 final _urlRegex = RegExp(r'^https?://', caseSensitive: false);
 
 TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
@@ -83,7 +81,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   bool startTimeMaxSet = false;
   bool submitted = false;
   late final bool isNewEvent;
-  late final AutoFocusField? autoFocusField;
 
   void _showValidationError(String error) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -323,7 +320,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     // load an existing event for editing
     if (widget.instanceId != null) {
       isNewEvent = false;
-      autoFocusField = null;
       loadMask = 'Loading event...';
       _editingInstance = const AsyncValue.loading();
 
@@ -359,7 +355,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     // load an existing event for duplicating
     if (widget.duplicateEventId != null) {
       isNewEvent = true;
-      autoFocusField = null;
       loadMask = 'Loading event...';
       _editingInstance = const AsyncValue.loading();
 
@@ -398,7 +393,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     // populate a new event from Facebook event data
     if (widget.facebookUrl != null) {
       isNewEvent = true;
-      autoFocusField = AutoFocusField.topic;
       loadMask = 'Loading Facebook event...';
       _editingInstance = const AsyncValue.loading();
 
@@ -440,7 +434,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
     // default: create a new event from scratch
     isNewEvent = true;
-    autoFocusField = AutoFocusField.title;
     _editingInstance = const AsyncValue.data(null);
   }
 
@@ -630,8 +623,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
-                                autofocus:
-                                    autoFocusField == AutoFocusField.title,
                                 textInputAction: TextInputAction.done,
                                 decoration: InputDecoration(
                                   labelText: 'Event Title',
