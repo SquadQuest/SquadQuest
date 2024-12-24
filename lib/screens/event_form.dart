@@ -729,7 +729,8 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                 title: const Text('Date'),
                                 subtitle: Text(
                                   startDate != null
-                                      ? DateFormat.yMd().format(startDate!)
+                                      ? DateFormat('E, MMM d')
+                                          .format(startDate!)
                                       : 'Select a date',
                                   style: startDate == null
                                       ? Theme.of(context)
@@ -925,10 +926,17 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                                     const SizedBox(height: 4),
                                                     Text(
                                                       startTimeMax != null
-                                                          ? MaterialLocalizations
-                                                                  .of(context)
-                                                              .formatTimeOfDay(
-                                                                  startTimeMax)
+                                                          ? startTimeMax.isBefore(
+                                                                  ref.watch(
+                                                                          _startTimeMinProvider) ??
+                                                                      TimeOfDay
+                                                                          .now())
+                                                              ? '${DateFormat('E').format(startDate?.add(const Duration(days: 1)) ?? DateTime.now())} ${MaterialLocalizations.of(context).formatTimeOfDay(startTimeMax)}'
+                                                              : MaterialLocalizations
+                                                                      .of(
+                                                                          context)
+                                                                  .formatTimeOfDay(
+                                                                      startTimeMax)
                                                           : 'Select a time',
                                                       style: startTimeMax ==
                                                               null
@@ -969,8 +977,16 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                     title: const Text('End Time'),
                                     subtitle: Text(
                                       endTime != null
-                                          ? MaterialLocalizations.of(context)
-                                              .formatTimeOfDay(endTime)
+                                          ? endTime.isBefore(ref.watch(
+                                                          _startTimeMinProvider) ??
+                                                      TimeOfDay.now()) ||
+                                                  endTime.isBefore(ref.watch(
+                                                          _startTimeMaxProvider) ??
+                                                      TimeOfDay.now())
+                                              ? '${DateFormat('E').format(startDate?.add(const Duration(days: 1)) ?? DateTime.now())} ${MaterialLocalizations.of(context).formatTimeOfDay(endTime)}'
+                                              : MaterialLocalizations.of(
+                                                      context)
+                                                  .formatTimeOfDay(endTime)
                                           : 'Optional',
                                       style: endTime == null
                                           ? Theme.of(context)
