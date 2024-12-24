@@ -134,6 +134,7 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
           child: child,
         );
       },
+      constraints: BoxConstraints(maxHeight: 500),
       itemBuilder: (context, topic) {
         int? matchIndex;
 
