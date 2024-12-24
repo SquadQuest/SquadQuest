@@ -38,12 +38,6 @@ class EventQuickActions extends StatelessWidget {
           icon: Icons.map_outlined,
           label: 'Map',
         ),
-        _buildActionButton(
-          context,
-          onTap: onShareTap,
-          icon: Icons.share_outlined,
-          label: 'Share',
-        ),
         if (showChat)
           _buildActionButton(
             context,
@@ -51,6 +45,12 @@ class EventQuickActions extends StatelessWidget {
             icon: Icons.chat_bubble_outline,
             label: 'Chat',
           ),
+        _buildActionButton(
+          context,
+          onTap: onShareTap,
+          icon: Icons.share_outlined,
+          label: 'Share',
+        ),
       ],
     );
   }
