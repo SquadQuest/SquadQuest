@@ -481,7 +481,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                     fit: BoxFit.cover,
                                   )
                                 : Image.file(
-                                    File(bannerPhoto.path),
+                                    File(Uri.decodeComponent(bannerPhoto.path)),
                                     fit: BoxFit.cover,
                                   );
                           }
