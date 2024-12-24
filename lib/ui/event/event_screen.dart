@@ -177,14 +177,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
 
     return AppScaffold(
-      title: eventAsync.when(
-        data: (event) => event.title,
-        loading: () => '',
-        error: (_, __) => 'Error loading event details',
-      ),
-      titleStyle: eventAsync.valueOrNull?.status == InstanceStatus.canceled
-          ? const TextStyle(decoration: TextDecoration.lineThrough)
-          : null,
+      showAppBar: false,
       body: eventAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text(error.toString())),
