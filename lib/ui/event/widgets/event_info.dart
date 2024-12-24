@@ -30,16 +30,16 @@ class EventInfo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSection(
-          title: 'About',
-          child: description != null && description!.trim().isNotEmpty
-              ? Text(
-                  description!,
-                  style: const TextStyle(fontSize: 16),
-                )
-              : const SizedBox.shrink(),
-        ),
-        const SizedBox(height: 24),
+        if (description != null && description!.trim().isNotEmpty) ...[
+          _buildSection(
+            title: 'About',
+            child: Text(
+              description!,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
         _buildSection(
           title: 'Event Info',
           child: Column(
