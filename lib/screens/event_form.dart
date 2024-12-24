@@ -785,152 +785,167 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                       padding: const EdgeInsets.fromLTRB(
                                           16, 12, 16, 4),
                                       child: Text(
-                                        'Start Time Range',
+                                        'Meet up between',
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleSmall,
                                       ),
                                     ),
-                                    Consumer(
-                                      builder: (context, ref, _) {
-                                        final startTimeMin =
-                                            ref.watch(_startTimeMinProvider);
-                                        return ListTile(
-                                          leading: Icon(
-                                            Icons.access_time,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                          title: const Text('Earliest'),
-                                          subtitle: Text(
-                                            startTimeMin != null
-                                                ? MaterialLocalizations.of(
-                                                        context)
-                                                    .formatTimeOfDay(
-                                                        startTimeMin)
-                                                : 'Select a time',
-                                            style: startTimeMin == null
-                                                ? Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium
-                                                    ?.copyWith(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant)
-                                                : null,
-                                          ),
-                                          trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                'Select',
-                                                style: TextStyle(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Consumer(
+                                            builder: (context, ref, _) {
+                                              final startTimeMin = ref
+                                                  .watch(_startTimeMinProvider);
+                                              return InkWell(
+                                                onTap: () async {
+                                                  final newTime =
+                                                      await showTimePicker(
+                                                    context: context,
+                                                    initialTime: startTimeMin ??
+                                                        TimeOfDay.now(),
+                                                  );
+                                                  if (newTime != null) {
+                                                    ref
+                                                        .read(
+                                                            _startTimeMinProvider
+                                                                .notifier)
+                                                        .state = newTime;
+                                                    if (!startTimeMaxSet) {
+                                                      ref
+                                                              .read(
+                                                                  _startTimeMaxProvider
+                                                                      .notifier)
+                                                              .state =
+                                                          _plusMinutes(
+                                                              newTime, 15);
+                                                    }
+                                                  }
+                                                },
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.access_time,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .primary,
+                                                          size: 20,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        const Text('Earliest'),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      startTimeMin != null
+                                                          ? MaterialLocalizations
+                                                                  .of(context)
+                                                              .formatTimeOfDay(
+                                                                  startTimeMin)
+                                                          : 'Select a time',
+                                                      style: startTimeMin ==
+                                                              null
+                                                          ? Theme.of(context)
+                                                              .textTheme
+                                                              .bodyMedium
+                                                              ?.copyWith(
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .colorScheme
+                                                                      .onSurfaceVariant)
+                                                          : Theme.of(context)
+                                                              .textTheme
+                                                              .titleMedium,
+                                                    ),
+                                                  ],
                                                 ),
-                                              ),
-                                              Icon(
-                                                Icons.chevron_right,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
-                                              ),
-                                            ],
+                                              );
+                                            },
                                           ),
-                                          onTap: () async {
-                                            final newTime =
-                                                await showTimePicker(
-                                              context: context,
-                                              initialTime: startTimeMin ??
-                                                  TimeOfDay.now(),
-                                            );
-                                            if (newTime != null) {
-                                              ref
-                                                  .read(_startTimeMinProvider
-                                                      .notifier)
-                                                  .state = newTime;
-                                              if (!startTimeMaxSet) {
-                                                ref
+                                          Consumer(
+                                            builder: (context, ref, _) {
+                                              final startTimeMax = ref
+                                                  .watch(_startTimeMaxProvider);
+                                              return InkWell(
+                                                onTap: () async {
+                                                  final newTime =
+                                                      await showTimePicker(
+                                                    context: context,
+                                                    initialTime: startTimeMax ??
+                                                        TimeOfDay.now(),
+                                                  );
+                                                  if (newTime != null) {
+                                                    ref
                                                         .read(
                                                             _startTimeMaxProvider
                                                                 .notifier)
-                                                        .state =
-                                                    _plusMinutes(newTime, 15);
-                                              }
-                                            }
-                                          },
-                                        );
-                                      },
-                                    ),
-                                    Consumer(
-                                      builder: (context, ref, _) {
-                                        final startTimeMax =
-                                            ref.watch(_startTimeMaxProvider);
-                                        return ListTile(
-                                          leading: Icon(
-                                            Icons.access_time,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                          title: const Text('Latest'),
-                                          subtitle: Text(
-                                            startTimeMax != null
-                                                ? MaterialLocalizations.of(
-                                                        context)
-                                                    .formatTimeOfDay(
-                                                        startTimeMax)
-                                                : 'Select a time',
-                                            style: startTimeMax == null
-                                                ? Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium
-                                                    ?.copyWith(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant)
-                                                : null,
-                                          ),
-                                          trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                'Select',
-                                                style: TextStyle(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
+                                                        .state = newTime;
+                                                    setState(() {
+                                                      startTimeMaxSet = true;
+                                                    });
+                                                  }
+                                                },
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: [
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment.end,
+                                                      children: [
+                                                        Icon(
+                                                          Icons.access_time,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .primary,
+                                                          size: 20,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        const Text('Latest'),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      startTimeMax != null
+                                                          ? MaterialLocalizations
+                                                                  .of(context)
+                                                              .formatTimeOfDay(
+                                                                  startTimeMax)
+                                                          : 'Select a time',
+                                                      style: startTimeMax ==
+                                                              null
+                                                          ? Theme.of(context)
+                                                              .textTheme
+                                                              .bodyMedium
+                                                              ?.copyWith(
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .colorScheme
+                                                                      .onSurfaceVariant)
+                                                          : Theme.of(context)
+                                                              .textTheme
+                                                              .titleMedium,
+                                                    ),
+                                                  ],
                                                 ),
-                                              ),
-                                              Icon(
-                                                Icons.chevron_right,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
-                                              ),
-                                            ],
+                                              );
+                                            },
                                           ),
-                                          onTap: () async {
-                                            final newTime =
-                                                await showTimePicker(
-                                              context: context,
-                                              initialTime: startTimeMax ??
-                                                  TimeOfDay.now(),
-                                            );
-                                            if (newTime != null) {
-                                              ref
-                                                  .read(_startTimeMaxProvider
-                                                      .notifier)
-                                                  .state = newTime;
-                                              setState(() {
-                                                startTimeMaxSet = true;
-                                              });
-                                            }
-                                          },
-                                        );
-                                      },
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
