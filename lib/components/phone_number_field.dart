@@ -89,7 +89,11 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
         result = asYouTypeFormatter.inputDigit(digits[i]);
       }
 
-      _internalController.text = result;
+      _internalController.value = TextEditingValue(
+        text: result,
+        selection:
+            TextSelection.fromPosition(TextPosition(offset: result.length)),
+      );
     }
 
     // update state
@@ -152,6 +156,8 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
         IntlPhoneField(
           key: _phoneFieldKey,
           controller: _internalController,
+          autofocus: widget.autofocus,
+          readOnly: !widget.enabled,
           disableLengthCheck: true,
           inputFormatters: [
             FilteringTextInputFormatter.deny(RegExp(r'[^+\(\) 0-9\-]')),
@@ -160,6 +166,9 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
           onCountryChanged: (country) {
             _selectedCountry = country;
           },
+          onSubmitted: widget.enabled && widget.onSubmitted != null
+              ? (value) => widget.onSubmitted!(value)
+              : null,
           validator: (fieldValue) {
             try {
               PhoneNumber number =

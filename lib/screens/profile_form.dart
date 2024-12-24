@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
@@ -32,6 +36,15 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
 
   bool submitted = false;
   late final bool isNewProfile;
+
+  Future<void> _pickPhoto() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      ref.read(_photoProvider.notifier).state =
+          kIsWeb ? Uri.parse(pickedFile.path) : File(pickedFile.path).uri;
+    }
+  }
 
   void _submitProfile(BuildContext context) async {
     FocusScope.of(context).unfocus();
@@ -197,101 +210,299 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
       }
     });
 
+    final photo = ref.watch(_photoProvider);
+
     return AppScaffold(
-        title: isNewProfile ? 'Set up your profile' : 'Update your profile',
-        loadMask: submitted ? 'Saving profile...' : null,
-        showDrawer: isNewProfile ? false : null,
-        actions: [
-          if (!submitted)
-            TextButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-              ),
-              onPressed: () => _submitProfile(context),
-              child: Text(isNewProfile ? 'Continue' : 'Save',
-                  style: const TextStyle(
-                      color: Colors.black, fontWeight: FontWeight.bold)),
-            ),
-        ],
-        bodyPadding: const EdgeInsets.all(16),
-        body: SingleChildScrollView(
-          child: AutofillGroup(
-            child: Form(
-              key: _formKey,
-              child: Column(
+      title: isNewProfile ? 'Create Profile' : 'Edit Profile',
+      loadMask: submitted ? 'Saving profile...' : null,
+      showDrawer: isNewProfile ? false : null,
+      body: Form(
+        key: _formKey,
+        child: CustomScrollView(
+          slivers: [
+            // Profile Photo Section
+            SliverToBoxAdapter(
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.bottomCenter,
                 children: [
-                  if (isNewProfile) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Welcome to SquadQuest!\n\nPlease set up your profile to get started:',
-                      textAlign: TextAlign.center,
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Your last name and photo will only ever be visible to your confirmed friends, everyone else will just see your first name when you post or respond to events',
-                    style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    autofillHints: const [AutofillHints.givenName],
-                    keyboardType: TextInputType.name,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.person),
-                      labelText: 'First name',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your first name';
-                      }
-                      return null;
-                    },
-                    controller: _firstNameController,
-                  ),
-                  TextFormField(
-                    autofillHints: const [AutofillHints.familyName],
-                    keyboardType: TextInputType.name,
-                    textInputAction: TextInputAction.done,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.person),
-                      labelText: 'Last name',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your last name';
-                      }
-                      return null;
-                    },
-                    controller: _lastNameController,
-                  ),
-                  const SizedBox(height: 32),
-                  FormPhotoPicker(
-                      labelText: 'Profile photo',
-                      valueProvider: _photoProvider),
-                  const SizedBox(height: 32),
-                  ListTile(
-                    title: const Text('Trail Color'),
-                    subtitle: const Text(
-                        'Choose the color for your map trail and icon'),
-                    trailing: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: _selectedColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey),
+                  Container(
+                    height: isNewProfile ? 280 : 180,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.0, 0.8, 1.0],
+                        colors: [
+                          Theme.of(context).colorScheme.primaryContainer,
+                          Theme.of(context)
+                              .colorScheme
+                              .primaryContainer
+                              .withOpacity(0.5),
+                          Theme.of(context).scaffoldBackgroundColor,
+                        ],
                       ),
                     ),
-                    onTap: _openColorPicker,
+                  ),
+                  Positioned(
+                    top: 36,
+                    child: Column(
+                      children: [
+                        Stack(
+                          children: [
+                            photo != null
+                                ? Stack(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 64,
+                                        backgroundImage:
+                                            kIsWeb || !photo.isScheme('file')
+                                                ? NetworkImage(photo.toString())
+                                                : FileImage(File(photo.path)),
+                                      ),
+                                      Positioned(
+                                        right: 0,
+                                        bottom: 0,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: IconButton(
+                                            icon: const Icon(Icons.edit),
+                                            onPressed: () => ref
+                                                .read(_photoProvider.notifier)
+                                                .state = null,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Stack(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 64,
+                                        backgroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceVariant,
+                                        child:
+                                            const Icon(Icons.person, size: 64),
+                                      ),
+                                      Positioned(
+                                        right: 0,
+                                        bottom: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.camera_alt,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                            onPressed: _pickPhoto,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ],
+                        ),
+                        if (isNewProfile) ...[
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Welcome to SquadQuest!',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(
+                              'Tell us a bit about yourself to get started',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        ));
+
+            // Form Content
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Basic Info Section
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Basic Information',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _firstNameController,
+                              decoration: InputDecoration(
+                                labelText: 'First Name',
+                                hintText: 'Enter your first name',
+                                prefixIcon: const Icon(Icons.person_outline),
+                                filled: false,
+                                fillColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceVariant
+                                    .withOpacity(0.3),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your first name';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _lastNameController,
+                              decoration: InputDecoration(
+                                labelText: 'Last Name',
+                                hintText: 'Enter your last name',
+                                prefixIcon: const Icon(Icons.person_outline),
+                                filled: false,
+                                fillColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceVariant
+                                    .withOpacity(0.3),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your last name';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  size: 16,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Your last name will only be visible to confirmed friends',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Appearance Section
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Appearance',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            ListTile(
+                              title: const Text('Trail Color'),
+                              subtitle: const Text(
+                                  'Choose the color for your map trail'),
+                              trailing: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: _selectedColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Theme.of(context).dividerColor,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _selectedColor.withOpacity(0.4),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              onTap: _openColorPicker,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton(
+                        onPressed: () => _submitProfile(context),
+                        child: Text(
+                          isNewProfile ? 'Get Started' : 'Save Changes',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

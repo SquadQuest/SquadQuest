@@ -40,7 +40,7 @@ class TopicsController extends AsyncNotifier<List<Topic>> {
 
   Future<Topic> save(Topic topic) async {
     assert(topic.id == null, 'Cannot create a topic with an ID');
-    assert(topic.name.trim().isNotEmpty, 'Cannot create a topic no name');
+    assert(topic.name.trim().isNotEmpty, 'Cannot create a topic with no name');
 
     final supabase = ref.read(supabaseClientProvider);
 
