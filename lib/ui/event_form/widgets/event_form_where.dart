@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geobase/coordinates.dart';
 
-import 'package:squadquest/components/event_rally_map.dart';
+import 'package:squadquest/ui/core/widgets/rally_point_map.dart';
 import 'package:squadquest/components/map_preview.dart';
 
 /// Location selection section for event form.
@@ -27,7 +27,7 @@ class EventFormWhere extends ConsumerWidget {
       isScrollControlled: true,
       enableDrag: false,
       isDismissible: false,
-      builder: (BuildContext context) => EventRallyMap(
+      builder: (BuildContext context) => RallyPointMap(
         initialRallyPoint: ref.read(locationProvider),
         onPlaceSelect: (placeName) {
           if (locationDescriptionController.text.isEmpty) {

@@ -8,7 +8,8 @@ import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/location_point.dart';
-import 'package:squadquest/components/base_map.dart';
+
+import '../../core/widgets/base_map.dart';
 
 enum Menu { keepRallyPointInView, keepFriendsInView }
 
@@ -20,11 +21,12 @@ class EventLiveMap extends BaseMap {
   final InstanceID eventId;
   final LatLng? rallyPoint;
 
-  const EventLiveMap(
-      {super.key,
-      this.title = 'Live map',
-      required this.eventId,
-      this.rallyPoint});
+  const EventLiveMap({
+    super.key,
+    this.title = 'Live map',
+    required this.eventId,
+    this.rallyPoint,
+  });
 
   @override
   ConsumerState<EventLiveMap> createState() => _EventLiveMapState();
@@ -42,7 +44,6 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
             .buffer
             .asUint8List());
 
-    // add rally point
     if (widget.rallyPoint != null) {
       await controller!.addSymbol(SymbolOptions(
           geometry: widget.rallyPoint,
@@ -96,55 +97,64 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
     }
 
     return SizedBox(
-        height: MediaQuery.of(context).size.height * .75,
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Stack(alignment: Alignment.center, children: [
-            Positioned(
+      height: MediaQuery.of(context).size.height * .75,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned(
                 left: 12,
                 child: IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    })),
-            Positioned(
-              right: 12,
-              child: PopupMenuButton<Menu>(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+              Positioned(
+                right: 12,
+                child: PopupMenuButton<Menu>(
                   icon: const Icon(Icons.more_vert),
                   offset: const Offset(0, 50),
                   itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
-                        CheckedPopupMenuItem<Menu>(
-                          value: Menu.keepRallyPointInView,
-                          checked: keepRallyPointInView,
-                          child: const Text('Keep rally point in view'),
-                          onTap: () {
-                            ref
-                                .read(keepRallyPointInViewProvider.notifier)
-                                .state = !keepRallyPointInView;
-                            renderTrails();
-                          },
-                        ),
-                        CheckedPopupMenuItem<Menu>(
-                          value: Menu.keepFriendsInView,
-                          checked: keepFriendsInView,
-                          child: const Text('Keep friends in view'),
-                          onTap: () {
-                            ref.read(keepFriendsInViewProvider.notifier).state =
-                                !keepFriendsInView;
-                            renderTrails();
-                          },
-                        ),
-                      ]),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              child: Text(
-                widget.title,
-                style: Theme.of(context).textTheme.titleLarge,
+                    CheckedPopupMenuItem<Menu>(
+                      value: Menu.keepRallyPointInView,
+                      checked: keepRallyPointInView,
+                      child: const Text('Keep rally point in view'),
+                      onTap: () {
+                        ref.read(keepRallyPointInViewProvider.notifier).state =
+                            !keepRallyPointInView;
+                        renderTrails();
+                      },
+                    ),
+                    CheckedPopupMenuItem<Menu>(
+                      value: Menu.keepFriendsInView,
+                      checked: keepFriendsInView,
+                      child: const Text('Keep friends in view'),
+                      onTap: () {
+                        ref.read(keepFriendsInViewProvider.notifier).state =
+                            !keepFriendsInView;
+                        renderTrails();
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ]),
-          Expanded(child: buildMap())
-        ]));
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                child: Text(
+                  widget.title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+            ],
+          ),
+          Expanded(child: buildMap()),
+        ],
+      ),
+    );
   }
 }

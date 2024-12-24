@@ -5,11 +5,19 @@ import 'package:squadquest/models/instance.dart';
 class EventQuickActions extends StatelessWidget {
   final InstanceMemberStatus? selectedStatus;
   final VoidCallback onRsvpTap;
+  final VoidCallback onMapTap;
+  final VoidCallback onShareTap;
+  final VoidCallback onChatTap;
+  final bool showChat;
 
   const EventQuickActions({
     super.key,
     required this.selectedStatus,
     required this.onRsvpTap,
+    required this.onMapTap,
+    required this.onShareTap,
+    required this.onChatTap,
+    this.showChat = true,
   });
 
   @override
@@ -26,22 +34,23 @@ class EventQuickActions extends StatelessWidget {
         ),
         _buildActionButton(
           context,
-          onTap: () {},
+          onTap: onMapTap,
           icon: Icons.map_outlined,
           label: 'Map',
         ),
         _buildActionButton(
           context,
-          onTap: () {},
+          onTap: onShareTap,
           icon: Icons.share_outlined,
           label: 'Share',
         ),
-        _buildActionButton(
-          context,
-          onTap: () {},
-          icon: Icons.chat_bubble_outline,
-          label: 'Chat',
-        ),
+        if (showChat)
+          _buildActionButton(
+            context,
+            onTap: onChatTap,
+            icon: Icons.chat_bubble_outline,
+            label: 'Chat',
+          ),
       ],
     );
   }

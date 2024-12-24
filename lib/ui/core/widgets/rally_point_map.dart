@@ -11,13 +11,13 @@ import 'package:http/http.dart' as http; // TODO: switch to dio
 
 import 'package:squadquest/controllers/auth.dart';
 
-class EventRallyMap extends ConsumerStatefulWidget {
+class RallyPointMap extends ConsumerStatefulWidget {
   final String title;
   final LatLng mapCenter;
   final Geographic? initialRallyPoint;
   final Function(String)? onPlaceSelect;
 
-  const EventRallyMap({
+  const RallyPointMap({
     super.key,
     this.title = 'Set rally point',
     this.mapCenter = const LatLng(39.9550, -75.1605),
@@ -26,10 +26,10 @@ class EventRallyMap extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<EventRallyMap> createState() => _EventRallyMapState();
+  ConsumerState<RallyPointMap> createState() => _RallyPointMapState();
 }
 
-class _EventRallyMapState extends ConsumerState<EventRallyMap> {
+class _RallyPointMapState extends ConsumerState<RallyPointMap> {
   MapLibreMapController? controller;
   late LatLng rallyPoint;
   Symbol? dragSymbol;
