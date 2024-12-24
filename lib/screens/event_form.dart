@@ -148,6 +148,11 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           )
         : null;
 
+    if (endDateTime != null && endDateTime.isBefore(startDateTimeMax)) {
+      return _showValidationError(
+          'Please select an end time after latest start time or none at all');
+    }
+
     if (visibility == null) {
       return _showValidationError('Please select a visibility for the event');
     }
