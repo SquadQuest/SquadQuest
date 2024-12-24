@@ -15,6 +15,7 @@ import 'package:squadquest/storybook/screens/onboarding/friend_finder.dart';
 import 'package:squadquest/storybook/screens/events/create_event.dart';
 import 'package:squadquest/storybook/screens/events/event_details.dart';
 import 'package:squadquest/storybook/screens/events/event_details.v2.dart';
+import 'package:squadquest/storybook/screens/events/event_details.v3.dart';
 import 'package:squadquest/storybook/screens/events/rsvp_interactions.dart';
 import 'package:squadquest/storybook/screens/events/rsvp_interactions.v2.dart';
 import 'package:squadquest/storybook/screens/events/event_chat.dart';
@@ -130,6 +131,12 @@ class StorybookApp extends StatelessWidget {
               name: 'Redesign/Events/Event Details v2',
               description: 'Expanded attendees list with RSVP grouping',
               builder: (context) => const EventDetailsV2Screen(),
+            ),
+            Story(
+              name: 'Redesign/Events/Event Details v3',
+              description:
+                  'Combined design with overlay header and detailed attendees',
+              builder: (context) => const EventDetailsV3Screen(),
             ),
             Story(
               name: 'Redesign/Events/RSVP Interactions v1',

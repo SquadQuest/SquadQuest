@@ -258,7 +258,9 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                                         backgroundImage:
                                             kIsWeb || !photo.isScheme('file')
                                                 ? NetworkImage(photo.toString())
-                                                : FileImage(File(photo.path)),
+                                                : FileImage(File(
+                                                    Uri.decodeComponent(
+                                                        photo.path))),
                                       ),
                                       Positioned(
                                         right: 0,

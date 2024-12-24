@@ -1,5 +1,6 @@
 # Configuration
 .env
+devtools_options.yaml
 
 # Miscellaneous
 *.class

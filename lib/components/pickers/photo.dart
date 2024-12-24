@@ -69,7 +69,7 @@ class _FormPhotoPickerState extends ConsumerState<FormPhotoPicker> {
                     child: kIsWeb || !value.isScheme('file')
                         ? Image.network(value.toString())
                         : Image.file(
-                            File(value.path),
+                            File(Uri.decodeComponent(value.path)),
                             errorBuilder: (BuildContext context, Object error,
                                 StackTrace? stackTrace) {
                               return const Center(
