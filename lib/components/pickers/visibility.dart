@@ -52,10 +52,13 @@ class _FormVisibilityPickerState extends ConsumerState<FormVisibilityPicker> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        Text(
-          widget.labelText,
-          style: Theme.of(context).inputDecorationTheme.floatingLabelStyle,
-        ),
+        ...[
+          if (widget.labelText.isNotEmpty)
+            Text(
+              widget.labelText,
+              style: Theme.of(context).inputDecorationTheme.floatingLabelStyle,
+            ),
+        ],
         RadioListTile<InstanceVisibility>(
           secondary: visibilityIcons[InstanceVisibility.private],
           title: const Text('Private'),
