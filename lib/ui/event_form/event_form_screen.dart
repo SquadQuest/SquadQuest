@@ -1,44 +1,25 @@
-import 'dart:io';
 import 'dart:developer';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geobase/coordinates.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
-import 'package:squadquest/logger.dart';
-import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
+import 'package:squadquest/common.dart';
+import 'package:squadquest/logger.dart';
+import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/services/router.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/instances.dart';
-import 'package:squadquest/models/instance.dart';
-import 'package:squadquest/models/topic.dart';
-import 'package:squadquest/components/pickers/location.dart';
-import 'package:squadquest/components/event_rally_map.dart';
-import 'package:squadquest/components/map_preview.dart';
-import 'package:squadquest/components/pickers/visibility.dart';
-import 'package:squadquest/components/pickers/topic.dart';
 
-final _urlRegex = RegExp(r'^https?://', caseSensitive: false);
-
-TimeOfDay _plusMinutes(TimeOfDay timeOfDay, int minutes) {
-  if (minutes == 0) {
-    return timeOfDay;
-  } else {
-    int mofd = timeOfDay.hour * 60 + timeOfDay.minute;
-    int newMofd = ((minutes % 1440) + mofd + 1440) % 1440;
-    if (mofd == newMofd) {
-      return timeOfDay;
-    } else {
-      int newHour = newMofd ~/ 60;
-      int newMinute = newMofd % 60;
-      return TimeOfDay(hour: newHour, minute: newMinute);
-    }
-  }
-}
+import 'widgets/event_form_banner.dart';
+import 'widgets/event_form_who.dart';
+import 'widgets/event_form_what.dart';
+import 'widgets/event_form_when.dart';
+import 'widgets/event_form_where.dart';
+import 'widgets/event_form_submit.dart';
 
 class EventEditScreen extends ConsumerStatefulWidget {
   final InstanceID? instanceId;
@@ -66,10 +47,10 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   final _locationDescriptionController = TextEditingController();
   final _topicProvider = StateProvider<Topic?>((ref) => null);
   final _locationProvider = StateProvider<Geographic?>((ref) => null);
-  final _startTimeMinProvider =
-      StateProvider<TimeOfDay?>((ref) => _plusMinutes(TimeOfDay.now(), 60));
-  final _startTimeMaxProvider =
-      StateProvider<TimeOfDay?>((ref) => _plusMinutes(TimeOfDay.now(), 75));
+  final _startTimeMinProvider = StateProvider<TimeOfDay?>(
+      (ref) => addMinutesToTimeOfDay(TimeOfDay.now(), 60));
+  final _startTimeMaxProvider = StateProvider<TimeOfDay?>(
+      (ref) => addMinutesToTimeOfDay(TimeOfDay.now(), 75));
   final _endTimeProvider = StateProvider<TimeOfDay?>((ref) => null);
   final _visibilityProvider =
       StateProvider<InstanceVisibility?>((ref) => InstanceVisibility.friends);
@@ -295,34 +276,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         : null;
   }
 
-  Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      ref.read(_bannerPhotoProvider.notifier).state =
-          kIsWeb ? Uri.parse(pickedFile.path) : File(pickedFile.path).uri;
-    }
-  }
-
-  Future<void> _showRallyPointPicker() async {
-    Geographic? newValue = await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      enableDrag: false,
-      isDismissible: false,
-      builder: (BuildContext context) => EventRallyMap(
-        initialRallyPoint: ref.read(_locationProvider),
-        onPlaceSelect: (placeName) {
-          if (_locationDescriptionController.text.isEmpty) {
-            _locationDescriptionController.text = placeName;
-          }
-        },
-      ),
-    );
-
-    ref.read(_locationProvider.notifier).state = newValue;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -473,689 +426,56 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           key: _formKey,
           child: CustomScrollView(
             slivers: [
-              // Banner Photo Section
               SliverToBoxAdapter(
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Consumer(
-                        builder: (context, ref, _) {
-                          final bannerPhoto = ref.watch(_bannerPhotoProvider);
-                          if (bannerPhoto != null) {
-                            return kIsWeb || !bannerPhoto.isScheme('file')
-                                ? Image.network(
-                                    bannerPhoto.toString(),
-                                    fit: BoxFit.cover,
-                                  )
-                                : Image.file(
-                                    File(Uri.decodeComponent(bannerPhoto.path)),
-                                    fit: BoxFit.cover,
-                                  );
-                          }
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.add_photo_alternate,
-                                  size: 48,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Add Cover Photo',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                      Consumer(
-                        builder: (context, ref, _) {
-                          final bannerPhoto = ref.watch(_bannerPhotoProvider);
-                          if (bannerPhoto != null) {
-                            return Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Row(
-                                children: [
-                                  IconButton.filledTonal(
-                                    onPressed: () {
-                                      ref
-                                          .read(_bannerPhotoProvider.notifier)
-                                          .state = null;
-                                    },
-                                    icon: const Icon(Icons.delete),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  IconButton.filledTonal(
-                                    onPressed: _pickImage,
-                                    icon: const Icon(Icons.edit),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return Positioned.fill(
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: _pickImage,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                child: EventFormBanner(
+                  bannerPhotoProvider: _bannerPhotoProvider,
                 ),
               ),
-
-              // Form Content
               SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Who Section
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Who',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              FormVisibilityPicker(
-                                labelText: '',
-                                valueProvider: _visibilityProvider,
-                              ),
-                            ],
-                          ),
-                        ),
+                      EventFormWho(
+                        visibilityProvider: _visibilityProvider,
                       ),
                       const SizedBox(height: 16),
-
-                      // What Section
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'What',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                textInputAction: TextInputAction.done,
-                                decoration: InputDecoration(
-                                  labelText: 'Event Title',
-                                  hintText: 'What\'s happening?',
-                                  prefixIcon: const Icon(Icons.title),
-                                  filled: true,
-                                  fillColor: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withAlpha(80),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter event title';
-                                  }
-                                  return null;
-                                },
-                                controller: _titleController,
-                              ),
-                              const SizedBox(height: 16),
-                              Consumer(
-                                builder: (context, ref, _) {
-                                  final visibility =
-                                      ref.watch(_visibilityProvider);
-                                  return FormTopicPicker(
-                                    valueProvider: _topicProvider,
-                                    required: visibility !=
-                                        InstanceVisibility.private,
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                textInputAction: TextInputAction.done,
-                                autofillHints: const [AutofillHints.url],
-                                keyboardType: TextInputType.url,
-                                decoration: InputDecoration(
-                                  labelText: 'Event Link (optional)',
-                                  hintText: 'https://',
-                                  prefixIcon: const Icon(Icons.link),
-                                  filled: true,
-                                  fillColor: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withAlpha(80),
-                                ),
-                                controller: _linkController,
-                                validator: (value) {
-                                  if (value != null &&
-                                      value.isNotEmpty &&
-                                      !_urlRegex.hasMatch(value)) {
-                                    return 'Link must start with http:// or https://';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                maxLines: 3,
-                                decoration: InputDecoration(
-                                  labelText: 'Description (optional)',
-                                  hintText: 'Add any important details...',
-                                  alignLabelWithHint: true,
-                                  prefixIcon: const Icon(Icons.description),
-                                  filled: true,
-                                  fillColor: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withAlpha(80),
-                                ),
-                                controller: _notesController,
-                              ),
-                            ],
-                          ),
-                        ),
+                      EventFormWhat(
+                        titleController: _titleController,
+                        topicProvider: _topicProvider,
+                        linkController: _linkController,
+                        notesController: _notesController,
+                        visibilityProvider: _visibilityProvider,
                       ),
                       const SizedBox(height: 16),
-
-                      // When Section
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'When',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 16),
-                              ListTile(
-                                leading: Icon(
-                                  Icons.calendar_today,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                title: const Text('Date'),
-                                subtitle: Text(
-                                  startDate != null
-                                      ? DateFormat('E, MMM d')
-                                          .format(startDate!)
-                                      : 'Select a date',
-                                  style: startDate == null
-                                      ? Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurfaceVariant)
-                                      : null,
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Select',
-                                      style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.chevron_right,
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                    ),
-                                  ],
-                                ),
-                                onTap: () async {
-                                  final newDate = await showDatePicker(
-                                    context: context,
-                                    initialDate: startDate ?? DateTime.now(),
-                                    firstDate: isNewEvent ||
-                                            instance?.startTimeMax
-                                                    .isAfter(DateTime.now()) ==
-                                                true
-                                        ? DateTime.now()
-                                        : instance!.startTimeMin,
-                                    lastDate: DateTime.now()
-                                        .add(const Duration(days: 365)),
-                                  );
-                                  if (newDate != null) {
-                                    setState(() {
-                                      startDate = newDate;
-                                    });
-                                  }
-                                },
-                              ),
-                              const Divider(),
-                              // Start Time Range
-                              Card(
-                                margin: EdgeInsets.zero,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          16, 12, 16, 4),
-                                      child: Text(
-                                        'Meet up between',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Consumer(
-                                            builder: (context, ref, _) {
-                                              final startTimeMin = ref
-                                                  .watch(_startTimeMinProvider);
-                                              return InkWell(
-                                                onTap: () async {
-                                                  final newTime =
-                                                      await showTimePicker(
-                                                    context: context,
-                                                    initialTime: startTimeMin ??
-                                                        TimeOfDay.now(),
-                                                  );
-                                                  if (newTime != null) {
-                                                    ref
-                                                        .read(
-                                                            _startTimeMinProvider
-                                                                .notifier)
-                                                        .state = newTime;
-                                                    if (!startTimeMaxSet) {
-                                                      ref
-                                                              .read(
-                                                                  _startTimeMaxProvider
-                                                                      .notifier)
-                                                              .state =
-                                                          _plusMinutes(
-                                                              newTime, 15);
-                                                    }
-                                                  }
-                                                },
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.access_time,
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .colorScheme
-                                                                  .primary,
-                                                          size: 20,
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 8),
-                                                        const Text('Earliest'),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      startTimeMin != null
-                                                          ? MaterialLocalizations
-                                                                  .of(context)
-                                                              .formatTimeOfDay(
-                                                                  startTimeMin)
-                                                          : 'Select a time',
-                                                      style: startTimeMin ==
-                                                              null
-                                                          ? Theme.of(context)
-                                                              .textTheme
-                                                              .bodyMedium
-                                                              ?.copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .colorScheme
-                                                                      .onSurfaceVariant)
-                                                          : Theme.of(context)
-                                                              .textTheme
-                                                              .titleMedium,
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                          Consumer(
-                                            builder: (context, ref, _) {
-                                              final startTimeMax = ref
-                                                  .watch(_startTimeMaxProvider);
-                                              return InkWell(
-                                                onTap: () async {
-                                                  final newTime =
-                                                      await showTimePicker(
-                                                    context: context,
-                                                    initialTime: startTimeMax ??
-                                                        TimeOfDay.now(),
-                                                  );
-                                                  if (newTime != null) {
-                                                    ref
-                                                        .read(
-                                                            _startTimeMaxProvider
-                                                                .notifier)
-                                                        .state = newTime;
-                                                    setState(() {
-                                                      startTimeMaxSet = true;
-                                                    });
-                                                  }
-                                                },
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
-                                                  children: [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment.end,
-                                                      children: [
-                                                        Icon(
-                                                          Icons.access_time,
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .colorScheme
-                                                                  .primary,
-                                                          size: 20,
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 8),
-                                                        const Text('Latest'),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      startTimeMax != null
-                                                          ? startTimeMax.isBefore(
-                                                                  ref.watch(
-                                                                          _startTimeMinProvider) ??
-                                                                      TimeOfDay
-                                                                          .now())
-                                                              ? '${DateFormat('E').format(startDate?.add(const Duration(days: 1)) ?? DateTime.now())} ${MaterialLocalizations.of(context).formatTimeOfDay(startTimeMax)}'
-                                                              : MaterialLocalizations
-                                                                      .of(
-                                                                          context)
-                                                                  .formatTimeOfDay(
-                                                                      startTimeMax)
-                                                          : 'Select a time',
-                                                      style: startTimeMax ==
-                                                              null
-                                                          ? Theme.of(context)
-                                                              .textTheme
-                                                              .bodyMedium
-                                                              ?.copyWith(
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .colorScheme
-                                                                      .onSurfaceVariant)
-                                                          : Theme.of(context)
-                                                              .textTheme
-                                                              .titleMedium,
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Divider(height: 16),
-                              // End Time (Optional)
-                              Consumer(
-                                builder: (context, ref, _) {
-                                  final endTime = ref.watch(_endTimeProvider);
-                                  return ListTile(
-                                    leading: Icon(
-                                      Icons.access_time,
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                    ),
-                                    title: const Text('End Time'),
-                                    subtitle: Text(
-                                      endTime != null
-                                          ? endTime.isBefore(ref.watch(
-                                                          _startTimeMinProvider) ??
-                                                      TimeOfDay.now()) ||
-                                                  endTime.isBefore(ref.watch(
-                                                          _startTimeMaxProvider) ??
-                                                      TimeOfDay.now())
-                                              ? '${DateFormat('E').format(startDate?.add(const Duration(days: 1)) ?? DateTime.now())} ${MaterialLocalizations.of(context).formatTimeOfDay(endTime)}'
-                                              : MaterialLocalizations.of(
-                                                      context)
-                                                  .formatTimeOfDay(endTime)
-                                          : 'Optional',
-                                      style: endTime == null
-                                          ? Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurfaceVariant)
-                                          : null,
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (endTime != null)
-                                          IconButton(
-                                            icon: const Icon(Icons.clear),
-                                            onPressed: () {
-                                              ref
-                                                  .read(
-                                                      _endTimeProvider.notifier)
-                                                  .state = null;
-                                            },
-                                          ),
-                                        Text(
-                                          'Select',
-                                          style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.chevron_right,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                        ),
-                                      ],
-                                    ),
-                                    onTap: () async {
-                                      final newTime = await showTimePicker(
-                                        context: context,
-                                        initialTime: endTime ?? TimeOfDay.now(),
-                                      );
-                                      if (newTime != null) {
-                                        ref
-                                            .read(_endTimeProvider.notifier)
-                                            .state = newTime;
-                                      }
-                                    },
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
+                      EventFormWhen(
+                        startDate: startDate,
+                        onDateSelected: (date) {
+                          setState(() {
+                            startDate = date;
+                          });
+                        },
+                        startTimeMinProvider: _startTimeMinProvider,
+                        startTimeMaxProvider: _startTimeMaxProvider,
+                        endTimeProvider: _endTimeProvider,
+                        isNewEvent: isNewEvent,
+                        instance: instance,
                       ),
                       const SizedBox(height: 16),
-
-                      // Where Section
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Where',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 16),
-                              Container(
-                                height: 120,
-                                clipBehavior: Clip.antiAlias,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withAlpha(80),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color:
-                                        Theme.of(context).colorScheme.outline,
-                                  ),
-                                ),
-                                child: Consumer(
-                                  builder: (context, ref, _) {
-                                    final location =
-                                        ref.watch(_locationProvider);
-
-                                    if (location != null) {
-                                      return ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: MapPreview(
-                                          location: location,
-                                          onTap: _showRallyPointPicker,
-                                        ),
-                                      );
-                                    }
-
-                                    return Material(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: InkWell(
-                                        onTap: _showRallyPointPicker,
-                                        child: Center(
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.map,
-                                                size: 32,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                'Select on Map (optional)',
-                                                style: TextStyle(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                textInputAction: TextInputAction.done,
-                                decoration: InputDecoration(
-                                  labelText: 'Location Name',
-                                  hintText: 'e.g., Central Park, Joe\'s Coffee',
-                                  prefixIcon: const Icon(Icons.place),
-                                  filled: true,
-                                  fillColor: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withAlpha(80),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter location descrption';
-                                  }
-                                  return null;
-                                },
-                                controller: _locationDescriptionController,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      const SizedBox(height: 32),
-
-                      // Submit Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: FilledButton(
-                          onPressed: submitted ||
-                                  _editingInstance.isLoading ||
-                                  loadMask != null
-                              ? null
-                              : () => _submitEvent(context),
-                          child: Text(
-                            isNewEvent ? 'Create Event' : 'Save Changes',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ),
+                      EventFormWhere(
+                        locationProvider: _locationProvider,
+                        locationDescriptionController:
+                            _locationDescriptionController,
                       ),
                       const SizedBox(height: 32),
+                      EventFormSubmit(
+                        onSubmit: () => _submitEvent(context),
+                        isNewEvent: isNewEvent,
+                        isSubmitting: submitted ||
+                            _editingInstance.isLoading ||
+                            loadMask != null,
+                      ),
                     ],
                   ),
                 ),
