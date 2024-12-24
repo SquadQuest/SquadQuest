@@ -295,6 +295,15 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         : null;
   }
 
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      ref.read(_bannerPhotoProvider.notifier).state =
+          kIsWeb ? Uri.parse(pickedFile.path) : File(pickedFile.path).uri;
+    }
+  }
+
   Future<void> _showRallyPointPicker() async {
     Geographic? newValue = await showModalBottomSheet(
       context: context,
@@ -535,19 +544,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   IconButton.filledTonal(
-                                    onPressed: () async {
-                                      final pickedFile = await ImagePicker()
-                                          .pickImage(
-                                              source: ImageSource.gallery);
-                                      if (pickedFile != null) {
-                                        ref
-                                                .read(_bannerPhotoProvider.notifier)
-                                                .state =
-                                            kIsWeb
-                                                ? Uri.parse(pickedFile.path)
-                                                : File(pickedFile.path).uri;
-                                      }
-                                    },
+                                    onPressed: _pickImage,
                                     icon: const Icon(Icons.edit),
                                   ),
                                 ],
@@ -558,18 +555,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                onTap: () async {
-                                  final pickedFile = await ImagePicker()
-                                      .pickImage(source: ImageSource.gallery);
-                                  if (pickedFile != null) {
-                                    ref
-                                            .read(_bannerPhotoProvider.notifier)
-                                            .state =
-                                        kIsWeb
-                                            ? Uri.parse(pickedFile.path)
-                                            : File(pickedFile.path).uri;
-                                  }
-                                },
+                                onTap: _pickImage,
                               ),
                             ),
                           );
