@@ -66,14 +66,6 @@ typedef RsvpFriend = ({
   List<UserProfile>? mutuals
 });
 
-final _statusGroupOrder = {
-  InstanceMemberStatus.omw: 0,
-  InstanceMemberStatus.yes: 1,
-  InstanceMemberStatus.maybe: 2,
-  InstanceMemberStatus.no: 3,
-  InstanceMemberStatus.invited: 4,
-};
-
 class EventAttendees extends ConsumerWidget {
   final InstanceID eventId;
 
@@ -93,6 +85,7 @@ class EventAttendees extends ConsumerWidget {
     }
 
     return Card(
+      margin: EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -104,7 +97,7 @@ class EventAttendees extends ConsumerWidget {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withAlpha(30),
                     shape: BoxShape.circle,
                   ),
                   child: Center(

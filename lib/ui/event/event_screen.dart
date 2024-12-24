@@ -278,7 +278,6 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
                       ],
                     ),
                   ),
