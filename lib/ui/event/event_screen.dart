@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/models/instance.dart';
@@ -67,6 +68,67 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         .cast<InstanceMember?>()
         .firstWhereOrNull((rsvp) => rsvp?.memberId == userId)
         ?.status;
+  }
+
+  void _handleHostAction(EventHostAction action) {
+    switch (action) {
+      case EventHostAction.setRallyPoint:
+        _showRallyPointMap();
+        break;
+      case EventHostAction.edit:
+        context.pushNamed(
+          'event-edit',
+          pathParameters: {'id': widget.eventId},
+        );
+        break;
+      case EventHostAction.cancel:
+      case EventHostAction.uncancel:
+        _cancelEvent(action == EventHostAction.cancel);
+        break;
+      case EventHostAction.duplicate:
+        context.pushNamed(
+          'post-event',
+          queryParameters: {'duplicateEventId': widget.eventId},
+        );
+        break;
+    }
+  }
+
+  Future<void> _cancelEvent([bool canceled = true]) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text('${canceled ? 'Cancel' : 'Uncancel'} event?'),
+        content: Text(
+          'Are you sure you want to ${canceled ? 'cancel' : 'uncancel'} this event? Guests will be alerted.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    await ref.read(instancesProvider.notifier).patch(
+      widget.eventId,
+      {'status': canceled ? 'canceled' : 'live'},
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          'Your event has been ${canceled ? 'canceled' : 'uncanceled'} and guests will be alerted',
+        ),
+      ));
+    }
   }
 
   void _showRallyPointMap() async {
@@ -199,6 +261,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(authControllerProvider);
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
 
     return AppScaffold(
@@ -213,6 +276,8 @@ class _EventScreenState extends ConsumerState<EventScreen> {
             EventBanner(
               event: event,
               isCollapsed: isBannerCollapsed,
+              currentUserId: session?.user.id,
+              onHostAction: _handleHostAction,
             ),
 
             // Content

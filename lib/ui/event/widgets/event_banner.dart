@@ -3,16 +3,22 @@ import 'package:intl/intl.dart';
 
 import 'package:squadquest/models/instance.dart';
 
+enum EventHostAction { setRallyPoint, edit, cancel, uncancel, duplicate }
+
 const eventBannerExpandedHeight = 200.0;
 
 class EventBanner extends StatelessWidget {
   final Instance event;
   final bool isCollapsed;
+  final String? currentUserId;
+  final void Function(EventHostAction action)? onHostAction;
 
   const EventBanner({
     super.key,
     required this.event,
     required this.isCollapsed,
+    this.currentUserId,
+    this.onHostAction,
   });
 
   @override
@@ -26,6 +32,50 @@ class EventBanner extends StatelessWidget {
         opacity: isCollapsed ? 1.0 : 0.0,
         child: Text(event.title),
       ),
+      actions: [
+        if (event.createdById == currentUserId) ...[
+          PopupMenuButton<EventHostAction>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: onHostAction,
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: EventHostAction.setRallyPoint,
+                child: ListTile(
+                  leading: const Icon(Icons.pin_drop_outlined),
+                  title: event.rallyPoint == null
+                      ? const Text('Set rally point')
+                      : const Text('Update rally point'),
+                ),
+              ),
+              const PopupMenuItem(
+                value: EventHostAction.edit,
+                child: ListTile(
+                  leading: Icon(Icons.edit_outlined),
+                  title: Text('Edit event'),
+                ),
+              ),
+              PopupMenuItem(
+                value: event.status == InstanceStatus.canceled
+                    ? EventHostAction.uncancel
+                    : EventHostAction.cancel,
+                child: ListTile(
+                  leading: const Icon(Icons.cancel_outlined),
+                  title: event.status == InstanceStatus.canceled
+                      ? const Text('Uncancel event')
+                      : const Text('Cancel event'),
+                ),
+              ),
+              const PopupMenuItem(
+                value: EventHostAction.duplicate,
+                child: ListTile(
+                  leading: Icon(Icons.copy),
+                  title: Text('Duplicate event'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
