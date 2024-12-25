@@ -36,7 +36,6 @@ class _EventInfoState extends State<EventInfo> {
   Widget build(BuildContext context) {
     return EventSection(
       title: 'Event Info',
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
         children: [
           _buildInfoRow(

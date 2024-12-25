@@ -11,7 +11,7 @@ class EventSection extends StatelessWidget {
     required this.title,
     required this.child,
     this.trailing,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.fromLTRB(16, 8, 16, 16),
   });
 
   @override

@@ -192,7 +192,6 @@ class EventAttendees extends ConsumerWidget {
         if (rsvpsFriends.isEmpty) {
           return EventSection(
             title: 'Attendees',
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             trailing: OutlinedButton.icon(
               onPressed: () {
                 showModalBottomSheet(
@@ -225,7 +224,6 @@ class EventAttendees extends ConsumerWidget {
 
         return EventSection(
           title: 'Attendees',
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           trailing: OutlinedButton.icon(
             onPressed: () {
               showModalBottomSheet(

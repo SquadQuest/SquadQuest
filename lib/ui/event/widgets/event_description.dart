@@ -63,7 +63,6 @@ class _EventDescriptionState extends State<EventDescription> {
 
     return EventSection(
       title: 'About',
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
