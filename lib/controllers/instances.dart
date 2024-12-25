@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -33,6 +35,11 @@ final eventPointsProvider = FutureProvider.autoDispose
       .select()
       .eq('id', instanceId)
       .maybeSingle();
+
+  Timer(
+    const Duration(seconds: 15),
+    () => ref.invalidateSelf(),
+  );
 
   return eventPoints == null ? null : EventPoints.fromMap(eventPoints);
 });

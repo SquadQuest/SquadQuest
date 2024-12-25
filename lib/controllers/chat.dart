@@ -15,6 +15,23 @@ final chatProvider =
 final latestChatProvider = AutoDisposeAsyncNotifierProviderFamily<
     LatestChatController, EventMessage, InstanceID>(LatestChatController.new);
 
+final chatMessageCountProvider =
+    FutureProvider.autoDispose.family<int, InstanceID>((ref, instanceId) async {
+  final supabase = ref.read(supabaseClientProvider);
+  final result = await supabase
+      .from('event_messages')
+      .select('id')
+      .eq('instance', instanceId)
+      .count(CountOption.exact);
+
+  Timer(
+    const Duration(seconds: 15),
+    () => ref.invalidateSelf(),
+  );
+
+  return result.count;
+});
+
 class ChatController
     extends FamilyAsyncNotifier<List<EventMessage>, InstanceID> {
   late InstanceID instanceId;
@@ -80,6 +97,9 @@ class ChatController
           state.value!, (existing) => existing.id == message.id, message,
           prepend: true));
     }
+
+    // invalidate count cache
+    ref.invalidate(chatMessageCountProvider(instanceId));
 
     return message;
   }
