@@ -2,29 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
 import 'package:squadquest/models/instance.dart';
-import 'package:squadquest/models/topic.dart';
-import 'package:squadquest/models/user.dart';
 
 import 'event_section.dart';
 
 class EventInfo extends StatefulWidget {
-  final String? description;
-  final UserProfile host;
-  final DateTime startTimeMin;
-  final DateTime startTimeMax;
-  final DateTime? endTime;
-  final InstanceVisibility visibility;
-  final Topic? topic;
+  final Instance event;
 
   const EventInfo({
     super.key,
-    this.description,
-    required this.host,
-    required this.startTimeMin,
-    required this.startTimeMax,
-    this.endTime,
-    required this.visibility,
-    this.topic,
+    required this.event,
   });
 
   @override
@@ -41,7 +27,7 @@ class _EventInfoState extends State<EventInfo> {
           context,
           icon: Icons.person,
           label: 'Posted by',
-          value: widget.host.displayName,
+          value: widget.event.createdBy!.displayName,
         ),
         const SizedBox(height: 16),
         _buildInfoRow(
@@ -49,9 +35,9 @@ class _EventInfoState extends State<EventInfo> {
           icon: Icons.schedule,
           label: 'Time',
           value:
-              'Starts between ${DateFormat('h:mm a').format(widget.startTimeMin)}-${DateFormat('h:mm a').format(widget.startTimeMax)}',
-          secondaryValue: widget.endTime != null
-              ? 'Ends around ${DateFormat('h:mm a').format(widget.endTime!)}'
+              'Starts between ${DateFormat('h:mm a').format(widget.event.startTimeMin)}-${DateFormat('h:mm a').format(widget.event.startTimeMax)}',
+          secondaryValue: widget.event.endTime != null
+              ? 'Ends around ${DateFormat('h:mm a').format(widget.event.endTime!)}'
               : null,
         ),
         const SizedBox(height: 16),
@@ -59,7 +45,7 @@ class _EventInfoState extends State<EventInfo> {
           context,
           icon: Icons.visibility,
           label: 'Visibility',
-          value: switch (widget.visibility) {
+          value: switch (widget.event.visibility) {
             InstanceVisibility.private => 'Private event',
             InstanceVisibility.friends => 'Friends-only event',
             InstanceVisibility.public => 'Public event',
@@ -70,7 +56,7 @@ class _EventInfoState extends State<EventInfo> {
           context,
           icon: Icons.category,
           label: 'Topic',
-          value: widget.topic?.name ?? '',
+          value: widget.event.topic?.name ?? '',
         ),
       ],
     );

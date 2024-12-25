@@ -316,15 +316,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
             if (event.notes != null) EventDescription(description: event.notes),
 
             // Event Info
-            EventInfo(
-              description: event.notes,
-              host: event.createdBy!,
-              startTimeMin: event.startTimeMin,
-              startTimeMax: event.startTimeMax,
-              endTime: event.endTime,
-              visibility: event.visibility,
-              topic: event.topic,
-            ),
+            EventInfo(event: event),
 
             // Attendees
             EventAttendees(eventId: widget.eventId),
