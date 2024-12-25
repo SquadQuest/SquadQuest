@@ -9,6 +9,9 @@ import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 
+import 'event_section.dart';
+import 'event_invite_sheet.dart';
+
 final _rsvpsFriendsProvider =
     Provider.family<AsyncValue<List<RsvpFriend>>, InstanceID>((ref, eventId) {
   final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(eventId));
@@ -187,9 +190,26 @@ class EventAttendees extends ConsumerWidget {
       ),
       data: (rsvpsFriends) {
         if (rsvpsFriends.isEmpty) {
-          return const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(32),
+          return EventSection(
+            title: 'Attendees',
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            trailing: OutlinedButton.icon(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (context) => EventInviteSheet(
+                    eventId: eventId,
+                    excludeUsers: const [],
+                  ),
+                );
+              },
+              icon: const Icon(Icons.person_add),
+              label: const Text('Invite Friends'),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
               child: Text(
                 'No one has RSVPed to this event yet. Be the first!',
                 style: TextStyle(fontSize: 20),
@@ -203,10 +223,29 @@ class EventAttendees extends ConsumerWidget {
           (rsvpFriend) => rsvpFriend.rsvp.status,
         );
 
-        return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
+        return EventSection(
+          title: 'Attendees',
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          trailing: OutlinedButton.icon(
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (context) => EventInviteSheet(
+                  eventId: eventId,
+                  excludeUsers: rsvpsFriends
+                      .map((rsvp) => rsvp.rsvp.memberId)
+                      .whereType<UserID>()
+                      .toList(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.person_add),
+            label: const Text('Invite Friends'),
+          ),
+          child: Column(
+            children: [
               if (groupedRsvps.containsKey(InstanceMemberStatus.omw))
                 _buildAttendeeSection(
                   context,
@@ -242,7 +281,7 @@ class EventAttendees extends ConsumerWidget {
                   attendees: groupedRsvps[InstanceMemberStatus.invited]!,
                   color: Theme.of(context).colorScheme.outline,
                 ),
-            ]),
+            ],
           ),
         );
       },

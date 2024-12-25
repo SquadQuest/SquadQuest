@@ -20,7 +20,7 @@ import 'widgets/event_quick_actions.dart';
 import 'widgets/event_info.dart';
 import 'widgets/event_attendees.dart';
 import 'widgets/event_rsvp_sheet.dart';
-import 'widgets/event_invite_sheet.dart';
+import 'widgets/event_canceled_banner.dart';
 
 class EventScreen extends ConsumerStatefulWidget {
   final InstanceID eventId;
@@ -285,132 +285,48 @@ class _EventScreenState extends ConsumerState<EventScreen> {
 
             // Canceled Banner
             if (event.status == InstanceStatus.canceled)
-              SliverToBoxAdapter(
-                child: Container(
-                  color: Colors.red.withOpacity(0.1),
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.cancel_outlined, color: Colors.red),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'This event has been cancelled',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Contact the host for more information',
-                              style: TextStyle(
-                                color: Colors.red.withAlpha(200),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+              const EventCanceledBanner(),
+
+            // Quick Actions
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverToBoxAdapter(
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final session = ref.watch(authControllerProvider);
+                    final selectedStatus = session == null
+                        ? null
+                        : _getCurrentRsvpStatus(session.user.id);
+
+                    return EventQuickActions(
+                      selectedStatus: selectedStatus,
+                      eventId: widget.eventId,
+                      onRsvpTap: () => _showRsvpSheet(event),
+                      onMapTap: _showLiveMap,
+                      onShareTap: _copyEventLink,
+                      onChatTap: _showChat,
+                      showChat: selectedStatus != null,
+                    );
+                  },
                 ),
-              ),
-
-            // Content
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Quick Actions
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final session = ref.watch(authControllerProvider);
-                            final selectedStatus = session == null
-                                ? null
-                                : _getCurrentRsvpStatus(session.user.id);
-
-                            return EventQuickActions(
-                              selectedStatus: selectedStatus,
-                              eventId: widget.eventId,
-                              onRsvpTap: () => _showRsvpSheet(event),
-                              onMapTap: _showLiveMap,
-                              onShareTap: _copyEventLink,
-                              onChatTap: _showChat,
-                              showChat: selectedStatus != null,
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Event Description
-                        if (event.notes != null) ...[
-                          EventDescription(description: event.notes),
-                          const SizedBox(height: 24),
-                        ],
-
-                        // Event Info
-                        EventInfo(
-                          description: event.notes,
-                          host: event.createdBy!,
-                          startTimeMin: event.startTimeMin,
-                          startTimeMax: event.startTimeMax,
-                          endTime: event.endTime,
-                          visibility: event.visibility,
-                          topic: event.topic,
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Attendees Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Attendees',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                final eventRsvps = ref
-                                        .read(rsvpsPerEventProvider(
-                                            widget.eventId))
-                                        .value ??
-                                    [];
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  useSafeArea: true,
-                                  builder: (context) => EventInviteSheet(
-                                    eventId: widget.eventId,
-                                    excludeUsers: eventRsvps
-                                        .map((rsvp) => rsvp.memberId)
-                                        .whereType<UserID>()
-                                        .toList(),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.person_add),
-                              label: const Text('Invite Friends'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ),
 
-            // Attendee Sections
+            // Event Description
+            if (event.notes != null) EventDescription(description: event.notes),
+
+            // Event Info
+            EventInfo(
+              description: event.notes,
+              host: event.createdBy!,
+              startTimeMin: event.startTimeMin,
+              startTimeMax: event.startTimeMax,
+              endTime: event.endTime,
+              visibility: event.visibility,
+              topic: event.topic,
+            ),
+
+            // Attendees
             EventAttendees(eventId: widget.eventId),
 
             const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
