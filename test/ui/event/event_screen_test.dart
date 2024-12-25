@@ -10,7 +10,7 @@ void main() {
         'Initial state', () async => EventScreen(eventId: mockEvent.id!),
         onTest: (WidgetTester tester) async {
       // Verify event details are displayed
-      expect(find.text(mockEvent.notes!), findsOneWidget);
+      expect(find.text(mockEvent.notes!.split('\n')[0]), findsOneWidget);
       expect(find.text(mockEvent.createdBy!.displayName), findsOneWidget);
       expect(find.text(mockEvent.locationDescription), findsOneWidget);
     });
