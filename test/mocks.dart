@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/models/friend.dart';
 
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/location.dart';
 import 'package:squadquest/controllers/instances.dart';
+import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 
 // Mock location controller
@@ -25,6 +27,14 @@ class MockLocationController extends LocationController {
 class MockRsvpsController extends InstanceRsvpsController {
   @override
   Future<List<InstanceMember>> build(InstanceID arg) async {
+    return [];
+  }
+}
+
+// Mock controller for friends that returns empty list
+class MockFriendsController extends FriendsController {
+  @override
+  Future<List<Friend>> build() async {
     return [];
   }
 }
@@ -74,6 +84,7 @@ final mockEvent = Instance(
   topic: Topic(id: 'test-topic-1', name: 'party.house'),
   createdAt: DateTime(2024, 11, 1, 12),
   createdBy: mockUser,
+  createdById: mockUser.id,
 );
 
 final mocksContainer = ProviderContainer(
@@ -90,6 +101,9 @@ final mocksContainer = ProviderContainer(
 
     // Override RSVPs with empty list
     rsvpsPerEventProvider.overrideWith(() => MockRsvpsController()),
+
+    // Override friends with empty list
+    friendsProvider.overrideWith(() => MockFriendsController()),
 
     // Override settings providers
     storybookModeProvider.overrideWith((ref) => true),
