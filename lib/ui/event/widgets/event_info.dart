@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:url_launcher/url_launcher.dart';
@@ -68,9 +70,66 @@ class _EventInfoState extends State<EventInfo> {
             child: _buildInfoRow(
               context,
               icon: Icons.link,
+              trailingIcon: Icons.open_in_new,
               label: 'Link',
               value: widget.event.link.toString(),
             ),
+          ),
+        ],
+        if (widget.event.rallyPoint != null) ...[
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () async {
+              final query = widget.event.rallyPoint == null
+                  ? widget.event.locationDescription
+                  : '${widget.event.rallyPoint!.lat},${widget.event.rallyPoint!.lon}';
+
+              final googleMapsUri = Uri(
+                scheme: 'https',
+                host: 'maps.google.com',
+                queryParameters: {
+                  'daddr': query,
+                  'q': widget.event.locationDescription,
+                  'directionsmode': 'bicycling',
+                },
+              );
+
+              final googleMapsIosUri = Uri(
+                scheme: 'comgooglemaps',
+                host: '',
+                queryParameters: {
+                  'daddr': query,
+                  'q': widget.event.locationDescription,
+                  'directionsmode': 'bicycling',
+                },
+              );
+
+              final appleMapsUri = Uri(
+                scheme: 'https',
+                host: 'maps.apple.com',
+                queryParameters: {
+                  'daddr': query,
+                  'dirflg': 'c',
+                },
+              );
+
+              if (Platform.isIOS) {
+                if (await canLaunchUrl(googleMapsIosUri)) {
+                  await launchUrl(googleMapsIosUri);
+                } else {
+                  await launchUrl(appleMapsUri);
+                }
+              } else {
+                await launchUrl(googleMapsUri);
+              }
+            },
+            child: _buildInfoRow(context,
+                icon: Icons.navigation_outlined,
+                trailingIcon: Icons.open_in_new,
+                label: 'Rally point',
+                value: widget.event.locationDescription,
+                secondaryValue:
+                    'Coordinates: ${widget.event.rallyPointPlusCode}'),
           ),
         ],
       ],
@@ -82,6 +141,7 @@ class _EventInfoState extends State<EventInfo> {
     required IconData icon,
     required String label,
     required String value,
+    IconData? trailingIcon,
     String? secondaryValue,
   }) {
     return Row(
@@ -130,6 +190,13 @@ class _EventInfoState extends State<EventInfo> {
             ],
           ),
         ),
+        if (trailingIcon != null) ...[
+          const SizedBox(width: 16),
+          Icon(
+            trailingIcon,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          )
+        ],
       ],
     );
   }
