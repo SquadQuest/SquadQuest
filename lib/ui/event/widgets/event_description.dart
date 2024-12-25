@@ -63,87 +63,82 @@ class _EventDescriptionState extends State<EventDescription> {
 
     return EventSection(
       title: 'About',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Hidden measurement widget
-          Offstage(
-            child: MarkdownBody(
-              key: _markdownKey,
-              data: markdown,
-            ),
+      children: [
+        // Hidden measurement widget
+        Offstage(
+          child: MarkdownBody(
+            key: _markdownKey,
+            data: markdown,
           ),
-          Stack(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                height: _isExpanded
-                    ? _markdownHeight
-                    : min(_maxHeight, _markdownHeight ?? 0),
-                clipBehavior: Clip.hardEdge,
-                decoration: const BoxDecoration(),
-                child: SingleChildScrollView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  child: MarkdownBody(
-                    data: markdown,
-                    selectable: true,
-                    onTapLink: (text, href, title) {
-                      if (href != null) {
-                        launchUrlString(href);
-                      }
-                    },
-                  ),
+        ),
+        Stack(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              height: _isExpanded
+                  ? _markdownHeight
+                  : min(_maxHeight, _markdownHeight ?? 0),
+              clipBehavior: Clip.hardEdge,
+              decoration: const BoxDecoration(),
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: MarkdownBody(
+                  data: markdown,
+                  selectable: true,
+                  onTapLink: (text, href, title) {
+                    if (href != null) {
+                      launchUrlString(href);
+                    }
+                  },
                 ),
               ),
-              if (!_isExpanded &&
-                  _markdownHeight != null &&
-                  _markdownHeight! > _maxHeight)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 32,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Theme.of(context)
-                              .scaffoldBackgroundColor
-                              .withAlpha(0),
-                          Theme.of(context)
-                              .scaffoldBackgroundColor
-                              .withAlpha(200),
-                          Theme.of(context).scaffoldBackgroundColor,
-                        ],
-                      ),
+            ),
+            if (!_isExpanded &&
+                _markdownHeight != null &&
+                _markdownHeight! > _maxHeight)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 32,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Theme.of(context).scaffoldBackgroundColor.withAlpha(0),
+                        Theme.of(context)
+                            .scaffoldBackgroundColor
+                            .withAlpha(200),
+                        Theme.of(context).scaffoldBackgroundColor,
+                      ],
                     ),
                   ),
                 ),
-            ],
-          ),
-          if (_markdownHeight != null && _markdownHeight! > _maxHeight)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isExpanded = !_isExpanded;
-                  });
-                },
-                child: Text(
-                  _isExpanded ? 'Show less' : 'Show more',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+          ],
+        ),
+        if (_markdownHeight != null && _markdownHeight! > _maxHeight)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                });
+              },
+              child: Text(
+                _isExpanded ? 'Show less' : 'Show more',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }

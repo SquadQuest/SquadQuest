@@ -6,7 +6,6 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/user.dart';
 import 'package:squadquest/controllers/rsvps.dart';
-import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 
 import 'event_section.dart';
@@ -174,115 +173,92 @@ class EventAttendees extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(authControllerProvider);
-    if (session == null) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
-    }
-
     final rsvpsFriendsAsync = ref.watch(_rsvpsFriendsProvider(eventId));
 
-    return rsvpsFriendsAsync.when(
-      loading: () => const SliverToBoxAdapter(
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, _) => SliverToBoxAdapter(
-        child: Center(child: Text('Error: $error')),
-      ),
-      data: (rsvpsFriends) {
-        if (rsvpsFriends.isEmpty) {
-          return EventSection(
-            title: 'Attendees',
-            trailing: OutlinedButton.icon(
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  useSafeArea: true,
-                  builder: (context) => EventInviteSheet(
-                    eventId: eventId,
-                    excludeUsers: const [],
-                  ),
-                );
-              },
-              icon: const Icon(Icons.person_add),
-              label: const Text('Invite Friends'),
-            ),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                'No one has RSVPed to this event yet. Be the first!',
-                style: TextStyle(fontSize: 20),
+    return EventSection(
+      title: 'Attendees',
+      trailing: rsvpsFriendsAsync.whenOrNull(
+        data: (rsvpsFriends) => OutlinedButton.icon(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              useSafeArea: true,
+              builder: (context) => EventInviteSheet(
+                eventId: eventId,
+                excludeUsers: rsvpsFriends
+                    .map((rsvp) => rsvp.rsvp.memberId)
+                    .whereType<UserID>()
+                    .toList(),
               ),
-            ),
+            );
+          },
+          icon: const Icon(Icons.person_add),
+          label: const Text('Invite Friends'),
+        ),
+      ),
+      children: rsvpsFriendsAsync.when(
+        loading: () => [
+          const Center(child: CircularProgressIndicator()),
+        ],
+        error: (error, _) => [
+          Center(child: Text('Error: $error')),
+        ],
+        data: (rsvpsFriends) {
+          if (rsvpsFriends.isEmpty) {
+            return [
+              const Text(
+                'No one has RSVPed to this event yet. Be the first!',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+            ];
+          }
+
+          final groupedRsvps = groupBy<RsvpFriend, InstanceMemberStatus>(
+            rsvpsFriends,
+            (rsvpFriend) => rsvpFriend.rsvp.status,
           );
-        }
 
-        final groupedRsvps = groupBy<RsvpFriend, InstanceMemberStatus>(
-          rsvpsFriends,
-          (rsvpFriend) => rsvpFriend.rsvp.status,
-        );
-
-        return EventSection(
-          title: 'Attendees',
-          trailing: OutlinedButton.icon(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                useSafeArea: true,
-                builder: (context) => EventInviteSheet(
-                  eventId: eventId,
-                  excludeUsers: rsvpsFriends
-                      .map((rsvp) => rsvp.rsvp.memberId)
-                      .whereType<UserID>()
-                      .toList(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.person_add),
-            label: const Text('Invite Friends'),
-          ),
-          child: Column(
-            children: [
-              if (groupedRsvps.containsKey(InstanceMemberStatus.omw))
-                _buildAttendeeSection(
-                  context,
-                  title: 'On My Way',
-                  attendees: groupedRsvps[InstanceMemberStatus.omw]!,
-                  color: Theme.of(context).colorScheme.tertiary,
-                ),
-              if (groupedRsvps.containsKey(InstanceMemberStatus.yes))
-                _buildAttendeeSection(
-                  context,
-                  title: 'Going',
-                  attendees: groupedRsvps[InstanceMemberStatus.yes]!,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              if (groupedRsvps.containsKey(InstanceMemberStatus.maybe))
-                _buildAttendeeSection(
-                  context,
-                  title: 'Maybe',
-                  attendees: groupedRsvps[InstanceMemberStatus.maybe]!,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-              if (groupedRsvps.containsKey(InstanceMemberStatus.no))
-                _buildAttendeeSection(
-                  context,
-                  title: 'Not Going',
-                  attendees: groupedRsvps[InstanceMemberStatus.no]!,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-              if (groupedRsvps.containsKey(InstanceMemberStatus.invited))
-                _buildAttendeeSection(
-                  context,
-                  title: 'Invited',
-                  attendees: groupedRsvps[InstanceMemberStatus.invited]!,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-            ],
-          ),
-        );
-      },
+          return [
+            if (groupedRsvps.containsKey(InstanceMemberStatus.omw))
+              _buildAttendeeSection(
+                context,
+                title: 'On My Way',
+                attendees: groupedRsvps[InstanceMemberStatus.omw]!,
+                color: Theme.of(context).colorScheme.tertiary,
+              ),
+            if (groupedRsvps.containsKey(InstanceMemberStatus.yes))
+              _buildAttendeeSection(
+                context,
+                title: 'Going',
+                attendees: groupedRsvps[InstanceMemberStatus.yes]!,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            if (groupedRsvps.containsKey(InstanceMemberStatus.maybe))
+              _buildAttendeeSection(
+                context,
+                title: 'Maybe',
+                attendees: groupedRsvps[InstanceMemberStatus.maybe]!,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            if (groupedRsvps.containsKey(InstanceMemberStatus.no))
+              _buildAttendeeSection(
+                context,
+                title: 'Not Going',
+                attendees: groupedRsvps[InstanceMemberStatus.no]!,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            if (groupedRsvps.containsKey(InstanceMemberStatus.invited))
+              _buildAttendeeSection(
+                context,
+                title: 'Invited',
+                attendees: groupedRsvps[InstanceMemberStatus.invited]!,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+          ];
+        },
+      ),
     );
   }
 }

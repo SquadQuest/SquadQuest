@@ -36,45 +36,43 @@ class _EventInfoState extends State<EventInfo> {
   Widget build(BuildContext context) {
     return EventSection(
       title: 'Event Info',
-      child: Column(
-        children: [
-          _buildInfoRow(
-            context,
-            icon: Icons.person,
-            label: 'Posted by',
-            value: widget.host.displayName,
-          ),
-          const SizedBox(height: 16),
-          _buildInfoRow(
-            context,
-            icon: Icons.schedule,
-            label: 'Time',
-            value:
-                'Starts between ${DateFormat('h:mm a').format(widget.startTimeMin)}-${DateFormat('h:mm a').format(widget.startTimeMax)}',
-            secondaryValue: widget.endTime != null
-                ? 'Ends around ${DateFormat('h:mm a').format(widget.endTime!)}'
-                : null,
-          ),
-          const SizedBox(height: 16),
-          _buildInfoRow(
-            context,
-            icon: Icons.visibility,
-            label: 'Visibility',
-            value: switch (widget.visibility) {
-              InstanceVisibility.private => 'Private event',
-              InstanceVisibility.friends => 'Friends-only event',
-              InstanceVisibility.public => 'Public event',
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildInfoRow(
-            context,
-            icon: Icons.category,
-            label: 'Topic',
-            value: widget.topic?.name ?? '',
-          ),
-        ],
-      ),
+      children: [
+        _buildInfoRow(
+          context,
+          icon: Icons.person,
+          label: 'Posted by',
+          value: widget.host.displayName,
+        ),
+        const SizedBox(height: 16),
+        _buildInfoRow(
+          context,
+          icon: Icons.schedule,
+          label: 'Time',
+          value:
+              'Starts between ${DateFormat('h:mm a').format(widget.startTimeMin)}-${DateFormat('h:mm a').format(widget.startTimeMax)}',
+          secondaryValue: widget.endTime != null
+              ? 'Ends around ${DateFormat('h:mm a').format(widget.endTime!)}'
+              : null,
+        ),
+        const SizedBox(height: 16),
+        _buildInfoRow(
+          context,
+          icon: Icons.visibility,
+          label: 'Visibility',
+          value: switch (widget.visibility) {
+            InstanceVisibility.private => 'Private event',
+            InstanceVisibility.friends => 'Friends-only event',
+            InstanceVisibility.public => 'Public event',
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildInfoRow(
+          context,
+          icon: Icons.category,
+          label: 'Topic',
+          value: widget.topic?.name ?? '',
+        ),
+      ],
     );
   }
 
