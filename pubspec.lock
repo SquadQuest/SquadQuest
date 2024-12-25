@@ -603,6 +603,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.4"
+  fullscreen_image_viewer:
+    dependency: "direct main"
+    description:
+      name: fullscreen_image_viewer
+      sha256: fa642422c901a7712a44c4d24cb396f8a07eccd562a58dae8ba0a27ccf0bec14
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.6"
   functions_client:
     dependency: transitive
     description:
