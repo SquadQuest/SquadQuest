@@ -10,6 +10,7 @@ import 'package:squadquest/models/user.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/ui/event/widgets/event_description.dart';
 
 import '../core/widgets/rally_point_map.dart';
 import 'widgets/event_live_map.dart';
@@ -347,6 +348,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                           },
                         ),
                         const SizedBox(height: 24),
+
+                        // Event Description
+                        if (event.notes != null) ...[
+                          EventDescription(description: event.notes),
+                          const SizedBox(height: 24),
+                        ],
 
                         // Event Info
                         EventInfo(
