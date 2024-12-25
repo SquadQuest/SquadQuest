@@ -60,20 +60,9 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
       return const Center(child: CircularProgressIndicator());
     }
 
-    // final mediaQueryData = MediaQuery.of(context);
-    // final displayFeaturesHeight = View.of(context)
-    //     .displayFeatures
-    //     .map((displayFeature) => displayFeature.bounds.height)
-    //     .fold(0.0, (value, height) => value + height);
-
     return AppBottomSheet(
         title: widget.title,
-        // height: searchFocus.hasFocus
-        //     ? mediaQueryData.size.height -
-        //         mediaQueryData.viewPadding.vertical -
-        //         displayFeaturesHeight
-        //     : mediaQueryData.size.height * .80,
-        // padding: mediaQueryData.viewInsets,
+        bottomPaddingSafeArea: false,
         rightWidget: IconButton(
           icon: const Icon(Icons.save),
           onPressed: () => _saveRallyPoint(),

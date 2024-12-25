@@ -139,6 +139,7 @@ class _MapScreenState extends BaseMapState<MapScreen> {
       context: context,
       builder: (context) => const DevMenu(),
       isScrollControlled: true,
+      useSafeArea: true,
     );
   }
 }

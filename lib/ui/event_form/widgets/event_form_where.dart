@@ -26,6 +26,7 @@ class EventFormWhere extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       enableDrag: false,
+      useSafeArea: true,
       isDismissible: false,
       builder: (BuildContext context) => RallyPointMap(
         initialRallyPoint: ref.read(locationProvider),
