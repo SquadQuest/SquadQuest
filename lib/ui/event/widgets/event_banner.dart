@@ -85,13 +85,24 @@ class EventBanner extends StatelessWidget {
       ],
       flexibleSpace: GestureDetector(
         onLongPress: () {
+          if (event.bannerPhoto == null) return;
+
           FullscreenImageViewer.open(
             context: context,
             child: Hero(
               tag: 'event-banner-${event.id}',
               child: Image.network(
-                event.bannerPhoto.toString(),
+                event.bannerPhoto!.toString(),
               ),
+            ),
+            closeWidget: Container(
+              padding: EdgeInsets.all(8),
+              margin: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withAlpha(150),
+              ),
+              child: Icon(Icons.close),
             ),
           );
         },
