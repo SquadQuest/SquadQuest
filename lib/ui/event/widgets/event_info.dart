@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:squadquest/models/instance.dart';
 
@@ -58,6 +59,20 @@ class _EventInfoState extends State<EventInfo> {
           label: 'Topic',
           value: widget.event.topic?.name ?? '',
         ),
+        if (widget.event.link != null) ...[
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () {
+              launchUrl(widget.event.link!);
+            },
+            child: _buildInfoRow(
+              context,
+              icon: Icons.link,
+              label: 'Link',
+              value: widget.event.link.toString(),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -86,34 +101,34 @@ class _EventInfoState extends State<EventInfo> {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 14,
-              ),
-            ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                overflow: TextOverflow.ellipsis,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 14,
                 ),
-                if (secondaryValue != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    secondaryValue,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (secondaryValue != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  secondaryValue,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
+          ),
         ),
       ],
     );
