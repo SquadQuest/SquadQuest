@@ -55,7 +55,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
         },
         wrapper: (WidgetTester tester, Widget screen) =>
             UncontrolledProviderScope(
-              container: container,
+              container: mocksContainer,
               child: MaterialApp(
                 home: screen,
                 theme: appThemeLight,

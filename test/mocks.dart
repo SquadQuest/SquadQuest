@@ -32,7 +32,17 @@ class MockRsvpsController extends InstanceRsvpsController {
 // Mock auth controller that returns null (logged out state)
 class MockAuthController extends AuthController {
   @override
-  Session? build() => null;
+  Session? build() => Session(
+      accessToken: 'test-access-token',
+      refreshToken: 'test-refresh-token',
+      tokenType: 'test-token',
+      user: User(
+        id: mockUser.id,
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'test-aud',
+        createdAt: '2024-01-01 12:00:00',
+      ));
 }
 
 final mockUser = UserProfile(
@@ -62,11 +72,11 @@ final mockEvent = Instance(
   link: Uri.parse(
       'https://www.etix.com/ticket/p/43349598/zoo-years-eve-with-too-many-zooz-philadelphia-music-hall-at-world-cafe-live'),
   topic: Topic(id: 'test-topic-1', name: 'party.house'),
-  createdAt: DateTime(2024, 1, 1, 12),
+  createdAt: DateTime(2024, 11, 1, 12),
   createdBy: mockUser,
 );
 
-final container = ProviderContainer(
+final mocksContainer = ProviderContainer(
   overrides: [
     // themeModeProvider.overrideWith((ref) => ThemeMode.dark),
 
