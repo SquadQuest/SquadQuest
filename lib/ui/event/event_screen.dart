@@ -10,11 +10,11 @@ import 'package:squadquest/models/user.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/auth.dart';
-import 'package:squadquest/screens/chat.dart';
 
 import '../core/widgets/rally_point_map.dart';
 import 'widgets/event_live_map.dart';
 import 'widgets/event_banner.dart';
+import 'widgets/event_chat_sheet.dart';
 import 'widgets/event_quick_actions.dart';
 import 'widgets/event_info.dart';
 import 'widgets/event_attendees.dart';
@@ -183,12 +183,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   }
 
   void _showChat() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) => ChatScreen(
-          instanceId: widget.eventId,
-          autofocus: true,
-        ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (BuildContext context) => EventChatSheet(
+        eventId: widget.eventId,
       ),
     );
   }
