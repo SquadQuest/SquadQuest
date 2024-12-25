@@ -83,8 +83,9 @@ class _EventInfoState extends State<EventInfo> {
           ),
         ),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               label,
@@ -93,15 +94,13 @@ class _EventInfoState extends State<EventInfo> {
                 fontSize: 14,
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
                 Text(
                   value,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
+                overflow: TextOverflow.ellipsis,
                 ),
                 if (secondaryValue != null) ...[
                   const SizedBox(height: 2),
@@ -115,7 +114,6 @@ class _EventInfoState extends State<EventInfo> {
                 ],
               ],
             ),
-          ],
         ),
       ],
     );
