@@ -53,6 +53,15 @@ class AppBottomSheet extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 50),
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               if (leftWidget != null)
                 Positioned(
                   left: 12,
@@ -65,14 +74,6 @@ class AppBottomSheet extends StatelessWidget {
                       icon: const Icon(Icons.close),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
-              ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
               ),
             ],
           ),
