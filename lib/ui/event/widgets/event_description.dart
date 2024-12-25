@@ -58,6 +58,9 @@ class _EventDescriptionState extends State<EventDescription> {
       return const SizedBox.shrink();
     }
 
+    final markdown =
+        widget.description!.replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), '\n\n');
+
     return EventSection(
       title: 'About',
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -68,7 +71,7 @@ class _EventDescriptionState extends State<EventDescription> {
           Offstage(
             child: MarkdownBody(
               key: _markdownKey,
-              data: widget.description!,
+              data: markdown,
             ),
           ),
           Stack(
@@ -84,7 +87,7 @@ class _EventDescriptionState extends State<EventDescription> {
                 child: SingleChildScrollView(
                   physics: const NeverScrollableScrollPhysics(),
                   child: MarkdownBody(
-                    data: widget.description!,
+                    data: markdown,
                     selectable: true,
                     onTapLink: (text, href, title) {
                       if (href != null) {
