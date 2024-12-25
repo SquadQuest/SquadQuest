@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dlibphonenumber/dlibphonenumber.dart';
@@ -106,6 +107,22 @@ Future<Uri> movePhoto(
 
   // append cache buster to force refresh of new upload
   return Uri.parse('$photoUrl&v=${DateTime.now().millisecondsSinceEpoch}');
+}
+
+TimeOfDay addMinutesToTimeOfDay(TimeOfDay timeOfDay, int minutes) {
+  if (minutes == 0) {
+    return timeOfDay;
+  } else {
+    int mofd = timeOfDay.hour * 60 + timeOfDay.minute;
+    int newMofd = ((minutes % 1440) + mofd + 1440) % 1440;
+    if (mofd == newMofd) {
+      return timeOfDay;
+    } else {
+      int newHour = newMofd ~/ 60;
+      int newMinute = newMofd % 60;
+      return TimeOfDay(hour: newHour, minute: newMinute);
+    }
+  }
 }
 
 extension IterableExtensions<T> on Iterable<T> {

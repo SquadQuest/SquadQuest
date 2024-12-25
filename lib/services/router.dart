@@ -18,7 +18,7 @@ import 'package:squadquest/screens/profile_form.dart';
 import 'package:squadquest/screens/profile.dart';
 import 'package:squadquest/screens/home.dart';
 import 'package:squadquest/screens/settings.dart';
-import 'package:squadquest/screens/event_form.dart';
+import 'package:squadquest/ui/event_form/event_form_screen.dart';
 import 'package:squadquest/screens/event_details.dart';
 import 'package:squadquest/screens/friends.dart';
 import 'package:squadquest/screens/map.dart';
