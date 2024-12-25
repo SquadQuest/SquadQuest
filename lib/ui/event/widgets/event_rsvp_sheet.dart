@@ -71,7 +71,7 @@ class _EventRsvpSheetState extends State<EventRsvpSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
       ),
       child: SingleChildScrollView(
         child: Container(
@@ -151,7 +151,6 @@ class _EventRsvpSheetState extends State<EventRsvpSheet> {
                   child: const Text("Remove RSVP"),
                 ),
               ],
-              const SizedBox(height: 16),
             ],
           ),
         ),

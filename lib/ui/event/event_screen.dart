@@ -142,6 +142,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       context: context,
       isScrollControlled: true,
       enableDrag: false,
+      useSafeArea: true,
       isDismissible: false,
       builder: (BuildContext context) => RallyPointMap(
         initialRallyPoint: eventAsync.value!.rallyPoint,
@@ -174,6 +175,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       enableDrag: false,
       builder: (BuildContext context) => EventLiveMap(
         eventId: widget.eventId,
@@ -379,6 +381,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                                 showModalBottomSheet(
                                   context: context,
                                   isScrollControlled: true,
+                                  useSafeArea: true,
                                   builder: (context) => EventInviteSheet(
                                     eventId: widget.eventId,
                                     excludeUsers: eventRsvps

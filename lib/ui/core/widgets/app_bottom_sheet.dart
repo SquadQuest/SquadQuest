@@ -13,6 +13,7 @@ class AppBottomSheet extends StatelessWidget {
   final bool bottomPaddingInset;
   final double bottomPaddingInsetExtra;
   final bool bottomPaddingSafeArea;
+  final double bottomPaddingMin;
 
   const AppBottomSheet({
     super.key,
@@ -26,6 +27,7 @@ class AppBottomSheet extends StatelessWidget {
     this.bottomPaddingInset = true,
     this.bottomPaddingInsetExtra = 0,
     this.bottomPaddingSafeArea = true,
+    this.bottomPaddingMin = 0,
   });
 
   @override
@@ -35,12 +37,15 @@ class AppBottomSheet extends StatelessWidget {
     return Container(
       height: height,
       padding: EdgeInsets.only(
-        bottom: bottomPaddingExtra +
-            max(
-              bottomPaddingInset ? mediaQuery.viewInsets.bottom : 0,
-              bottomPaddingSafeArea ? mediaQuery.viewPadding.bottom : 0,
-            ) +
-            (mediaQuery.viewInsets.bottom > 0 ? bottomPaddingInsetExtra : 0),
+        bottom: max(
+          bottomPaddingMin,
+          bottomPaddingExtra +
+              max(
+                bottomPaddingInset ? mediaQuery.viewInsets.bottom : 0,
+                bottomPaddingSafeArea ? mediaQuery.viewPadding.bottom : 0,
+              ) +
+              (mediaQuery.viewInsets.bottom > 0 ? bottomPaddingInsetExtra : 0),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

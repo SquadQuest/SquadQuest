@@ -11,6 +11,8 @@ import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
 
+import 'package:squadquest/ui/core/widgets/app_bottom_sheet.dart';
+
 class EventInviteSheet extends ConsumerStatefulWidget {
   final InstanceID eventId;
   final List<UserID> excludeUsers;
@@ -67,100 +69,87 @@ class _EventInviteSheetState extends ConsumerState<EventInviteSheet> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Container(
-      height: MediaQuery.of(context).size.height * .75,
-      padding: EdgeInsets.only(
-        top: 16,
-        bottom: max(MediaQuery.of(context).viewInsets.bottom, 16),
-      ),
-      child: Column(
-        // mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Invite Friends',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+    return AppBottomSheet(
+      title: 'Invite Friends',
+      bottomPaddingInsetExtra: 16,
+      bottomPaddingMin: 16,
+      children: [
+        TextFormField(
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search),
+            labelText: 'Search friends',
           ),
-          TextFormField(
-            textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              labelText: 'Search friends',
-            ),
-            onChanged: _onSearchQueryChanged,
+          onChanged: _onSearchQueryChanged,
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: friendsList.when(
+            data: (friends) {
+              final filteredFriends = friends.where((friend) {
+                if (friend.status != FriendStatus.accepted) {
+                  return false;
+                }
+
+                final otherProfile = friend.getOtherProfile(session.user.id)!;
+
+                if (widget.excludeUsers.contains(otherProfile.id)) {
+                  return false;
+                }
+
+                return _searchQuery.isEmpty ||
+                    otherProfile.displayName
+                        .toLowerCase()
+                        .contains(_searchQuery);
+              });
+
+              return filteredFriends.isEmpty
+                  ? const Text(
+                      'No friends found who haven\'t already been invited')
+                  : ListView(
+                      children: filteredFriends.map((friend) {
+                        final otherProfile =
+                            friend.getOtherProfile(session.user.id);
+
+                        return CheckboxListTile(
+                          title: Text(otherProfile!.displayName),
+                          value: _selectedUsers.contains(otherProfile.id),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value!) {
+                                _selectedUsers.add(otherProfile.id);
+                              } else {
+                                _selectedUsers.remove(otherProfile.id);
+                              }
+                              FocusScope.of(context).unfocus();
+                            });
+                          },
+                        );
+                      }).toList(),
+                    );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Text('Error: $error'),
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: friendsList.when(
-              data: (friends) {
-                final filteredFriends = friends.where((friend) {
-                  if (friend.status != FriendStatus.accepted) {
-                    return false;
-                  }
-
-                  final otherProfile = friend.getOtherProfile(session.user.id)!;
-
-                  if (widget.excludeUsers.contains(otherProfile.id)) {
-                    return false;
-                  }
-
-                  return _searchQuery.isEmpty ||
-                      otherProfile.displayName
-                          .toLowerCase()
-                          .contains(_searchQuery);
-                });
-
-                return filteredFriends.isEmpty
-                    ? const Text(
-                        'No friends found who haven\'t already been invited')
-                    : ListView(
-                        children: filteredFriends.map((friend) {
-                          final otherProfile =
-                              friend.getOtherProfile(session.user.id);
-
-                          return CheckboxListTile(
-                            title: Text(otherProfile!.displayName),
-                            value: _selectedUsers.contains(otherProfile.id),
-                            onChanged: (bool? value) {
-                              setState(() {
-                                if (value!) {
-                                  _selectedUsers.add(otherProfile.id);
-                                } else {
-                                  _selectedUsers.remove(otherProfile.id);
-                                }
-                                FocusScope.of(context).unfocus();
-                              });
-                            },
-                          );
-                        }).toList(),
-                      );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Text('Error: $error'),
-            ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _selectedUsers.isEmpty ? null : _inviteSelectedUsers,
+                child: const Text('Invite'),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed:
-                      _selectedUsers.isEmpty ? null : _inviteSelectedUsers,
-                  child: const Text('Invite'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
