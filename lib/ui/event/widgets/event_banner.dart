@@ -32,6 +32,7 @@ class EventBanner extends StatelessWidget {
         opacity: isCollapsed ? 1.0 : 0.0,
         child: Text(event.title,
             style: TextStyle(
+              overflow: TextOverflow.ellipsis,
               decoration: event.status == InstanceStatus.canceled
                   ? TextDecoration.lineThrough
                   : null,
@@ -105,6 +106,7 @@ class EventBanner extends StatelessWidget {
             Positioned(
               bottom: 16,
               left: 16,
+              right: 16,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
