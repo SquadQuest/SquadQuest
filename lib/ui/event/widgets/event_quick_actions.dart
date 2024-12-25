@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/controllers/chat.dart' show chatMessageCountProvider;
+import 'package:squadquest/controllers/instances.dart' show eventPointsProvider;
 
-class EventQuickActions extends StatelessWidget {
+class EventQuickActions extends ConsumerWidget {
   final InstanceMemberStatus? selectedStatus;
+  final InstanceID eventId;
   final VoidCallback onRsvpTap;
   final VoidCallback onMapTap;
   final VoidCallback onShareTap;
@@ -13,6 +17,7 @@ class EventQuickActions extends StatelessWidget {
   const EventQuickActions({
     super.key,
     required this.selectedStatus,
+    required this.eventId,
     required this.onRsvpTap,
     required this.onMapTap,
     required this.onShareTap,
@@ -21,7 +26,10 @@ class EventQuickActions extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final eventPointsAsync = ref.watch(eventPointsProvider(eventId));
+    final messageCountAsync = ref.watch(chatMessageCountProvider(eventId));
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -37,6 +45,10 @@ class EventQuickActions extends StatelessWidget {
           onTap: onMapTap,
           icon: Icons.map_outlined,
           label: 'Map',
+          badge: eventPointsAsync.whenOrNull(
+            data: (eventPoints) =>
+                eventPoints!.users > 0 ? eventPoints.users : null,
+          ),
         ),
         if (showChat)
           _buildActionButton(
@@ -44,6 +56,9 @@ class EventQuickActions extends StatelessWidget {
             onTap: onChatTap,
             icon: Icons.chat_bubble_outline,
             label: 'Chat',
+            badge: messageCountAsync.whenOrNull(
+              data: (count) => count > 0 ? count : null,
+            ),
           ),
         _buildActionButton(
           context,
@@ -77,6 +92,7 @@ class EventQuickActions extends StatelessWidget {
     required IconData icon,
     required String label,
     bool selected = false,
+    int? badge,
   }) {
     return Material(
       color: Colors.transparent,
@@ -96,24 +112,58 @@ class EventQuickActions extends StatelessWidget {
                   ),
                 )
               : null,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Icon(
-                icon,
-                size: 24,
-                color: selected ? Theme.of(context).colorScheme.primary : null,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: selected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurface,
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 24,
+                      color: selected
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: selected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              if (badge != null)
+                Positioned(
+                  right: 12,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 20,
+                      minHeight: 14,
+                    ),
+                    child: Text(
+                      badge.toString(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.surface,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

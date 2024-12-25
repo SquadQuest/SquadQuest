@@ -335,6 +335,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
 
                             return EventQuickActions(
                               selectedStatus: selectedStatus,
+                              eventId: widget.eventId,
                               onRsvpTap: () => _showRsvpSheet(event),
                               onMapTap: _showLiveMap,
                               onShareTap: _copyEventLink,
