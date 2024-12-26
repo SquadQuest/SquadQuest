@@ -5,6 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Flutter: Run event screen tests",
+            "type": "dart",
+            "request": "launch",
+            "program": "test/ui/event/event_screen_test.dart"
+        },
+        {
+            "name": "Flutter: Test Environment",
+            "type": "dart",
+            "request": "launch",
+            "program": "test/main.dart",
+        },
+        {
             "name": "Flutter: Storybook",
             "type": "dart",
             "request": "launch",

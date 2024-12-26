@@ -321,15 +321,9 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               if (event.status == InstanceStatus.canceled)
                 const EventCanceledBanner(),
 
-              // Host Bulletin
-              EventHostBulletin(
-                eventId: widget.eventId,
-                onTap: () => _showChat(),
-              ),
-
               // Quick Actions
               SliverPadding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 sliver: SliverToBoxAdapter(
                   child: Consumer(
                     builder: (context, ref, child) {
@@ -350,6 +344,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                     },
                   ),
                 ),
+              ),
+
+              // Host Bulletin
+              EventHostBulletin(
+                eventId: widget.eventId,
+                onTap: () => _showChat(),
               ),
 
               // Event Description

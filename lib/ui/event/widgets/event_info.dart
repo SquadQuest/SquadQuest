@@ -87,11 +87,12 @@ class _EventInfoState extends State<EventInfo> {
 
               final googleMapsUri = Uri(
                 scheme: 'https',
-                host: 'maps.google.com',
+                host: 'www.google.com',
+                path: '/maps/dir/',
                 queryParameters: {
-                  'daddr': query,
-                  'q': widget.event.locationDescription,
-                  'directionsmode': 'bicycling',
+                  'api': '1',
+                  'destination': query,
+                  'travelmode': 'bicycling',
                 },
               );
 
