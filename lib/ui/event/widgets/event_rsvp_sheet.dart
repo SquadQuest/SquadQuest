@@ -134,7 +134,7 @@ class _EventRsvpSheetState extends State<EventRsvpSheet> {
               //           fillColor: Theme.of(context)
               //               .colorScheme
               //               .surfaceVariant
-              //               .withOpacity(0.3),
+              //               .withAlpha(80),
               //         ),
               //         maxLines: 2,
               //       ),

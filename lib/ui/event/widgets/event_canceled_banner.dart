@@ -7,7 +7,7 @@ class EventCanceledBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
       child: Container(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withAlpha(30),
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
