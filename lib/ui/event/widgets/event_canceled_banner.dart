@@ -8,7 +8,7 @@ class EventCanceledBanner extends StatelessWidget {
     return SliverToBoxAdapter(
       child: Container(
         color: Colors.red.withAlpha(30),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Row(
           children: [
             const Icon(Icons.cancel_outlined, color: Colors.red),

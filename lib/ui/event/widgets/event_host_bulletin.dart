@@ -25,7 +25,7 @@ class EventHostBulletin extends ConsumerWidget {
       data: (message) => message == null
           ? const SliverToBoxAdapter()
           : SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               sliver: SliverToBoxAdapter(
                 child: Card(
                   color: Theme.of(context).colorScheme.primaryContainer,
