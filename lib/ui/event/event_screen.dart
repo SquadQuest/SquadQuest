@@ -353,7 +353,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               ),
 
               // Event Description
-              if (event.notes != null)
+              if (event.notes != null && event.notes!.trim().isNotEmpty)
                 EventDescription(description: event.notes),
 
               // Event Info
