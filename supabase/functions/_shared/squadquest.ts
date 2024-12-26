@@ -26,6 +26,7 @@ async function scrubProfile(
       last_name: userProfile?.last_name,
       phone: userProfile?.phone,
       photo: userProfile?.photo,
+      trail_color: userProfile?.trail_color,
     };
   }
 
