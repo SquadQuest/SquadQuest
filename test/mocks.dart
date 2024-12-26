@@ -14,6 +14,8 @@ import 'package:squadquest/models/event_message.dart';
 
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/firebase.dart';
+import 'package:squadquest/controllers/topics.dart';
+import 'package:squadquest/controllers/topic_subscriptions.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/settings.dart';
@@ -99,6 +101,21 @@ class MockLocationController extends LocationController {
   }
 }
 
+// Mock controllers for topics
+class MockTopicsController extends TopicsController {
+  @override
+  Future<List<Topic>> build() async {
+    return [];
+  }
+}
+
+class MockTopicSubscriptionsController extends TopicSubscriptionsController {
+  @override
+  Future<List<TopicID>> build() async {
+    return [];
+  }
+}
+
 // Mock controller for instances that returns test event
 class MockInstancesController extends InstancesController {
   @override
@@ -119,6 +136,11 @@ class MockInstanceRsvpsController extends InstanceRsvpsController {
 // Mock controller for RSVPs
 class MockRsvpsController extends RsvpsController {
   static final _instanceRsvps = <String, List<InstanceMember>>{};
+
+  @override
+  Future<List<InstanceMember>> build() async {
+    return [];
+  }
 
   @override
   Future<InstanceMember?> save(
@@ -297,6 +319,11 @@ final baseOverrides = [
 
   // Override profiles cache
   profilesCacheProvider.overrideWith(() => MockProfilesCacheService()),
+
+  // Override topics
+  topicsProvider.overrideWith(() => MockTopicsController()),
+  topicSubscriptionsProvider
+      .overrideWith(() => MockTopicSubscriptionsController()),
 
   // Override instances with mock data
   instancesProvider.overrideWith(() => MockInstancesController()),
