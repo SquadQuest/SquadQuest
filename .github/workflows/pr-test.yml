@@ -41,3 +41,11 @@ jobs:
 
       - name: Run tests
         run: fvm flutter test
+
+      - name: Upload test failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failures
+          path: test/**/failures/
+          if-no-files-found: ignore
