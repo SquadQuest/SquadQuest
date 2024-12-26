@@ -3,7 +3,7 @@
 devtools_options.yaml
 
 # Test output
-test/**/failures
+# test/**/failures
 
 # Miscellaneous
 *.class

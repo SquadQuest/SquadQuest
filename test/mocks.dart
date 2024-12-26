@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:test_screen/test_screen.dart';
 
 import 'package:squadquest/theme.dart';
 import 'package:squadquest/models/user.dart';
@@ -91,6 +89,9 @@ class MockLocationController extends LocationController {
   MockLocationController(super.ref);
 
   @override
+  void init() async {}
+
+  @override
   Future<void> startTracking([InstanceID? instanceId]) async {
     tracking = true;
   }
@@ -125,18 +126,22 @@ class MockInstancesController extends InstancesController {
 }
 
 // Mock controller for RSVPs per event
+final rsvpMockStateProvider =
+    Provider<Map<String, List<InstanceMember>>>((ref) {
+  throw UnimplementedError();
+});
+
 class MockInstanceRsvpsController extends InstanceRsvpsController {
   @override
   Future<List<InstanceMember>> build(InstanceID eventId) async {
-    final rsvps = MockRsvpsController._instanceRsvps[eventId] ?? [];
+    final instanceRsvps = ref.read(rsvpMockStateProvider);
+    final rsvps = instanceRsvps[eventId] ?? [];
     return rsvps;
   }
 }
 
 // Mock controller for RSVPs
 class MockRsvpsController extends RsvpsController {
-  static final _instanceRsvps = <String, List<InstanceMember>>{};
-
   @override
   Future<List<InstanceMember>> build() async {
     return [];
@@ -145,21 +150,21 @@ class MockRsvpsController extends RsvpsController {
   @override
   Future<InstanceMember?> save(
       Instance instance, InstanceMemberStatus? status) async {
+    final instanceRsvps = ref.read(rsvpMockStateProvider);
+
     if (status == null) {
-      _instanceRsvps[instance.id!] = [];
+      instanceRsvps[instance.id!] = [];
       ref.invalidate(rsvpsPerEventProvider(instance.id!));
       return null;
     }
 
     final rsvp = InstanceMember(
-      id: 'test-rsvp-1',
       instance: instance,
       memberId: mockUser.id,
       status: status,
-      createdAt: DateTime.now(),
     );
 
-    _instanceRsvps[instance.id!] = [rsvp];
+    instanceRsvps[instance.id!] = [rsvp];
     ref.invalidate(rsvpsPerEventProvider(instance.id!));
     return rsvp;
   }
@@ -312,128 +317,78 @@ final mockEvent = Instance(
   createdById: mockUser.id,
 );
 
-// Base overrides used in all containers
-final baseOverrides = [
-  // Override auth to simulate logged out state
-  authControllerProvider.overrideWith(() => MockAuthController()),
+// Builder for mock environments
+ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
+    ProviderScope(
+      overrides: [
+        // Override auth to simulate logged out state
+        authControllerProvider.overrideWith(() => MockAuthController()),
 
-  // Override profiles cache
-  profilesCacheProvider.overrideWith(() => MockProfilesCacheService()),
+        // Override profiles cache
+        profilesCacheProvider.overrideWith(() => MockProfilesCacheService()),
 
-  // Override topics
-  topicsProvider.overrideWith(() => MockTopicsController()),
-  topicSubscriptionsProvider
-      .overrideWith(() => MockTopicSubscriptionsController()),
+        // Override topics
+        topicsProvider.overrideWith(() => MockTopicsController()),
+        topicSubscriptionsProvider
+            .overrideWith(() => MockTopicSubscriptionsController()),
 
-  // Override instances with mock data
-  instancesProvider.overrideWith(() => MockInstancesController()),
-  eventDetailsProvider(mockEvent.id!).overrideWith(
-    (ref) => Future.value(mockEvent),
-  ),
+        // Override instances with mock data
+        instancesProvider.overrideWith(() => MockInstancesController()),
+        eventDetailsProvider(mockEvent.id!).overrideWith(
+          (ref) => Future.value(mockEvent),
+        ),
 
-  // Override RSVPs
-  rsvpsProvider.overrideWith(() => MockRsvpsController()),
-  rsvpsPerEventProvider.overrideWith(() => MockInstanceRsvpsController()),
+        // Override RSVPs
+        rsvpMockStateProvider
+            .overrideWith((ref) => <String, List<InstanceMember>>{}),
+        rsvpsProvider.overrideWith(() => MockRsvpsController()),
+        rsvpsPerEventProvider.overrideWith(() => MockInstanceRsvpsController()),
 
-  // Override friends with empty list
-  friendsProvider.overrideWith(() => MockFriendsController()),
+        // Override friends with empty list
+        friendsProvider.overrideWith(() => MockFriendsController()),
 
-  // Override chat provider
-  chatProvider.overrideWith(() => MockChatController()),
+        // Override chat provider
+        chatProvider.overrideWith(() => MockChatController()),
 
-  // Override location controller
-  locationControllerProvider.overrideWith((ref) => MockLocationController(ref)),
+        // Override location controller
+        locationControllerProvider
+            .overrideWith((ref) => MockLocationController(ref)),
 
-  // Override settings providers
-  storybookModeProvider.overrideWith((ref) => true),
-  themeModeProvider.overrideWith((ref) => ThemeMode.dark),
+        // Override settings providers
+        storybookModeProvider.overrideWith((ref) => true),
+        themeModeProvider.overrideWith((ref) => ThemeMode.dark),
 
-  // Override Firebase messaging
-  firebaseMessagingServiceProvider
-      .overrideWith((ref) => MockFirebaseMessagingService(ref)),
-  firebaseMessagingStreamProvider.overrideWith((ref) => Stream.empty()),
+        // Override Firebase messaging
+        firebaseMessagingServiceProvider
+            .overrideWith((ref) => MockFirebaseMessagingService(ref)),
+        firebaseMessagingStreamProvider.overrideWith((ref) => Stream.empty()),
 
-  // Override app initialization
-  profileProvider.overrideWith(() => MockProfileController()),
-  appVersionsProvider.overrideWith(() => MockAppVersionsController()),
+        // Override app initialization
+        profileProvider.overrideWith(() => MockProfileController()),
+        appVersionsProvider.overrideWith(() => MockAppVersionsController()),
 
-  // Override Supabase
-  supabaseClientProvider.overrideWithValue(MockSupabase())
-];
+        // Override Supabase
+        supabaseClientProvider.overrideWithValue(MockSupabase()),
 
-// Container with pinned message for testing bulletin
-final mocksContainerWithPinnedMessage = ProviderContainer(
-  overrides: [
-    ...baseOverrides,
-    latestPinnedMessageProvider.overrideWith(
-      () => MockLatestPinnedMessageController(true),
-    ),
-  ],
-);
-
-// Container without pinned message
-TestScreenConfig buildTestScreenConfig({ProviderContainer? container}) {
-  return TestScreenConfig(
-      locales: [
-        'en'
+        // scenarios
+        ...switch (scenario) {
+          'pinned-message' => [
+              latestPinnedMessageProvider.overrideWith(
+                () => MockLatestPinnedMessageController(true),
+              ),
+            ],
+          _ => [
+              latestPinnedMessageProvider.overrideWith(
+                () => MockLatestPinnedMessageController(false),
+              ),
+            ]
+        }
       ],
-      devices: {
-        UITargetPlatform.webAndroid: [TestScreenDevice.forWeb(412, 915)],
-        UITargetPlatform.webIos: [TestScreenDevice.forWeb(393, 852)],
-        UITargetPlatform.android: [
-          const TestScreenDevice(
-            id: 'Pixel2',
-            manufacturer: 'Google',
-            name: 'Pixel 2',
-            size: Size(1080, 1920),
-            devicePixelRatio: 2.625,
-          ),
-          const TestScreenDevice(
-            id: 'Pixel8Pro',
-            manufacturer: 'Google',
-            name: 'Pixel 8 Pros',
-            size: Size(1344, 2992),
-            devicePixelRatio: 3.0,
-          ),
-        ],
-        UITargetPlatform.iOS: [
-          const TestScreenDevice(
-            id: 'iPhoneSE',
-            manufacturer: 'Apple',
-            name: 'iPhone SE 2022',
-            size: Size(750, 1334),
-            devicePixelRatio: 2.0,
-          ),
-          const TestScreenDevice(
-            id: 'iPhone15Plus',
-            manufacturer: 'Apple',
-            name: 'iPhone 15 Plus',
-            size: Size(1290, 2796),
-            devicePixelRatio: 3.0,
-          ),
-        ],
-      },
-      wrapper: (WidgetTester tester, Widget screen) =>
-          UncontrolledProviderScope(
-            container: container ?? mocksContainer,
-            child: MaterialApp(
-              home: screen,
-              theme: appThemeLight,
-              darkTheme: appThemeDark,
-              themeMode: ThemeMode.dark,
-              debugShowCheckedModeBanner: false,
-            ),
-          ),
-      onAfterCreate: (WidgetTester tester, Widget screen) async {
-        await tester.pumpAndSettle();
-      });
-}
-
-final mocksContainer = ProviderContainer(
-  overrides: [
-    ...baseOverrides,
-    latestPinnedMessageProvider.overrideWith(
-      () => MockLatestPinnedMessageController(false),
-    ),
-  ],
-);
+      child: MaterialApp(
+        home: screen,
+        theme: appThemeLight,
+        darkTheme: appThemeDark,
+        themeMode: ThemeMode.dark,
+        debugShowCheckedModeBanner: false,
+      ),
+    );

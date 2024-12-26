@@ -47,10 +47,10 @@ class LocationController {
   Stream<LocationData> get stream => _streamController.stream;
 
   LocationController(this.ref) {
-    _init();
+    init();
   }
 
-  void _init() async {
+  void init() async {
     _location = Location();
     _location.changeNotificationOptions(
         channelName: 'Location Sharing',
@@ -64,7 +64,7 @@ class LocationController {
     _permissionGranted = await _location.hasPermission();
 
     logger.d({
-      'LocationController._init': {
+      'LocationController.init': {
         'serviceEnabled': _serviceEnabled,
         'permissionGranted': _permissionGranted,
       }
