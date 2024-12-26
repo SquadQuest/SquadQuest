@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:test_screen/test_screen.dart';
 
 import 'package:squadquest/theme.dart';
@@ -11,6 +12,7 @@ import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/event_message.dart';
 
+import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/auth.dart';
@@ -22,6 +24,28 @@ import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
+
+class MockSupabase extends Fake implements SupabaseClient {
+  @override
+  get auth => MockGotrue();
+}
+
+Stream<AuthState> mockAuthStateChangeStream() async* {
+  yield AuthState(
+    AuthChangeEvent.initialSession,
+    mockSession,
+  );
+}
+
+class MockGotrue extends Fake implements GoTrueClient {
+  @override
+  Session? get currentSession => mockSession;
+  @override
+  User? get currentUser => mockSession.user;
+
+  @override
+  Stream<AuthState> get onAuthStateChange => mockAuthStateChangeStream();
+}
 
 // Mock profile controller
 class MockProfileController extends ProfileController {
@@ -130,17 +154,7 @@ class MockFriendsController extends FriendsController {
 // Mock auth controller that returns mock user
 class MockAuthController extends AuthController {
   @override
-  Session? build() => Session(
-      accessToken: 'test-access-token',
-      refreshToken: 'test-refresh-token',
-      tokenType: 'test-token',
-      user: User(
-        id: mockUser.id,
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'test-aud',
-        createdAt: '2024-01-01 12:00:00',
-      ));
+  Session? build() => mockSession;
 }
 
 // Mock profiles cache that returns mock users
@@ -172,6 +186,18 @@ class MockLatestPinnedMessageController extends LatestPinnedMessageController {
     return mockMessages.lastWhere((m) => m.pinned);
   }
 }
+
+final mockSession = Session(
+    accessToken: 'test-access-token',
+    refreshToken: 'test-refresh-token',
+    tokenType: 'test-token',
+    user: User(
+      id: mockUser.id,
+      appMetadata: {},
+      userMetadata: {},
+      aud: 'test-aud',
+      createdAt: '2024-01-01 12:00:00',
+    ));
 
 final mockUser = UserProfile(
   id: 'test-user-1',
@@ -303,6 +329,9 @@ final baseOverrides = [
   // Override app initialization
   profileProvider.overrideWith(() => MockProfileController()),
   appVersionsProvider.overrideWith(() => MockAppVersionsController()),
+
+  // Override Supabase
+  supabaseClientProvider.overrideWithValue(MockSupabase())
 ];
 
 // Container with pinned message for testing bulletin

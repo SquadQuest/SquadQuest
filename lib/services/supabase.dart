@@ -88,3 +88,7 @@ Future<Supabase> buildSupabaseApp() async {
 
   return supabase;
 }
+
+void mockSupabaseInitializedComplete() {
+  _supabaseInitializedCompleter.complete();
+}

@@ -6,10 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:device_preview/device_preview.dart';
 
 import 'package:squadquest/app.dart';
+import 'package:squadquest/services/supabase.dart';
 
 import 'mocks.dart';
 
 void main() {
+  mockSupabaseInitializedComplete();
+
   runApp(UncontrolledProviderScope(
     container: mocksContainer,
     child: DevicePreview(
