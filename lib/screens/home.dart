@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:grouped_list/grouped_list.dart';
 
 import 'package:squadquest/common.dart';
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/friends.dart';
@@ -285,8 +286,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   const Expanded(
                       child: Center(child: CircularProgressIndicator()))
                 ],
-            error: (error, stackTrace) =>
-                [Expanded(child: Center(child: Text('Error: $error')))],
+            error: (error, stackTrace) {
+              logger.e('Failed to load events list',
+                  error: error, stackTrace: stackTrace);
+              return [Expanded(child: Center(child: Text('Error: $error')))];
+            },
             data: (data) {
               final now = DateTime.now();
 
