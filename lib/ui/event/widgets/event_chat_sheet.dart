@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/common.dart';
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/controllers/chat.dart';
@@ -45,21 +46,6 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
   }
 
   Future<void> _sendMessage(bool isHost) async {
@@ -256,7 +242,7 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
                                   padding: const EdgeInsets.only(
                                       left: 12, right: 12, top: 4),
                                   child: Text(
-                                    _formatTime(message.createdAt),
+                                    formatRelativeTime(message.createdAt),
                                     style:
                                         Theme.of(context).textTheme.bodySmall,
                                   ),
