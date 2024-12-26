@@ -510,7 +510,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         builder: (BuildContext context) => SizedBox(
             height: MediaQuery.of(context).size.height * .75,
             child: const Padding(
-                padding: EdgeInsets.only(top: 16, bottom: 16),
+                padding: EdgeInsets.only(top: 0, bottom: 16),
                 child: ContactsList())));
   }
 

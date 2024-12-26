@@ -12,11 +12,12 @@ import 'package:squadquest/models/instance.dart';
 final _bottomPaddingProvider = StateProvider<double?>((ref) => null);
 
 class AppScaffold extends ConsumerWidget {
-  final String title;
+  final String? title;
   final TextStyle? titleStyle;
   final String? loadMask;
   final Widget body;
   final EdgeInsetsGeometry? bodyPadding;
+  final bool showAppBar;
   final bool? showDrawer;
   final bool showLocationSharingSheet;
   final InstanceID? locationSharingAvailableEvent;
@@ -27,11 +28,12 @@ class AppScaffold extends ConsumerWidget {
 
   AppScaffold(
       {super.key,
-      required this.title,
+      this.title,
       this.titleStyle,
       this.loadMask,
       required this.body,
       this.bodyPadding,
+      this.showAppBar = true,
       this.showDrawer,
       this.showLocationSharingSheet = true,
       this.locationSharingAvailableEvent,
@@ -60,10 +62,12 @@ class AppScaffold extends ConsumerWidget {
     }
 
     return Scaffold(
-        appBar: AppBar(
-          title: Text(title, style: titleStyle),
-          actions: actions,
-        ),
+        appBar: showAppBar
+            ? AppBar(
+                title: title == null ? null : Text(title!, style: titleStyle),
+                actions: actions,
+              )
+            : null,
         drawer: isStorybook
             ? null
             : session == null

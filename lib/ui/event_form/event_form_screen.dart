@@ -207,8 +207,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       if (tempBannerPhotoPath != null) {
         final bannerPhotoUrl = await movePhoto(
             tempBannerPhotoPath, savedInstance.id!, supabase, 'event-banners',
-            upsert: true,
-            transform: const TransformOptions(width: 1024, height: 1024));
+            upsert: true, transform: const TransformOptions(width: 1024));
         await instancesController.patch(
             savedInstance.id!, {'banner_photo': bannerPhotoUrl.toString()});
         log('Moved banner photo');

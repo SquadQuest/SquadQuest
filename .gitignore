@@ -2,6 +2,9 @@
 .env
 devtools_options.yaml
 
+# Test output
+test/**/failures
+
 # Miscellaneous
 *.class
 *.log
