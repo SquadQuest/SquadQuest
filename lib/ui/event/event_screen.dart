@@ -19,6 +19,7 @@ import 'widgets/event_live_map.dart';
 import 'widgets/event_banner.dart';
 import 'widgets/event_chat_sheet.dart';
 import 'widgets/event_quick_actions.dart';
+import 'widgets/event_host_bulletin.dart';
 import 'widgets/event_description.dart';
 import 'widgets/event_info.dart';
 import 'widgets/event_attendees.dart';
@@ -303,6 +304,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
             ref.invalidate(eventPointsProvider(widget.eventId));
             ref.invalidate(chatMessageCountProvider(widget.eventId));
             ref.invalidate(chatProvider(widget.eventId));
+            ref.invalidate(latestPinnedMessageProvider(widget.eventId));
           },
           child: CustomScrollView(
             controller: scrollController,
@@ -318,6 +320,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               // Canceled Banner
               if (event.status == InstanceStatus.canceled)
                 const EventCanceledBanner(),
+
+              // Host Bulletin
+              EventHostBulletin(
+                eventId: widget.eventId,
+                onTap: () => _showChat(),
+              ),
 
               // Quick Actions
               SliverPadding(
