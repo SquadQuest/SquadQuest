@@ -13,9 +13,8 @@ import 'mocks.dart';
 void main() {
   mockSupabaseInitializedComplete();
 
-  runApp(UncontrolledProviderScope(
-    container: mocksContainer,
-    child: DevicePreview(
+  runApp(buildMockEnvironment(
+    DevicePreview(
       enabled: !kIsWeb && Platform.isMacOS,
       defaultDevice: Devices.ios.iPhoneSE,
       backgroundColor: Colors.black87,
