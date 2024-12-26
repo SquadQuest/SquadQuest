@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:go_router/go_router.dart';
+import 'package:squadquest/controllers/chat.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
@@ -294,57 +295,68 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       body: eventAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text(error.toString())),
-        data: (event) => CustomScrollView(
-          controller: scrollController,
-          slivers: [
-            // Banner with event details overlay
-            EventBanner(
-              event: event,
-              isCollapsed: isBannerCollapsed,
-              currentUserId: session?.user.id,
-              onHostAction: _handleHostAction,
-            ),
+        data: (event) => RefreshIndicator(
+          displacement: 100,
+          onRefresh: () async {
+            ref.invalidate(eventDetailsProvider(widget.eventId));
+            ref.invalidate(rsvpsPerEventProvider(widget.eventId));
+            ref.invalidate(eventPointsProvider(widget.eventId));
+            ref.invalidate(chatMessageCountProvider(widget.eventId));
+            ref.invalidate(chatProvider(widget.eventId));
+          },
+          child: CustomScrollView(
+            controller: scrollController,
+            slivers: [
+              // Banner with event details overlay
+              EventBanner(
+                event: event,
+                isCollapsed: isBannerCollapsed,
+                currentUserId: session?.user.id,
+                onHostAction: _handleHostAction,
+              ),
 
-            // Canceled Banner
-            if (event.status == InstanceStatus.canceled)
-              const EventCanceledBanner(),
+              // Canceled Banner
+              if (event.status == InstanceStatus.canceled)
+                const EventCanceledBanner(),
 
-            // Quick Actions
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverToBoxAdapter(
-                child: Consumer(
-                  builder: (context, ref, child) {
-                    final session = ref.watch(authControllerProvider);
-                    final selectedStatus = session == null
-                        ? null
-                        : _getCurrentRsvpStatus(session.user.id);
+              // Quick Actions
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverToBoxAdapter(
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final session = ref.watch(authControllerProvider);
+                      final selectedStatus = session == null
+                          ? null
+                          : _getCurrentRsvpStatus(session.user.id);
 
-                    return EventQuickActions(
-                      selectedStatus: selectedStatus,
-                      eventId: widget.eventId,
-                      onRsvpTap: () => _showRsvpSheet(event),
-                      onMapTap: _showLiveMap,
-                      onShareTap: _copyEventLink,
-                      onChatTap: _showChat,
-                      showChat: selectedStatus != null,
-                    );
-                  },
+                      return EventQuickActions(
+                        selectedStatus: selectedStatus,
+                        eventId: widget.eventId,
+                        onRsvpTap: () => _showRsvpSheet(event),
+                        onMapTap: _showLiveMap,
+                        onShareTap: _copyEventLink,
+                        onChatTap: _showChat,
+                        showChat: selectedStatus != null,
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
 
-            // Event Description
-            if (event.notes != null) EventDescription(description: event.notes),
+              // Event Description
+              if (event.notes != null)
+                EventDescription(description: event.notes),
 
-            // Event Info
-            EventInfo(event: event),
+              // Event Info
+              EventInfo(event: event),
 
-            // Attendees
-            EventAttendees(eventId: widget.eventId),
+              // Attendees
+              EventAttendees(eventId: widget.eventId),
 
-            const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
-          ],
+              const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
+            ],
+          ),
         ),
       ),
     );
