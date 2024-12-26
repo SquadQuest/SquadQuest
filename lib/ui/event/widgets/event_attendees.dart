@@ -69,11 +69,13 @@ typedef RsvpFriend = ({
 });
 
 class EventAttendees extends ConsumerWidget {
-  final InstanceID eventId;
+  final Instance event;
+  final UserID? currentUserId;
 
   const EventAttendees({
     super.key,
-    required this.eventId,
+    required this.event,
+    this.currentUserId,
   });
 
   Widget _buildAttendeeSection(
@@ -88,6 +90,7 @@ class EventAttendees extends ConsumerWidget {
 
     return Card(
       margin: EdgeInsets.only(bottom: 24),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -133,9 +136,14 @@ class EventAttendees extends ConsumerWidget {
   Widget _buildAttendeeItem(
       BuildContext context, RsvpFriend rsvpFriend, Color sectionColor) {
     final theme = Theme.of(context);
-    final isFriendOrSelf = rsvpFriend.friendship != null;
+    final isHost = event.createdById == rsvpFriend.rsvp.memberId;
+    final isCurrentUser = currentUserId == rsvpFriend.rsvp.memberId;
+    final isFriendOrSelf = isCurrentUser || rsvpFriend.friendship != null;
 
     return ListTile(
+      tileColor: isCurrentUser
+          ? theme.colorScheme.primaryContainer.withAlpha(77)
+          : null,
       leading: !isFriendOrSelf
           ? CircleAvatar(
               backgroundColor:
@@ -153,11 +161,47 @@ class EventAttendees extends ConsumerWidget {
                   backgroundImage:
                       NetworkImage(rsvpFriend.rsvp.member!.photo.toString()),
                 ),
-      title: Text(
-        rsvpFriend.rsvp.member!.displayName,
-        style: TextStyle(
-          color: isFriendOrSelf ? null : theme.disabledColor,
-        ),
+      title: Row(
+        children: [
+          Text(
+            rsvpFriend.rsvp.member!.displayName,
+            style: TextStyle(
+              color: isFriendOrSelf ? null : theme.disabledColor,
+            ),
+          ),
+          if (isCurrentUser) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'You',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                ),
+              ),
+            ),
+          ],
+          if (isHost) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: sectionColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Host',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.surface,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
       subtitle: rsvpFriend.mutuals == null || isFriendOrSelf
           ? null
@@ -179,7 +223,7 @@ class EventAttendees extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rsvpsFriendsAsync = ref.watch(_rsvpsFriendsProvider(eventId));
+    final rsvpsFriendsAsync = ref.watch(_rsvpsFriendsProvider(event.id!));
 
     return EventSection(
       title: 'Attendees',
@@ -191,7 +235,7 @@ class EventAttendees extends ConsumerWidget {
               isScrollControlled: true,
               useSafeArea: true,
               builder: (context) => EventInviteSheet(
-                eventId: eventId,
+                eventId: event.id!,
                 excludeUsers: rsvpsFriends
                     .map((rsvp) => rsvp.rsvp.memberId)
                     .whereType<UserID>()

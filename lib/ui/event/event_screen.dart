@@ -352,7 +352,10 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               EventInfo(event: event),
 
               // Attendees
-              EventAttendees(eventId: widget.eventId),
+              EventAttendees(
+                event: event,
+                currentUserId: session!.user.id,
+              ),
 
               const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
             ],
