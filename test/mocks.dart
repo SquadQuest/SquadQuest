@@ -5,6 +5,7 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/models/friend.dart';
 
+import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/location.dart';
@@ -39,7 +40,7 @@ class MockFriendsController extends FriendsController {
   }
 }
 
-// Mock auth controller that returns null (logged out state)
+// Mock auth controller that returns mock user
 class MockAuthController extends AuthController {
   @override
   Session? build() => Session(
@@ -53,6 +54,12 @@ class MockAuthController extends AuthController {
         aud: 'test-aud',
         createdAt: '2024-01-01 12:00:00',
       ));
+}
+
+// Mock profiles cache that returns mock user
+class MockProfilesCacheService extends ProfilesCacheService {
+  @override
+  ProfilesCache build() => {mockUser.id: mockUser};
 }
 
 final mockUser = UserProfile(
@@ -89,10 +96,11 @@ final mockEvent = Instance(
 
 final mocksContainer = ProviderContainer(
   overrides: [
-    // themeModeProvider.overrideWith((ref) => ThemeMode.dark),
-
     // Override auth to simulate logged out state
     authControllerProvider.overrideWith(() => MockAuthController()),
+
+    // Override profiles cache
+    profilesCacheProvider.overrideWith(() => MockProfilesCacheService()),
 
     // Override event details with mock data
     eventDetailsProvider(mockEvent.id!).overrideWith(
