@@ -54,10 +54,6 @@ class _EventDescriptionState extends State<EventDescription> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.description == null || widget.description!.trim().isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     final markdown =
         widget.description!.replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), '\n\n');
 

@@ -15,6 +15,11 @@ final chatProvider =
 final latestChatProvider = AutoDisposeAsyncNotifierProviderFamily<
     LatestChatController, EventMessage, InstanceID>(LatestChatController.new);
 
+final latestPinnedMessageProvider = AutoDisposeAsyncNotifierProviderFamily<
+    LatestPinnedMessageController, EventMessage?, InstanceID>(
+  LatestPinnedMessageController.new,
+);
+
 final chatMessageCountProvider =
     FutureProvider.autoDispose.family<int, InstanceID>((ref, instanceId) async {
   final supabase = ref.read(supabaseClientProvider);
@@ -80,12 +85,17 @@ class ChatController
   }
 
   Future<EventMessage?> post(
-    String content,
-  ) async {
+    String content, {
+    bool pinned = false,
+  }) async {
     final messageData = await ref
         .read(supabaseClientProvider)
         .from('event_messages')
-        .insert({'instance': instanceId, 'content': content})
+        .insert({
+          'instance': instanceId,
+          'content': content,
+          'pinned': pinned,
+        })
         .select()
         .single();
 
@@ -102,6 +112,43 @@ class ChatController
     ref.invalidate(chatMessageCountProvider(instanceId));
 
     return message;
+  }
+}
+
+class LatestPinnedMessageController
+    extends AutoDisposeFamilyAsyncNotifier<EventMessage?, InstanceID> {
+  @override
+  Future<EventMessage?> build(InstanceID arg) async {
+    // Watch latestChatProvider to get updates
+    ref.listen(latestChatProvider(arg), (previous, next) {
+      next.whenData((message) {
+        // Update state if we receive a pinned message that's newer than our current one
+        if (message.pinned &&
+            (state.value == null ||
+                message.createdAt.isAfter(state.value!.createdAt))) {
+          state = AsyncValue.data(message);
+        }
+      });
+    });
+
+    // Get initial state by querying for latest pinned message
+    final supabase = ref.read(supabaseClientProvider);
+    final data = await supabase
+        .from('event_messages')
+        .select()
+        .eq('instance', arg)
+        .eq('pinned', true)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (data == null) return null;
+
+    final profilesCache = ref.read(profilesCacheProvider.notifier);
+    await profilesCache
+        .populateData([data], [(idKey: 'created_by', modelKey: 'created_by')]);
+
+    return EventMessage.fromMap(data);
   }
 }
 
