@@ -5,11 +5,13 @@ import 'package:test_screen/test_screen.dart';
 
 import 'package:squadquest/theme.dart';
 import 'package:squadquest/models/user.dart';
+import 'package:squadquest/models/app_version.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/event_message.dart';
 
+import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/settings.dart';
@@ -18,23 +20,102 @@ import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/friends.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/chat.dart';
+import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/controllers/app_versions.dart';
+
+// Mock profile controller
+class MockProfileController extends ProfileController {
+  @override
+  Future<UserProfile> build() async {
+    return mockUser;
+  }
+}
+
+final mockAppVersion = AppVersion(
+  build: 0,
+  version: '0.0',
+  released: DateTime(2024, 1, 1),
+  supported: true,
+  notices: null,
+  news: null,
+  availability: [],
+);
+
+// Mock app versions controller
+class MockAppVersionsController extends AppVersionsController {
+  @override
+  Future<List<AppVersion>> build() async {
+    return [mockAppVersion];
+  }
+
+  @override
+  Future<void> showUpdateAlertIfAvailable() async {}
+}
+
+// Mock Firebase messaging service
+class MockFirebaseMessagingService extends FirebaseMessagingService {
+  MockFirebaseMessagingService(super.ref);
+
+  @override
+  Future<void> requestPermissions() async {}
+}
 
 // Mock location controller
 class MockLocationController extends LocationController {
   MockLocationController(super.ref);
 
   @override
-  Future<void> startTracking([InstanceID? instanceId]) async {}
+  Future<void> startTracking([InstanceID? instanceId]) async {
+    tracking = true;
+  }
 
   @override
-  Future<void> stopTracking([InstanceID? instanceId]) async {}
+  Future<void> stopTracking([InstanceID? instanceId]) async {
+    tracking = false;
+  }
 }
 
-// Mock controller for RSVPs that returns empty list
-class MockRsvpsController extends InstanceRsvpsController {
+// Mock controller for instances that returns test event
+class MockInstancesController extends InstancesController {
   @override
-  Future<List<InstanceMember>> build(InstanceID arg) async {
-    return [];
+  Future<List<Instance>> build() async {
+    return [mockEvent];
+  }
+}
+
+// Mock controller for RSVPs per event
+class MockInstanceRsvpsController extends InstanceRsvpsController {
+  @override
+  Future<List<InstanceMember>> build(InstanceID eventId) async {
+    final rsvps = MockRsvpsController._instanceRsvps[eventId] ?? [];
+    return rsvps;
+  }
+}
+
+// Mock controller for RSVPs
+class MockRsvpsController extends RsvpsController {
+  static final _instanceRsvps = <String, List<InstanceMember>>{};
+
+  @override
+  Future<InstanceMember?> save(
+      Instance instance, InstanceMemberStatus? status) async {
+    if (status == null) {
+      _instanceRsvps[instance.id!] = [];
+      ref.invalidate(rsvpsPerEventProvider(instance.id!));
+      return null;
+    }
+
+    final rsvp = InstanceMember(
+      id: 'test-rsvp-1',
+      instance: instance,
+      memberId: mockUser.id,
+      status: status,
+      createdAt: DateTime.now(),
+    );
+
+    _instanceRsvps[instance.id!] = [rsvp];
+    ref.invalidate(rsvpsPerEventProvider(instance.id!));
+    return rsvp;
   }
 }
 
@@ -191,13 +272,15 @@ final baseOverrides = [
   // Override profiles cache
   profilesCacheProvider.overrideWith(() => MockProfilesCacheService()),
 
-  // Override event details with mock data
+  // Override instances with mock data
+  instancesProvider.overrideWith(() => MockInstancesController()),
   eventDetailsProvider(mockEvent.id!).overrideWith(
     (ref) => Future.value(mockEvent),
   ),
 
-  // Override RSVPs with empty list
-  rsvpsPerEventProvider.overrideWith(() => MockRsvpsController()),
+  // Override RSVPs
+  rsvpsProvider.overrideWith(() => MockRsvpsController()),
+  rsvpsPerEventProvider.overrideWith(() => MockInstanceRsvpsController()),
 
   // Override friends with empty list
   friendsProvider.overrideWith(() => MockFriendsController()),
@@ -205,8 +288,21 @@ final baseOverrides = [
   // Override chat provider
   chatProvider.overrideWith(() => MockChatController()),
 
+  // Override location controller
+  locationControllerProvider.overrideWith((ref) => MockLocationController(ref)),
+
   // Override settings providers
   storybookModeProvider.overrideWith((ref) => true),
+  themeModeProvider.overrideWith((ref) => ThemeMode.dark),
+
+  // Override Firebase messaging
+  firebaseMessagingServiceProvider
+      .overrideWith((ref) => MockFirebaseMessagingService(ref)),
+  firebaseMessagingStreamProvider.overrideWith((ref) => Stream.empty()),
+
+  // Override app initialization
+  profileProvider.overrideWith(() => MockProfileController()),
+  appVersionsProvider.overrideWith(() => MockAppVersionsController()),
 ];
 
 // Container with pinned message for testing bulletin
