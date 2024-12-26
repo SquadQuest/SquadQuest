@@ -4,19 +4,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';
+import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
-import 'package:squadquest/controllers/auth.dart';
-import 'package:squadquest/ui/event/widgets/event_description.dart';
+import 'package:squadquest/controllers/location.dart';
 
 import '../core/widgets/rally_point_map.dart';
 import 'widgets/event_live_map.dart';
 import 'widgets/event_banner.dart';
 import 'widgets/event_chat_sheet.dart';
 import 'widgets/event_quick_actions.dart';
+import 'widgets/event_description.dart';
 import 'widgets/event_info.dart';
 import 'widgets/event_attendees.dart';
 import 'widgets/event_rsvp_sheet.dart';
@@ -35,6 +37,7 @@ class EventScreen extends ConsumerStatefulWidget {
 }
 
 class _EventScreenState extends ConsumerState<EventScreen> {
+  ScaffoldFeatureController? rsvpSnackbar;
   late ScrollController scrollController;
   bool isBannerCollapsed = false;
 
@@ -214,8 +217,26 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       final rsvpsController = ref.read(rsvpsProvider.notifier);
       final savedRsvp = await rsvpsController.save(instance, status);
 
+      // start or stop tracking
+      final locationController = ref.read(locationControllerProvider);
+      if (status == InstanceMemberStatus.omw) {
+        await locationController.startTracking(instance.id!);
+      } else {
+        await locationController.stopTracking(instance.id!);
+      }
+
+      if (rsvpSnackbar != null) {
+        try {
+          rsvpSnackbar!.close();
+        } catch (error, stackTrace) {
+          logger.e('Failed to close rsvpSnackbar',
+              error: error, stackTrace: stackTrace);
+        }
+        rsvpSnackbar = null;
+      }
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        rsvpSnackbar = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
             savedRsvp == null
                 ? 'You\'ve removed your RSVP'
@@ -223,12 +244,13 @@ class _EventScreenState extends ConsumerState<EventScreen> {
           ),
         ));
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to save RSVP: $e'),
-        ));
-      }
+
+      rsvpSnackbar?.closed.then((reason) {
+        rsvpSnackbar = null;
+      });
+    } catch (error, stackTrace) {
+      logger.e("EventDetailsScreen._saveRsvp: error",
+          error: error, stackTrace: stackTrace);
       rethrow;
     }
   }
