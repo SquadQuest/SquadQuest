@@ -43,6 +43,39 @@ void main() {
           expect(find.text('30m ago'), findsOneWidget);
         },
       );
+
+      testScreenUI(
+        'Opens chat after RSVP',
+        () async => buildMockEnvironment(EventScreen(eventId: mockEvent.id!)),
+        goldenDir: 'with_chat',
+        onTest: (WidgetTester tester) async {
+          // Chat button should not be visible initially
+          expect(find.byIcon(Icons.chat_bubble_outline), findsNothing);
+          expect(find.byIcon(Icons.check_circle_outline), findsOne);
+
+          // RSVP to event
+          await tester.tap(find.text('RSVP'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('I\'m going'));
+          await tester.pumpAndSettle();
+
+          // Chat button should now be visible
+          expect(find.byIcon(Icons.chat_bubble_outline), findsOneWidget);
+
+          // Tap chat button
+          await tester.tap(find.byIcon(Icons.chat_bubble_outline));
+          await tester.pumpAndSettle();
+
+          // Verify chat sheet is shown
+          expect(find.byType(EventChatSheet), findsOneWidget);
+
+          // Verify chat messages are displayed
+          expect(find.text('Looking forward to this!'), findsOneWidget);
+          expect(find.text('Me too! Bringing snacks.'), findsOneWidget);
+          expect(find.text('Just got here, parking is available on the street'),
+              findsOneWidget);
+        },
+      );
     },
   );
 }
