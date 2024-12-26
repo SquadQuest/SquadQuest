@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:url_launcher/url_launcher.dart';
@@ -113,7 +114,7 @@ class _EventInfoState extends State<EventInfo> {
                 },
               );
 
-              if (Platform.isIOS) {
+              if (!kIsWeb && Platform.isIOS) {
                 if (await canLaunchUrl(googleMapsIosUri)) {
                   await launchUrl(googleMapsIosUri);
                 } else {
