@@ -80,12 +80,17 @@ class ChatController
   }
 
   Future<EventMessage?> post(
-    String content,
-  ) async {
+    String content, {
+    bool pinned = false,
+  }) async {
     final messageData = await ref
         .read(supabaseClientProvider)
         .from('event_messages')
-        .insert({'instance': instanceId, 'content': content})
+        .insert({
+          'instance': instanceId,
+          'content': content,
+          'pinned': pinned,
+        })
         .select()
         .single();
 
