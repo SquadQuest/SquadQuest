@@ -6,53 +6,52 @@ import 'package:go_router/go_router.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/user.dart';
+import 'package:squadquest/services/profiles_cache.dart';
+import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/friends.dart';
 
 import 'event_section.dart';
 import 'event_invite_sheet.dart';
 
-final _rsvpsFriendsProvider =
-    Provider.family<AsyncValue<List<RsvpFriend>>, InstanceID>((ref, eventId) {
-  final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(eventId));
-  final friendsAsync = ref.watch(friendsProvider);
+final _rsvpsFriendsProvider = FutureProvider.autoDispose
+    .family<List<RsvpFriend>, InstanceID>((ref, instanceId) async {
+  final session = ref.watch(authControllerProvider);
 
-  return eventRsvpsAsync.when(
-    loading: () => const AsyncValue.loading(),
-    error: (error, stackTrace) => AsyncValue.error(error, stackTrace),
-    data: (rsvps) => friendsAsync.when(
-      loading: () => const AsyncValue.loading(),
-      error: (error, stackTrace) => AsyncValue.error(error, stackTrace),
-      data: (friends) {
-        final List<RsvpFriend> rsvpFriends = [];
-        for (final rsvp in rsvps) {
-          if (rsvp.member == null || rsvp.memberId == null) continue;
+  if (session == null) {
+    return [];
+  }
 
-          final friendship = friends.firstWhereOrNull(
-            (f) =>
-                f.requesterId == rsvp.memberId ||
-                f.requesteeId == rsvp.memberId,
-          );
+  final eventRsvps = await ref.watch(rsvpsPerEventProvider(instanceId).future);
+  final friendsList = await ref.watch(friendsProvider.future);
+  final profilesCache = ref.read(profilesCacheProvider.notifier);
 
-          final mutuals = friends
-              .where((f) =>
-                  f.requesterId == rsvp.memberId ||
-                  f.requesteeId == rsvp.memberId)
-              .map((f) => f.getOtherProfile(rsvp.memberId!))
-              .whereType<UserProfile>()
-              .toList();
+  // generate list of rsvp members with friendship status and mutual friends
+  final rsvpFriends = await Future.wait(eventRsvps.map((rsvp) async {
+    final Friend? friendship = friendsList.firstWhereOrNull((friend) =>
+        friend.status == FriendStatus.accepted &&
+        ((friend.requesterId == session.user.id &&
+                friend.requesteeId == rsvp.memberId) ||
+            (friend.requesteeId == session.user.id &&
+                friend.requesterId == rsvp.memberId)));
 
-          rsvpFriends.add((
-            rsvp: rsvp,
-            friendship: friendship,
-            mutuals: mutuals.isEmpty ? null : mutuals,
-          ));
-        }
+    final mutuals = rsvp.member!.mutuals == null
+        ? null
+        : await Future.wait(rsvp.member!.mutuals!.map((userId) async {
+            final profile = await profilesCache.getById(userId);
+            return profile;
+          }));
 
-        return AsyncValue.data(rsvpFriends);
-      },
-    ),
-  );
+    return (rsvp: rsvp, friendship: friendship, mutuals: mutuals);
+  }).toList());
+
+  // filter out non-friend members who haven't responded to their invitation
+  return rsvpFriends
+      .where((rsvpMember) =>
+          rsvpMember.rsvp.memberId == session.user.id ||
+          rsvpMember.rsvp.status != InstanceMemberStatus.invited ||
+          rsvpMember.friendship != null)
+      .toList();
 });
 
 final rsvpIcons = {
