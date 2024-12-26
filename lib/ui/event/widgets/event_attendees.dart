@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/friend.dart';
@@ -168,6 +169,12 @@ class EventAttendees extends ConsumerWidget {
               ),
             ),
       trailing: rsvpIcons[rsvpFriend.rsvp.status],
+      onTap: isFriendOrSelf
+          ? () {
+              context.pushNamed('profile-view',
+                  pathParameters: {'id': rsvpFriend.rsvp.memberId!});
+            }
+          : null,
     );
   }
 
