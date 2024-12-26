@@ -18,10 +18,10 @@ import 'package:squadquest/screens/profile_form.dart';
 import 'package:squadquest/screens/profile.dart';
 import 'package:squadquest/screens/home.dart';
 import 'package:squadquest/screens/settings.dart';
-import 'package:squadquest/screens/event_form.dart';
-import 'package:squadquest/screens/event_details.dart';
+import 'package:squadquest/ui/event_form/event_form_screen.dart';
+import 'package:squadquest/ui/event/event_screen.dart';
 import 'package:squadquest/screens/friends.dart';
-import 'package:squadquest/screens/map.dart';
+import 'package:squadquest/ui/map/map_screen.dart';
 import 'package:squadquest/screens/topics.dart';
 import 'package:squadquest/models/instance.dart';
 
@@ -93,7 +93,7 @@ class RouterService {
         name: 'event-details',
         path: '/events/:id',
         builder: (context, GoRouterState state) =>
-            EventDetailsScreen(instanceId: state.pathParameters['id']!),
+            EventScreen(eventId: state.pathParameters['id']!),
       ),
       GoRoute(
         name: 'event-edit',

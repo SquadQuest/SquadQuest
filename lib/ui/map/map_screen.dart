@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/models/location_point.dart';
 import 'package:squadquest/services/supabase.dart';
-import 'package:squadquest/components/base_map.dart';
+import 'package:squadquest/ui/core/widgets/base_map.dart';
 import 'package:squadquest/controllers/settings.dart';
 
 // Providers for threshold values (stored in meters, converted to degrees when used)
@@ -51,14 +51,11 @@ class _MapScreenState extends BaseMapState<MapScreen> {
   double get zigzagRadius => ref.read(zigzagRadiusProvider) / 111000;
 
   @override
-  double get largeGapThreshold =>
-      ref.watch(largeGapThresholdProvider) /
-      111000; // New getter for large gap threshold
+  double get largeGapThreshold => ref.watch(largeGapThresholdProvider) / 111000;
 
   @override
   bool get autoCameraEnabled => ref.watch(autoCameraEnabledProvider);
 
-  // New getters for filter toggles
   @override
   bool get pointZigzagFilterEnabled =>
       ref.watch(pointZigzagFilterEnabledProvider);
@@ -84,10 +81,7 @@ class _MapScreenState extends BaseMapState<MapScreen> {
     ref.listen(maxDistanceProvider, (_, __) => _onThresholdChange());
     ref.listen(segmentThresholdProvider, (_, __) => _onThresholdChange());
     ref.listen(zigzagRadiusProvider, (_, __) => _onThresholdChange());
-    ref.listen(
-        largeGapThresholdProvider,
-        (_, __) =>
-            _onThresholdChange()); // New listener for large gap threshold
+    ref.listen(largeGapThresholdProvider, (_, __) => _onThresholdChange());
     ref.listen(
         pointZigzagFilterEnabledProvider, (_, __) => _onThresholdChange());
     ref.listen(largeGapFilterEnabledProvider, (_, __) => _onThresholdChange());
@@ -145,6 +139,7 @@ class _MapScreenState extends BaseMapState<MapScreen> {
       context: context,
       builder: (context) => const DevMenu(),
       isScrollControlled: true,
+      useSafeArea: true,
     );
   }
 }

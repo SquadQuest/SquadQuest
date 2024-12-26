@@ -34,41 +34,44 @@ serve(async (request) => {
     );
   }
 
-  // get friend
-  const { data: friend } = await serviceRoleSupabase
-    .from(
-      "friends",
-    )
-    .select("*")
-    .in("requester", [userId, currentUser.id])
-    .in("requestee", [userId, currentUser.id])
-    .maybeSingle()
-    .throwOnError();
+  // verify access
+  if (userId != currentUser.id) {
+    // get friend
+    const { data: friend } = await serviceRoleSupabase
+      .from(
+        "friends",
+      )
+      .select("*")
+      .in("requester", [userId, currentUser.id])
+      .in("requestee", [userId, currentUser.id])
+      .maybeSingle()
+      .throwOnError();
 
-  if (!friend) {
-    throw new HttpError(
-      "No friend request found matching that user_id",
-      404,
-      "friend-not-found",
-    );
-  }
+    if (!friend) {
+      throw new HttpError(
+        "No friend request found matching that user_id",
+        404,
+        "friend-not-found",
+      );
+    }
 
-  // only allow fetching profile for accepted or incoming friendships
-  if (
-    friend.status != "accepted" && friend.status != "requested" &&
-    friend.requestee != currentUser.id
-  ) {
-    throw new HttpError(
-      "Friendship is not accepted or incoming",
-      400,
-      "friend-not-accepted-or-incoming",
-    );
+    // only allow fetching profile for accepted or incoming friendships
+    if (
+      friend.status != "accepted" && friend.status != "requested" &&
+      friend.requestee != currentUser.id
+    ) {
+      throw new HttpError(
+        "Friendship is not accepted or incoming",
+        400,
+        "friend-not-accepted-or-incoming",
+      );
+    }
   }
 
   // get friend's profile
   const friendProfile = await getSupabaseUserProfile(
     request,
-    friend.requestee == currentUser.id ? friend.requester : friend.requestee,
+    userId,
   );
 
   // get friend's subscribed topics

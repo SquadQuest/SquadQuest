@@ -97,7 +97,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
       final response = await supabase.functions.invoke('invite',
           body: {'instance_id': instanceId, 'users': userIds});
 
-      return hydrate(response.data);
+      return hydrate(response.data.cast<Map<String, dynamic>>());
     } on FunctionException catch (error) {
       throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
     }
