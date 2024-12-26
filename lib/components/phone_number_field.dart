@@ -181,6 +181,8 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
             } catch (error) {
               return 'Invalid ${_selectedCountry.code} number';
             }
+
+            return null;
           },
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(labelText: 'Phone number'),
