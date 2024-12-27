@@ -220,6 +220,7 @@ class InstanceMember {
     this.member,
     this.memberId,
     required this.status,
+    this.chatLastSeen,
     this.note,
   })  : assert(
             (id != null &&
@@ -247,6 +248,7 @@ class InstanceMember {
   final UserProfile? member;
   final UserID? memberId;
   final InstanceMemberStatus status;
+  final DateTime? chatLastSeen;
   final String? note;
 
   factory InstanceMember.fromMap(Map<String, dynamic> map) {
@@ -282,6 +284,9 @@ class InstanceMember {
       status: InstanceMemberStatus.values.firstWhere(
         (e) => e.name == map['status'],
       ),
+      chatLastSeen: map['chat_last_seen'] == null
+          ? null
+          : DateTime.parse(map['chat_last_seen']).toLocal(),
       note: map['note'] as String?,
     );
   }
@@ -291,6 +296,7 @@ class InstanceMember {
       'instance': instance?.id ?? instanceId,
       'member': member?.id ?? memberId,
       'status': status.name,
+      'chat_last_seen': chatLastSeen?.toUtc().toIso8601String(),
       'note': note,
     };
 
