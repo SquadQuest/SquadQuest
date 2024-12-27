@@ -199,6 +199,9 @@ class MockChatController extends ChatController {
   Future<List<EventMessage>> build(InstanceID arg) async {
     return mockMessages;
   }
+
+  @override
+  Future<void> updateLastSeen(DateTime timestamp) async {}
 }
 
 // Mock latest pinned message controller
