@@ -139,7 +139,7 @@ jobs:
           releaseFiles: build/app/outputs/bundle/release/SquadQuest.aab
           track: production
           whatsNewDirectory: /tmp/whatsnew
-          changesNotSentForReview: true
+          status: draft
 
       - name: Insert new row into app_versions
         env:
