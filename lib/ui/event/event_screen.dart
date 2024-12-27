@@ -203,11 +203,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     }
   }
 
-  Future<void> _saveRsvp(
-      InstanceMemberStatus? status, Instance instance) async {
+  Future<void> _saveRsvp(InstanceMemberStatus? status, Instance instance,
+      {String? note}) async {
     try {
       final rsvpsController = ref.read(rsvpsProvider.notifier);
-      final savedRsvp = await rsvpsController.save(instance, status);
+      final savedRsvp =
+          await rsvpsController.save(instance, status, note: note);
 
       // start or stop tracking
       final locationController = ref.read(locationControllerProvider);
@@ -265,12 +266,9 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       builder: (context) => EventRsvpSheet(
         event: event,
         selectedStatus: myRsvp?.status,
-        // note: _note,
+        note: myRsvp?.note,
         onStatusSelected: (status, note) {
-          _saveRsvp(status, event);
-        },
-        onRemoveRsvp: () {
-          _saveRsvp(null, event);
+          _saveRsvp(status, event, note: note);
         },
       ),
     );

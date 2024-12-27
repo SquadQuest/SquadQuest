@@ -220,6 +220,7 @@ class InstanceMember {
     this.member,
     this.memberId,
     required this.status,
+    this.note,
   })  : assert(
             (id != null &&
                     createdAt != null &&
@@ -246,6 +247,7 @@ class InstanceMember {
   final UserProfile? member;
   final UserID? memberId;
   final InstanceMemberStatus status;
+  final String? note;
 
   factory InstanceMember.fromMap(Map<String, dynamic> map) {
     final createdByModel = map['created_by'] is UserProfile
@@ -280,6 +282,7 @@ class InstanceMember {
       status: InstanceMemberStatus.values.firstWhere(
         (e) => e.name == map['status'],
       ),
+      note: map['note'] as String?,
     );
   }
 
@@ -288,6 +291,7 @@ class InstanceMember {
       'instance': instance?.id ?? instanceId,
       'member': member?.id ?? memberId,
       'status': status.name,
+      'note': note,
     };
 
     if (id != null) {

@@ -8,6 +8,7 @@ create table
     instance uuid not null,
     member uuid not null,
     status public.instance_member_status not null,
+    note text default null,
     constraint instance_members_pkey primary key (id),
     constraint instance_member unique (instance, member),
     constraint instance_members_member_fkey foreign key (member) references profiles (id),
