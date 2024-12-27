@@ -163,65 +163,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return AppScaffold(
       showDrawer: true,
       title: 'Explore Events',
-      floatingActionButtonLocation: ExpandableFab.location,
-      floatingActionButton: ExpandableFab(
-        key: _fabKey,
-        type: ExpandableFabType.up,
-        distance: 80,
-        childrenAnimation: ExpandableFabAnimation.none,
-        overlayStyle: ExpandableFabOverlayStyle(
-          color: Colors.black.withOpacity(0.75),
-          blur: 5,
-        ),
-        openButtonBuilder: RotateFloatingActionButtonBuilder(
-          child: const Icon(Icons.add),
-        ),
-        closeButtonBuilder: DefaultFloatingActionButtonBuilder(
-          child: const Icon(Icons.close),
-        ),
-        children: [
-          Row(
-            children: [
-              const Text('Create New Event'),
-              const SizedBox(width: 20),
-              FloatingActionButton(
-                heroTag: null,
-                onPressed: () {
-                  final fabState = _fabKey.currentState;
-                  if (fabState != null && fabState.isOpen) {
-                    fabState.toggle();
-                  }
-
-                  context.pushNamed('post-event');
-                },
-                child: const Icon(Icons.keyboard),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              const Text('Import from Facebook'),
-              const SizedBox(width: 20),
-              FloatingActionButton(
-                heroTag: null,
-                onPressed: () async {
-                  final fabState = _fabKey.currentState;
-                  if (fabState != null && fabState.isOpen) {
-                    fabState.toggle();
-                  }
-
-                  final url = await _promptFacebookUrl(context);
-                  if (url == null) return;
-                  if (!context.mounted) return;
-                  context.pushNamed('post-event', queryParameters: {
-                    'facebookUrl': url,
-                  });
-                },
-                child: const Icon(Icons.facebook),
-              ),
-            ],
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.pushNamed('post-event');
+        },
+        child: const Icon(Icons.add),
       ),
       body: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (pendingFriendsList.isNotEmpty)
@@ -440,36 +386,5 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             'Your event has been ended and location sharing will be stopped'),
       ));
     }
-  }
-
-  Future<String?> _promptFacebookUrl(BuildContext context) {
-    final urlController = TextEditingController();
-
-    return showDialog<String>(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) => AlertDialog(
-              title: const Text('Import Event from Facebook'),
-              content: TextFormField(
-                controller: urlController,
-                autofocus: true,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.facebook),
-                  labelText: 'Paste Facebook event URL',
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(null),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.of(context).pop(urlController.text.trim()),
-                  child: const Text('Load and edit'),
-                ),
-              ],
-            ));
   }
 }

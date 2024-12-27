@@ -24,16 +24,10 @@ import 'widgets/event_form_submit.dart';
 
 class EventEditScreen extends ConsumerStatefulWidget {
   final InstanceID? instanceId;
-  final String? facebookUrl;
   final InstanceID? duplicateEventId;
 
-  const EventEditScreen(
-      {super.key, this.instanceId, this.facebookUrl, this.duplicateEventId})
-      : assert(duplicateEventId == null || facebookUrl == null,
-            'duplicateEventId and facebookUrl cannot both be provided'),
-        assert(instanceId == null || facebookUrl == null,
-            'instanceId and facebookUrl cannot both be provided'),
-        assert(instanceId == null || duplicateEventId == null,
+  const EventEditScreen({super.key, this.instanceId, this.duplicateEventId})
+      : assert(instanceId == null || duplicateEventId == null,
             'instanceId and duplicateEventId cannot both be provided');
 
   @override
@@ -349,48 +343,6 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Failed to load event to duplicate:\n\n$error'),
-        ));
-
-        return;
-      });
-
-      return;
-    }
-
-    // populate a new event from Facebook event data
-    if (widget.facebookUrl != null) {
-      isNewEvent = true;
-      loadMask = 'Loading Facebook event...';
-      _editingInstance = const AsyncValue.loading();
-
-      instancesController
-          .fetchFacebookEventData(widget.facebookUrl!)
-          .then((instance) {
-        logger.d({'loaded FB instance': instance});
-        setState(() {
-          // pre-populate form controllers
-          _loadValuesFromInstance(instance);
-
-          // apply AsyncValue to state
-          _editingInstance = const AsyncValue.data(null);
-
-          // clear mask
-          loadMask = null;
-        });
-      }).onError((error, stackTrace) {
-        logger.e('Error loading Facebook event',
-            error: error, stackTrace: stackTrace);
-
-        if (!mounted) return;
-
-        context.pop();
-
-        final message = error is FunctionException
-            ? (error.details?['message'] ?? error.details)
-            : error;
-
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to load Facebook event:\n\n$message'),
         ));
 
         return;
