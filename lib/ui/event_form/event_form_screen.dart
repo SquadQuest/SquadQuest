@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geobase/coordinates.dart';
 import 'package:go_router/go_router.dart';
@@ -403,6 +404,75 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     _editingInstance = const AsyncValue.data(null);
   }
 
+  Future<void> _importEvent() async {
+    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+    final clipboardText = clipboardData?.text;
+
+    if (clipboardText == null || clipboardText.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No URL found in clipboard')),
+      );
+      return;
+    }
+
+    // Basic URL validation
+    Uri? url;
+    try {
+      url = Uri.parse(clipboardText);
+      if (!url.hasScheme || !url.hasAuthority) {
+        throw FormatException('Invalid URL');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Clipboard content is not a valid URL')),
+      );
+      return;
+    }
+
+    setState(() {
+      loadMask = 'Loading event...';
+      _editingInstance = const AsyncValue.loading();
+    });
+
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      final response = await supabase.functions.invoke(
+        'scrape-event',
+        method: HttpMethod.get,
+        queryParameters: {'url': clipboardText},
+      );
+
+      final instance = Instance.fromMap(response.data);
+
+      setState(() {
+        _loadValuesFromInstance(instance);
+        _editingInstance = const AsyncValue.data(null);
+        loadMask = null;
+      });
+    } catch (error) {
+      logger.e('Error importing event', error: error);
+
+      setState(() {
+        _editingInstance = const AsyncValue.data(null);
+        loadMask = null;
+      });
+
+      if (!mounted) return;
+
+      final message = error is FunctionException
+          ? (error.details is String
+              ? error.details.replaceAll(RegExp(r'^[a-z\-]+: '), '')
+              : error.details?['message'])
+          : error;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to import event: ${message}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -418,6 +488,15 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
               : 'Saving event...'
           : loadMask,
       showLocationSharingSheet: false,
+      actions: isNewEvent
+          ? [
+              IconButton(
+                icon: const Icon(Icons.content_paste),
+                tooltip: 'Import Event from Clipboard',
+                onPressed: _importEvent,
+              ),
+            ]
+          : null,
       body: _editingInstance.when(
         error: (error, __) => Center(child: Text(error.toString())),
         loading: () => const SizedBox.shrink(),
