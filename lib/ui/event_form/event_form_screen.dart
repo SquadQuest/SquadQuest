@@ -316,7 +316,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     // load an existing event for duplicating
     if (widget.duplicateEventId != null) {
       isNewEvent = true;
-      loadMask = 'Loading event...';
+      loadMask = 'Duplicating event...';
       _editingInstance = const AsyncValue.loading();
 
       instancesController.getById(widget.duplicateEventId!).then((instance) {
@@ -384,7 +384,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     }
 
     setState(() {
-      loadMask = 'Loading event...';
+      loadMask = 'Importing event...';
       _editingInstance = const AsyncValue.loading();
     });
 
