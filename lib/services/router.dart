@@ -86,7 +86,6 @@ class RouterService {
         name: 'post-event',
         path: '/post-event',
         builder: (context, state) => EventEditScreen(
-            facebookUrl: state.uri.queryParameters['facebookUrl'],
             duplicateEventId: state.uri.queryParameters['duplicateEventId']),
       ),
       GoRoute(

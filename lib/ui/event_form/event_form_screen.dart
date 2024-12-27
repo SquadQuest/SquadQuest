@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geobase/coordinates.dart';
 import 'package:go_router/go_router.dart';
@@ -23,16 +24,10 @@ import 'widgets/event_form_submit.dart';
 
 class EventEditScreen extends ConsumerStatefulWidget {
   final InstanceID? instanceId;
-  final String? facebookUrl;
   final InstanceID? duplicateEventId;
 
-  const EventEditScreen(
-      {super.key, this.instanceId, this.facebookUrl, this.duplicateEventId})
-      : assert(duplicateEventId == null || facebookUrl == null,
-            'duplicateEventId and facebookUrl cannot both be provided'),
-        assert(instanceId == null || facebookUrl == null,
-            'instanceId and facebookUrl cannot both be provided'),
-        assert(instanceId == null || duplicateEventId == null,
+  const EventEditScreen({super.key, this.instanceId, this.duplicateEventId})
+      : assert(instanceId == null || duplicateEventId == null,
             'instanceId and duplicateEventId cannot both be provided');
 
   @override
@@ -321,7 +316,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     // load an existing event for duplicating
     if (widget.duplicateEventId != null) {
       isNewEvent = true;
-      loadMask = 'Loading event...';
+      loadMask = 'Duplicating event...';
       _editingInstance = const AsyncValue.loading();
 
       instancesController.getById(widget.duplicateEventId!).then((instance) {
@@ -356,51 +351,78 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       return;
     }
 
-    // populate a new event from Facebook event data
-    if (widget.facebookUrl != null) {
-      isNewEvent = true;
-      loadMask = 'Loading Facebook event...';
-      _editingInstance = const AsyncValue.loading();
-
-      instancesController
-          .fetchFacebookEventData(widget.facebookUrl!)
-          .then((instance) {
-        logger.d({'loaded FB instance': instance});
-        setState(() {
-          // pre-populate form controllers
-          _loadValuesFromInstance(instance);
-
-          // apply AsyncValue to state
-          _editingInstance = const AsyncValue.data(null);
-
-          // clear mask
-          loadMask = null;
-        });
-      }).onError((error, stackTrace) {
-        logger.e('Error loading Facebook event',
-            error: error, stackTrace: stackTrace);
-
-        if (!mounted) return;
-
-        context.pop();
-
-        final message = error is FunctionException
-            ? (error.details?['message'] ?? error.details)
-            : error;
-
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to load Facebook event:\n\n$message'),
-        ));
-
-        return;
-      });
-
-      return;
-    }
-
     // default: create a new event from scratch
     isNewEvent = true;
     _editingInstance = const AsyncValue.data(null);
+  }
+
+  Future<void> _importEvent() async {
+    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+    final clipboardText = clipboardData?.text;
+
+    if (clipboardText == null || clipboardText.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No URL found in clipboard')),
+      );
+      return;
+    }
+
+    // Basic URL validation
+    Uri? url;
+    try {
+      url = Uri.parse(clipboardText);
+      if (!url.hasScheme || !url.hasAuthority) {
+        throw FormatException('Invalid URL');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Clipboard content is not a valid URL')),
+      );
+      return;
+    }
+
+    setState(() {
+      loadMask = 'Importing event...';
+      _editingInstance = const AsyncValue.loading();
+    });
+
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      final response = await supabase.functions.invoke(
+        'scrape-event',
+        method: HttpMethod.get,
+        queryParameters: {'url': clipboardText},
+      );
+
+      final instance = Instance.fromMap(response.data);
+
+      setState(() {
+        _loadValuesFromInstance(instance);
+        _editingInstance = const AsyncValue.data(null);
+        loadMask = null;
+      });
+    } catch (error) {
+      logger.e('Error importing event', error: error);
+
+      setState(() {
+        _editingInstance = const AsyncValue.data(null);
+        loadMask = null;
+      });
+
+      if (!mounted) return;
+
+      final message = error is FunctionException
+          ? (error.details is String
+              ? error.details.replaceAll(RegExp(r'^[a-z\-]+: '), '')
+              : error.details?['message'])
+          : error;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to import event: ${message}')),
+      );
+    }
   }
 
   @override
@@ -418,6 +440,15 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
               : 'Saving event...'
           : loadMask,
       showLocationSharingSheet: false,
+      actions: isNewEvent
+          ? [
+              IconButton(
+                icon: const Icon(Icons.content_paste),
+                tooltip: 'Import Event from Clipboard',
+                onPressed: _importEvent,
+              ),
+            ]
+          : null,
       body: _editingInstance.when(
         error: (error, __) => Center(child: Text(error.toString())),
         loading: () => const SizedBox.shrink(),

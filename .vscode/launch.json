@@ -84,10 +84,10 @@
         },
         {
             "request": "launch",
-            "name": "Deno: scrape-facebook-event",
+            "name": "Deno: scrape-event",
             "type": "node",
-            "program": "${workspaceFolder}/supabase/functions/scrape-facebook-event/index.ts",
-            "cwd": "${workspaceFolder}/supabase/functions/scrape-facebook-event",
+            "program": "${workspaceFolder}/supabase/functions/scrape-event/index.ts",
+            "cwd": "${workspaceFolder}/supabase/functions/scrape-event",
             "env": {
                 "PORT": "8001"
             },
