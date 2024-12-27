@@ -38,6 +38,16 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
         _showScrollToBottom = _scrollController.position.pixels > 100;
       });
     });
+
+    // Set initial chat_last_seen
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final messages = await ref.read(chatProvider(widget.eventId).future);
+      if (messages.isNotEmpty) {
+        ref
+            .read(chatProvider(widget.eventId).notifier)
+            .updateLastSeen(messages.first.createdAt);
+      }
+    });
   }
 
   void _scrollToBottom() {
@@ -76,6 +86,18 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
     final currentUserId = ref.read(authControllerProvider)!.user.id;
 
+    // Listen for new messages and update chat_last_seen
+    ref.listen(
+      chatProvider(widget.eventId),
+      (_, next) {
+        if (next.value != null && next.value!.isNotEmpty) {
+          ref
+              .read(chatProvider(widget.eventId).notifier)
+              .updateLastSeen(next.value!.first.createdAt);
+        }
+      },
+    );
+
     final messages = messagesAsync.value ?? [];
 
     return AppBottomSheet(
@@ -83,6 +105,7 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
       title: eventAsync.value != null
           ? 'Chat: ${eventAsync.value!.title}'
           : 'Chat',
+      bottomPaddingSafeArea: false,
       children: [
         Expanded(
           child: Stack(
@@ -253,104 +276,6 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
                       },
                     ),
                   ),
-
-                  // Message Input
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(30),
-                          blurRadius: 4,
-                          offset: const Offset(0, -2),
-                        ),
-                      ],
-                    ),
-                    child: SafeArea(
-                      child: Column(
-                        children: [
-                          if (eventAsync.value?.createdBy?.id ==
-                                  currentUserId &&
-                              _isPinned)
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.push_pin),
-                                  const SizedBox(width: 8),
-                                  const Expanded(
-                                    child: Text(
-                                        'This message will be pinned as an announcement'),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.close),
-                                    onPressed: () =>
-                                        setState(() => _isPinned = false),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          Row(
-                            children: [
-                              if (eventAsync.value?.createdBy?.id ==
-                                  currentUserId)
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.push_pin,
-                                    color: _isPinned
-                                        ? Theme.of(context).colorScheme.primary
-                                        : null,
-                                  ),
-                                  onPressed: () =>
-                                      setState(() => _isPinned = !_isPinned),
-                                ),
-                              Expanded(
-                                child: TextField(
-                                  controller: _messageController,
-                                  decoration: InputDecoration(
-                                    hintText: 'Type a message...',
-                                    filled: true,
-                                    fillColor: Theme.of(context)
-                                        .colorScheme
-                                        .surfaceVariant,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(24),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                  maxLines: null,
-                                  textInputAction: TextInputAction.send,
-                                  onSubmitted: (_) => _sendMessage(
-                                      eventAsync.value?.createdBy?.id ==
-                                          currentUserId),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                onPressed: () => _sendMessage(
-                                    eventAsync.value?.createdBy?.id ==
-                                        currentUserId),
-                                icon: const Icon(Icons.send),
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
 
@@ -367,6 +292,90 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
                     child: const Icon(Icons.keyboard_arrow_down),
                   ),
                 ),
+            ],
+          ),
+        ),
+        // Message Input
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(30),
+                blurRadius: 4,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              if (eventAsync.value?.createdBy?.id == currentUserId && _isPinned)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.push_pin),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                            'This message will be pinned as an announcement'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => setState(() => _isPinned = false),
+                      ),
+                    ],
+                  ),
+                ),
+              Row(
+                children: [
+                  if (eventAsync.value?.createdBy?.id == currentUserId)
+                    IconButton(
+                      icon: Icon(
+                        Icons.push_pin,
+                        color: _isPinned
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      onPressed: () => setState(() => _isPinned = !_isPinned),
+                    ),
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                      maxLines: null,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(
+                          eventAsync.value?.createdBy?.id == currentUserId),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => _sendMessage(
+                        eventAsync.value?.createdBy?.id == currentUserId),
+                    icon: const Icon(Icons.send),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
             ],
           ),
         ),

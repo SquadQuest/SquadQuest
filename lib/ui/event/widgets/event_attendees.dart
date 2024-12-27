@@ -140,84 +140,131 @@ class EventAttendees extends ConsumerWidget {
     final isCurrentUser = currentUserId == rsvpFriend.rsvp.memberId;
     final isFriendOrSelf = isCurrentUser || rsvpFriend.friendship != null;
 
-    return ListTile(
-      tileColor: isCurrentUser
-          ? theme.colorScheme.primaryContainer.withAlpha(77)
-          : null,
-      leading: !isFriendOrSelf
-          ? CircleAvatar(
-              backgroundColor:
-                  theme.colorScheme.primaryContainer.withAlpha(100),
-              child: Icon(
-                Icons.person_outline,
-                color: theme.iconTheme.color!.withAlpha(100),
-              ),
-            )
-          : rsvpFriend.rsvp.member!.photo == null
-              ? const CircleAvatar(
-                  child: Icon(Icons.person),
-                )
-              : CircleAvatar(
-                  backgroundImage:
-                      NetworkImage(rsvpFriend.rsvp.member!.photo.toString()),
-                ),
-      title: Row(
+    return Container(
+      decoration: BoxDecoration(
+        color: isCurrentUser
+            ? theme.colorScheme.primaryContainer.withAlpha(77)
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            rsvpFriend.rsvp.member!.displayName,
-            style: TextStyle(
-              color: isFriendOrSelf ? null : theme.disabledColor,
+          ListTile(
+            leading: !isFriendOrSelf
+                ? CircleAvatar(
+                    backgroundColor:
+                        theme.colorScheme.primaryContainer.withAlpha(100),
+                    child: Icon(
+                      Icons.person_outline,
+                      color: theme.iconTheme.color!.withAlpha(100),
+                    ),
+                  )
+                : rsvpFriend.rsvp.member!.photo == null
+                    ? const CircleAvatar(
+                        child: Icon(Icons.person),
+                      )
+                    : CircleAvatar(
+                        backgroundImage: NetworkImage(
+                            rsvpFriend.rsvp.member!.photo.toString()),
+                      ),
+            title: Row(
+              children: [
+                Text(
+                  rsvpFriend.rsvp.member!.displayName,
+                  style: TextStyle(
+                    color: isFriendOrSelf ? null : theme.disabledColor,
+                  ),
+                ),
+                if (isCurrentUser) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'You',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+                if (isHost) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: sectionColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Host',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.surface,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
+            subtitle: rsvpFriend.mutuals == null || isFriendOrSelf
+                ? null
+                : Text(
+                    'Friend of ${rsvpFriend.mutuals!.map((profile) => profile.displayName).join(', ')}',
+                    style: TextStyle(
+                      color: isFriendOrSelf ? theme.disabledColor : null,
+                    ),
+                  ),
+            trailing: rsvpIcons[rsvpFriend.rsvp.status],
+            onTap: isFriendOrSelf
+                ? () {
+                    context.pushNamed('profile-view',
+                        pathParameters: {'id': rsvpFriend.rsvp.memberId!});
+                  }
+                : null,
           ),
-          if (isCurrentUser) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'You',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onPrimary,
+          if (rsvpFriend.rsvp.note != null &&
+              rsvpFriend.rsvp.note!.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(72, 0, 16, 16),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerHighest
+                      .withAlpha(80),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.format_quote,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        rsvpFriend.rsvp.note!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-          if (isHost) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: sectionColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Host',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.surface,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
-      subtitle: rsvpFriend.mutuals == null || isFriendOrSelf
-          ? null
-          : Text(
-              'Friend of ${rsvpFriend.mutuals!.map((profile) => profile.displayName).join(', ')}',
-              style: TextStyle(
-                color: isFriendOrSelf ? theme.disabledColor : null,
-              ),
-            ),
-      trailing: rsvpIcons[rsvpFriend.rsvp.status],
-      onTap: isFriendOrSelf
-          ? () {
-              context.pushNamed('profile-view',
-                  pathParameters: {'id': rsvpFriend.rsvp.memberId!});
-            }
-          : null,
     );
   }
 

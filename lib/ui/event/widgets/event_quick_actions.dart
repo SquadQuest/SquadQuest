@@ -57,7 +57,7 @@ class EventQuickActions extends ConsumerWidget {
             icon: Icons.chat_bubble_outline,
             label: 'Chat',
             badge: messageCountAsync.whenOrNull(
-              data: (count) => count > 0 ? count : null,
+              data: (count) => (count ?? 0) > 0 ? count : null,
             ),
           ),
         _buildActionButton(

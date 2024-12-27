@@ -5,17 +5,15 @@ import 'package:squadquest/models/instance.dart';
 class EventRsvpSheet extends StatefulWidget {
   final Instance event;
   final InstanceMemberStatus? selectedStatus;
-  // final String note;
-  final Function(InstanceMemberStatus status, String note) onStatusSelected;
-  final VoidCallback onRemoveRsvp;
+  final String? note;
+  final Function(InstanceMemberStatus? status, String? note) onStatusSelected;
 
   const EventRsvpSheet({
     super.key,
     required this.event,
     this.selectedStatus,
-    // required this.note,
+    this.note,
     required this.onStatusSelected,
-    required this.onRemoveRsvp,
   });
 
   @override
@@ -23,19 +21,21 @@ class EventRsvpSheet extends StatefulWidget {
 }
 
 class _EventRsvpSheetState extends State<EventRsvpSheet> {
-  // late final TextEditingController _noteController;
+  bool isNoteModified = false;
+
+  late final TextEditingController _noteController;
   late InstanceMemberStatus? _selectedStatus;
 
   @override
   void initState() {
     super.initState();
-    // _noteController = TextEditingController(text: widget.note);
+    _noteController = TextEditingController(text: widget.note);
     _selectedStatus = widget.selectedStatus;
   }
 
   @override
   void dispose() {
-    // _noteController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -61,7 +61,7 @@ class _EventRsvpSheetState extends State<EventRsvpSheet> {
       subtitle: Text(subtitle),
       trailing: isSelected ? const Icon(Icons.check) : null,
       onTap: () {
-        widget.onStatusSelected(status, ''); // _noteController.text
+        widget.onStatusSelected(status, _noteController.text);
         Navigator.pop(context);
       },
     );
@@ -112,43 +112,70 @@ class _EventRsvpSheetState extends State<EventRsvpSheet> {
                 title: "Can't make it",
                 subtitle: "You won't get further updates",
               ),
-              // const SizedBox(height: 16),
-              // const Divider(),
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(vertical: 16),
-              //   child: Column(
-              //     crossAxisAlignment: CrossAxisAlignment.start,
-              //     children: [
-              //       Text(
-              //         'Add a Note (Optional)',
-              //         style: TextStyle(
-              //           color: Theme.of(context).colorScheme.onSurfaceVariant,
-              //         ),
-              //       ),
-              //       const SizedBox(height: 8),
-              //       TextFormField(
-              //         controller: _noteController,
-              //         decoration: InputDecoration(
-              //           hintText: 'e.g., "Bringing snacks!" or "Running late"',
-              //           filled: true,
-              //           fillColor: Theme.of(context)
-              //               .colorScheme
-              //               .surfaceVariant
-              //               .withAlpha(80),
-              //         ),
-              //         maxLines: 2,
-              //       ),
-              //     ],
-              //   ),
-              // ),
+              const SizedBox(height: 16),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Add a Note (Optional)',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _noteController,
+                      decoration: InputDecoration(
+                        hintText: 'e.g., "Bringing snacks!" or "Running late"',
+                        filled: true,
+                        fillColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withAlpha(80),
+                      ),
+                      maxLines: 2,
+                      textInputAction: TextInputAction.done,
+                      onChanged: (note) {
+                        setState(() {
+                          isNoteModified = note != widget.note;
+                        });
+                      },
+                      // onFieldSubmitted: (note) {
+                      //   if (widget.selectedStatus != null) {
+                      //     widget.onStatusSelected(widget.selectedStatus!, note);
+                      //     Navigator.pop(context);
+                      //   }
+                      // },
+                    ),
+                  ],
+                ),
+              ),
               if (widget.selectedStatus != null) ...[
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    widget.onRemoveRsvp();
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Remove RSVP"),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        widget.onStatusSelected(null, _noteController.text);
+                        Navigator.pop(context);
+                      },
+                      child: const Text("Remove RSVP"),
+                    ),
+                    FilledButton(
+                      onPressed: isNoteModified
+                          ? () {
+                              widget.onStatusSelected(
+                                  widget.selectedStatus, _noteController.text);
+                              Navigator.pop(context);
+                            }
+                          : null,
+                      child: const Text("Save Note"),
+                    ),
+                  ],
                 ),
               ],
             ],

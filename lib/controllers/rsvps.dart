@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/common.dart';
+import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/calendar.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/supabase.dart';
@@ -17,6 +18,20 @@ final rsvpsPerEventProvider = AutoDisposeAsyncNotifierProviderFamily<
     InstanceRsvpsController,
     List<InstanceMember>,
     InstanceID>(InstanceRsvpsController.new);
+
+final myRsvpPerEventProvider = FutureProvider.autoDispose
+    .family<InstanceMember?, InstanceID>((ref, eventId) async {
+  final session = ref.watch(authControllerProvider);
+
+  if (session == null) {
+    return null;
+  }
+
+  final eventRsvps = await ref.watch(rsvpsPerEventProvider(eventId).future);
+
+  return eventRsvps
+      .firstWhereOrNull((rsvp) => rsvp.memberId == session.user.id);
+});
 
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   @override
@@ -45,13 +60,16 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     return data.map(InstanceMember.fromMap).toList();
   }
 
-  Future<InstanceMember?> save(
-      Instance instance, InstanceMemberStatus? status) async {
+  Future<InstanceMember?> save(Instance instance, InstanceMemberStatus? status,
+      {String? note}) async {
     final supabase = ref.read(supabaseClientProvider);
 
     try {
-      final response = await supabase.functions.invoke('rsvp',
-          body: {'instance_id': instance.id, 'status': status?.name});
+      final response = await supabase.functions.invoke('rsvp', body: {
+        'instance_id': instance.id,
+        'status': status?.name,
+        if (note != null) 'note': note,
+      });
 
       final instanceMember = response.data['status'] == null
           ? null

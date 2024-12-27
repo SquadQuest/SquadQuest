@@ -16,13 +16,14 @@ import { scrubProfile } from "../_shared/squadquest.ts";
 serve(async (request) => {
   // process request
   assertPost(request);
-  const { instance_id: instanceId, status } = await getRequiredJsonParameters(
-    request,
-    [
-      "instance_id",
-      "status",
-    ],
-  );
+  const { instance_id: instanceId, status, note = null } =
+    await getRequiredJsonParameters(
+      request,
+      [
+        "instance_id",
+        "status",
+      ],
+    );
 
   // connect to Supabase
   const serviceRoleSupabase = getServiceRoleSupabaseClient();
@@ -115,6 +116,20 @@ serve(async (request) => {
 
     // enrich data
     rsvp.member = await getSupabaseUserProfile(request, rsvp.member.id);
+
+    // just update note if provided
+    if (note !== null) {
+      const { data: updatedRsvp } = await serviceRoleSupabase.from(
+        "instance_members",
+      )
+        .update({ note })
+        .eq("id", existingRsvp.id)
+        .select(defaultSelect)
+        .single()
+        .throwOnError();
+
+      rsvp = updatedRsvp;
+    }
   } else if (
     status == null && existingRsvp &&
     existingRsvp.created_by == currentUser.id
@@ -138,7 +153,10 @@ serve(async (request) => {
     const { data: updatedRsvp } = await serviceRoleSupabase.from(
       "instance_members",
     )
-      .update({ status: status ?? "invited" })
+      .update({
+        status: status ?? "invited",
+        ...note !== null ? { note } : {},
+      })
       .eq("id", existingRsvp.id)
       .select(defaultSelect)
       .single()
@@ -159,6 +177,7 @@ serve(async (request) => {
         instance: instanceId,
         member: currentUser.id,
         status: status,
+        ...note !== null ? { note } : {},
       })
       .select(defaultSelect)
       .single()

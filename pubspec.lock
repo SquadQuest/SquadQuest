@@ -1331,6 +1331,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.1"
+  shared_preferences_tools:
+    dependency: "direct dev"
+    description:
+      name: shared_preferences_tools
+      sha256: d63c72ae2ec6c5f606e0125f3ecff3a50f601709b75554da091ff2519198f7d2
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   shared_preferences_web:
     dependency: transitive
     description:

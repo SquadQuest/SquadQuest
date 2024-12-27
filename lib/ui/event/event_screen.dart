@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +10,6 @@ import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/models/instance.dart';
-import 'package:squadquest/models/user.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
@@ -42,10 +43,13 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   ScaffoldFeatureController? rsvpSnackbar;
   late ScrollController scrollController;
   bool isBannerCollapsed = false;
+  late Timer refreshIndicatorsTimer;
 
   @override
   void initState() {
     super.initState();
+
+    // track scrolling to determine when banner is collapsed
     scrollController = ScrollController()
       ..addListener(() {
         if (scrollController.offset >
@@ -58,22 +62,20 @@ class _EventScreenState extends ConsumerState<EventScreen> {
           setState(() => isBannerCollapsed = false);
         }
       });
+
+    // start timer to refreshh indicators periodically
+    refreshIndicatorsTimer =
+        Timer.periodic(const Duration(seconds: 15), (Timer t) {
+      ref.invalidate(eventPointsProvider(widget.eventId));
+      ref.invalidate(chatMessageCountProvider(widget.eventId));
+    });
   }
 
   @override
   void dispose() {
     scrollController.dispose();
+    refreshIndicatorsTimer.cancel();
     super.dispose();
-  }
-
-  InstanceMemberStatus? _getCurrentRsvpStatus(UserID userId) {
-    final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(widget.eventId));
-    if (!eventRsvpsAsync.hasValue) return null;
-
-    return eventRsvpsAsync.value!
-        .cast<InstanceMember?>()
-        .firstWhereOrNull((rsvp) => rsvp?.memberId == userId)
-        ?.status;
   }
 
   void _handleHostAction(EventHostAction action) {
@@ -213,11 +215,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     }
   }
 
-  Future<void> _saveRsvp(
-      InstanceMemberStatus? status, Instance instance) async {
+  Future<void> _saveRsvp(InstanceMemberStatus? status, Instance instance,
+      {String? note}) async {
     try {
       final rsvpsController = ref.read(rsvpsProvider.notifier);
-      final savedRsvp = await rsvpsController.save(instance, status);
+      final savedRsvp =
+          await rsvpsController.save(instance, status, note: note);
 
       // start or stop tracking
       final locationController = ref.read(locationControllerProvider);
@@ -275,12 +278,9 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       builder: (context) => EventRsvpSheet(
         event: event,
         selectedStatus: myRsvp?.status,
-        // note: _note,
+        note: myRsvp?.note,
         onStatusSelected: (status, note) {
-          _saveRsvp(status, event);
-        },
-        onRemoveRsvp: () {
-          _saveRsvp(null, event);
+          _saveRsvp(status, event, note: note);
         },
       ),
     );
@@ -290,6 +290,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   Widget build(BuildContext context) {
     final session = ref.watch(authControllerProvider);
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
+    final myRsvp = ref.watch(myRsvpPerEventProvider(widget.eventId));
 
     return AppScaffold(
       showAppBar: false,
@@ -327,19 +328,14 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                 sliver: SliverToBoxAdapter(
                   child: Consumer(
                     builder: (context, ref, child) {
-                      final session = ref.watch(authControllerProvider);
-                      final selectedStatus = session == null
-                          ? null
-                          : _getCurrentRsvpStatus(session.user.id);
-
                       return EventQuickActions(
-                        selectedStatus: selectedStatus,
+                        selectedStatus: myRsvp.valueOrNull?.status,
                         eventId: widget.eventId,
                         onRsvpTap: () => _showRsvpSheet(event),
                         onMapTap: _showLiveMap,
                         onShareTap: _copyEventLink,
                         onChatTap: _showChat,
-                        showChat: selectedStatus != null,
+                        showChat: myRsvp.valueOrNull != null,
                       );
                     },
                   ),
