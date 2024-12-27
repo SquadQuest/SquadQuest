@@ -304,6 +304,9 @@ services:
         condition: service_healthy
     ports:
       - 0.0.0.0:9229:9229/tcp
+    env_file:
+      - path: ./functions/.env
+        required: true
     environment:
       JWT_SECRET: ${JWT_SECRET}
       SUPABASE_URL: http://kong:8000
