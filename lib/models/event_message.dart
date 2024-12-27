@@ -30,7 +30,6 @@ class EventMessage {
             ? UserProfile.fromMap(map['created_by'])
             : null;
 
-    logger.d({'EventMessage.fromMap': map});
     return EventMessage(
       id: map['id'] as EventMessageID,
       createdAt: DateTime.parse(map['created_at']).toLocal(),
