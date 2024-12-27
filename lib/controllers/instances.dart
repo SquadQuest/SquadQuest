@@ -36,11 +36,6 @@ final eventPointsProvider = FutureProvider.autoDispose
       .eq('id', instanceId)
       .maybeSingle();
 
-  Timer(
-    const Duration(seconds: 15),
-    () => ref.invalidateSelf(),
-  );
-
   return eventPoints == null ? null : EventPoints.fromMap(eventPoints);
 });
 

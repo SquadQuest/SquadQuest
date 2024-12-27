@@ -7,6 +7,8 @@ import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/models/event_message.dart';
 import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/controllers/rsvps.dart';
+import 'package:squadquest/controllers/auth.dart';
 
 final chatProvider =
     AsyncNotifierProviderFamily<ChatController, List<EventMessage>, InstanceID>(
@@ -21,18 +23,18 @@ final latestPinnedMessageProvider = AutoDisposeAsyncNotifierProviderFamily<
 );
 
 final chatMessageCountProvider =
-    FutureProvider.autoDispose.family<int, InstanceID>((ref, instanceId) async {
-  final supabase = ref.read(supabaseClientProvider);
-  final result = await supabase
+    FutureProvider.autoDispose.family<int?, InstanceID>((ref, eventId) async {
+  final myRsvp = await ref.watch(myRsvpPerEventProvider(eventId).future);
+
+  // Count messages after last seen
+  final result = await ref
+      .read(supabaseClientProvider)
       .from('event_messages')
       .select('id')
-      .eq('instance', instanceId)
+      .eq('instance', eventId)
+      .gt('created_at',
+          (myRsvp?.chatLastSeen ?? DateTime(0)).toUtc().toIso8601String())
       .count(CountOption.exact);
-
-  Timer(
-    const Duration(seconds: 15),
-    () => ref.invalidateSelf(),
-  );
 
   return result.count;
 });

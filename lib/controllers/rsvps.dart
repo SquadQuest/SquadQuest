@@ -27,11 +27,10 @@ final myRsvpPerEventProvider = FutureProvider.autoDispose
     return null;
   }
 
-  final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(eventId));
+  final eventRsvps = await ref.watch(rsvpsPerEventProvider(eventId).future);
 
-  return eventRsvpsAsync.valueOrNull
-      ?.cast<InstanceMember?>()
-      .firstWhereOrNull((rsvp) => rsvp?.memberId == session.user.id);
+  return eventRsvps
+      .firstWhereOrNull((rsvp) => rsvp.memberId == session.user.id);
 });
 
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +10,6 @@ import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/models/instance.dart';
-import 'package:squadquest/models/user.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
@@ -42,10 +43,13 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   ScaffoldFeatureController? rsvpSnackbar;
   late ScrollController scrollController;
   bool isBannerCollapsed = false;
+  late Timer refreshIndicatorsTimer;
 
   @override
   void initState() {
     super.initState();
+
+    // track scrolling to determine when banner is collapsed
     scrollController = ScrollController()
       ..addListener(() {
         if (scrollController.offset >
@@ -58,11 +62,19 @@ class _EventScreenState extends ConsumerState<EventScreen> {
           setState(() => isBannerCollapsed = false);
         }
       });
+
+    // start timer to refreshh indicators periodically
+    refreshIndicatorsTimer =
+        Timer.periodic(const Duration(seconds: 15), (Timer t) {
+      ref.invalidate(eventPointsProvider(widget.eventId));
+      ref.invalidate(chatMessageCountProvider(widget.eventId));
+    });
   }
 
   @override
   void dispose() {
     scrollController.dispose();
+    refreshIndicatorsTimer.cancel();
     super.dispose();
   }
 
