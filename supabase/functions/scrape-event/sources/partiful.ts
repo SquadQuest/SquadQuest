@@ -9,19 +9,17 @@ function canScrape(url: URL): boolean {
   );
 }
 async function scrape(url: URL): Promise<Event> {
-  // extract event ID
-  const { JSDOM } = await import("https://cdn.esm.sh/jsdom-deno");
-
   // load page from partiful
   const response = await fetch(url);
   assert(response.status == 200, "Failed to load event page from Partiful");
 
   // parse dom
   const html = await response.text();
-  const { window: { document } } = new JSDOM(html);
-  const eventJson = document.querySelector("#__NEXT_DATA__")?.textContent;
+  const [, eventJson] = html.match(
+    /<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/,
+  ) || [];
 
-  assert(eventJson, "Failed to extract event data from Partiful");
+  assert(eventJson != null, "Failed to extract event data from Partiful");
   const eventData = JSON.parse(eventJson).props.pageProps.event;
 
   // fetch calendar file
