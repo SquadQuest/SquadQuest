@@ -51,4 +51,4 @@ async function scrape(url: URL): Promise<Event> {
   };
 }
 
-export { canScrape, scrape };
+export default { canScrape, scrape };

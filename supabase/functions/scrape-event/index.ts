@@ -4,8 +4,10 @@ import {
   getRequiredQueryParameters,
   serve,
 } from "../_shared/http.ts";
+import { Event } from "../_shared/squadquest.ts";
+import scrapers from "./sources/index.ts";
 
-serve(async (request) => {
+serve(async (request: Request) => {
   // process request
   assertGet(request);
   const { url: rawUrl } = getRequiredQueryParameters(
@@ -18,13 +20,12 @@ serve(async (request) => {
   const url = new URL(rawUrl);
 
   // find source module
-  let scrape: ((url: URL) => Event) | null = null;
-  for await (const sourceFile of Deno.readDir("./sources")) {
-    const source = await import(`./sources/${sourceFile.name}`);
+  let scrape: ((url: URL) => Promise<Event>) | null = null;
 
-    if (source.canScrape(url)) {
-      console.log(`Scraping with ${sourceFile.name}: ${url}`);
-      scrape = source.scrape;
+  for (const [scraperId, scraper] of Object.entries(scrapers)) {
+    if (scraper.canScrape(url)) {
+      console.log(`Scraping with ${scraperId}: ${url}`);
+      scrape = scraper.scrape;
       break;
     }
   }
