@@ -51,113 +51,113 @@ async function scrape(url: URL): Promise<Event> {
 }
 
 // old HTML scraper implementation
-async function scrapeHtml(
-  url: URL,
-  localTimezoneOffset?: number,
-): Promise<Event> {
-  const { JSDOM } = await import("https://cdn.esm.sh/jsdom-deno");
+// async function scrapeHtml(
+//   url: URL,
+//   localTimezoneOffset?: number,
+// ): Promise<Event> {
+//   const { JSDOM } = await import("https://cdn.esm.sh/jsdom-deno");
 
-  assert(
-    localTimezoneOffset != null,
-    "Local time zone required to scrape Partiful",
-  );
+//   assert(
+//     localTimezoneOffset != null,
+//     "Local time zone required to scrape Partiful",
+//   );
 
-  // load page from partiful
-  const response = await fetch(url);
-  assert(response.status == 200, "Failed to load event page from Partiful");
+//   // load page from partiful
+//   const response = await fetch(url);
+//   assert(response.status == 200, "Failed to load event page from Partiful");
 
-  // parse dom
-  const html = await response.text();
-  const { window: { document } } = new JSDOM(html);
+//   // parse dom
+//   const html = await response.text();
+//   const { window: { document } } = new JSDOM(html);
 
-  // parse start/end times
-  const dateScraped =
-    document.querySelector("time div div").childNodes[0].textContent;
-  const dateParsed = new Date(`${dateScraped}, ${new Date().getFullYear()}`);
-  const dateString = dateParsed
-    ? `${dateParsed.getFullYear()}-${
-      String(dateParsed.getMonth() + 1).padStart(2, "0")
-    }-${String(dateParsed.getDate()).padStart(2, "0")}`
-    : null;
+//   // parse start/end times
+//   const dateScraped =
+//     document.querySelector("time div div").childNodes[0].textContent;
+//   const dateParsed = new Date(`${dateScraped}, ${new Date().getFullYear()}`);
+//   const dateString = dateParsed
+//     ? `${dateParsed.getFullYear()}-${
+//       String(dateParsed.getMonth() + 1).padStart(2, "0")
+//     }-${String(dateParsed.getDate()).padStart(2, "0")}`
+//     : null;
 
-  // try to extract end time
-  let startTime, endTime;
+//   // try to extract end time
+//   let startTime, endTime;
 
-  const timeRangeBits = document.querySelector("time div + div").childNodes[0]
-    .textContent
-    .split(/\s*–\s*/);
+//   const timeRangeBits = document.querySelector("time div + div").childNodes[0]
+//     .textContent
+//     .split(/\s*–\s*/);
 
-  if (dateString && timeRangeBits) {
-    const tzOffsetHours = Math.floor(localTimezoneOffset! / 60);
-    const tzOffsetMinutes = localTimezoneOffset! % 60;
+//   if (dateString && timeRangeBits) {
+//     const tzOffsetHours = Math.floor(localTimezoneOffset! / 60);
+//     const tzOffsetMinutes = localTimezoneOffset! % 60;
 
-    if (timeRangeBits.length >= 1) {
-      let [, startHour, startMinute, startAMPM] = timeRangeBits[0].match(
-        /^(\d+):(\d+)(am|pm)$/i,
-      );
+//     if (timeRangeBits.length >= 1) {
+//       let [, startHour, startMinute, startAMPM] = timeRangeBits[0].match(
+//         /^(\d+):(\d+)(am|pm)$/i,
+//       );
 
-      startHour = parseInt(startHour, 10);
-      startMinute = parseInt(startMinute, 10);
+//       startHour = parseInt(startHour, 10);
+//       startMinute = parseInt(startMinute, 10);
 
-      if (startAMPM.toLowerCase() == "pm") {
-        startHour += 12;
-      }
+//       if (startAMPM.toLowerCase() == "pm") {
+//         startHour += 12;
+//       }
 
-      startHour -= tzOffsetHours;
-      startMinute -= tzOffsetMinutes;
+//       startHour -= tzOffsetHours;
+//       startMinute -= tzOffsetMinutes;
 
-      startTime = new Date(
-        `${dateString}T${String(startHour).padStart(2, "0")}:${
-          String(startMinute).padStart(2, "0")
-        }:00Z`,
-      );
-    }
+//       startTime = new Date(
+//         `${dateString}T${String(startHour).padStart(2, "0")}:${
+//           String(startMinute).padStart(2, "0")
+//         }:00Z`,
+//       );
+//     }
 
-    if (timeRangeBits.length == 2) {
-      let [, endHour, endMinute, endAMPM] = timeRangeBits[1].match(
-        /^(\d+):(\d+)(am|pm)$/i,
-      );
+//     if (timeRangeBits.length == 2) {
+//       let [, endHour, endMinute, endAMPM] = timeRangeBits[1].match(
+//         /^(\d+):(\d+)(am|pm)$/i,
+//       );
 
-      endHour = parseInt(endHour, 10);
-      endMinute = parseInt(endMinute, 10);
+//       endHour = parseInt(endHour, 10);
+//       endMinute = parseInt(endMinute, 10);
 
-      if (endAMPM.toLowerCase() == "pm") {
-        endHour += 12;
-      }
+//       if (endAMPM.toLowerCase() == "pm") {
+//         endHour += 12;
+//       }
 
-      endHour -= tzOffsetHours;
-      endMinute -= tzOffsetMinutes;
+//       endHour -= tzOffsetHours;
+//       endMinute -= tzOffsetMinutes;
 
-      endTime = new Date(
-        `${dateString}T${String(endHour).padStart(2, "0")}:${
-          String(endMinute).padStart(2, "0")
-        }:00Z`,
-      );
+//       endTime = new Date(
+//         `${dateString}T${String(endHour).padStart(2, "0")}:${
+//           String(endMinute).padStart(2, "0")
+//         }:00Z`,
+//       );
 
-      // TODO: handle multi-day ranges
-      if (startTime! > endTime) {
-        endTime.setDate(endTime.getDate() + 1);
-      }
-    }
-  }
+//       // TODO: handle multi-day ranges
+//       if (startTime! > endTime) {
+//         endTime.setDate(endTime.getDate() + 1);
+//       }
+//     }
+//   }
 
-  // build event object
-  return {
-    title: document.querySelector("h1 span.summary").textContent,
-    start_time_min: startTime,
-    start_time_max: startTime
-      ? new Date(startTime.getTime() + 15 * 60 * 1000)
-      : undefined,
-    end_time: endTime,
-    location_description: document.querySelector(
-      'a[href^="https://www.google.com/maps/"]',
-    )
-      ?.textContent,
-    link: url.toString(),
-    notes: document.querySelector(".description")?.textContent,
-    banner_photo: document.querySelector("section img[srcset]")?.src,
-    visibility: EventVisibility.public,
-  };
-}
+//   // build event object
+//   return {
+//     title: document.querySelector("h1 span.summary").textContent,
+//     start_time_min: startTime,
+//     start_time_max: startTime
+//       ? new Date(startTime.getTime() + 15 * 60 * 1000)
+//       : undefined,
+//     end_time: endTime,
+//     location_description: document.querySelector(
+//       'a[href^="https://www.google.com/maps/"]',
+//     )
+//       ?.textContent,
+//     link: url.toString(),
+//     notes: document.querySelector(".description")?.textContent,
+//     banner_photo: document.querySelector("section img[srcset]")?.src,
+//     visibility: EventVisibility.public,
+//   };
+// }
 
 export default { canScrape, scrape };
