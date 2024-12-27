@@ -1,3 +1,4 @@
+import { time } from "https://deno.land/x/time.ts@v2.0.1/mod.ts";
 import { EventVisibility } from "../../_shared/squadquest.ts";
 import { Event } from "../../_shared/squadquest.ts";
 
@@ -38,6 +39,9 @@ async function scrape(url: URL): Promise<Event> {
             longitude
           }
         }
+        area {
+          ianaTimeZone
+        }
       }
     }
   `;
@@ -48,13 +52,18 @@ async function scrape(url: URL): Promise<Event> {
     { id: eventId },
   );
 
-  // build event object
-  const startTime = new Date(eventData.startTime);
+  // parse dates using the event's timezone
+  const startTime =
+    time(eventData.startTime).tz(eventData.area?.ianaTimeZone).t;
+  const endTime = eventData.endTime
+    ? time(eventData.endTime).tz(eventData.area?.ianaTimeZone).t
+    : undefined;
 
+  // build event object
   return {
     start_time_min: startTime,
     start_time_max: new Date(startTime.getTime() + 15 * 60 * 1000),
-    end_time: eventData.endTime ? new Date(eventData.endTime) : undefined,
+    end_time: endTime,
     title: eventData.title,
     location_description: eventData.venue?.name,
     rally_point_text: eventData.venue?.location
