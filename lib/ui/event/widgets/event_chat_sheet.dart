@@ -12,11 +12,13 @@ import 'package:squadquest/ui/core/widgets/app_bottom_sheet.dart';
 
 class EventChatSheet extends ConsumerStatefulWidget {
   final InstanceID eventId;
+  final DateTime? lastSeen;
   final double? height;
 
   const EventChatSheet({
     super.key,
     required this.eventId,
+    this.lastSeen,
     this.height,
   });
 
@@ -132,6 +134,15 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
                         final nextMessage =
                             index > 0 ? messages[index - 1] : null;
 
+                        // Check if this message is the first unread message
+                        final isUnreadDivider = widget.lastSeen != null &&
+                            previousMessage != null &&
+                            message.createdAt.isAfter(widget.lastSeen!) &&
+                            (previousMessage.createdAt
+                                    .isBefore(widget.lastSeen!) ||
+                                previousMessage.createdAt
+                                    .isAtSameMomentAs(widget.lastSeen!));
+
                         final isFirstInGroup = previousMessage?.createdBy?.id !=
                             message.createdBy?.id;
                         final isLastInGroup =
@@ -142,13 +153,38 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
 
                         return Padding(
                           padding: EdgeInsets.only(
-                            bottom: isLastInGroup ? 16 : 2,
+                            bottom: isLastInGroup || isUnreadDivider ? 16 : 2,
+                            top: isUnreadDivider ? 16 : 0,
                           ),
                           child: Column(
                             crossAxisAlignment: isMe
                                 ? CrossAxisAlignment.end
                                 : CrossAxisAlignment.start,
                             children: [
+                              if (isUnreadDivider)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      const Expanded(child: Divider()),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16),
+                                        child: Text(
+                                          'New messages',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const Expanded(child: Divider()),
+                                    ],
+                                  ),
+                                ),
                               if (isFirstInGroup)
                                 Padding(
                                   padding: const EdgeInsets.only(

@@ -22,9 +22,16 @@ final latestPinnedMessageProvider = AutoDisposeAsyncNotifierProviderFamily<
   LatestPinnedMessageController.new,
 );
 
+final chatLastSeenProvider = FutureProvider.autoDispose
+    .family<DateTime?, InstanceID>((ref, eventId) async {
+  final myRsvp = await ref.watch(myRsvpPerEventProvider(eventId).future);
+
+  return myRsvp?.chatLastSeen;
+});
+
 final chatMessageCountProvider =
     FutureProvider.autoDispose.family<int?, InstanceID>((ref, eventId) async {
-  final myRsvp = await ref.watch(myRsvpPerEventProvider(eventId).future);
+  final chatLastSeen = await ref.watch(chatLastSeenProvider(eventId).future);
 
   // Count messages after last seen
   final result = await ref
@@ -32,8 +39,7 @@ final chatMessageCountProvider =
       .from('event_messages')
       .select('id')
       .eq('instance', eventId)
-      .gt('created_at',
-          (myRsvp?.chatLastSeen ?? DateTime(0)).toUtc().toIso8601String())
+      .gt('created_at', (chatLastSeen ?? DateTime(0)).toUtc().toIso8601String())
       .count(CountOption.exact);
 
   return result.count;

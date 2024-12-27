@@ -192,13 +192,19 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     );
   }
 
-  void _showChat() {
+  Future<void> _showChat() async {
+    final lastSeen =
+        await ref.read(chatLastSeenProvider(widget.eventId).future);
+
+    if (!mounted) return;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (BuildContext context) => EventChatSheet(
         eventId: widget.eventId,
+        lastSeen: lastSeen,
       ),
     );
   }
