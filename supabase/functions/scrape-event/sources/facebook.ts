@@ -16,8 +16,8 @@ async function scrape(url: URL): Promise<Event> {
 
   // build event object
   return {
-    start_time_min: new Date(1000 * (eventData.startTimestamp - 15 * 60)),
-    start_time_max: new Date(1000 * eventData.startTimestamp),
+    start_time_min: new Date(1000 * eventData.startTimestamp),
+    start_time_max: new Date(1000 * (eventData.startTimestamp + 15 * 60)),
     end_time: eventData.endTimestamp
       ? new Date(1000 * eventData.endTimestamp)
       : undefined,

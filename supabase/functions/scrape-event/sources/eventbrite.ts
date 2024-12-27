@@ -36,8 +36,8 @@ async function scrape(url: URL): Promise<Event> {
   const startTime = new Date(eventData.start.utc);
 
   return {
-    start_time_min: new Date(startTime.getTime() - 15 * 60 * 1000),
-    start_time_max: startTime,
+    start_time_min: startTime,
+    start_time_max: new Date(startTime.getTime() + 15 * 60 * 1000),
     end_time: new Date(eventData.end.utc),
     title: eventData.name.text,
     location_description: eventData.venue?.name,
