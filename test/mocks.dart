@@ -148,8 +148,8 @@ class MockRsvpsController extends RsvpsController {
   }
 
   @override
-  Future<InstanceMember?> save(
-      Instance instance, InstanceMemberStatus? status) async {
+  Future<InstanceMember?> save(Instance instance, InstanceMemberStatus? status,
+      {String? note}) async {
     final instanceRsvps = ref.read(rsvpMockStateProvider);
 
     if (status == null) {
