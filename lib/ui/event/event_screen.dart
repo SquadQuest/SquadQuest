@@ -66,16 +66,6 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     super.dispose();
   }
 
-  InstanceMemberStatus? _getCurrentRsvpStatus(UserID userId) {
-    final eventRsvpsAsync = ref.watch(rsvpsPerEventProvider(widget.eventId));
-    if (!eventRsvpsAsync.hasValue) return null;
-
-    return eventRsvpsAsync.value!
-        .cast<InstanceMember?>()
-        .firstWhereOrNull((rsvp) => rsvp?.memberId == userId)
-        ?.status;
-  }
-
   void _handleHostAction(EventHostAction action) {
     switch (action) {
       case EventHostAction.setRallyPoint:
@@ -290,6 +280,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   Widget build(BuildContext context) {
     final session = ref.watch(authControllerProvider);
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
+    final myRsvp = ref.watch(myRsvpPerEventProvider(widget.eventId));
 
     return AppScaffold(
       showAppBar: false,
@@ -327,19 +318,14 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                 sliver: SliverToBoxAdapter(
                   child: Consumer(
                     builder: (context, ref, child) {
-                      final session = ref.watch(authControllerProvider);
-                      final selectedStatus = session == null
-                          ? null
-                          : _getCurrentRsvpStatus(session.user.id);
-
                       return EventQuickActions(
-                        selectedStatus: selectedStatus,
+                        selectedStatus: myRsvp.valueOrNull?.status,
                         eventId: widget.eventId,
                         onRsvpTap: () => _showRsvpSheet(event),
                         onMapTap: _showLiveMap,
                         onShareTap: _copyEventLink,
                         onChatTap: _showChat,
-                        showChat: selectedStatus != null,
+                        showChat: myRsvp.valueOrNull != null,
                       );
                     },
                   ),
