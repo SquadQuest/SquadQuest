@@ -1,4 +1,4 @@
-import { time } from "https://deno.land/x/time.ts@v2.0.1/mod.ts";
+import moment from "npm:moment-timezone";
 import { EventVisibility } from "../../_shared/squadquest.ts";
 import { Event } from "../../_shared/squadquest.ts";
 
@@ -53,10 +53,10 @@ async function scrape(url: URL): Promise<Event> {
   );
 
   // parse dates using the event's timezone
-  const startTime =
-    time(eventData.startTime).tz(eventData.area?.ianaTimeZone).t;
+  const startTime = moment.tz(eventData.startTime, eventData.area?.ianaTimeZone)
+    .toDate();
   const endTime = eventData.endTime
-    ? time(eventData.endTime).tz(eventData.area?.ianaTimeZone).t
+    ? moment.tz(eventData.endTime, eventData.area?.ianaTimeZone).toDate()
     : undefined;
 
   // build event object
