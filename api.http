@@ -116,7 +116,7 @@ Authorization: Bearer {{token}}
 
 ### Scrape Facebook event
 
-GET {{baseUrl}}/scrape-facebook-event
+GET {{baseUrl}}/scrape-event
     ?url=https%3A%2F%2Fwww.facebook.com%2Fevents%2Fs%2Faugust-19th-philly-full-moon-r%2F1188917002238256%2F
 Authorization: Bearer {{token}}
 
