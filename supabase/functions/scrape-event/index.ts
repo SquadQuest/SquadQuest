@@ -32,7 +32,7 @@ serve(async (request: Request) => {
 
   assert(
     scrape != null,
-    "No event scraper found for URL",
+    "SquadQuest does not yet support importing events from this site",
     404,
     "no-scraper-available",
   );
