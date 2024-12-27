@@ -38,6 +38,16 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
         _showScrollToBottom = _scrollController.position.pixels > 100;
       });
     });
+
+    // Set initial chat_last_seen
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final messages = await ref.read(chatProvider(widget.eventId).future);
+      if (messages.isNotEmpty) {
+        ref
+            .read(chatProvider(widget.eventId).notifier)
+            .updateLastSeen(messages.first.createdAt);
+      }
+    });
   }
 
   void _scrollToBottom() {
@@ -75,6 +85,18 @@ class _EventChatSheetState extends ConsumerState<EventChatSheet> {
     final messagesAsync = ref.watch(chatProvider(widget.eventId));
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
     final currentUserId = ref.read(authControllerProvider)!.user.id;
+
+    // Listen for new messages and update chat_last_seen
+    ref.listen(
+      chatProvider(widget.eventId),
+      (_, next) {
+        if (next.value != null && next.value!.isNotEmpty) {
+          ref
+              .read(chatProvider(widget.eventId).notifier)
+              .updateLastSeen(next.value!.first.createdAt);
+        }
+      },
+    );
 
     final messages = messagesAsync.value ?? [];
 

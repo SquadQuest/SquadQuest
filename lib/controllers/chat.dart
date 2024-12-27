@@ -43,6 +43,7 @@ class ChatController
     extends FamilyAsyncNotifier<List<EventMessage>, InstanceID> {
   late InstanceID instanceId;
   late StreamSubscription _subscription;
+  DateTime? lastSeen;
 
   ChatController();
 
@@ -114,6 +115,24 @@ class ChatController
     ref.invalidate(chatMessageCountProvider(instanceId));
 
     return message;
+  }
+
+  Future<void> updateLastSeen(DateTime timestamp) async {
+    if (lastSeen != null &&
+        (lastSeen!.isAtSameMomentAs(timestamp) ||
+            lastSeen!.isAfter(timestamp))) {
+      return;
+    }
+
+    lastSeen = timestamp;
+
+    await ref
+        .read(supabaseClientProvider)
+        .functions
+        .invoke('set-chat-last-seen', body: {
+      'event_id': instanceId,
+      'timestamp': timestamp.toUtc().toIso8601String(),
+    });
   }
 }
 
