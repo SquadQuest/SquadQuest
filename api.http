@@ -126,6 +126,11 @@ GET {{baseUrl}}/scrape-event
     ?url=https%3A%2F%2Fwww.eventbrite.com%2Fe%2Fyoga-at-trinity-saturdays-tickets-1102467202079
 Authorization: Bearer {{token}}
 
+### Scrape Resident Advisor event
+
+GET {{baseUrl}}/scrape-event
+    ?url=https%3A%2F%2Fra.co%2Fevents%2F1797211
+Authorization: Bearer {{token}}
 
 
 ### Trigger: INSERT event_messages
