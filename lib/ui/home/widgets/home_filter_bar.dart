@@ -18,39 +18,42 @@ class HomeFilterBar extends ConsumerWidget {
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Row(
-              children: filters.asMap().entries.map((entry) {
-                final index = entry.key;
-                final filter = entry.value;
+          SizedBox(
+            height: 48,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: filters.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final filter = filters[index];
                 final isSelected = selectedIndex == index;
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    selected: isSelected,
-                    label: Text(filter.label),
-                    onSelected: (selected) {
-                      if (selected) {
-                        onFilterSelected(index);
-                      }
-                    },
-                    avatar:
-                        isSelected ? const Icon(Icons.check, size: 18) : null,
-                  ),
+                return FilterChip(
+                  selected: isSelected,
+                  label: Text(filter.label),
+                  onSelected: (selected) {
+                    if (selected) {
+                      onFilterSelected(index);
+                    }
+                  },
+                  avatar: isSelected ? const Icon(Icons.check, size: 18) : null,
+                  showCheckmark: false,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 );
-              }).toList(),
+              },
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             child: Text(
               filters[selectedIndex].description,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withAlpha(179),
+                  ),
             ),
           ),
         ],

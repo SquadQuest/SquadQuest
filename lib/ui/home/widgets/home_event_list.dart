@@ -56,79 +56,83 @@ class HomeEventList extends ConsumerWidget {
     final now = DateTime.now();
     final sections = _groupEventsByTimeGroup(events, now);
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      itemCount: sections.length,
-      itemBuilder: (context, index) {
-        final section = sections[index];
-        return _buildSection(
-          context,
-          title: _getSectionTitle(section.timeGroup),
-          icon: _getSectionIcon(section.timeGroup),
-          events: section.events,
-        );
-      },
+    return CustomScrollView(
+      slivers: [
+        for (final section in sections) ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            sliver: SliverToBoxAdapter(
+              child: _buildSectionHeader(
+                context,
+                title: _getSectionTitle(section.timeGroup),
+                icon: _getSectionIcon(section.timeGroup),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final event = section.events[index];
+                  final stats = eventStats?[event.id!] ??
+                      (going: 0, maybe: 0, omw: 0, invited: 0);
+
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: index < section.events.length - 1 ? 16 : 0,
+                    ),
+                    child: HomeEventCard(
+                      event: event,
+                      onTap: () => onEventTap(event),
+                      onEndTap:
+                          onEndEvent != null ? () => onEndEvent!(event) : null,
+                      goingCount: stats.going,
+                      maybeCount: stats.maybe,
+                      omwCount: stats.omw,
+                      invitedCount: stats.invited,
+                    ),
+                  );
+                },
+                childCount: section.events.length,
+              ),
+            ),
+          ),
+        ],
+        // Add bottom padding
+        const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+      ],
     );
   }
 
-  Widget _buildSection(
+  Widget _buildSectionHeader(
     BuildContext context, {
     required String title,
     required IconData icon,
-    required List<Instance> events,
   }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (showSectionIcons) ...[
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
+    return Row(
+      children: [
+        if (showSectionIcons) ...[
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
           ),
-          const SizedBox(height: 16),
-          ...events.map((event) {
-            final stats = eventStats?[event.id!] ??
-                (
-                  going: 0,
-                  maybe: 0,
-                  omw: 0,
-                  invited: 0,
-                );
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: HomeEventCard(
-                event: event,
-                onTap: () => onEventTap(event),
-                onEndTap: onEndEvent != null ? () => onEndEvent!(event) : null,
-                goingCount: stats.going,
-                maybeCount: stats.maybe,
-                omwCount: stats.omw,
-                invitedCount: stats.invited,
-              ),
-            );
-          }).toList(),
+          const SizedBox(width: 12),
         ],
-      ),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+      ],
     );
   }
 

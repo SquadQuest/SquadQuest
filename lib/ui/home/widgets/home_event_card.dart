@@ -32,7 +32,7 @@ class HomeEventCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (isLive)
               Container(
@@ -42,6 +42,7 @@ class HomeEventCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.circle,
@@ -62,10 +63,11 @@ class HomeEventCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Title and Topic
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
@@ -79,7 +81,8 @@ class HomeEventCard extends StatelessWidget {
                               ),
                         ),
                       ),
-                      if (event.topic != null)
+                      if (event.topic != null) ...[
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -102,6 +105,7 @@ class HomeEventCard extends StatelessWidget {
                             ),
                           ),
                         ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -125,52 +129,75 @@ class HomeEventCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Hosted by ${event.createdBy!.displayName}',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withAlpha(179),
-                                  ),
+                        Expanded(
+                          child: Text(
+                            'Hosted by ${event.createdBy!.displayName}',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withAlpha(179),
+                                    ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                   const SizedBox(height: 12),
 
                   // Time and Location
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatEventTime(event, now),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      if (event.locationDescription.isNotEmpty) ...[
-                        const SizedBox(width: 16),
-                        Icon(
-                          Icons.place,
-                          size: 16,
-                          color: Theme.of(context).textTheme.bodySmall?.color,
+                  DefaultTextStyle(
+                    style: Theme.of(context).textTheme.bodySmall!,
+                    child: Wrap(
+                      spacing: 16,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 16,
+                              color:
+                                  Theme.of(context).textTheme.bodySmall?.color,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(_formatEventTime(event, now)),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          event.locationDescription,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
+                        if (event.locationDescription.isNotEmpty)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.place,
+                                size: 16,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  event.locationDescription,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 16),
 
                   // Attendance Stats
-                  _buildAttendanceStats(context),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: _buildAttendanceStats(context),
+                  ),
                 ],
               ),
             ),

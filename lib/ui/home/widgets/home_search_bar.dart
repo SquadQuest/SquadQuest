@@ -18,25 +18,48 @@ class HomeSearchBar extends ConsumerWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       height: isVisible ? 72 : 0,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: isVisible ? 1.0 : 0.0,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Search events...',
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceVariant,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: isVisible ? 1.0 : 0.0,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search events...',
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withAlpha(179),
+                ),
+                hintStyle: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withAlpha(179),
+                ),
               ),
-              prefixIcon: const Icon(Icons.search),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              onChanged: onChanged,
+              textInputAction: TextInputAction.search,
             ),
-            onChanged: onChanged,
           ),
         ),
       ),
