@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';
@@ -35,6 +36,87 @@ class HomeEventCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatEventTime(Instance event, DateTime now) {
+    if (event.getTimeGroup(now) == InstanceTimeGroup.current) {
+      final startedAgo = now.difference(event.startTimeMin);
+      if (startedAgo.inHours > 0) {
+        return 'Started ${startedAgo.inHours}h ago';
+      } else {
+        return 'Started ${startedAgo.inMinutes}m ago';
+      }
+    }
+
+    final startTime = event.startTimeMin;
+    final endTime = event.startTimeMax;
+    final dateFormat = DateFormat.MMMd(); // e.g., "Jan 15"
+    final timeFormat = DateFormat.jm(); // e.g., "3:30 PM"
+
+    // If event is in the past
+    if (event.getTimeGroup(now) == InstanceTimeGroup.past) {
+      return 'Ended ${_formatRelativeDate(endTime, now)}';
+    }
+
+    // If event is today
+    if (startTime.year == now.year &&
+        startTime.month == now.month &&
+        startTime.day == now.day) {
+      return 'Today at ${timeFormat.format(startTime)}';
+    }
+
+    // If event is tomorrow
+    final tomorrow = now.add(const Duration(days: 1));
+    if (startTime.year == tomorrow.year &&
+        startTime.month == tomorrow.month &&
+        startTime.day == tomorrow.day) {
+      return 'Tomorrow at ${timeFormat.format(startTime)}';
+    }
+
+    // If event is within the next 6 days
+    if (startTime.difference(now).inDays < 7) {
+      return '${DateFormat.EEEE().format(startTime)} at ${timeFormat.format(startTime)}';
+    }
+
+    // If event is within this year
+    if (startTime.year == now.year) {
+      return '${dateFormat.format(startTime)} at ${timeFormat.format(startTime)}';
+    }
+
+    // If event is next year or later
+    return '${DateFormat.yMMMd().format(startTime)} at ${timeFormat.format(startTime)}';
+  }
+
+  String _formatRelativeDate(DateTime date, DateTime now) {
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      if (difference.inHours == 0) {
+        return '${difference.inMinutes}m ago';
+      }
+      return '${difference.inHours}h ago';
+    }
+
+    if (difference.inDays == 1) {
+      return 'yesterday';
+    }
+
+    if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    }
+
+    if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+      return '$weeks ${weeks == 1 ? 'week' : 'weeks'} ago';
+    }
+
+    if (difference.inDays < 365) {
+      final months = (difference.inDays / 30).floor();
+      return '$months ${months == 1 ? 'month' : 'months'} ago';
+    }
+
+    final years = (difference.inDays / 365).floor();
+    return '$years ${years == 1 ? 'year' : 'years'} ago';
   }
 
   @override
@@ -201,19 +283,5 @@ class HomeEventCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatEventTime(Instance event, DateTime now) {
-    if (event.getTimeGroup(now) == InstanceTimeGroup.current) {
-      final startedAgo = now.difference(event.startTimeMin);
-      if (startedAgo.inHours > 0) {
-        return 'Started ${startedAgo.inHours}h ago';
-      } else {
-        return 'Started ${startedAgo.inMinutes}m ago';
-      }
-    }
-
-    // TODO: Implement better time formatting
-    return event.startTimeMin.toString();
   }
 }
