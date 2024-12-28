@@ -7,6 +7,7 @@ class HomeEventList extends ConsumerWidget {
   final List<Instance> events;
   final Function(Instance) onEventTap;
   final Function(Instance)? onEndEvent;
+  final Map<InstanceID, InstanceMemberStatus>? rsvps;
   final bool showSectionIcons;
 
   const HomeEventList({
@@ -14,6 +15,7 @@ class HomeEventList extends ConsumerWidget {
     required this.events,
     required this.onEventTap,
     this.onEndEvent,
+    this.rsvps,
     this.showSectionIcons = true,
   });
 
@@ -81,6 +83,7 @@ class HomeEventList extends ConsumerWidget {
                       onTap: () => onEventTap(event),
                       onEndTap:
                           onEndEvent != null ? () => onEndEvent!(event) : null,
+                      rsvpStatus: rsvps?[event.id],
                     ),
                   );
                 },

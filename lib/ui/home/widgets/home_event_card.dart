@@ -8,12 +8,14 @@ class HomeEventCard extends StatelessWidget {
   final Instance event;
   final VoidCallback onTap;
   final VoidCallback? onEndTap;
+  final InstanceMemberStatus? rsvpStatus;
 
   const HomeEventCard({
     super.key,
     required this.event,
     required this.onTap,
     this.onEndTap,
+    this.rsvpStatus,
   });
 
   Widget _buildHostAvatar(BuildContext context, UserProfile host) {
@@ -33,6 +35,63 @@ class HomeEventCard extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           color: Theme.of(context).colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRsvpStatus(BuildContext context) {
+    if (rsvpStatus == null) return const SizedBox.shrink();
+
+    final (backgroundColor, textColor, text) = switch (rsvpStatus!) {
+      InstanceMemberStatus.invited => (
+          Theme.of(context).colorScheme.tertiaryContainer,
+          Theme.of(context).colorScheme.onTertiaryContainer,
+          'Invited'
+        ),
+      InstanceMemberStatus.maybe => (
+          Colors.orange[100]!,
+          Colors.orange[900]!,
+          'Maybe'
+        ),
+      InstanceMemberStatus.yes => (
+          Theme.of(context).colorScheme.primaryContainer,
+          Theme.of(context).colorScheme.onPrimaryContainer,
+          'Going'
+        ),
+      InstanceMemberStatus.omw => (
+          Theme.of(context).colorScheme.inversePrimary,
+          Theme.of(context).colorScheme.primary,
+          'On my way'
+        ),
+      InstanceMemberStatus.no => (
+          Theme.of(context).colorScheme.surfaceVariant,
+          Theme.of(context).colorScheme.onSurfaceVariant,
+          'Not going'
+        ),
+      _ => (null, null, null),
+    };
+
+    if (text == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        border: rsvpStatus == InstanceMemberStatus.omw
+            ? Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1,
+              )
+            : null,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          color: textColor,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -208,10 +267,10 @@ class HomeEventCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
 
-                  // Host Info
-                  if (event.createdBy != null)
-                    Row(
-                      children: [
+                  // Host Info and RSVP Status
+                  Row(
+                    children: [
+                      if (event.createdBy != null) ...[
                         _buildHostAvatar(context, event.createdBy!),
                         const SizedBox(width: 8),
                         Expanded(
@@ -228,7 +287,12 @@ class HomeEventCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ),
+                      if (rsvpStatus != null) ...[
+                        const SizedBox(width: 8),
+                        _buildRsvpStatus(context),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 12),
 
                   // Time and Location

@@ -17,7 +17,8 @@ import 'widgets/home_filter_bar.dart';
 import 'widgets/home_event_list.dart';
 import 'widgets/home_search_results.dart';
 
-final _filteredEventsProvider = FutureProvider<List<Instance>>((ref) async {
+final _filteredEventsWithStatsProvider =
+    FutureProvider<List<Instance>>((ref) async {
   final events = await ref.watch(instancesProvider.future);
   final topics = await ref.watch(topicSubscriptionsProvider.future);
   final rsvpsList = ref.watch(rsvpsProvider).valueOrNull ?? [];
@@ -62,7 +63,7 @@ final _searchResultsProvider = Provider<List<Instance>>((ref) {
   final query = ref.watch(_searchQueryProvider).toLowerCase();
   if (query.isEmpty) return [];
 
-  final eventsAsync = ref.watch(_filteredEventsProvider);
+  final eventsAsync = ref.watch(_filteredEventsWithStatsProvider);
   return eventsAsync.when(
     loading: () => [],
     error: (_, __) => [],
@@ -72,6 +73,20 @@ final _searchResultsProvider = Provider<List<Instance>>((ref) {
           event.notes?.toLowerCase().contains(query) == true;
     }).toList(),
   );
+});
+
+final _rsvpStatusesProvider =
+    Provider<Map<InstanceID, InstanceMemberStatus>>((ref) {
+  final rsvpsList = ref.watch(rsvpsProvider).valueOrNull ?? [];
+  final statuses = <InstanceID, InstanceMemberStatus>{};
+
+  for (final rsvp in rsvpsList) {
+    if (rsvp.instanceId != null) {
+      statuses[rsvp.instanceId!] = rsvp.status;
+    }
+  }
+
+  return statuses;
 });
 
 enum EventFilter {
@@ -192,7 +207,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final selectedFilter = ref.watch(_selectedFilterProvider);
     final isSearching = ref.watch(_isSearchingProvider);
     final searchQuery = ref.watch(_searchQueryProvider);
-    final eventsAsync = ref.watch(_filteredEventsProvider);
+    final eventsAsync = ref.watch(_filteredEventsWithStatsProvider);
+    final rsvpStatuses = ref.watch(_rsvpStatusesProvider);
 
     final friendsList = ref.watch(friendsProvider);
     final pendingFriendRequests = friendsList.value
@@ -230,6 +246,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       events: ref.watch(_searchResultsProvider),
                       onEventTap: _navigateToEventDetails,
                       onEndEvent: _endEvent,
+                      rsvps: rsvpStatuses,
                     )
                   : Column(
                       children: [
@@ -275,6 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       events: events,
                                       onEventTap: _navigateToEventDetails,
                                       onEndEvent: _endEvent,
+                                      rsvps: rsvpStatuses,
                                     ),
                                   ),
                           ),

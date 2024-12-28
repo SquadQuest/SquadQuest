@@ -8,6 +8,7 @@ class HomeSearchResults extends ConsumerWidget {
   final List<Instance> events;
   final Function(Instance) onEventTap;
   final Function(Instance)? onEndEvent;
+  final Map<InstanceID, InstanceMemberStatus>? rsvps;
 
   const HomeSearchResults({
     super.key,
@@ -15,6 +16,7 @@ class HomeSearchResults extends ConsumerWidget {
     required this.events,
     required this.onEventTap,
     this.onEndEvent,
+    this.rsvps,
   });
 
   @override
@@ -63,6 +65,7 @@ class HomeSearchResults extends ConsumerWidget {
       events: events,
       onEventTap: onEventTap,
       onEndEvent: onEndEvent,
+      rsvps: rsvps,
       showSectionIcons: false,
     );
   }
