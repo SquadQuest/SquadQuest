@@ -111,17 +111,25 @@ class MockTopicsController extends TopicsController {
 }
 
 class MockTopicSubscriptionsController extends TopicSubscriptionsController {
+  final bool hasSubscriptions;
+
+  MockTopicSubscriptionsController([this.hasSubscriptions = true]);
+
   @override
   Future<List<TopicID>> build() async {
-    return [];
+    return hasSubscriptions ? ['test-topic-1'] : [];
   }
 }
 
 // Mock controller for instances that returns test event
 class MockInstancesController extends InstancesController {
+  final bool hasEvents;
+
+  MockInstancesController([this.hasEvents = true]);
+
   @override
   Future<List<Instance>> build() async {
-    return [mockEvent];
+    return hasEvents ? [mockEvent] : [];
   }
 }
 
@@ -170,11 +178,27 @@ class MockRsvpsController extends RsvpsController {
   }
 }
 
-// Mock controller for friends that returns empty list
+// Mock controller for friends
 class MockFriendsController extends FriendsController {
+  final bool hasPendingRequests;
+
+  MockFriendsController([this.hasPendingRequests = false]);
+
   @override
   Future<List<Friend>> build() async {
-    return [];
+    if (!hasPendingRequests) return [];
+
+    return [
+      Friend(
+        id: 'test-friend-1',
+        status: FriendStatus.requested,
+        requesterId: mockUser2.id,
+        requester: mockUser2,
+        requesteeId: mockUser.id,
+        requestee: mockUser,
+        createdAt: DateTime.now(),
+      ),
+    ];
   }
 }
 
@@ -332,11 +356,16 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
 
         // Override topics
         topicsProvider.overrideWith(() => MockTopicsController()),
-        topicSubscriptionsProvider
-            .overrideWith(() => MockTopicSubscriptionsController()),
+        topicSubscriptionsProvider.overrideWith(
+          () => MockTopicSubscriptionsController(
+            scenario != 'no-subscriptions',
+          ),
+        ),
 
         // Override instances with mock data
-        instancesProvider.overrideWith(() => MockInstancesController()),
+        instancesProvider.overrideWith(() => MockInstancesController(
+              scenario != 'no-subscriptions',
+            )),
         eventDetailsProvider(mockEvent.id!).overrideWith(
           (ref) => Future.value(mockEvent),
         ),
@@ -347,8 +376,12 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
         rsvpsProvider.overrideWith(() => MockRsvpsController()),
         rsvpsPerEventProvider.overrideWith(() => MockInstanceRsvpsController()),
 
-        // Override friends with empty list
-        friendsProvider.overrideWith(() => MockFriendsController()),
+        // Override friends
+        friendsProvider.overrideWith(
+          () => MockFriendsController(
+            scenario == 'friend-requests',
+          ),
+        ),
 
         // Override chat provider
         chatProvider.overrideWith(() => MockChatController()),

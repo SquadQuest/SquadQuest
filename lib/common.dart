@@ -58,15 +58,31 @@ List<T> updateListWithRecord<T>(List<T> list, bool Function(T) where, T? record,
   return updatedList;
 }
 
+bool isUploadedPhoto(Uri photo, SupabaseClient supabase) {
+  if (!photo.isScheme('http') && !photo.isScheme('https')) {
+    return false;
+  }
+
+  final storageUrl = supabase.storage.url;
+  return photo.host == Uri.parse(storageUrl).host;
+}
+
 Future<Uri> uploadPhoto(
     Uri photo, String path, SupabaseClient supabase, String bucketName,
     {TransformOptions? transform}) async {
-  // already-online URI need to further processing
-  if (photo.isScheme('http') || photo.isScheme('https')) {
+  // Return already-hosted photos from our storage
+  if (isUploadedPhoto(photo, supabase)) {
     return photo;
   }
 
-  if (photo.isScheme('file')) {
+  if (photo.isScheme('http') || photo.isScheme('https')) {
+    // Handle external HTTP/HTTPS URLs that aren't from our storage
+    final response = await http.get(photo);
+    await supabase.storage.from(bucketName).uploadBinary(
+        path, response.bodyBytes,
+        fileOptions: FileOptions(
+            upsert: true, contentType: response.headers['content-type']));
+  } else if (photo.isScheme('file')) {
     await supabase.storage.from(bucketName).upload(
         path, File(photo.toFilePath()),
         fileOptions: const FileOptions(upsert: true));
