@@ -143,7 +143,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
     String? tempBannerPhotoPath;
 
-    if (bannerPhoto != null && !bannerPhoto.isScheme('https')) {
+    if (bannerPhoto != null && !isUploadedPhoto(bannerPhoto, supabase)) {
       try {
         tempBannerPhotoPath = '_pending/${supabase.auth.currentUser!.id}';
         await uploadPhoto(
