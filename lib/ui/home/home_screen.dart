@@ -129,11 +129,11 @@ final _searchResultsProvider = Provider<List<Instance>>((ref) {
 });
 
 enum EventFilter {
-  all('All', 'Events you\'re invited to or match your interests'),
+  all('Feed', 'Events you\'re invited to or match your interests'),
   pending('Pending', 'Events awaiting your response'),
   going('Going', 'Events you\'re attending'),
   hosting('Hosting', 'Events you\'re organizing'),
-  discover('Discover', 'Public events you might like');
+  discover('Public', 'All public events');
 
   final String label;
   final String description;
