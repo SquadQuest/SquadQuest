@@ -15,16 +15,22 @@ class HomeFriendRequestsBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     if (pendingRequests.isEmpty) return const SizedBox.shrink();
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final bannerColor = colorScheme.primaryContainer;
+    final textColor = colorScheme.onPrimaryContainer;
+    final buttonColor = colorScheme.primary;
+    final buttonTextColor = colorScheme.onPrimary;
+
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.tertiary.withAlpha(255),
-              Theme.of(context).colorScheme.tertiaryContainer.withAlpha(255),
-            ],
+          color: bannerColor,
+          border: Border(
+            bottom: BorderSide(
+              color: colorScheme.outline.withAlpha(40),
+            ),
           ),
         ),
         child: Row(
@@ -32,12 +38,13 @@ class HomeFriendRequestsBanner extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withAlpha(24),
+                color: buttonColor,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.person_add,
-                color: Colors.white,
+                color: buttonTextColor,
+                size: 20,
               ),
             ),
             const SizedBox(width: 16),
@@ -45,18 +52,18 @@ class HomeFriendRequestsBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'New Friend Requests',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: textColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _formatRequestText(pendingRequests),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: textColor.withAlpha(230),
                       height: 1.4,
                     ),
                   ),
@@ -66,10 +73,13 @@ class HomeFriendRequestsBanner extends StatelessWidget {
             TextButton(
               onPressed: onTap,
               style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.white.withAlpha(24),
+                foregroundColor: buttonTextColor,
+                backgroundColor: buttonColor,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('View'),
             ),
