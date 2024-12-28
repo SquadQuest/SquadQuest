@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/models/user.dart';
 
 class HomeEventCard extends StatelessWidget {
   final Instance event;
@@ -12,6 +14,28 @@ class HomeEventCard extends StatelessWidget {
     required this.onTap,
     this.onEndTap,
   });
+
+  Widget _buildHostAvatar(BuildContext context, UserProfile host) {
+    if (host.photo != null) {
+      return CircleAvatar(
+        radius: 12,
+        backgroundImage: NetworkImage(host.photo!.toString()),
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      );
+    }
+
+    return CircleAvatar(
+      radius: 12,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      child: Text(
+        host.displayName[0],
+        style: TextStyle(
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,20 +130,7 @@ class HomeEventCard extends StatelessWidget {
                   if (event.createdBy != null)
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primaryContainer,
-                          child: Text(
-                            event.createdBy!.displayName[0],
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
-                            ),
-                          ),
-                        ),
+                        _buildHostAvatar(context, event.createdBy!),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
