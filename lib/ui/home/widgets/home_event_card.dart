@@ -188,160 +188,199 @@ class HomeEventCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
           children: [
-            if (isLive)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.circle,
-                      size: 8,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Live Now',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+            // Banner Photo Background
+            if (event.bannerPhoto != null) ...[
+              Positioned.fill(
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withAlpha(130),
+                    BlendMode.darken,
+                  ),
+                  child: Image.network(
+                    event.bannerPhoto!.toString(),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Title and Topic
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          event.title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                decoration:
-                                    isPast ? TextDecoration.lineThrough : null,
-                              ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Theme.of(context).cardColor.withAlpha(240),
+                      ],
+                      stops: const [0.0, 0.8],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isLive)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 8,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
-                      ),
-                      if (event.topic != null) ...[
                         const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .secondaryContainer
-                                .withAlpha(128),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            event.topic!.name,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSecondaryContainer,
-                            ),
+                        Text(
+                          'Live Now',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-
-                  // Host Info and RSVP Status
-                  Row(
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (event.createdBy != null) ...[
-                        _buildHostAvatar(context, event.createdBy!),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Hosted by ${event.createdBy!.displayName}',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                      // Title and Topic
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              event.title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    decoration: isPast
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                  ),
+                            ),
+                          ),
+                          if (event.topic != null) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer
+                                    .withAlpha(128),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                event.topic!.name,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Host Info and RSVP Status
+                      Row(
+                        children: [
+                          if (event.createdBy != null) ...[
+                            _buildHostAvatar(context, event.createdBy!),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Hosted by ${event.createdBy!.displayName}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface
                                           .withAlpha(179),
                                     ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                      if (rsvpStatus != null) ...[
-                        const SizedBox(width: 8),
-                        _buildRsvpStatus(context),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Time and Location
-                  DefaultTextStyle(
-                    style: Theme.of(context).textTheme.bodySmall!,
-                    child: Wrap(
-                      spacing: 16,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.access_time,
-                              size: 16,
-                              color:
-                                  Theme.of(context).textTheme.bodySmall?.color,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            const SizedBox(width: 4),
-                            Text(_formatEventTime(event, now)),
+                          ],
+                          if (rsvpStatus != null) ...[
+                            const SizedBox(width: 8),
+                            _buildRsvpStatus(context),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Time and Location
+                      DefaultTextStyle(
+                        style: Theme.of(context).textTheme.bodySmall!,
+                        child: Wrap(
+                          spacing: 16,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 16,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(_formatEventTime(event, now)),
+                              ],
+                            ),
+                            if (event.locationDescription.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.place,
+                                    size: 16,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.color,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      event.locationDescription,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                           ],
                         ),
-                        if (event.locationDescription.isNotEmpty)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.place,
-                                size: 16,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color,
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  event.locationDescription,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
