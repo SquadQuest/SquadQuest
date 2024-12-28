@@ -13,6 +13,7 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/friend.dart';
 import 'widgets/home_search_bar.dart';
 import 'widgets/home_friend_requests_banner.dart';
+import 'widgets/home_topics_prompt_banner.dart';
 import 'widgets/home_filter_bar.dart';
 import 'widgets/home_event_list.dart';
 import 'widgets/home_search_results.dart';
@@ -209,6 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final searchQuery = ref.watch(_searchQueryProvider);
     final eventsAsync = ref.watch(_filteredEventsWithStatsProvider);
     final rsvpStatuses = ref.watch(_rsvpStatusesProvider);
+    final topics = ref.watch(topicSubscriptionsProvider);
 
     final friendsList = ref.watch(friendsProvider);
     final pendingFriendRequests = friendsList.value
@@ -288,12 +290,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     error: (error, stack) => Center(
                                       child: Text('Error: $error'),
                                     ),
-                                    data: (events) => HomeEventList(
-                                      events: events,
-                                      onEventTap: _navigateToEventDetails,
-                                      onEndEvent: _endEvent,
-                                      rsvps: rsvpStatuses,
-                                    ),
+                                    data: (events) {
+                                      if (events.isEmpty &&
+                                          topics.hasValue &&
+                                          topics.value!.isEmpty &&
+                                          selectedFilter == EventFilter.all) {
+                                        return HomeTopicsPromptBanner(
+                                          onTap: _navigateToTopics,
+                                        );
+                                      }
+
+                                      return HomeEventList(
+                                        events: events,
+                                        onEventTap: _navigateToEventDetails,
+                                        onEndEvent: _endEvent,
+                                        rsvps: rsvpStatuses,
+                                      );
+                                    },
                                   ),
                           ),
                         ),
