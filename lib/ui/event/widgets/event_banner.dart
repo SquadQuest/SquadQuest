@@ -28,6 +28,11 @@ class EventBanner extends StatelessWidget {
       expandedHeight: eventBannerExpandedHeight,
       floating: false,
       pinned: true,
+      iconTheme: IconThemeData(
+        color: isCollapsed && Theme.of(context).brightness == Brightness.light
+            ? null
+            : Colors.white,
+      ),
       title: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
         opacity: isCollapsed ? 1.0 : 0.0,
