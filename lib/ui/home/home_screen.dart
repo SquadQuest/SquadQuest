@@ -27,15 +27,15 @@ final _filteredEventsWithStatsProvider =
     FutureProvider<EventsWithStats>((ref) async {
   final events = await ref.watch(instancesProvider.future);
   final topics = await ref.watch(topicSubscriptionsProvider.future);
-  final rsvpsList = ref.watch(rsvpsProvider);
+  final rsvpsList = ref.watch(rsvpsProvider).valueOrNull ?? [];
   final eventsTab = ref.watch(_selectedFilterProvider);
   final session = ref.read(authControllerProvider);
   final now = DateTime.now();
   final stats = await ref.watch(_eventStatsProvider.future);
 
   final filteredEvents = events.where((event) {
-    final rsvp = rsvpsList.value
-        ?.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id);
+    final rsvp =
+        rsvpsList.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id);
 
     // never show draft events unless you created it
     if (event.status == InstanceStatus.draft &&
@@ -43,65 +43,26 @@ final _filteredEventsWithStatsProvider =
       return false;
     }
 
-    switch (eventsTab) {
-      case EventFilter.all:
-        // always show events you created
-        if (event.createdById == session?.user.id) {
-          return true;
-        }
-
-        // always show events you have an invitation/RSVP to
-        if (rsvp != null) {
-          return true;
-        }
-
-        // don't show canceled events if none of the above passed
-        if (event.status != InstanceStatus.live) {
-          return false;
-        }
-
-        // don't show public events unless you're subscribed to the topic
-        if (event.visibility == InstanceVisibility.public &&
-            !topics.contains(event.topicId)) {
-          return false;
-        }
-
-      case EventFilter.pending:
-        // only show events awaiting your response
-        if (rsvp?.status != InstanceMemberStatus.invited ||
-            event.getTimeGroup(now) == InstanceTimeGroup.past) {
-          return false;
-        }
-
-      case EventFilter.going:
-        // only show events you're going to
-        if (![
+    return switch (eventsTab) {
+      EventFilter.all =>
+        event.createdById == session?.user.id || // events you created
+            rsvp != null || // events you're invited to
+            (event.status ==
+                    InstanceStatus
+                        .live && // live public events you're subscribed to
+                event.visibility == InstanceVisibility.public &&
+                topics.contains(event.topicId)),
+      EventFilter.pending => rsvp?.status == InstanceMemberStatus.invited &&
+          event.getTimeGroup(now) != InstanceTimeGroup.past,
+      EventFilter.going => [
           InstanceMemberStatus.maybe,
           InstanceMemberStatus.yes,
           InstanceMemberStatus.omw,
-        ].contains(rsvp?.status)) {
-          return false;
-        }
-
-      case EventFilter.hosting:
-        // only show events you're hosting
-        if (event.createdById != session?.user.id) {
-          return false;
-        }
-
-      case EventFilter.discover:
-        // only show public events
-        if (event.visibility != InstanceVisibility.public) {
-          return false;
-        }
-
-        // don't show canceled events
-        if (event.status != InstanceStatus.live) {
-          return false;
-        }
-    }
-
-    return true;
+        ].contains(rsvp?.status),
+      EventFilter.hosting => event.createdById == session?.user.id,
+      EventFilter.discover => event.visibility == InstanceVisibility.public &&
+          event.status == InstanceStatus.live,
+    };
   }).toList();
 
   return (events: filteredEvents, stats: stats);
@@ -109,7 +70,8 @@ final _filteredEventsWithStatsProvider =
 
 final _eventStatsProvider =
     FutureProvider<Map<InstanceID, EventStats>>((ref) async {
-  final rsvpsList = await ref.watch(rsvpsPerEventProvider('*').future);
+  final rsvpsList =
+      await ref.watch(rsvpsPerEventProvider('*')).valueOrNull ?? [];
   final stats = <InstanceID, EventStats>{};
 
   for (final rsvp in rsvpsList) {
@@ -154,13 +116,16 @@ final _searchResultsProvider = Provider<List<Instance>>((ref) {
   final query = ref.watch(_searchQueryProvider).toLowerCase();
   if (query.isEmpty) return [];
 
-  final eventsData = ref.watch(_filteredEventsWithStatsProvider).valueOrNull;
-  final events = eventsData?.events ?? [];
-  return events.where((event) {
-    return event.title.toLowerCase().contains(query) ||
-        event.locationDescription.toLowerCase().contains(query) ||
-        event.notes?.toLowerCase().contains(query) == true;
-  }).toList();
+  final eventsAsync = ref.watch(_filteredEventsWithStatsProvider);
+  return eventsAsync.when(
+    loading: () => [],
+    error: (_, __) => [],
+    data: (data) => data.events.where((event) {
+      return event.title.toLowerCase().contains(query) ||
+          event.locationDescription.toLowerCase().contains(query) ||
+          event.notes?.toLowerCase().contains(query) == true;
+    }).toList(),
+  );
 });
 
 enum EventFilter {
@@ -281,6 +246,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final selectedFilter = ref.watch(_selectedFilterProvider);
     final isSearching = ref.watch(_isSearchingProvider);
     final searchQuery = ref.watch(_searchQueryProvider);
+    final eventsAsync = ref.watch(_filteredEventsWithStatsProvider);
 
     final friendsList = ref.watch(friendsProvider);
     final pendingFriendRequests = friendsList.value
@@ -289,8 +255,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 friend.requesterId != session?.user.id)
             .toList() ??
         [];
-
-    final eventsData = ref.watch(_filteredEventsWithStatsProvider).valueOrNull;
 
     return AppScaffold(
       title: 'SquadQuest',
@@ -320,7 +284,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       events: ref.watch(_searchResultsProvider),
                       onEventTap: _navigateToEventDetails,
                       onEndEvent: _endEvent,
-                      eventStats: eventsData?.stats,
+                      eventStats: eventsAsync.valueOrNull?.stats,
                     )
                   : Column(
                       children: [
@@ -355,11 +319,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             },
                             child: _isTransitioning
                                 ? const SizedBox.shrink()
-                                : HomeEventList(
-                                    events: eventsData?.events ?? [],
-                                    onEventTap: _navigateToEventDetails,
-                                    onEndEvent: _endEvent,
-                                    eventStats: eventsData?.stats,
+                                : eventsAsync.when(
+                                    loading: () => const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                    error: (error, stack) => Center(
+                                      child: Text('Error: $error'),
+                                    ),
+                                    data: (data) => HomeEventList(
+                                      events: data.events,
+                                      onEventTap: _navigateToEventDetails,
+                                      onEndEvent: _endEvent,
+                                      eventStats: data.stats,
+                                    ),
                                   ),
                           ),
                         ),

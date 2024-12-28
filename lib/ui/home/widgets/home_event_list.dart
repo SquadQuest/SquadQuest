@@ -30,12 +30,23 @@ class HomeEventList extends ConsumerWidget {
             Icon(
               Icons.event_busy,
               size: 48,
-              color: Theme.of(context).colorScheme.primary,
+              color: Theme.of(context).colorScheme.primary.withAlpha(128),
             ),
             const SizedBox(height: 16),
             Text(
               'No events found',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withAlpha(179),
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Check back later or try a different filter',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withAlpha(128),
+                  ),
             ),
           ],
         ),
