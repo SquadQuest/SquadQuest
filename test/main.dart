@@ -24,5 +24,6 @@ void main() {
         SystemSection(),
       ],
     ),
+    // scenario: 'no-subscriptions',
   ));
 }
