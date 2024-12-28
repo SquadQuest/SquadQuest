@@ -183,6 +183,7 @@ class HomeEventCard extends StatelessWidget {
     final now = DateTime.now();
     final isLive = event.getTimeGroup(now) == InstanceTimeGroup.current;
     final isPast = event.getTimeGroup(now) == InstanceTimeGroup.past;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -195,8 +196,10 @@ class HomeEventCard extends StatelessWidget {
               Positioned.fill(
                 child: ColorFiltered(
                   colorFilter: ColorFilter.mode(
-                    Colors.black.withAlpha(130),
-                    BlendMode.darken,
+                    isDark
+                        ? Colors.black.withAlpha(130)
+                        : Colors.white.withAlpha(180),
+                    isDark ? BlendMode.darken : BlendMode.lighten,
                   ),
                   child: Image.network(
                     event.bannerPhoto!.toString(),
@@ -212,7 +215,7 @@ class HomeEventCard extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Theme.of(context).cardColor.withAlpha(240),
+                        Theme.of(context).cardColor,
                       ],
                       stops: const [0.0, 0.8],
                     ),
