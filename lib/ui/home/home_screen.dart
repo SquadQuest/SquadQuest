@@ -17,23 +17,15 @@ import 'widgets/home_filter_bar.dart';
 import 'widgets/home_event_list.dart';
 import 'widgets/home_search_results.dart';
 
-typedef EventStats = ({int going, int maybe, int omw, int invited});
-typedef EventsWithStats = ({
-  List<Instance> events,
-  Map<InstanceID, EventStats> stats
-});
-
-final _filteredEventsWithStatsProvider =
-    FutureProvider<EventsWithStats>((ref) async {
+final _filteredEventsProvider = FutureProvider<List<Instance>>((ref) async {
   final events = await ref.watch(instancesProvider.future);
   final topics = await ref.watch(topicSubscriptionsProvider.future);
   final rsvpsList = ref.watch(rsvpsProvider).valueOrNull ?? [];
   final eventsTab = ref.watch(_selectedFilterProvider);
   final session = ref.read(authControllerProvider);
   final now = DateTime.now();
-  final stats = await ref.watch(_eventStatsProvider.future);
 
-  final filteredEvents = events.where((event) {
+  return events.where((event) {
     final rsvp =
         rsvpsList.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id);
 
@@ -64,63 +56,17 @@ final _filteredEventsWithStatsProvider =
           event.status == InstanceStatus.live,
     };
   }).toList();
-
-  return (events: filteredEvents, stats: stats);
-});
-
-final _eventStatsProvider =
-    FutureProvider<Map<InstanceID, EventStats>>((ref) async {
-  final rsvpsList =
-      await ref.watch(rsvpsPerEventProvider('*')).valueOrNull ?? [];
-  final stats = <InstanceID, EventStats>{};
-
-  for (final rsvp in rsvpsList) {
-    if (rsvp.instanceId == null) continue;
-
-    final current =
-        stats[rsvp.instanceId] ?? (going: 0, maybe: 0, omw: 0, invited: 0);
-    final updated = switch (rsvp.status) {
-      InstanceMemberStatus.invited => (
-          going: current.going,
-          maybe: current.maybe,
-          omw: current.omw,
-          invited: current.invited + 1,
-        ),
-      InstanceMemberStatus.maybe => (
-          going: current.going,
-          maybe: current.maybe + 1,
-          omw: current.omw,
-          invited: current.invited,
-        ),
-      InstanceMemberStatus.yes => (
-          going: current.going + 1,
-          maybe: current.maybe,
-          omw: current.omw,
-          invited: current.invited,
-        ),
-      InstanceMemberStatus.omw => (
-          going: current.going,
-          maybe: current.maybe,
-          omw: current.omw + 1,
-          invited: current.invited,
-        ),
-      _ => current,
-    };
-    stats[rsvp.instanceId!] = updated;
-  }
-
-  return stats;
 });
 
 final _searchResultsProvider = Provider<List<Instance>>((ref) {
   final query = ref.watch(_searchQueryProvider).toLowerCase();
   if (query.isEmpty) return [];
 
-  final eventsAsync = ref.watch(_filteredEventsWithStatsProvider);
+  final eventsAsync = ref.watch(_filteredEventsProvider);
   return eventsAsync.when(
     loading: () => [],
     error: (_, __) => [],
-    data: (data) => data.events.where((event) {
+    data: (events) => events.where((event) {
       return event.title.toLowerCase().contains(query) ||
           event.locationDescription.toLowerCase().contains(query) ||
           event.notes?.toLowerCase().contains(query) == true;
@@ -129,11 +75,11 @@ final _searchResultsProvider = Provider<List<Instance>>((ref) {
 });
 
 enum EventFilter {
-  all('Feed', 'Events you\'re invited to or match your interests'),
+  all('All', 'Events you\'re invited to or match your interests'),
   pending('Pending', 'Events awaiting your response'),
   going('Going', 'Events you\'re attending'),
   hosting('Hosting', 'Events you\'re organizing'),
-  discover('Public', 'All public events');
+  discover('Discover', 'Public events you might like');
 
   final String label;
   final String description;
@@ -246,7 +192,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final selectedFilter = ref.watch(_selectedFilterProvider);
     final isSearching = ref.watch(_isSearchingProvider);
     final searchQuery = ref.watch(_searchQueryProvider);
-    final eventsAsync = ref.watch(_filteredEventsWithStatsProvider);
+    final eventsAsync = ref.watch(_filteredEventsProvider);
 
     final friendsList = ref.watch(friendsProvider);
     final pendingFriendRequests = friendsList.value
@@ -284,7 +230,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       events: ref.watch(_searchResultsProvider),
                       onEventTap: _navigateToEventDetails,
                       onEndEvent: _endEvent,
-                      eventStats: eventsAsync.valueOrNull?.stats,
                     )
                   : Column(
                       children: [
@@ -326,11 +271,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     error: (error, stack) => Center(
                                       child: Text('Error: $error'),
                                     ),
-                                    data: (data) => HomeEventList(
-                                      events: data.events,
+                                    data: (events) => HomeEventList(
+                                      events: events,
                                       onEventTap: _navigateToEventDetails,
                                       onEndEvent: _endEvent,
-                                      eventStats: data.stats,
                                     ),
                                   ),
                           ),

@@ -7,8 +7,6 @@ class HomeEventList extends ConsumerWidget {
   final List<Instance> events;
   final Function(Instance) onEventTap;
   final Function(Instance)? onEndEvent;
-  final Map<InstanceID, ({int going, int maybe, int omw, int invited})>?
-      eventStats;
   final bool showSectionIcons;
 
   const HomeEventList({
@@ -16,7 +14,6 @@ class HomeEventList extends ConsumerWidget {
     required this.events,
     required this.onEventTap,
     this.onEndEvent,
-    this.eventStats,
     this.showSectionIcons = true,
   });
 
@@ -75,9 +72,6 @@ class HomeEventList extends ConsumerWidget {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final event = section.events[index];
-                  final stats = eventStats?[event.id!] ??
-                      (going: 0, maybe: 0, omw: 0, invited: 0);
-
                   return Padding(
                     padding: EdgeInsets.only(
                       bottom: index < section.events.length - 1 ? 16 : 0,
@@ -87,10 +81,6 @@ class HomeEventList extends ConsumerWidget {
                       onTap: () => onEventTap(event),
                       onEndTap:
                           onEndEvent != null ? () => onEndEvent!(event) : null,
-                      goingCount: stats.going,
-                      maybeCount: stats.maybe,
-                      omwCount: stats.omw,
-                      invitedCount: stats.invited,
                     ),
                   );
                 },
