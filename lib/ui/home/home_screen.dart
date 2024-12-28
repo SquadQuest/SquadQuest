@@ -38,7 +38,7 @@ final _filteredEventsWithStatsProvider =
     }
 
     return switch (eventsTab) {
-      EventFilter.all =>
+      EventFilter.feed =>
         event.createdById == session?.user.id || // events you created
             rsvp != null || // events you're invited to
             (event.status ==
@@ -54,7 +54,7 @@ final _filteredEventsWithStatsProvider =
           InstanceMemberStatus.omw,
         ].contains(rsvp?.status),
       EventFilter.hosting => event.createdById == session?.user.id,
-      EventFilter.discover => event.visibility == InstanceVisibility.public &&
+      EventFilter.public => event.visibility == InstanceVisibility.public &&
           event.status == InstanceStatus.live,
     };
   }).toList();
@@ -91,11 +91,11 @@ final _rsvpStatusesProvider =
 });
 
 enum EventFilter {
-  all('All', 'Events you\'re invited to or match your interests'),
+  feed('Feed', 'Events you\'re invited to or match your interests'),
   pending('Pending', 'Events awaiting your response'),
   going('Going', 'Events you\'re attending'),
   hosting('Hosting', 'Events you\'re organizing'),
-  discover('Discover', 'Public events you might like');
+  public('Public', 'All public events');
 
   final String label;
   final String description;
@@ -103,7 +103,7 @@ enum EventFilter {
 }
 
 final _selectedFilterProvider =
-    StateProvider<EventFilter>((ref) => EventFilter.all);
+    StateProvider<EventFilter>((ref) => EventFilter.feed);
 final _isSearchingProvider = StateProvider<bool>((ref) => false);
 final _searchQueryProvider = StateProvider<String>((ref) => '');
 
@@ -294,7 +294,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       if (events.isEmpty &&
                                           topics.hasValue &&
                                           topics.value!.isEmpty &&
-                                          selectedFilter == EventFilter.all) {
+                                          selectedFilter == EventFilter.feed) {
                                         return HomeTopicsPromptBanner(
                                           onTap: _navigateToTopics,
                                         );
