@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squadquest/models/friend.dart';
 
-class HomeFriendRequestsBanner extends ConsumerWidget {
+class HomeFriendRequestsBanner extends StatelessWidget {
   final List<Friend> pendingRequests;
   final VoidCallback onTap;
 
@@ -13,12 +12,8 @@ class HomeFriendRequestsBanner extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (pendingRequests.isEmpty) return const SizedBox.shrink();
-
-    final requesters =
-        pendingRequests.map((fr) => fr.requester!.displayName).join(', ');
-    final isMultiple = pendingRequests.length > 1;
 
     return InkWell(
       onTap: onTap,
@@ -27,8 +22,8 @@ class HomeFriendRequestsBanner extends ConsumerWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Theme.of(context).colorScheme.tertiary,
-              Theme.of(context).colorScheme.tertiaryContainer,
+              Theme.of(context).colorScheme.tertiary.withAlpha(255),
+              Theme.of(context).colorScheme.tertiaryContainer.withAlpha(255),
             ],
           ),
         ),
@@ -37,12 +32,12 @@ class HomeFriendRequestsBanner extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onTertiary.withAlpha(25),
+                color: Colors.white.withAlpha(24),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.person_add,
-                color: Theme.of(context).colorScheme.onTertiary,
+                color: Colors.white,
               ),
             ),
             const SizedBox(width: 16),
@@ -50,21 +45,19 @@ class HomeFriendRequestsBanner extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'New Friend Requests',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onTertiary,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$requesters ${isMultiple ? 'want' : 'wants'} to be friends',
-                    style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onTertiary
-                          .withAlpha(204),
+                    _formatRequestText(pendingRequests),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      height: 1.4,
                     ),
                   ),
                 ],
@@ -73,7 +66,10 @@ class HomeFriendRequestsBanner extends ConsumerWidget {
             TextButton(
               onPressed: onTap,
               style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.onTertiary,
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.white.withAlpha(24),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               child: const Text('View'),
             ),
@@ -81,5 +77,19 @@ class HomeFriendRequestsBanner extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _formatRequestText(List<Friend> requests) {
+    if (requests.isEmpty) return '';
+
+    final names = requests.map((fr) => fr.requester!.displayName).toList();
+    if (names.length == 1) {
+      return '${names[0]} wants to be friends';
+    } else if (names.length == 2) {
+      return '${names[0]} and ${names[1]} want to be friends';
+    } else {
+      final othersCount = names.length - 1;
+      return '${names[0]} and $othersCount others want to be friends';
+    }
   }
 }
