@@ -187,25 +187,54 @@ class MockRsvpsController extends RsvpsController {
 
 // Mock controller for friends
 class MockFriendsController extends FriendsController {
-  final bool hasPendingRequests;
+  final String? scenario;
 
-  MockFriendsController([this.hasPendingRequests = false]);
+  MockFriendsController([this.scenario]);
 
   @override
   Future<List<Friend>> build() async {
-    if (!hasPendingRequests) return [];
+    switch (scenario) {
+      case 'no-friends':
+        return [];
+      case 'friend-requests':
+        return [
+          Friend(
+            id: 'test-friend-1',
+            status: FriendStatus.requested,
+            requesterId: mockUser2.id,
+            requester: mockUser2,
+            requesteeId: mockUser.id,
+            requestee: mockUser,
+            createdAt: DateTime.now(),
+          ),
+        ];
+      default:
+        return [
+          Friend(
+            id: 'test-friend-2',
+            status: FriendStatus.accepted,
+            requesterId: mockUser2.id,
+            requester: mockUser2,
+            requesteeId: mockUser.id,
+            requestee: mockUser,
+            createdAt: DateTime.now(),
+          ),
+        ];
+    }
+  }
 
-    return [
-      Friend(
-        id: 'test-friend-1',
-        status: FriendStatus.requested,
-        requesterId: mockUser2.id,
-        requester: mockUser2,
-        requesteeId: mockUser.id,
-        requestee: mockUser,
-        createdAt: DateTime.now(),
-      ),
-    ];
+  @override
+  Future<Friend> respondToFriendRequest(
+      Friend friend, FriendStatus status) async {
+    return Friend(
+      id: friend.id,
+      status: status,
+      requesterId: friend.requesterId,
+      requester: friend.requester,
+      requesteeId: friend.requesteeId,
+      requestee: friend.requestee,
+      createdAt: friend.createdAt,
+    );
   }
 }
 
@@ -390,9 +419,7 @@ ProviderScope buildMockEnvironment(Widget screen,
 
         // Override friends
         friendsProvider.overrideWith(
-          () => MockFriendsController(
-            scenario == 'friend-requests',
-          ),
+          () => MockFriendsController(scenario),
         ),
 
         // Override chat provider
