@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:device_preview/device_preview.dart';
 
 import 'package:squadquest/app.dart';
@@ -19,7 +18,8 @@ void main() {
     backgroundColor: Colors.black87,
     builder: (context) => buildMockEnvironment(
       MyApp(),
-      // scenario: 'no-subscriptions',
+      storybookMode: false,
+      // scenario: 'new-profile',
     ),
     tools: const [
       DeviceSection(),

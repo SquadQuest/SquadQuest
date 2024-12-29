@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,9 +52,13 @@ class MockGotrue extends Fake implements GoTrueClient {
 
 // Mock profile controller
 class MockProfileController extends ProfileController {
+  final bool hasProfile;
+
+  MockProfileController({this.hasProfile = true});
+
   @override
-  Future<UserProfile> build() async {
-    return mockUser;
+  FutureOr<UserProfile?> build() {
+    return hasProfile ? mockUser : null;
   }
 }
 
@@ -114,7 +120,7 @@ class MockTopicsController extends TopicsController {
 class MockTopicSubscriptionsController extends TopicSubscriptionsController {
   final bool hasSubscriptions;
 
-  MockTopicSubscriptionsController([this.hasSubscriptions = true]);
+  MockTopicSubscriptionsController({this.hasSubscriptions = true});
 
   @override
   Future<List<TopicID>> build() async {
@@ -126,7 +132,7 @@ class MockTopicSubscriptionsController extends TopicSubscriptionsController {
 class MockInstancesController extends InstancesController {
   final bool hasEvents;
 
-  MockInstancesController([this.hasEvents = true]);
+  MockInstancesController({this.hasEvents = true});
 
   @override
   Future<List<Instance>> build() async {
@@ -258,7 +264,8 @@ final mockUser = UserProfile(
   id: '6415c228-1e81-4ad8-92ec-03f8acfdfe71',
   firstName: 'Test',
   lastName: 'User',
-  phone: null,
+  phone: '+15555555555',
+  trailColor: '#FF0000',
   fcmToken: null,
   fcmTokenUpdatedAt: null,
   fcmTokenAppBuild: null,
@@ -270,7 +277,8 @@ final mockUser2 = UserProfile(
   id: '12a51b02-42ea-4892-ab0f-d9746cee1525',
   firstName: 'Another',
   lastName: 'User',
-  phone: null,
+  phone: '+15555551234',
+  trailColor: '#00FF00',
   fcmToken: null,
   fcmTokenUpdatedAt: null,
   fcmTokenAppBuild: null,
@@ -346,7 +354,8 @@ final mockEvent = Instance(
 );
 
 // Builder for mock environments
-ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
+ProviderScope buildMockEnvironment(Widget screen,
+        {String? scenario, bool storybookMode = true}) =>
     ProviderScope(
       overrides: [
         // Override auth to simulate logged out state
@@ -359,14 +368,16 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
         topicsProvider.overrideWith(() => MockTopicsController()),
         topicSubscriptionsProvider.overrideWith(
           () => MockTopicSubscriptionsController(
-            scenario != 'no-subscriptions',
+            hasSubscriptions: scenario != 'no-subscriptions',
           ),
         ),
 
         // Override instances with mock data
-        instancesProvider.overrideWith(() => MockInstancesController(
-              scenario != 'no-subscriptions',
-            )),
+        instancesProvider.overrideWith(
+          () => MockInstancesController(
+            hasEvents: scenario != 'no-subscriptions',
+          ),
+        ),
         eventDetailsProvider(mockEvent.id!).overrideWith(
           (ref) => Future.value(mockEvent),
         ),
@@ -392,6 +403,7 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
             .overrideWith((ref) => MockLocationController(ref)),
 
         // Override settings providers
+        storybookModeProvider.overrideWith((ref) => storybookMode),
         themeModeProvider.overrideWith((ref) => ThemeMode.dark),
         developerModeProvider.overrideWith((ref) => false),
         splashCompleteProvider.overrideWith((ref) => true),
@@ -402,7 +414,11 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
         firebaseMessagingStreamProvider.overrideWith((ref) => Stream.empty()),
 
         // Override app initialization
-        profileProvider.overrideWith(() => MockProfileController()),
+        profileProvider.overrideWith(
+          () => MockProfileController(
+            hasProfile: scenario != 'new-profile',
+          ),
+        ),
         appVersionsProvider.overrideWith(() => MockAppVersionsController()),
 
         // Override Supabase
