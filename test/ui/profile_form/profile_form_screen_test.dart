@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:test_screen/test_screen.dart';
 
 import '../../mocks.dart';
-import 'package:squadquest/screens/profile_form.dart';
+import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
 
 void main() {
   group('ProfileFormScreen', () {
