@@ -407,6 +407,8 @@ ProviderScope buildMockEnvironment(Widget screen,
         themeModeProvider.overrideWith((ref) => ThemeMode.dark),
         developerModeProvider.overrideWith((ref) => false),
         splashCompleteProvider.overrideWith((ref) => true),
+        locationSharingEnabledProvider.overrideWith((ref) => false),
+        calendarWritingEnabledProvider.overrideWith((ref) => false),
 
         // Override Firebase messaging
         firebaseMessagingServiceProvider
