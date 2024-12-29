@@ -285,6 +285,12 @@ class MockFriendsController extends FriendsController {
 class MockAuthController extends AuthController {
   @override
   Session? build() => mockSession;
+
+  @override
+  Future<void> signInWithOtp({required String phone}) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 250));
+  }
 }
 
 // Mock profiles cache that returns mock users
