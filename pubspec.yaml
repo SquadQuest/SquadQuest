@@ -63,7 +63,6 @@ dependencies:
   dio: ^5.7.0
   easy_debounce: ^2.0.3
   flutter_contacts: ^1.1.9+2
-  flutter_expandable_fab: ^2.3.0
   timezone: ^0.10.0
   badges: ^3.1.2
   flutter_exit_app: ^1.1.4
