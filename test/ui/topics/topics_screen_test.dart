@@ -38,19 +38,24 @@ void main() {
       // Wait for list to populate
       await tester.pumpAndSettle();
 
-      // Verify sections
-      expect(find.text('Subscribed'), findsWidgets);
-      expect(find.text('Available'), findsOneWidget);
+      // Verify section header
+      expect(find.text('Available Topics'), findsOneWidget);
 
-      // Find and tap a checkbox for sports.basketball
-      await tester.tap(find.text('sports.basketball', findRichText: true));
+      // Find and tap a switch for sports.basketball
+      final sportsTile = find.ancestor(
+        of: find.text('sports.basketball'),
+        matching: find.byType(ListTile),
+      );
+      final sportsSwitch = find.descendant(
+        of: sportsTile,
+        matching: find.byType(Switch),
+      );
+      await tester.tap(sportsSwitch);
       await tester.pumpAndSettle();
 
-      // Verify checkbox state changed
-      final checkboxWidget = tester.widget<CheckboxListTile>(find.ancestor(
-          of: find.text('sports.basketball', findRichText: true),
-          matching: find.byType(CheckboxListTile)));
-      expect(checkboxWidget.value, isTrue);
+      // Verify switch state changed
+      final switchWidget = tester.widget<Switch>(sportsSwitch);
+      expect(switchWidget.value, isTrue);
     },
   );
 
@@ -71,15 +76,19 @@ void main() {
 
       // Verify filtered results
       expect(
-          find.ancestor(
-              of: find.text('sports.basketball', findRichText: true),
-              matching: find.byType(CheckboxListTile)),
-          findsOneWidget);
+        find.ancestor(
+          of: find.text('sports.basketball'),
+          matching: find.byType(ListTile),
+        ),
+        findsOneWidget,
+      );
       expect(
-          find.ancestor(
-              of: find.text('party.house', findRichText: true),
-              matching: find.byType(CheckboxListTile)),
-          findsNothing);
+        find.ancestor(
+          of: find.text('party.house'),
+          matching: find.byType(ListTile),
+        ),
+        findsNothing,
+      );
     },
   );
 }
