@@ -13,17 +13,17 @@ import 'mocks.dart';
 void main() {
   mockSupabaseInitializedComplete();
 
-  runApp(buildMockEnvironment(
-    DevicePreview(
-      enabled: !kIsWeb && Platform.isMacOS,
-      defaultDevice: Devices.ios.iPhoneSE,
-      backgroundColor: Colors.black87,
-      builder: (context) => MyApp(),
-      tools: const [
-        DeviceSection(),
-        SystemSection(),
-      ],
+  runApp(DevicePreview(
+    enabled: !kIsWeb && Platform.isMacOS,
+    defaultDevice: Devices.ios.iPhoneSE,
+    backgroundColor: Colors.black87,
+    builder: (context) => buildMockEnvironment(
+      MyApp(),
+      // scenario: 'no-subscriptions',
     ),
-    // scenario: 'no-subscriptions',
+    tools: const [
+      DeviceSection(),
+      SystemSection(),
+    ],
   ));
 }
