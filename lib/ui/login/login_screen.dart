@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/connection.dart';
 import 'package:squadquest/services/supabase.dart';
@@ -43,14 +44,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } on AuthRetryableFetchException catch (_) {
       await ConnectionService.showConnectionErrorDialog();
-    } catch (error, st) {
-      log('Error sending SMS:', error: error, stackTrace: st);
+    } catch (error, stackTrace) {
+      logger.e('Error sending SMS', error: error, stackTrace: stackTrace);
       final errorMessage = switch (error) {
         AuthException(:final message) => message,
         _ => 'Unexpected error',
       };
 
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
             'Failed to login, check phone number and try again.\n'
