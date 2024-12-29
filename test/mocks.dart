@@ -29,7 +29,7 @@ import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
-import 'package:squadquest/screens/splash.dart';
+import 'package:squadquest/ui/splash/splash_screen.dart';
 
 class MockSupabase extends Fake implements SupabaseClient {
   @override

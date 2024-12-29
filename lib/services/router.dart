@@ -11,7 +11,7 @@ import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/profile.dart';
-import 'package:squadquest/screens/splash.dart';
+import 'package:squadquest/ui/splash/splash_screen.dart';
 import 'package:squadquest/ui/login/login_screen.dart';
 import 'package:squadquest/ui/verify/verify_screen.dart';
 import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
