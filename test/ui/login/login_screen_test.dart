@@ -78,16 +78,10 @@ void main() {
       // Submit form and wait for validation
       await tester
           .tap(find.widgetWithText(ElevatedButton, 'Send login code via SMS'));
-      await tester.pump(
-          const Duration(milliseconds: 50)); // Wait for validation to complete
+      await tester.pump();
 
       // Verify loading state appears
-      expect(find.byType(AppScaffold), findsOneWidget);
-      final loadingScaffold =
-          tester.widget<AppScaffold>(find.byType(AppScaffold));
-      expect(loadingScaffold.loadMask, equals('Sending login code...'));
-
-      // Wait for any remaining animations
+      expect(find.text('Sending login code...', findRichText: true), findsOne);
       await tester.pumpAndSettle();
     },
   );
