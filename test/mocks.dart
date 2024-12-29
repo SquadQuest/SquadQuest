@@ -9,6 +9,7 @@ import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/app_version.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/models/topic_member.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/event_message.dart';
 
@@ -17,6 +18,7 @@ import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/topics.dart';
 import 'package:squadquest/controllers/topic_subscriptions.dart';
+import 'package:squadquest/controllers/topic_memberships.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/location.dart';
@@ -125,6 +127,47 @@ class MockTopicSubscriptionsController extends TopicSubscriptionsController {
   @override
   Future<List<TopicID>> build() async {
     return hasSubscriptions ? ['test-topic-1'] : [];
+  }
+}
+
+class MockTopicMembershipsController extends TopicMembershipsController {
+  final String? scenario;
+  final List<MyTopicMembership> _memberships = [
+    MyTopicMembership(
+      topic: Topic(id: 'test-topic-1', name: 'party.house'),
+      subscribed: true,
+      events: 5,
+    ),
+    MyTopicMembership(
+      topic: Topic(id: 'test-topic-2', name: 'sports.basketball'),
+      subscribed: false,
+      events: 3,
+    ),
+  ];
+
+  MockTopicMembershipsController([this.scenario]);
+
+  @override
+  Future<List<MyTopicMembership>> build() async {
+    return _memberships;
+  }
+
+  @override
+  Future<MyTopicMembership> saveSubscribed(
+      MyTopicMembership topicMembership, bool subscribed) async {
+    final index =
+        _memberships.indexWhere((m) => m.topic.id == topicMembership.topic.id);
+    if (index != -1) {
+      final updatedMembership = MyTopicMembership(
+        topic: topicMembership.topic,
+        subscribed: subscribed,
+        events: topicMembership.events,
+      );
+      _memberships[index] = updatedMembership;
+      state = AsyncValue.data(_memberships);
+      return updatedMembership;
+    }
+    return topicMembership;
   }
 }
 
@@ -399,6 +442,9 @@ ProviderScope buildMockEnvironment(Widget screen,
           () => MockTopicSubscriptionsController(
             hasSubscriptions: scenario != 'no-subscriptions',
           ),
+        ),
+        topicMembershipsProvider.overrideWith(
+          () => MockTopicMembershipsController(scenario),
         ),
 
         // Override instances with mock data
