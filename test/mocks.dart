@@ -255,7 +255,7 @@ final mockSession = Session(
     ));
 
 final mockUser = UserProfile(
-  id: 'test-user-1',
+  id: '6415c228-1e81-4ad8-92ec-03f8acfdfe71',
   firstName: 'Test',
   lastName: 'User',
   phone: null,
@@ -267,7 +267,7 @@ final mockUser = UserProfile(
 );
 
 final mockUser2 = UserProfile(
-  id: 'test-user-2',
+  id: '12a51b02-42ea-4892-ab0f-d9746cee1525',
   firstName: 'Another',
   lastName: 'User',
   phone: null,
