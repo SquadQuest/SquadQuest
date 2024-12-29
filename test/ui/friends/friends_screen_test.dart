@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:test_screen/test_screen.dart';
 
 import '../../mocks.dart';
-import 'package:squadquest/screens/friends.dart';
+import 'package:squadquest/ui/friends/friends_screen.dart';
 
 void main() {
   testScreenUI(

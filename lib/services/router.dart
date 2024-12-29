@@ -20,7 +20,7 @@ import 'package:squadquest/ui/home/home_screen.dart';
 import 'package:squadquest/ui/settings/screens/settings_screen.dart';
 import 'package:squadquest/ui/event_form/event_form_screen.dart';
 import 'package:squadquest/ui/event/event_screen.dart';
-import 'package:squadquest/screens/friends.dart';
+import 'package:squadquest/ui/friends/friends_screen.dart';
 import 'package:squadquest/ui/map/map_screen.dart';
 import 'package:squadquest/screens/topics.dart';
 import 'package:squadquest/models/instance.dart';
