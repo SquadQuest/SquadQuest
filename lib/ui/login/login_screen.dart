@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:squadquest/common.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/connection.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
-import 'package:squadquest/components/phone_number_field.dart';
+
+import 'widgets/login_form.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? redirect;
@@ -21,22 +21,13 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-
-  final _phoneController = TextEditingController();
-
   bool submitted = false;
 
-  void _submitPhone(BuildContext context) async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
+  void _submitPhone(String phone) async {
     setState(() {
       submitted = true;
     });
 
-    final phone = _phoneController.text;
     log('Sending login code via SMS to $phone');
 
     try {
@@ -45,7 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
       log('Sent SMS');
 
-      if (context.mounted) {
+      if (mounted) {
         context.pushNamed('verify',
             queryParameters:
                 widget.redirect == null ? {} : {'redirect': widget.redirect});
@@ -81,35 +72,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       loadMask: submitted ? 'Sending login code...' : null,
       showLocationSharingSheet: false,
       bodyPadding: const EdgeInsets.all(16),
-      body: AutofillGroup(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              PhoneNumberFormField(
-                autofocus: true,
-                onSubmitted: (_) => _submitPhone(context),
-                phoneNumberController: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Enter your phone number',
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: submitted ? null : () => _submitPhone(context),
-                child: const Text(
-                  'Send login code via SMS',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              ),
-              const Spacer(),
-              const Text('SquadQuest is focused on privacy.\n\n'
-                  'Only people who know your phone number already can send you a friend request,'
-                  ' and only people you\'ve accepted friend requests from can see any of your personal details.'),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
+      body: LoginForm(
+        onSubmit: _submitPhone,
+        submitted: submitted,
       ),
     );
   }

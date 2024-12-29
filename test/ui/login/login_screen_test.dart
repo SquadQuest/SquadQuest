@@ -4,7 +4,7 @@ import 'package:test_screen/test_screen.dart';
 
 import '../../mocks.dart';
 import 'package:squadquest/app_scaffold.dart';
-import 'package:squadquest/screens/login.dart';
+import 'package:squadquest/ui/login/login_screen.dart';
 
 void main() {
   testScreenUI(
