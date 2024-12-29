@@ -1,5 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:collection/collection.dart';
+
+import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/controllers/instances.dart';
+import 'package:squadquest/controllers/rsvps.dart';
+
+final _pendingEventsCountProvider = Provider<int>((ref) {
+  final eventsAsync = ref.watch(instancesProvider);
+  final now = DateTime.now();
+  final rsvpsList = ref.watch(rsvpsProvider).valueOrNull ?? [];
+
+  return eventsAsync.when(
+    loading: () => 0,
+    error: (_, __) => 0,
+    data: (events) => events.where((event) {
+      final rsvp =
+          rsvpsList.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id);
+      return rsvp?.status == InstanceMemberStatus.invited &&
+          event.getTimeGroup(now) != InstanceTimeGroup.past;
+    }).length,
+  );
+});
 
 class HomeFilterBar extends ConsumerWidget {
   final List<({String label, String description})> filters;
@@ -15,6 +37,8 @@ class HomeFilterBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final pendingCount = ref.watch(_pendingEventsCountProvider);
+
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
@@ -30,10 +54,49 @@ class HomeFilterBar extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final filter = filters[index];
                 final isSelected = selectedIndex == index;
+                final isPendingFilter = filter.label == 'Pending';
 
                 return FilterChip(
                   selected: isSelected,
-                  label: Text(filter.label),
+                  label: isPendingFilter && pendingCount > 0
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(filter.label),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .onSecondaryContainer
+                                        .withAlpha(40)
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withAlpha(40),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                pendingCount.toString(),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isSelected
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onSecondaryContainer
+                                      : Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(filter.label),
                   onSelected: (selected) {
                     if (selected) {
                       onFilterSelected(index);
