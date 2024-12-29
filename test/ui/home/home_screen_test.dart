@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:squadquest/ui/home/widgets/home_event_card.dart';
+import 'package:squadquest/ui/core/widgets/event_card.dart';
 import 'package:test_screen/test_screen.dart';
 
 import '../../mocks.dart';
@@ -123,7 +123,7 @@ void main() {
           find.text('Events you\'re invited to or match your interests'),
           findsOneWidget,
         );
-        expect(find.byType(HomeEventCard), findsExactly(1));
+        expect(find.byType(EventCard), findsExactly(1));
 
         // Switch to Pending tab
         await tester.tap(find.text('Pending'));
@@ -133,7 +133,7 @@ void main() {
           find.text('Events awaiting your response'),
           findsOneWidget,
         );
-        expect(find.byType(HomeEventCard), findsNothing);
+        expect(find.byType(EventCard), findsNothing);
 
         // Switch to Going tab
         await tester.tap(find.text('Going'));
@@ -143,7 +143,7 @@ void main() {
           find.text('Events you\'re attending'),
           findsOneWidget,
         );
-        expect(find.byType(HomeEventCard), findsNothing);
+        expect(find.byType(EventCard), findsNothing);
 
         // Scroll filter bar
         await tester.dragUntilVisible(
@@ -160,7 +160,7 @@ void main() {
           find.text('Events you\'re organizing'),
           findsOneWidget,
         );
-        expect(find.byType(HomeEventCard), findsExactly(1));
+        expect(find.byType(EventCard), findsExactly(1));
 
         // Switch to Public tab
         await tester.tap(find.text('Public'));
@@ -170,7 +170,7 @@ void main() {
           find.text('All public events'),
           findsOneWidget,
         );
-        expect(find.byType(HomeEventCard), findsExactly(1));
+        expect(find.byType(EventCard), findsExactly(1));
       },
     );
   });
