@@ -1,88 +1,52 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/common.dart';
-import 'package:squadquest/services/router.dart';
-import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/controllers/auth.dart';
-import 'package:squadquest/controllers/profile.dart';
 
 final RegExp otpCodeRegExp = RegExp(r'^\d{6}$');
 
-class VerifyScreen extends ConsumerStatefulWidget {
-  final String? redirect;
+class VerifyForm extends StatefulWidget {
+  final bool submitted;
+  final Function(String) onSubmit;
 
-  const VerifyScreen({super.key, this.redirect});
+  const VerifyForm({
+    super.key,
+    required this.submitted,
+    required this.onSubmit,
+  });
 
   @override
-  ConsumerState<VerifyScreen> createState() => _VerifyScreenState();
+  State<VerifyForm> createState() => _VerifyFormState();
 }
 
-class _VerifyScreenState extends ConsumerState<VerifyScreen> {
+class _VerifyFormState extends State<VerifyForm> {
   final _formKey = GlobalKey<FormState>();
   final _tokenController = TextEditingController();
 
-  bool submitted = false;
-
-  void _submitToken(BuildContext context) async {
+  void _submitToken() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() {
-      submitted = true;
-    });
-
     final token = _tokenController.text.trim();
-    log('Verifying OTP');
-
-    final authController = ref.read(authControllerProvider.notifier);
-
-    try {
-      await authController.verifyOTP(
-        token: token,
-      );
-      log('Verified OTP');
-    } catch (error) {
-      log('Error verifying OTP: $error');
-
-      setState(() {
-        submitted = false;
-      });
-
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Failed to verify, check code and try again:\n\n$error'),
-      ));
-
-      return;
-    }
-
-    await ref.read(profileProvider.notifier).fetch();
-
-    ref.read(routerProvider).goInitialLocation(widget.redirect);
+    widget.onSubmit(token);
   }
 
   @override
   Widget build(BuildContext context) {
-    final authController = ref.read(authControllerProvider.notifier);
+    return Consumer(
+      builder: (context, ref, child) {
+        final authController = ref.read(authControllerProvider.notifier);
 
-    return AppScaffold(
-      title: 'Verify phone number',
-      loadMask: submitted ? 'Verifying code...' : null,
-      showLocationSharingSheet: false,
-      bodyPadding: const EdgeInsets.all(16),
-      body: AutofillGroup(
-        child: Form(
+        return Form(
           key: _formKey,
           child: Column(
             children: [
               TextFormField(
                 autofocus: true,
-                readOnly: submitted,
+                readOnly: widget.submitted,
                 keyboardType: TextInputType.number,
                 autofillHints: const [AutofillHints.oneTimeCode],
                 textInputAction: TextInputAction.done,
@@ -103,11 +67,11 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
                   return null;
                 },
                 controller: _tokenController,
-                onFieldSubmitted: (_) => _submitToken(context),
+                onFieldSubmitted: (_) => _submitToken(),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: submitted ? null : () => _submitToken(context),
+                onPressed: widget.submitted ? null : _submitToken,
                 child: const Text(
                   'Verify',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -115,8 +79,8 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
               )
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

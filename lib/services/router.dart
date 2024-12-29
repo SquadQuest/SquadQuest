@@ -13,7 +13,7 @@ import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/screens/splash.dart';
 import 'package:squadquest/ui/login/login_screen.dart';
-import 'package:squadquest/screens/verify.dart';
+import 'package:squadquest/ui/verify/verify_screen.dart';
 import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
 import 'package:squadquest/ui/profile/profile_screen.dart';
 import 'package:squadquest/ui/home/home_screen.dart';

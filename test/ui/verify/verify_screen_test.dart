@@ -3,8 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:test_screen/test_screen.dart';
 
 import '../../mocks.dart';
-import 'package:squadquest/app_scaffold.dart';
-import 'package:squadquest/screens/verify.dart';
+import 'package:squadquest/ui/verify/verify_screen.dart';
 
 void main() {
   testScreenUI(
@@ -41,7 +40,7 @@ void main() {
       const VerifyScreen(),
     ),
     goldenDir: 'code-validation',
-    // onlyPlatform: UITargetPlatform.webIos,
+    // onlyPlatform: UITargetPlatform.webAndroid,
     onTest: (WidgetTester tester) async {
       // Enter invalid code and wait for validation
       await tester.enterText(find.byType(TextFormField), '123'); // Too short
