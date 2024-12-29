@@ -15,6 +15,7 @@ import 'package:squadquest/models/event_message.dart';
 
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/firebase.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/topics.dart';
 import 'package:squadquest/controllers/topic_subscriptions.dart';
@@ -61,6 +62,12 @@ class MockProfileController extends ProfileController {
   @override
   FutureOr<UserProfile?> build() {
     return hasProfile ? mockUser : null;
+  }
+
+  @override
+  Future<UserProfile?> fetch({bool throwOnError = false}) async {
+    // state = AsyncValue.data(hasProfile ? mockUser : null);
+    // return hasProfile ? mockUser : null;
   }
 }
 
@@ -282,15 +289,34 @@ class MockFriendsController extends FriendsController {
 }
 
 // Mock auth controller that returns mock user
+class MockRouterService extends RouterService {
+  MockRouterService(super.ref);
+
+  @override
+  Future<void> goInitialLocation([String? overrideLocation]) async {
+    // Mock implementation that does nothing
+  }
+}
+
 class MockAuthController extends AuthController {
   @override
   Session? build() => mockSession;
+
+  @override
+  String? get verifyingPhone => '+1 555-555-5555';
 
   @override
   Future<void> signInWithOtp({required String phone}) async {
     // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 250));
     throw AuthException('Cannot signIn in mock environment');
+  }
+
+  @override
+  Future<void> verifyOTP({required String token}) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 250));
+    throw AuthException('Cannot verify in mock environment');
   }
 }
 
@@ -433,93 +459,99 @@ final mockEvent = Instance(
 );
 
 // Builder for mock environments
-ProviderScope buildMockEnvironment(Widget screen,
+UncontrolledProviderScope buildMockEnvironment(Widget screen,
         {String? scenario, bool storybookMode = true}) =>
-    ProviderScope(
-      overrides: [
-        // Override auth to simulate logged out state
-        authControllerProvider.overrideWith(() => MockAuthController()),
+    UncontrolledProviderScope(
+      container: ProviderContainer(
+        overrides: [
+          // Override auth to simulate logged out state
+          authControllerProvider.overrideWith(() => MockAuthController()),
 
-        // Override profiles cache
-        profilesCacheProvider.overrideWith(() => MockProfilesCacheService()),
+          // Override profiles cache
+          profilesCacheProvider.overrideWith(() => MockProfilesCacheService()),
 
-        // Override topics
-        topicsProvider.overrideWith(() => MockTopicsController()),
-        topicSubscriptionsProvider.overrideWith(
-          () => MockTopicSubscriptionsController(
-            hasSubscriptions: scenario != 'no-subscriptions',
+          // Override topics
+          topicsProvider.overrideWith(() => MockTopicsController()),
+          topicSubscriptionsProvider.overrideWith(
+            () => MockTopicSubscriptionsController(
+              hasSubscriptions: scenario != 'no-subscriptions',
+            ),
           ),
-        ),
-        topicMembershipsProvider.overrideWith(
-          () => MockTopicMembershipsController(scenario),
-        ),
-
-        // Override instances with mock data
-        instancesProvider.overrideWith(
-          () => MockInstancesController(
-            hasEvents: scenario != 'no-subscriptions',
+          topicMembershipsProvider.overrideWith(
+            () => MockTopicMembershipsController(scenario),
           ),
-        ),
-        eventDetailsProvider(mockEvent.id!).overrideWith(
-          (ref) => Future.value(mockEvent),
-        ),
 
-        // Override RSVPs
-        rsvpMockStateProvider
-            .overrideWith((ref) => <String, List<InstanceMember>>{}),
-        rsvpsProvider.overrideWith(() => MockRsvpsController()),
-        rsvpsPerEventProvider.overrideWith(() => MockInstanceRsvpsController()),
-
-        // Override friends
-        friendsProvider.overrideWith(
-          () => MockFriendsController(scenario),
-        ),
-
-        // Override chat provider
-        chatProvider.overrideWith(() => MockChatController()),
-
-        // Override location controller
-        locationControllerProvider
-            .overrideWith((ref) => MockLocationController(ref)),
-
-        // Override settings providers
-        storybookModeProvider.overrideWith((ref) => storybookMode),
-        themeModeProvider.overrideWith((ref) => ThemeMode.dark),
-        developerModeProvider.overrideWith((ref) => false),
-        splashCompleteProvider.overrideWith((ref) => true),
-        locationSharingEnabledProvider.overrideWith((ref) => false),
-        calendarWritingEnabledProvider.overrideWith((ref) => false),
-
-        // Override Firebase messaging
-        firebaseMessagingServiceProvider
-            .overrideWith((ref) => MockFirebaseMessagingService(ref)),
-        firebaseMessagingStreamProvider.overrideWith((ref) => Stream.empty()),
-
-        // Override app initialization
-        profileProvider.overrideWith(
-          () => MockProfileController(
-            hasProfile: scenario != 'new-profile',
+          // Override instances with mock data
+          instancesProvider.overrideWith(
+            () => MockInstancesController(
+              hasEvents: scenario != 'no-subscriptions',
+            ),
           ),
-        ),
-        appVersionsProvider.overrideWith(() => MockAppVersionsController()),
+          eventDetailsProvider(mockEvent.id!).overrideWith(
+            (ref) => Future.value(mockEvent),
+          ),
 
-        // Override Supabase
-        supabaseClientProvider.overrideWithValue(MockSupabase()),
+          // Override RSVPs
+          rsvpMockStateProvider
+              .overrideWith((ref) => <String, List<InstanceMember>>{}),
+          rsvpsProvider.overrideWith(() => MockRsvpsController()),
+          rsvpsPerEventProvider
+              .overrideWith(() => MockInstanceRsvpsController()),
 
-        // scenarios
-        ...switch (scenario) {
-          'pinned-message' => [
-              latestPinnedMessageProvider.overrideWith(
-                () => MockLatestPinnedMessageController(true),
-              ),
-            ],
-          _ => [
-              latestPinnedMessageProvider.overrideWith(
-                () => MockLatestPinnedMessageController(false),
-              ),
-            ]
-        }
-      ],
+          // Override friends
+          friendsProvider.overrideWith(
+            () => MockFriendsController(scenario),
+          ),
+
+          // Override chat provider
+          chatProvider.overrideWith(() => MockChatController()),
+
+          // Override location controller
+          locationControllerProvider
+              .overrideWith((ref) => MockLocationController(ref)),
+
+          // Override settings providers
+          storybookModeProvider.overrideWith((ref) => storybookMode),
+          themeModeProvider.overrideWith((ref) => ThemeMode.dark),
+          developerModeProvider.overrideWith((ref) => false),
+          splashCompleteProvider.overrideWith((ref) => true),
+          locationSharingEnabledProvider.overrideWith((ref) => false),
+          calendarWritingEnabledProvider.overrideWith((ref) => false),
+
+          // Override Firebase messaging
+          firebaseMessagingServiceProvider
+              .overrideWith((ref) => MockFirebaseMessagingService(ref)),
+          firebaseMessagingStreamProvider.overrideWith((ref) => Stream.empty()),
+
+          // Override app initialization
+          profileProvider.overrideWith(
+            () => MockProfileController(
+              hasProfile: scenario != 'new-profile',
+            ),
+          ),
+          appVersionsProvider.overrideWith(() => MockAppVersionsController()),
+
+          // Override router
+          routerProvider.overrideWith((ref) => MockRouterService(ref)),
+
+          // Override Supabase
+          supabaseClientProvider.overrideWithValue(MockSupabase()),
+
+          // scenarios
+          ...switch (scenario) {
+            'pinned-message' => [
+                latestPinnedMessageProvider.overrideWith(
+                  () => MockLatestPinnedMessageController(true),
+                ),
+              ],
+            _ => [
+                latestPinnedMessageProvider.overrideWith(
+                  () => MockLatestPinnedMessageController(false),
+                ),
+              ]
+          }
+        ],
+      ),
       child: MaterialApp(
         home: screen,
         theme: appThemeLight,
