@@ -89,27 +89,28 @@ class ProfileTopics extends StatelessWidget {
           child: Column(
             children: topics.map((topic) {
               final isPending = pendingChanges.containsKey(topic.topic.id);
-              return ListTile(
-                title: Text(
-                  topic.topic.name,
-                  style: TextStyle(
-                    color: isPending
-                        ? Theme.of(context).colorScheme.onSurface.withAlpha(128)
-                        : null,
-                  ),
-                ),
-                trailing: isPending
-                    ? const SizedBox(
+              return isPending
+                  ? ListTile(
+                      title: Text(
+                        topic.topic.name,
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withAlpha(128),
+                        ),
+                      ),
+                      trailing: const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Switch(
-                        value:
-                            pendingChanges[topic.topic.id] ?? topic.subscribed,
-                        onChanged: (value) => onTopicToggle(topic, value),
                       ),
-              );
+                    )
+                  : CheckboxListTile(
+                      title: Text(topic.topic.name),
+                      value: pendingChanges[topic.topic.id] ?? topic.subscribed,
+                      onChanged: (value) => onTopicToggle(topic, value),
+                    );
             }).toList(),
           ),
         ),
