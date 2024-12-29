@@ -15,7 +15,7 @@ import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/models/topic_member.dart';
-import 'package:squadquest/components/tiles/instance.dart';
+import 'package:squadquest/ui/core/widgets/event_card.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   final UserID userId;
@@ -174,15 +174,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ))
                           : SliverList.list(
                               children: rsvps
-                                  .map((rsvp) => InstanceTile(
-                                      instance: rsvp.instance!,
-                                      rsvp: rsvp,
+                                  .map(
+                                    (rsvp) => EventCard(
+                                      event: rsvp.instance!,
+                                      rsvpStatus: rsvp.status,
                                       onTap: () {
                                         context.pushNamed('event-details',
                                             pathParameters: {
                                               'id': rsvp.instance!.id!,
                                             });
-                                      }))
+                                      },
+                                    ),
+                                  )
                                   .toList(),
                             )),
                   SliverPersistentHeader(

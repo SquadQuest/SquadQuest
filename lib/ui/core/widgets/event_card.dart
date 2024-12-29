@@ -4,13 +4,13 @@ import 'package:intl/intl.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/user.dart';
 
-class HomeEventCard extends StatelessWidget {
+class EventCard extends StatelessWidget {
   final Instance event;
   final VoidCallback onTap;
   final VoidCallback? onEndTap;
   final InstanceMemberStatus? rsvpStatus;
 
-  const HomeEventCard({
+  const EventCard({
     super.key,
     required this.event,
     required this.onTap,
