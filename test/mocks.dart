@@ -12,9 +12,9 @@ import 'package:squadquest/models/event_message.dart';
 
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/firebase.dart';
+import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/topics.dart';
 import 'package:squadquest/controllers/topic_subscriptions.dart';
-import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/location.dart';
@@ -24,6 +24,7 @@ import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
+import 'package:squadquest/screens/splash.dart';
 
 class MockSupabase extends Fake implements SupabaseClient {
   @override
@@ -391,8 +392,9 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
             .overrideWith((ref) => MockLocationController(ref)),
 
         // Override settings providers
-        storybookModeProvider.overrideWith((ref) => true),
         themeModeProvider.overrideWith((ref) => ThemeMode.dark),
+        developerModeProvider.overrideWith((ref) => false),
+        splashCompleteProvider.overrideWith((ref) => true),
 
         // Override Firebase messaging
         firebaseMessagingServiceProvider
