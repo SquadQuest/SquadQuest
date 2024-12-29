@@ -530,7 +530,8 @@ ProviderScope buildMockEnvironment(Widget screen,
         appVersionsProvider.overrideWith(() => MockAppVersionsController()),
 
         // Override router
-        routerProvider.overrideWith((ref) => MockRouterService(ref)),
+        if (storybookMode)
+          routerProvider.overrideWith((ref) => MockRouterService(ref)),
 
         // Override Supabase
         supabaseClientProvider.overrideWithValue(MockSupabase()),
