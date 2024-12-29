@@ -5,27 +5,25 @@ import '../../mocks.dart';
 import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
 
 void main() {
-  group('ProfileFormScreen', () {
-    testScreenUI(
-      'Initial state - Edit profile',
-      () async => buildMockEnvironment(
-        const ProfileFormScreen(),
-        scenario: 'edit-profile',
-      ),
-      onTest: (WidgetTester tester) async {
-        // Verify edit mode doesn't show welcome message
-        expect(find.text('Welcome to SquadQuest!'), findsNothing);
+  testScreenUI(
+    'Initial state - Edit profile',
+    () async => buildMockEnvironment(
+      const ProfileFormScreen(),
+      scenario: 'edit-profile',
+    ),
+    onTest: (WidgetTester tester) async {
+      // Verify edit mode doesn't show welcome message
+      expect(find.text('Welcome to SquadQuest!'), findsNothing);
 
-        // Verify form fields are present and populated
-        expect(find.text('First Name'), findsOneWidget);
-        expect(find.text('Last Name'), findsOneWidget);
-        expect(find.text('Trail Color'), findsOneWidget);
+      // Verify form fields are present and populated
+      expect(find.text('First Name'), findsOneWidget);
+      expect(find.text('Last Name'), findsOneWidget);
+      expect(find.text('Trail Color'), findsOneWidget);
 
-        // Verify submit button
-        expect(find.text('Save Changes'), findsOneWidget);
-      },
-    );
-  });
+      // Verify submit button
+      expect(find.text('Save Changes'), findsOneWidget);
+    },
+  );
 
   testScreenUI(
     'Initial state - New profile',
