@@ -29,15 +29,20 @@ class _HomeSearchBarState extends ConsumerState<HomeSearchBar> {
   @override
   void didUpdateWidget(HomeSearchBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isVisible && !oldWidget.isVisible) {
-      // Wait for animation to start before focusing
-      Future.delayed(const Duration(milliseconds: 50), () {
-        _focusNode.requestFocus();
-        widget.controller.selection = TextSelection(
-          baseOffset: 0,
-          extentOffset: widget.controller.text.length,
-        );
-      });
+    if (widget.isVisible != oldWidget.isVisible) {
+      if (widget.isVisible) {
+        // Wait for animation to start before focusing
+        Future.delayed(const Duration(milliseconds: 50), () {
+          _focusNode.requestFocus();
+          widget.controller.selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: widget.controller.text.length,
+          );
+        });
+      } else {
+        // Immediately unfocus when hiding
+        _focusNode.unfocus();
+      }
     }
   }
 
