@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/controllers/auth.dart';
 
 import 'package:squadquest/ui/core/widgets/event_card.dart';
 
@@ -54,6 +55,7 @@ class HomeEventList extends ConsumerWidget {
       );
     }
 
+    final session = ref.read(authControllerProvider);
     final now = DateTime.now();
     final sections = _groupEventsByTimeGroup(events, now);
 
@@ -83,8 +85,12 @@ class HomeEventList extends ConsumerWidget {
                     child: EventCard(
                       event: event,
                       onTap: () => onEventTap(event),
-                      onEndTap:
-                          onEndEvent != null ? () => onEndEvent!(event) : null,
+                      onEndTap: onEndEvent != null &&
+                              event.getTimeGroup(now) ==
+                                  InstanceTimeGroup.current &&
+                              event.createdById == session?.user.id
+                          ? () => onEndEvent!(event)
+                          : null,
                       rsvpStatus: rsvps?[event.id],
                     ),
                   );

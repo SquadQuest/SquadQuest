@@ -31,20 +31,27 @@ final _filteredEventsWithStatsProvider =
     final rsvp =
         rsvpsList.firstWhereOrNull((rsvp) => rsvp.instanceId == event.id);
 
+    final isCreator = event.createdById == session?.user.id;
+
     // never show draft events unless you created it
-    if (event.status == InstanceStatus.draft &&
-        event.createdById != session?.user.id) {
+    if (event.status == InstanceStatus.draft && !isCreator) {
+      return false;
+    }
+
+    // Don't filter out canceled events if you created them or have an RSVP
+    final isInvolved = isCreator || rsvp != null;
+
+    // For public events you're not involved with, only show live ones
+    if (!isInvolved && event.status != InstanceStatus.live) {
       return false;
     }
 
     return switch (eventsTab) {
       EventFilter.feed =>
-        event.createdById == session?.user.id || // events you created
-            rsvp != null || // events you're invited to
-            (event.status ==
-                    InstanceStatus
-                        .live && // live public events you're subscribed to
-                event.visibility == InstanceVisibility.public &&
+        // events you're invited to
+        isInvolved ||
+            // public events you're subscribed to
+            (event.visibility != InstanceVisibility.public ||
                 topics.contains(event.topicId)),
       EventFilter.pending => rsvp?.status == InstanceMemberStatus.invited &&
           event.getTimeGroup(now) != InstanceTimeGroup.past,
@@ -53,9 +60,8 @@ final _filteredEventsWithStatsProvider =
           InstanceMemberStatus.yes,
           InstanceMemberStatus.omw,
         ].contains(rsvp?.status),
-      EventFilter.hosting => event.createdById == session?.user.id,
-      EventFilter.public => event.visibility == InstanceVisibility.public &&
-          event.status == InstanceStatus.live,
+      EventFilter.hosting => isCreator,
+      EventFilter.public => event.visibility == InstanceVisibility.public,
     };
   }).toList();
 });
@@ -222,6 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return AppScaffold(
       title: 'SquadQuest',
+      showDrawer: true,
       actions: [
         IconButton(
           icon: Icon(isSearching ? Icons.close : Icons.search),
@@ -300,11 +307,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         );
                                       }
 
-                                      return HomeEventList(
-                                        events: events,
-                                        onEventTap: _navigateToEventDetails,
-                                        onEndEvent: _endEvent,
-                                        rsvps: rsvpStatuses,
+                                      return RefreshIndicator(
+                                        onRefresh: () async {
+                                          return ref
+                                              .read(instancesProvider.notifier)
+                                              .refresh();
+                                        },
+                                        child: HomeEventList(
+                                          events: events,
+                                          onEventTap: _navigateToEventDetails,
+                                          onEndEvent: _endEvent,
+                                          rsvps: rsvpStatuses,
+                                        ),
                                       );
                                     },
                                   ),

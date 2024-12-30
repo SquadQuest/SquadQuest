@@ -205,7 +205,6 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     return AppScaffold(
       title: isNewProfile ? 'Create Profile' : 'Edit Profile',
       loadMask: submitted ? 'Saving profile...' : null,
-      showDrawer: isNewProfile ? false : null,
       body: Form(
         key: _formKey,
         child: CustomScrollView(

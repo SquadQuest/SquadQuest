@@ -183,185 +183,172 @@ class EventCard extends StatelessWidget {
     final now = DateTime.now();
     final isLive = event.getTimeGroup(now) == InstanceTimeGroup.current;
     final isPast = event.getTimeGroup(now) == InstanceTimeGroup.past;
+    final isCanceled = event.status != InstanceStatus.live;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Stack(
-          children: [
-            // Banner Photo Background
-            if (event.bannerPhoto != null) ...[
-              Positioned.fill(
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    isDark
-                        ? Colors.black.withAlpha(130)
-                        : Colors.white.withAlpha(180),
-                    isDark ? BlendMode.darken : BlendMode.lighten,
-                  ),
-                  child: Image.network(
-                    event.bannerPhoto!.toString(),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Theme.of(context).cardColor,
-                      ],
-                      stops: const [0.0, 0.8],
+    return Opacity(
+      opacity: isPast && !isCanceled ? 0.5 : 1.0,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
+            children: [
+              // Banner Photo Background
+              if (event.bannerPhoto != null) ...[
+                Positioned.fill(
+                  child: ColorFiltered(
+                    colorFilter: ColorFilter.mode(
+                      isDark
+                          ? Colors.black.withAlpha(130)
+                          : Colors.white.withAlpha(180),
+                      isDark ? BlendMode.darken : BlendMode.lighten,
+                    ),
+                    child: Image.network(
+                      event.bannerPhoto!.toString(),
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
-              ),
-            ],
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (isLive)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                Positioned.fill(
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.circle,
-                          size: 8,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Live Now',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Theme.of(context).cardColor,
+                        ],
+                        stops: const [0.0, 0.8],
+                      ),
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Title and Topic
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              ],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (isLive)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Expanded(
-                            child: Text(
-                              event.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    decoration: isPast
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
+                          Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Live Now',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          if (event.topic != null) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .secondaryContainer
-                                    .withAlpha(128),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                event.topic!.name,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSecondaryContainer,
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
-                      const SizedBox(height: 8),
-
-                      // Host Info and RSVP Status
-                      Row(
-                        children: [
-                          if (event.createdBy != null) ...[
-                            _buildHostAvatar(context, event.createdBy!),
-                            const SizedBox(width: 8),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Title and Topic
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Expanded(
                               child: Text(
-                                'Hosted by ${event.createdBy!.displayName}',
+                                event.title,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodySmall
+                                    .titleMedium
                                     ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withAlpha(179),
+                                      decoration: isCanceled
+                                          ? TextDecoration.lineThrough
+                                          : null,
                                     ),
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ],
-                          if (rsvpStatus != null) ...[
-                            const SizedBox(width: 8),
-                            _buildRsvpStatus(context),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Time and Location
-                      DefaultTextStyle(
-                        style: Theme.of(context).textTheme.bodySmall!,
-                        child: Wrap(
-                          spacing: 16,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 16,
+                            if (event.topic != null) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
                                   color: Theme.of(context)
+                                      .colorScheme
+                                      .secondaryContainer
+                                      .withAlpha(128),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  event.topic!.name,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSecondaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Host Info and RSVP Status
+                        Row(
+                          children: [
+                            if (event.createdBy != null) ...[
+                              _buildHostAvatar(context, event.createdBy!),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Posted by ${event.createdBy!.displayName}',
+                                  style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
-                                      ?.color,
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withAlpha(179),
+                                      ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(_formatEventTime(event, now)),
-                              ],
-                            ),
-                            if (event.locationDescription.isNotEmpty)
+                              ),
+                            ],
+                            if (rsvpStatus != null) ...[
+                              const SizedBox(width: 8),
+                              _buildRsvpStatus(context),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Time and Location
+                        DefaultTextStyle(
+                          style: Theme.of(context).textTheme.bodySmall!,
+                          child: Wrap(
+                            spacing: 16,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.place,
+                                    Icons.access_time,
                                     size: 16,
                                     color: Theme.of(context)
                                         .textTheme
@@ -369,23 +356,75 @@ class EventCard extends StatelessWidget {
                                         ?.color,
                                   ),
                                   const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      event.locationDescription,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
+                                  Text(_formatEventTime(event, now)),
                                 ],
                               ),
-                          ],
+                              if (event.locationDescription.isNotEmpty)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.place,
+                                      size: 16,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.color,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        event.locationDescription,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // End Event Button
+                        if (onEndTap != null && isLive) ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: onEndTap,
+                            icon: const Icon(Icons.stop_circle_outlined),
+                            label: const Text('End Event'),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  if (isCanceled)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withAlpha(30),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.cancel_outlined,
+                            size: 16,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Event Canceled',
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
