@@ -380,6 +380,16 @@ class EventCard extends StatelessWidget {
                           ],
                         ),
                       ),
+
+                      // End Event Button
+                      if (onEndTap != null && isLive) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: onEndTap,
+                          icon: const Icon(Icons.stop_circle_outlined),
+                          label: const Text('End Event'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
