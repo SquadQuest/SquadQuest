@@ -40,6 +40,32 @@ class EventCard extends StatelessWidget {
     );
   }
 
+  Widget _buildVisibilityIndicator(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withAlpha(128),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Tooltip(
+        message: switch (event.visibility) {
+          InstanceVisibility.public => 'Public Event',
+          InstanceVisibility.friends => 'Friends Only',
+          InstanceVisibility.private => 'Private Event',
+        },
+        child: Icon(
+          switch (event.visibility) {
+            InstanceVisibility.public => Icons.public,
+            InstanceVisibility.friends => Icons.people,
+            InstanceVisibility.private => Icons.lock,
+          },
+          size: 14,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
   Widget _buildRsvpStatus(BuildContext context) {
     if (rsvpStatus == null) return const SizedBox.shrink();
 
@@ -306,7 +332,7 @@ class EventCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
 
-                        // Host Info and RSVP Status
+                        // Host Info, Visibility, and RSVP Status
                         Row(
                           children: [
                             if (event.createdBy != null) ...[
@@ -328,6 +354,8 @@ class EventCard extends StatelessWidget {
                                 ),
                               ),
                             ],
+                            const SizedBox(width: 8),
+                            _buildVisibilityIndicator(context),
                             if (rsvpStatus != null) ...[
                               const SizedBox(width: 8),
                               _buildRsvpStatus(context),
