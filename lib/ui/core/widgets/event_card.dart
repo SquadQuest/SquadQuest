@@ -183,10 +183,11 @@ class EventCard extends StatelessWidget {
     final now = DateTime.now();
     final isLive = event.getTimeGroup(now) == InstanceTimeGroup.current;
     final isPast = event.getTimeGroup(now) == InstanceTimeGroup.past;
+    final isCanceled = event.status != InstanceStatus.live;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Opacity(
-      opacity: isPast ? 0.5 : 1.0,
+      opacity: isPast && !isCanceled ? 0.5 : 1.0,
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -266,7 +267,14 @@ class EventCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 event.title,
-                                style: Theme.of(context).textTheme.titleMedium,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      decoration: isCanceled
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                    ),
                               ),
                             ),
                             if (event.topic != null) ...[
@@ -388,6 +396,31 @@ class EventCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (isCanceled)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withAlpha(30),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.cancel_outlined,
+                            size: 16,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Event Canceled',
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ],
