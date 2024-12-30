@@ -447,13 +447,13 @@ final mockEvent = Instance(
   notes: 'Bring in the new year with your favorite friends!\n\n'
       'BYO drinks and snack. We\'ll start at 10pm and kick everyone out by 2am. The building code is 1234 and then go up to the 4th floor.\n\n'
       'Don\'t drink and drive! Have your ride home planned.',
-  startTimeMin: DateTime(2024, 12, 31, 22),
-  startTimeMax: DateTime(2024, 12, 31, 23, 59, 59),
-  endTime: DateTime(2025, 1, 1, 2, 0, 0),
+  startTimeMin: DateTime(2050, 12, 31, 22),
+  startTimeMax: DateTime(2050, 12, 31, 23, 59, 59),
+  endTime: DateTime(2050, 1, 1, 2, 0, 0),
   link: Uri.parse(
       'https://www.etix.com/ticket/p/43349598/zoo-years-eve-with-too-many-zooz-philadelphia-music-hall-at-world-cafe-live'),
   topic: Topic(id: 'test-topic-1', name: 'party.house'),
-  createdAt: DateTime(2024, 11, 1, 12),
+  createdAt: DateTime(2050, 11, 1, 12),
   createdBy: mockUser,
   createdById: mockUser.id,
 );
