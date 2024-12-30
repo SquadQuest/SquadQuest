@@ -6,7 +6,6 @@ import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/topic_memberships.dart';
 import 'package:squadquest/controllers/settings.dart';
 
-import 'package:squadquest/screens/topics.dart';
 import 'package:squadquest/storybook/screens/onboarding/welcome.dart';
 import 'package:squadquest/storybook/screens/onboarding/home.dart';
 import 'package:squadquest/storybook/screens/onboarding/permission_notification.dart';
@@ -56,13 +55,6 @@ class StorybookApp extends StatelessWidget {
             ),
           ),
           stories: [
-            // Real screens with mock data
-            Story(
-              name: 'Existing Screens/Topics Screen',
-              description: 'The real topics screen with mock data',
-              builder: (context) => const TopicsScreen(),
-            ),
-
             // Mock onboarding screens
             Story(
               name: 'Onboarding/Welcome',

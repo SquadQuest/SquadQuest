@@ -5,8 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:test_screen/test_screen.dart';
 
+import 'utils/golden-file-comparator.dart';
+
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   initializeDateFormatting();
+
+  initializeGoldenFileComparator();
 
   initializeDefaultTestScreenConfig(TestScreenConfig(
       locales: [

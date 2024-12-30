@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +16,7 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
   static const _defaultSelect = '*';
 
   @override
-  Future<UserProfile?> build() async {
+  FutureOr<UserProfile?> build() async {
     log('ProfileController.build');
 
     // clear profile on logout

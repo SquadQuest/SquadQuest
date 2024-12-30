@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,14 +9,17 @@ import 'package:squadquest/models/user.dart';
 import 'package:squadquest/models/app_version.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
+import 'package:squadquest/models/topic_member.dart';
 import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/event_message.dart';
 
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/firebase.dart';
+import 'package:squadquest/services/router.dart';
+import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/controllers/topics.dart';
 import 'package:squadquest/controllers/topic_subscriptions.dart';
-import 'package:squadquest/services/profiles_cache.dart';
+import 'package:squadquest/controllers/topic_memberships.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/location.dart';
@@ -24,6 +29,7 @@ import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
+import 'package:squadquest/ui/splash/splash_screen.dart';
 
 class MockSupabase extends Fake implements SupabaseClient {
   @override
@@ -49,9 +55,19 @@ class MockGotrue extends Fake implements GoTrueClient {
 
 // Mock profile controller
 class MockProfileController extends ProfileController {
+  final bool hasProfile;
+
+  MockProfileController({this.hasProfile = true});
+
   @override
-  Future<UserProfile> build() async {
-    return mockUser;
+  FutureOr<UserProfile?> build() {
+    return hasProfile ? mockUser : null;
+  }
+
+  @override
+  Future<UserProfile?> fetch({bool throwOnError = false}) async {
+    // state = AsyncValue.data(hasProfile ? mockUser : null);
+    // return hasProfile ? mockUser : null;
   }
 }
 
@@ -113,7 +129,7 @@ class MockTopicsController extends TopicsController {
 class MockTopicSubscriptionsController extends TopicSubscriptionsController {
   final bool hasSubscriptions;
 
-  MockTopicSubscriptionsController([this.hasSubscriptions = true]);
+  MockTopicSubscriptionsController({this.hasSubscriptions = true});
 
   @override
   Future<List<TopicID>> build() async {
@@ -121,11 +137,52 @@ class MockTopicSubscriptionsController extends TopicSubscriptionsController {
   }
 }
 
+class MockTopicMembershipsController extends TopicMembershipsController {
+  final String? scenario;
+  final List<MyTopicMembership> _memberships = [
+    MyTopicMembership(
+      topic: Topic(id: 'test-topic-1', name: 'party.house'),
+      subscribed: true,
+      events: 5,
+    ),
+    MyTopicMembership(
+      topic: Topic(id: 'test-topic-2', name: 'sports.basketball'),
+      subscribed: false,
+      events: 3,
+    ),
+  ];
+
+  MockTopicMembershipsController([this.scenario]);
+
+  @override
+  Future<List<MyTopicMembership>> build() async {
+    return _memberships;
+  }
+
+  @override
+  Future<MyTopicMembership> saveSubscribed(
+      MyTopicMembership topicMembership, bool subscribed) async {
+    final index =
+        _memberships.indexWhere((m) => m.topic.id == topicMembership.topic.id);
+    if (index != -1) {
+      final updatedMembership = MyTopicMembership(
+        topic: topicMembership.topic,
+        subscribed: subscribed,
+        events: topicMembership.events,
+      );
+      _memberships[index] = updatedMembership;
+      state = AsyncValue.data(_memberships);
+      return updatedMembership;
+    }
+    return topicMembership;
+  }
+}
+
 // Mock controller for instances that returns test event
 class MockInstancesController extends InstancesController {
   final bool hasEvents;
 
-  MockInstancesController([this.hasEvents = true]);
+  MockInstancesController({this.hasEvents = true});
 
   @override
   Future<List<Instance>> build() async {
@@ -180,32 +237,87 @@ class MockRsvpsController extends RsvpsController {
 
 // Mock controller for friends
 class MockFriendsController extends FriendsController {
-  final bool hasPendingRequests;
+  final String? scenario;
 
-  MockFriendsController([this.hasPendingRequests = false]);
+  MockFriendsController([this.scenario]);
 
   @override
   Future<List<Friend>> build() async {
-    if (!hasPendingRequests) return [];
+    switch (scenario) {
+      case 'no-friends':
+        return [];
+      case 'friend-requests':
+        return [
+          Friend(
+            id: 'test-friend-1',
+            status: FriendStatus.requested,
+            requesterId: mockUser2.id,
+            requester: mockUser2,
+            requesteeId: mockUser.id,
+            requestee: mockUser,
+            createdAt: DateTime.now(),
+          ),
+        ];
+      default:
+        return [
+          Friend(
+            id: 'test-friend-2',
+            status: FriendStatus.accepted,
+            requesterId: mockUser2.id,
+            requester: mockUser2,
+            requesteeId: mockUser.id,
+            requestee: mockUser,
+            createdAt: DateTime.now(),
+          ),
+        ];
+    }
+  }
 
-    return [
-      Friend(
-        id: 'test-friend-1',
-        status: FriendStatus.requested,
-        requesterId: mockUser2.id,
-        requester: mockUser2,
-        requesteeId: mockUser.id,
-        requestee: mockUser,
-        createdAt: DateTime.now(),
-      ),
-    ];
+  @override
+  Future<Friend> respondToFriendRequest(
+      Friend friend, FriendStatus status) async {
+    return Friend(
+      id: friend.id,
+      status: status,
+      requesterId: friend.requesterId,
+      requester: friend.requester,
+      requesteeId: friend.requesteeId,
+      requestee: friend.requestee,
+      createdAt: friend.createdAt,
+    );
   }
 }
 
 // Mock auth controller that returns mock user
+class MockRouterService extends RouterService {
+  MockRouterService(super.ref);
+
+  @override
+  Future<void> goInitialLocation([String? overrideLocation]) async {
+    // Mock implementation that does nothing
+  }
+}
+
 class MockAuthController extends AuthController {
   @override
   Session? build() => mockSession;
+
+  @override
+  String? get verifyingPhone => '+1 555-555-5555';
+
+  @override
+  Future<void> signInWithOtp({required String phone}) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 250));
+    throw AuthException('Cannot signIn in mock environment');
+  }
+
+  @override
+  Future<void> verifyOTP({required String token}) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 250));
+    throw AuthException('Cannot verify in mock environment');
+  }
 }
 
 // Mock profiles cache that returns mock users
@@ -254,10 +366,11 @@ final mockSession = Session(
     ));
 
 final mockUser = UserProfile(
-  id: 'test-user-1',
+  id: '6415c228-1e81-4ad8-92ec-03f8acfdfe71',
   firstName: 'Test',
   lastName: 'User',
-  phone: null,
+  phone: '+15555555555',
+  trailColor: '#FF0000',
   fcmToken: null,
   fcmTokenUpdatedAt: null,
   fcmTokenAppBuild: null,
@@ -266,10 +379,11 @@ final mockUser = UserProfile(
 );
 
 final mockUser2 = UserProfile(
-  id: 'test-user-2',
+  id: '12a51b02-42ea-4892-ab0f-d9746cee1525',
   firstName: 'Another',
   lastName: 'User',
-  phone: null,
+  phone: '+15555551234',
+  trailColor: '#00FF00',
   fcmToken: null,
   fcmTokenUpdatedAt: null,
   fcmTokenAppBuild: null,
@@ -345,7 +459,8 @@ final mockEvent = Instance(
 );
 
 // Builder for mock environments
-ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
+ProviderScope buildMockEnvironment(Widget screen,
+        {String? scenario, bool storybookMode = true}) =>
     ProviderScope(
       overrides: [
         // Override auth to simulate logged out state
@@ -358,14 +473,19 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
         topicsProvider.overrideWith(() => MockTopicsController()),
         topicSubscriptionsProvider.overrideWith(
           () => MockTopicSubscriptionsController(
-            scenario != 'no-subscriptions',
+            hasSubscriptions: scenario != 'no-subscriptions',
           ),
+        ),
+        topicMembershipsProvider.overrideWith(
+          () => MockTopicMembershipsController(scenario),
         ),
 
         // Override instances with mock data
-        instancesProvider.overrideWith(() => MockInstancesController(
-              scenario != 'no-subscriptions',
-            )),
+        instancesProvider.overrideWith(
+          () => MockInstancesController(
+            hasEvents: scenario != 'no-subscriptions',
+          ),
+        ),
         eventDetailsProvider(mockEvent.id!).overrideWith(
           (ref) => Future.value(mockEvent),
         ),
@@ -378,9 +498,7 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
 
         // Override friends
         friendsProvider.overrideWith(
-          () => MockFriendsController(
-            scenario == 'friend-requests',
-          ),
+          () => MockFriendsController(scenario),
         ),
 
         // Override chat provider
@@ -391,8 +509,12 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
             .overrideWith((ref) => MockLocationController(ref)),
 
         // Override settings providers
-        storybookModeProvider.overrideWith((ref) => true),
+        storybookModeProvider.overrideWith((ref) => storybookMode),
         themeModeProvider.overrideWith((ref) => ThemeMode.dark),
+        developerModeProvider.overrideWith((ref) => false),
+        splashCompleteProvider.overrideWith((ref) => true),
+        locationSharingEnabledProvider.overrideWith((ref) => false),
+        calendarWritingEnabledProvider.overrideWith((ref) => false),
 
         // Override Firebase messaging
         firebaseMessagingServiceProvider
@@ -400,8 +522,16 @@ ProviderScope buildMockEnvironment(Widget screen, {String? scenario}) =>
         firebaseMessagingStreamProvider.overrideWith((ref) => Stream.empty()),
 
         // Override app initialization
-        profileProvider.overrideWith(() => MockProfileController()),
+        profileProvider.overrideWith(
+          () => MockProfileController(
+            hasProfile: scenario != 'new-profile',
+          ),
+        ),
         appVersionsProvider.overrideWith(() => MockAppVersionsController()),
+
+        // Override router
+        if (storybookMode)
+          routerProvider.overrideWith((ref) => MockRouterService(ref)),
 
         // Override Supabase
         supabaseClientProvider.overrideWithValue(MockSupabase()),

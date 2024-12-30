@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:squadquest/models/instance.dart';
-import 'home_event_card.dart';
+
+import 'package:squadquest/ui/core/widgets/event_card.dart';
 
 class HomeEventList extends ConsumerWidget {
   final List<Instance> events;
@@ -78,7 +80,7 @@ class HomeEventList extends ConsumerWidget {
                     padding: EdgeInsets.only(
                       bottom: index < section.events.length - 1 ? 16 : 0,
                     ),
-                    child: HomeEventCard(
+                    child: EventCard(
                       event: event,
                       onTap: () => onEventTap(event),
                       onEndTap:
