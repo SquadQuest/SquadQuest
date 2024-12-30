@@ -311,7 +311,7 @@ class EventCard extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Hosted by ${event.createdBy!.displayName}',
+                                'Posted by ${event.createdBy!.displayName}',
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall
