@@ -51,7 +51,7 @@ final _filteredEventsWithStatsProvider =
         // events you're invited to
         isInvolved ||
             // public events you're subscribed to
-            (event.visibility == InstanceVisibility.public &&
+            (event.visibility != InstanceVisibility.public ||
                 topics.contains(event.topicId)),
       EventFilter.pending => rsvp?.status == InstanceMemberStatus.invited &&
           event.getTimeGroup(now) != InstanceTimeGroup.past,
