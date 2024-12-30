@@ -300,11 +300,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         );
                                       }
 
-                                      return HomeEventList(
-                                        events: events,
-                                        onEventTap: _navigateToEventDetails,
-                                        onEndEvent: _endEvent,
-                                        rsvps: rsvpStatuses,
+                                      return RefreshIndicator(
+                                        onRefresh: () async {
+                                          return ref
+                                              .read(instancesProvider.notifier)
+                                              .refresh();
+                                        },
+                                        child: HomeEventList(
+                                          events: events,
+                                          onEventTap: _navigateToEventDetails,
+                                          onEndEvent: _endEvent,
+                                          rsvps: rsvpStatuses,
+                                        ),
                                       );
                                     },
                                   ),
