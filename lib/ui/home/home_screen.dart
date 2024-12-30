@@ -228,6 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return AppScaffold(
       title: 'SquadQuest',
+      showDrawer: true,
       actions: [
         IconButton(
           icon: Icon(isSearching ? Icons.close : Icons.search),
