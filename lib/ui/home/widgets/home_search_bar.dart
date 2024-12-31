@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class HomeSearchBar extends ConsumerWidget {
+class HomeSearchBar extends ConsumerStatefulWidget {
   final bool isVisible;
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -14,20 +14,53 @@ class HomeSearchBar extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeSearchBar> createState() => _HomeSearchBarState();
+}
+
+class _HomeSearchBarState extends ConsumerState<HomeSearchBar> {
+  final _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(HomeSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isVisible != oldWidget.isVisible) {
+      if (widget.isVisible) {
+        // Wait for animation to start before focusing
+        Future.delayed(const Duration(milliseconds: 50), () {
+          _focusNode.requestFocus();
+          widget.controller.selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: widget.controller.text.length,
+          );
+        });
+      } else {
+        // Immediately unfocus when hiding
+        _focusNode.unfocus();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      height: isVisible ? 72 : 0,
+      height: widget.isVisible ? 72 : 0,
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 200),
-          opacity: isVisible ? 1.0 : 0.0,
+          opacity: widget.isVisible ? 1.0 : 0.0,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
-              controller: controller,
-              autofocus: true,
+              controller: widget.controller,
+              focusNode: _focusNode,
               decoration: InputDecoration(
                 hintText: 'Search events...',
                 filled: true,
@@ -57,7 +90,7 @@ class HomeSearchBar extends ConsumerWidget {
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
-              onChanged: onChanged,
+              onChanged: widget.onChanged,
               textInputAction: TextInputAction.search,
             ),
           ),

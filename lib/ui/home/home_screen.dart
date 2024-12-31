@@ -77,7 +77,8 @@ final _searchResultsProvider = Provider<List<Instance>>((ref) {
     data: (events) => events.where((event) {
       return event.title.toLowerCase().contains(query) ||
           event.locationDescription.toLowerCase().contains(query) ||
-          event.notes?.toLowerCase().contains(query) == true;
+          event.notes?.toLowerCase().contains(query) == true ||
+          event.topic?.name.toLowerCase().contains(query) == true;
     }).toList(),
   );
 });
