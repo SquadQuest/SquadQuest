@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:go_router/go_router.dart';
 import 'package:squadquest/controllers/chat.dart';
+import 'package:geobase/coordinates.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
@@ -146,7 +147,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       return;
     }
 
-    final updatedRallyPoint = await showModalBottomSheet(
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       enableDrag: false,
@@ -154,21 +155,30 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       isDismissible: false,
       builder: (BuildContext context) => RallyPointMap(
         initialRallyPoint: eventAsync.value!.rallyPoint,
+        initialTrail: eventAsync.value!.trail,
       ),
     );
 
+    if (result == null) return;
+
+    final rallyPoint = result['rallyPoint'] as Geographic?;
+    final trail = (result['trail'] as List<dynamic>?)?.cast<Geographic>();
+
     await ref.read(instancesProvider.notifier).patch(widget.eventId, {
-      'rally_point': updatedRallyPoint == null
+      'rally_point': rallyPoint == null
           ? null
-          : 'POINT(${updatedRallyPoint.lon} ${updatedRallyPoint.lat})',
+          : 'POINT(${rallyPoint.lon} ${rallyPoint.lat})',
+      'trail': trail == null || trail.isEmpty
+          ? null
+          : 'LINESTRING(${trail.map((p) => '${p.lon} ${p.lat}').join(',')})',
     });
 
     ref.invalidate(eventDetailsProvider(widget.eventId));
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            'Rally point ${updatedRallyPoint == null ? 'cleared' : 'updated'}!'),
+        content:
+            Text('Rally point ${rallyPoint == null ? 'cleared' : 'updated'}!'),
       ));
     }
   }
@@ -188,6 +198,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       builder: (BuildContext context) => EventLiveMap(
         eventId: widget.eventId,
         rallyPoint: eventAsync.value!.rallyPointLatLng,
+        trail: eventAsync.value!.trailLatLngs,
       ),
     );
   }

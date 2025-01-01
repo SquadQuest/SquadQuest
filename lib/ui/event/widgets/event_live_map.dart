@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +24,7 @@ class EventLiveMap extends BaseMap {
   final InstanceID eventId;
   final double? height;
   final LatLng? rallyPoint;
+  final List<LatLng>? trail;
 
   const EventLiveMap({
     super.key,
@@ -29,6 +32,7 @@ class EventLiveMap extends BaseMap {
     required this.eventId,
     this.height,
     this.rallyPoint,
+    this.trail,
   });
 
   @override
@@ -41,18 +45,76 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
 
   @override
   Future<void> loadAdditionalMarkers() async {
+    // Load marker images
     await controller!.addImage(
         'flag-marker',
-        (await rootBundle.load('assets/symbols/flag-marker.png'))
+        (await rootBundle.load('assets/symbols/marker-flag.png'))
             .buffer
             .asUint8List());
+    await controller!.addImage(
+      'start-marker',
+      (await rootBundle.load('assets/symbols/marker-play.png'))
+          .buffer
+          .asUint8List(),
+      true,
+    );
+    await controller!.addImage(
+      'end-marker',
+      (await rootBundle.load('assets/symbols/marker-stop.png'))
+          .buffer
+          .asUint8List(),
+      true,
+    );
 
+    // Add rally point marker
     if (widget.rallyPoint != null) {
       await controller!.addSymbol(SymbolOptions(
           geometry: widget.rallyPoint,
           iconImage: 'flag-marker',
           iconSize: kIsWeb ? 0.25 : 0.5,
           iconAnchor: 'bottom-left'));
+    }
+
+    // Add trail line and markers
+    if (widget.trail != null && widget.trail!.isNotEmpty) {
+      // Add trail line
+      await controller!.addLine(
+        LineOptions(
+          geometry: widget.trail!,
+          lineColor: "#1976D2",
+          lineWidth: 3,
+        ),
+      );
+
+      // Add start marker
+      await controller?.addSymbol(
+        SymbolOptions(
+          geometry: widget.trail!.first,
+          iconImage: 'start-marker',
+          iconSize: kIsWeb ? 0.15 : 0.3,
+          iconAnchor: 'bottom',
+          iconColor: '#00ff00',
+          textField: 'Start',
+          textColor: '#ffffff',
+          textAnchor: 'top',
+          textOffset: const Offset(0, 0.5),
+        ),
+      );
+
+      // Add end marker
+      await controller?.addSymbol(
+        SymbolOptions(
+          geometry: widget.trail!.last,
+          iconImage: 'end-marker',
+          iconSize: kIsWeb ? 0.15 : 0.3,
+          iconAnchor: 'bottom',
+          iconColor: '#ff0000',
+          textField: 'End',
+          textColor: '#ffffff',
+          textAnchor: 'top',
+          textOffset: const Offset(0, 0.5),
+        ),
+      );
     }
   }
 
@@ -77,13 +139,37 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
   Map<String, double> getInitialBounds() {
     final keepRallyPointInView = ref.read(keepRallyPointInViewProvider);
 
-    if (keepRallyPointInView && widget.rallyPoint != null) {
-      return {
-        'minLatitude': widget.rallyPoint!.latitude,
-        'maxLatitude': widget.rallyPoint!.latitude,
-        'minLongitude': widget.rallyPoint!.longitude,
-        'maxLongitude': widget.rallyPoint!.longitude,
-      };
+    if (keepRallyPointInView) {
+      var minLat = double.infinity;
+      var minLon = double.infinity;
+      var maxLat = -double.infinity;
+      var maxLon = -double.infinity;
+
+      // Include rally point in bounds if present
+      if (widget.rallyPoint != null) {
+        minLat = maxLat = widget.rallyPoint!.latitude;
+        minLon = maxLon = widget.rallyPoint!.longitude;
+      }
+
+      // Include trail points in bounds if present
+      if (widget.trail != null) {
+        for (final point in widget.trail!) {
+          minLat = min(minLat, point.latitude);
+          minLon = min(minLon, point.longitude);
+          maxLat = max(maxLat, point.latitude);
+          maxLon = max(maxLon, point.longitude);
+        }
+      }
+
+      // Only return bounds if we have points to bound
+      if (minLat != double.infinity) {
+        return {
+          'minLatitude': minLat,
+          'maxLatitude': maxLat,
+          'minLongitude': minLon,
+          'maxLongitude': maxLon,
+        };
+      }
     }
 
     return super.getInitialBounds();

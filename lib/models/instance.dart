@@ -52,6 +52,7 @@ class Instance {
       required this.visibility,
       required this.locationDescription,
       this.rallyPoint,
+      this.trail,
       this.link,
       this.notes,
       this.bannerPhoto})
@@ -84,9 +85,13 @@ class Instance {
   final InstanceVisibility visibility;
   final String locationDescription;
   final Geographic? rallyPoint;
+  final List<Geographic>? trail;
   final Uri? link;
   final String? notes;
   final Uri? bannerPhoto;
+
+  List<LatLng>? get trailLatLngs =>
+      trail?.map((p) => LatLng(p.lat, p.lon)).toList();
 
   LatLng? get rallyPointLatLng =>
       rallyPoint == null ? null : LatLng(rallyPoint!.lat, rallyPoint!.lon);
@@ -151,6 +156,20 @@ class Instance {
           ? null
           : Geographic(
               lon: double.parse(longitude), lat: double.parse(latitude)),
+      trail: map['trail_text'] == null
+          ? null
+          : () {
+              final text = map['trail_text'] as String;
+              // Parse LINESTRING(lon1 lat1, lon2 lat2, ...)
+              final coordsText = text.substring(11, text.length - 1);
+              return coordsText.split(',').map((coord) {
+                final parts = coord.trim().split(' ');
+                return Geographic(
+                  lon: double.parse(parts[0]),
+                  lat: double.parse(parts[1]),
+                );
+              }).toList();
+            }(),
       link: map['link'] == null ? null : Uri.parse(map['link']),
       notes: map['notes'],
       bannerPhoto:
@@ -171,6 +190,9 @@ class Instance {
       'rally_point': rallyPoint == null
           ? null
           : 'POINT(${rallyPoint!.lon} ${rallyPoint!.lat})',
+      'trail': trail == null
+          ? null
+          : 'LINESTRING(${trail!.map((p) => '${p.lon} ${p.lat}').join(',')})',
       'link': link?.toString(),
       'notes': notes,
       'banner_photo': bannerPhoto?.toString(),
