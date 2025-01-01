@@ -54,15 +54,19 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
             .buffer
             .asUint8List());
     await controller!.addImage(
-        'start-marker',
-        (await rootBundle.load('assets/symbols/marker-play.png'))
-            .buffer
-            .asUint8List());
+      'start-marker',
+      (await rootBundle.load('assets/symbols/marker-play.png'))
+          .buffer
+          .asUint8List(),
+      true,
+    );
     await controller!.addImage(
-        'end-marker',
-        (await rootBundle.load('assets/symbols/marker-stop.png'))
-            .buffer
-            .asUint8List());
+      'end-marker',
+      (await rootBundle.load('assets/symbols/marker-stop.png'))
+          .buffer
+          .asUint8List(),
+      true,
+    );
 
     // Add rally point marker
     if (widget.rallyPoint != null) {
@@ -89,8 +93,9 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
         SymbolOptions(
           geometry: widget.trail!.first,
           iconImage: 'start-marker',
-          iconSize: kIsWeb ? 0.25 : 0.5,
+          iconSize: kIsWeb ? 0.15 : 0.3,
           iconAnchor: 'bottom',
+          iconColor: '#00ff00',
           textField: 'Start',
           textColor: '#ffffff',
           textAnchor: 'top',
@@ -104,8 +109,9 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
         SymbolOptions(
           geometry: widget.trail!.last,
           iconImage: 'end-marker',
-          iconSize: kIsWeb ? 0.25 : 0.5,
+          iconSize: kIsWeb ? 0.15 : 0.3,
           iconAnchor: 'bottom',
+          iconColor: '#ff0000',
           textField: 'End',
           textColor: '#ffffff',
           textAnchor: 'top',
