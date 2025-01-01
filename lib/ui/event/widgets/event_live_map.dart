@@ -43,14 +43,28 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
   @override
   bool get keepTrailsInView => ref.read(keepFriendsInViewProvider);
 
+  List<Symbol> trailMarkers = [];
+
   @override
   Future<void> loadAdditionalMarkers() async {
+    // Load marker images
     await controller!.addImage(
         'flag-marker',
         (await rootBundle.load('assets/symbols/flag-marker.png'))
             .buffer
             .asUint8List());
+    await controller!.addImage(
+        'start-marker',
+        (await rootBundle.load('assets/symbols/marker-play.png'))
+            .buffer
+            .asUint8List());
+    await controller!.addImage(
+        'end-marker',
+        (await rootBundle.load('assets/symbols/marker-stop.png'))
+            .buffer
+            .asUint8List());
 
+    // Add rally point marker
     if (widget.rallyPoint != null) {
       await controller!.addSymbol(SymbolOptions(
           geometry: widget.rallyPoint,
@@ -59,7 +73,9 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
           iconAnchor: 'bottom-left'));
     }
 
+    // Add trail line and markers
     if (widget.trail != null && widget.trail!.isNotEmpty) {
+      // Add trail line
       await controller!.addLine(
         LineOptions(
           geometry: widget.trail!,
@@ -67,6 +83,36 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
           lineWidth: 3,
         ),
       );
+
+      // Add start marker
+      final startMarker = await controller?.addSymbol(
+        SymbolOptions(
+          geometry: widget.trail!.first,
+          iconImage: 'start-marker',
+          iconSize: kIsWeb ? 0.25 : 0.5,
+          iconAnchor: 'bottom',
+          textField: 'Start',
+          textColor: '#ffffff',
+          textAnchor: 'top',
+          textOffset: const Offset(0, 0.5),
+        ),
+      );
+      if (startMarker != null) trailMarkers.add(startMarker);
+
+      // Add end marker
+      final endMarker = await controller?.addSymbol(
+        SymbolOptions(
+          geometry: widget.trail!.last,
+          iconImage: 'end-marker',
+          iconSize: kIsWeb ? 0.25 : 0.5,
+          iconAnchor: 'bottom',
+          textField: 'End',
+          textColor: '#ffffff',
+          textAnchor: 'top',
+          textOffset: const Offset(0, 0.5),
+        ),
+      );
+      if (endMarker != null) trailMarkers.add(endMarker);
     }
   }
 

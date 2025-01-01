@@ -42,6 +42,7 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
   late LatLng rallyPoint;
   Symbol? dragSymbol;
   Line? trailLine;
+  List<Symbol> trailMarkers = [];
   List<Geographic>? trail;
   FocusNode searchFocus = FocusNode();
   List<Symbol> resultSymbols = [];
@@ -221,18 +222,23 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
   }
 
   Future<void> _updateTrail(List<Geographic>? newTrail) async {
-    // Remove existing trail line if any
+    // Remove existing trail line and markers
     if (trailLine != null) {
       await controller?.removeLine(trailLine!);
       trailLine = null;
     }
+    if (trailMarkers.isNotEmpty) {
+      await controller?.removeSymbols(trailMarkers);
+      trailMarkers.clear();
+    }
 
-    // Add new trail line if points provided
+    // Add new trail line and markers if points provided
     if (newTrail != null && newTrail.isNotEmpty) {
       // Convert trail points to LatLng
       final points = newTrail.map((p) => LatLng(p.lat, p.lon)).toList();
       trail = newTrail;
 
+      // Add trail line
       trailLine = await controller?.addLine(
         LineOptions(
           geometry: points,
@@ -240,6 +246,34 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
           lineWidth: 3,
         ),
       );
+
+      // Add start and end markers
+      final startMarker = await controller?.addSymbol(
+        SymbolOptions(
+          geometry: points.first,
+          iconImage: 'start-marker',
+          iconSize: kIsWeb ? 0.25 : 0.5,
+          iconAnchor: 'bottom',
+          textField: 'Start',
+          textColor: '#ffffff',
+          textAnchor: 'top',
+          textOffset: const Offset(0, 0.5),
+        ),
+      );
+      final endMarker = await controller?.addSymbol(
+        SymbolOptions(
+          geometry: points.last,
+          iconImage: 'end-marker',
+          iconSize: kIsWeb ? 0.25 : 0.5,
+          iconAnchor: 'bottom',
+          textField: 'End',
+          textColor: '#ffffff',
+          textAnchor: 'top',
+          textOffset: const Offset(0, 0.5),
+        ),
+      );
+      if (startMarker != null) trailMarkers.add(startMarker);
+      if (endMarker != null) trailMarkers.add(endMarker);
 
       // Fit map bounds to include trail
       if (controller != null) {
@@ -282,6 +316,16 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
     await controller!.addImage(
         'select-marker',
         (await rootBundle.load('assets/symbols/select-marker.png'))
+            .buffer
+            .asUint8List());
+    await controller!.addImage(
+        'start-marker',
+        (await rootBundle.load('assets/symbols/marker-play.png'))
+            .buffer
+            .asUint8List());
+    await controller!.addImage(
+        'end-marker',
+        (await rootBundle.load('assets/symbols/marker-stop.png'))
             .buffer
             .asUint8List());
 
