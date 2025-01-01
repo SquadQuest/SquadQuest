@@ -163,7 +163,7 @@ class _MobileCalendarController implements CalendarController {
           description:
               "${event.notes}\n\nSquadQuest event: https://squadquest.app/events/${event.id!}",
           start: TZDateTime.from(event.startTimeMin, location),
-          end: TZDateTime.from(event.startTimeMax, location),
+          end: TZDateTime.from(event.endTime ?? event.startTimeMax, location),
           reminders: [
             Reminder(minutes: 60),
           ],
