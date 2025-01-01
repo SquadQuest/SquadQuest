@@ -310,12 +310,12 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
     await controller!.setSymbolTextAllowOverlap(true);
     await controller!.addImage(
         'drag-marker',
-        (await rootBundle.load('assets/symbols/drag-marker.png'))
+        (await rootBundle.load('assets/symbols/marker-drag.png'))
             .buffer
             .asUint8List());
     await controller!.addImage(
         'select-marker',
-        (await rootBundle.load('assets/symbols/select-marker.png'))
+        (await rootBundle.load('assets/symbols/marker-select.png'))
             .buffer
             .asUint8List());
     await controller!.addImage(

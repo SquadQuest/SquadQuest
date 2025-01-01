@@ -50,7 +50,7 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
     // Load marker images
     await controller!.addImage(
         'flag-marker',
-        (await rootBundle.load('assets/symbols/flag-marker.png'))
+        (await rootBundle.load('assets/symbols/marker-flag.png'))
             .buffer
             .asUint8List());
     await controller!.addImage(
