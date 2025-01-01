@@ -14,6 +14,8 @@ import 'package:http/http.dart' as http; // TODO: switch to dio
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/ui/core/widgets/app_bottom_sheet.dart';
 
+const _trailBoundsPadding = 50 / 11000;
+
 class RallyPointMap extends ConsumerStatefulWidget {
   final String title;
   final LatLng mapCenter;
@@ -39,7 +41,7 @@ class RallyPointMap extends ConsumerStatefulWidget {
 class _RallyPointMapState extends ConsumerState<RallyPointMap>
     with SingleTickerProviderStateMixin {
   MapLibreMapController? controller;
-  late LatLng rallyPoint;
+  late LatLng? rallyPoint;
   Symbol? dragSymbol;
   Line? trailLine;
   List<Symbol> trailMarkers = [];
@@ -50,14 +52,15 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
   bool isDragging = false;
   String? resultText;
 
-  Geographic get rallyPointGeographic =>
-      Geographic(lat: rallyPoint.latitude, lon: rallyPoint.longitude);
+  Geographic? get rallyPointGeographic => rallyPoint == null
+      ? null
+      : Geographic(lat: rallyPoint!.latitude, lon: rallyPoint!.longitude);
 
   @override
   void initState() {
     super.initState();
     rallyPoint = widget.initialRallyPoint == null
-        ? widget.mapCenter
+        ? null
         : LatLng(widget.initialRallyPoint!.lat, widget.initialRallyPoint!.lon);
     trail = widget.initialTrail;
   }
@@ -75,54 +78,42 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
         bottomPaddingSafeArea: false,
         rightWidget: IconButton(
           icon: const Icon(Icons.save),
-          onPressed: () => _saveRallyPoint(),
+          onPressed: _saveChanges,
         ),
         leftWidget: PopupMenuButton(
             icon: const Icon(Icons.more_vert),
             offset: const Offset(0, 50),
             itemBuilder: (BuildContext context) => [
                   PopupMenuItem(
-                    child: const ListTile(
-                      leading: Icon(Icons.save),
-                      title: Text('Save rally point'),
-                    ),
-                    onTap: () => _saveRallyPoint(),
-                  ),
-                  PopupMenuItem(
-                    child: const ListTile(
-                      leading: Icon(Icons.delete),
-                      title: Text('Clear rally point'),
-                    ),
-                    onTap: () {
-                      Navigator.of(context).pop(null);
-                    },
-                  ),
-                  PopupMenuItem(
+                    onTap: _uploadGpxTrail,
                     child: const ListTile(
                       leading: Icon(Icons.upload_file),
                       title: Text('Upload GPX trail'),
                     ),
-                    onTap: () async {
-                      await _uploadGpxTrail();
-                    },
                   ),
-                  PopupMenuItem(
-                    child: const ListTile(
-                      leading: Icon(Icons.clear),
-                      title: Text('Clear trail'),
+                  if (trail != null)
+                    PopupMenuItem(
+                      onTap: _clearTrail,
+                      child: const ListTile(
+                        leading: Icon(Icons.clear),
+                        title: Text('Clear trail'),
+                      ),
                     ),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await _clearTrail();
-                    },
-                  ),
+                  if (rallyPoint != null)
+                    PopupMenuItem(
+                      onTap: _clearRallyPoint,
+                      child: const ListTile(
+                        leading: Icon(Icons.clear),
+                        title: Text('Clear rally point'),
+                      ),
+                    ),
                   PopupMenuItem(
                     child: const ListTile(
                       leading: Icon(Icons.undo),
-                      title: Text('Cancel change'),
+                      title: Text('Cancel changes'),
                     ),
                     onTap: () {
-                      Navigator.of(context).pop(widget.initialRallyPoint);
+                      Navigator.of(context).pop(null);
                     },
                   ),
                 ]),
@@ -207,6 +198,17 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
         .map((p) => Geographic(lat: p.lat!, lon: p.lon!))
         .toList();
 
+    if (rallyPoint == null && points.isNotEmpty) {
+      rallyPoint = LatLng(points.first.lat, points.first.lon);
+      await controller!.updateSymbol(
+        dragSymbol!,
+        SymbolOptions(
+          geometry: rallyPoint,
+          iconOpacity: 1,
+        ),
+      );
+    }
+
     await _updateTrail(points);
 
     if (widget.onTrailUpload != null) {
@@ -255,6 +257,7 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
           iconSize: kIsWeb ? 0.15 : 0.3,
           iconAnchor: 'bottom',
           iconColor: '#00ff00',
+          iconOpacity: 0.9,
           textField: 'Start',
           textColor: '#ffffff',
           textAnchor: 'top',
@@ -268,6 +271,7 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
           iconSize: kIsWeb ? 0.15 : 0.3,
           iconAnchor: 'bottom',
           iconColor: '#ff0000',
+          iconOpacity: 0.9,
           textField: 'End',
           textColor: '#ffffff',
           textAnchor: 'top',
@@ -293,8 +297,10 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
         }
 
         final bounds = LatLngBounds(
-          southwest: LatLng(minLat, minLon),
-          northeast: LatLng(maxLat, maxLon),
+          southwest: LatLng(
+              minLat - _trailBoundsPadding, minLon - _trailBoundsPadding),
+          northeast: LatLng(
+              maxLat + _trailBoundsPadding, maxLon + _trailBoundsPadding),
         );
         await controller!.animateCamera(CameraUpdate.newLatLngBounds(bounds));
       }
@@ -336,16 +342,29 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
     );
 
     dragSymbol = await controller!.addSymbol(SymbolOptions(
-        geometry: rallyPoint,
-        iconImage: 'drag-marker',
-        iconSize: kIsWeb ? 0.5 : 1,
-        iconAnchor: 'top',
-        draggable: true));
+      geometry: rallyPoint ?? widget.mapCenter,
+      iconImage: 'drag-marker',
+      iconSize: kIsWeb ? 0.5 : 1,
+      iconAnchor: 'top',
+      iconOpacity: rallyPoint == null ? 0.3 : 1,
+      draggable: true,
+    ));
 
     // Add initial trail if any
     if (trail != null) {
       await _updateTrail(trail);
     }
+  }
+
+  void _clearRallyPoint() async {
+    rallyPoint = null;
+    await controller!.updateSymbol(
+        dragSymbol!,
+        SymbolOptions(
+          geometry: widget.mapCenter,
+          iconOpacity: 0.3,
+        ));
+    selectedPlaceName = null;
   }
 
   void _onMapLongClick(Point<double> point, LatLng coordinates) async {
@@ -355,8 +374,12 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
 
     rallyPoint = coordinates;
 
-    await controller!
-        .updateSymbol(dragSymbol!, SymbolOptions(geometry: coordinates));
+    await controller!.updateSymbol(
+        dragSymbol!,
+        SymbolOptions(
+          geometry: coordinates,
+          iconOpacity: 1,
+        ));
     selectedPlaceName = null;
   }
 
@@ -365,7 +388,15 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
       required LatLng origin,
       required LatLng current,
       required LatLng delta,
-      required DragEventType eventType}) {
+      required DragEventType eventType}) async {
+    if (rallyPoint == null) {
+      await controller!.updateSymbol(
+          dragSymbol!,
+          SymbolOptions(
+            iconOpacity: 1,
+          ));
+    }
+
     if (eventType == DragEventType.start) {
       isDragging = true;
     }
@@ -386,7 +417,16 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
 
     await controller!.removeSymbols(resultSymbols);
     await controller!.updateSymbol(
-        dragSymbol!, SymbolOptions(geometry: resultSymbol.options.geometry));
+      dragSymbol!,
+      SymbolOptions(
+        geometry: resultSymbol.options.geometry,
+        iconOpacity: 1,
+      ),
+    );
+
+    setState(() {
+      resultText = null;
+    });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -452,7 +492,7 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
     resultSymbols = await controller!.addSymbols(resultSymbolOptions);
   }
 
-  void _saveRallyPoint() {
+  void _saveChanges() {
     if (widget.onPlaceSelect != null && selectedPlaceName != null) {
       widget.onPlaceSelect!(selectedPlaceName!);
     }
