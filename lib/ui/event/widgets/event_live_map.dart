@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +24,7 @@ class EventLiveMap extends BaseMap {
   final InstanceID eventId;
   final double? height;
   final LatLng? rallyPoint;
+  final List<LatLng>? trail;
 
   const EventLiveMap({
     super.key,
@@ -29,6 +32,7 @@ class EventLiveMap extends BaseMap {
     required this.eventId,
     this.height,
     this.rallyPoint,
+    this.trail,
   });
 
   @override
@@ -54,6 +58,16 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
           iconSize: kIsWeb ? 0.25 : 0.5,
           iconAnchor: 'bottom-left'));
     }
+
+    if (widget.trail != null && widget.trail!.isNotEmpty) {
+      await controller!.addLine(
+        LineOptions(
+          geometry: widget.trail!,
+          lineColor: "#1976D2",
+          lineWidth: 3,
+        ),
+      );
+    }
   }
 
   @override
@@ -77,13 +91,37 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
   Map<String, double> getInitialBounds() {
     final keepRallyPointInView = ref.read(keepRallyPointInViewProvider);
 
-    if (keepRallyPointInView && widget.rallyPoint != null) {
-      return {
-        'minLatitude': widget.rallyPoint!.latitude,
-        'maxLatitude': widget.rallyPoint!.latitude,
-        'minLongitude': widget.rallyPoint!.longitude,
-        'maxLongitude': widget.rallyPoint!.longitude,
-      };
+    if (keepRallyPointInView) {
+      var minLat = double.infinity;
+      var minLon = double.infinity;
+      var maxLat = -double.infinity;
+      var maxLon = -double.infinity;
+
+      // Include rally point in bounds if present
+      if (widget.rallyPoint != null) {
+        minLat = maxLat = widget.rallyPoint!.latitude;
+        minLon = maxLon = widget.rallyPoint!.longitude;
+      }
+
+      // Include trail points in bounds if present
+      if (widget.trail != null) {
+        for (final point in widget.trail!) {
+          minLat = min(minLat, point.latitude);
+          minLon = min(minLon, point.longitude);
+          maxLat = max(maxLat, point.latitude);
+          maxLon = max(maxLon, point.longitude);
+        }
+      }
+
+      // Only return bounds if we have points to bound
+      if (minLat != double.infinity) {
+        return {
+          'minLatitude': minLat,
+          'maxLatitude': maxLat,
+          'minLongitude': minLon,
+          'maxLongitude': maxLon,
+        };
+      }
     }
 
     return super.getInitialBounds();

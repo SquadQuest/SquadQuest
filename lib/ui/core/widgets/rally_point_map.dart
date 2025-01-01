@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:gpx/gpx.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,14 +18,18 @@ class RallyPointMap extends ConsumerStatefulWidget {
   final String title;
   final LatLng mapCenter;
   final Geographic? initialRallyPoint;
+  final List<Geographic>? initialTrail;
   final Function(String)? onPlaceSelect;
+  final Function(List<Geographic>)? onTrailUpload;
 
   const RallyPointMap({
     super.key,
     this.title = 'Set rally point',
     this.mapCenter = const LatLng(39.9550, -75.1605),
     this.initialRallyPoint,
+    this.initialTrail,
     this.onPlaceSelect,
+    this.onTrailUpload,
   });
 
   @override
@@ -35,6 +41,8 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
   MapLibreMapController? controller;
   late LatLng rallyPoint;
   Symbol? dragSymbol;
+  Line? trailLine;
+  List<Geographic>? trail;
   FocusNode searchFocus = FocusNode();
   List<Symbol> resultSymbols = [];
   String? selectedPlaceName;
@@ -50,6 +58,7 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
     rallyPoint = widget.initialRallyPoint == null
         ? widget.mapCenter
         : LatLng(widget.initialRallyPoint!.lat, widget.initialRallyPoint!.lon);
+    trail = widget.initialTrail;
   }
 
   @override
@@ -85,6 +94,25 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
                     ),
                     onTap: () {
                       Navigator.of(context).pop(null);
+                    },
+                  ),
+                  PopupMenuItem(
+                    child: const ListTile(
+                      leading: Icon(Icons.upload_file),
+                      title: Text('Upload GPX trail'),
+                    ),
+                    onTap: () async {
+                      await _uploadGpxTrail();
+                    },
+                  ),
+                  PopupMenuItem(
+                    child: const ListTile(
+                      leading: Icon(Icons.clear),
+                      title: Text('Clear trail'),
+                    ),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _clearTrail();
                     },
                   ),
                   PopupMenuItem(
@@ -148,6 +176,97 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
     this.controller = controller;
   }
 
+  Future<void> _uploadGpxTrail() async {
+    final result = await FilePicker.platform.pickFiles(
+      withData: true,
+      type: FileType.any,
+      // allowedExtensions: ['gpx'],
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.first;
+    if (file.bytes == null) return;
+
+    final gpxString = String.fromCharCodes(file.bytes!);
+    final gpx = GpxReader().fromString(gpxString);
+
+    if (gpx.trks.isEmpty || gpx.trks.first.trksegs.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No track found in GPX file')),
+        );
+      }
+      return;
+    }
+
+    // Get points from first track segment, ensuring non-null coordinates
+    final points = gpx.trks.first.trksegs.first.trkpts
+        .where((p) => p.lat != null && p.lon != null)
+        .map((p) => Geographic(lat: p.lat!, lon: p.lon!))
+        .toList();
+
+    await _updateTrail(points);
+
+    if (widget.onTrailUpload != null) {
+      widget.onTrailUpload!(points);
+    }
+  }
+
+  Future<void> _clearTrail() async {
+    await _updateTrail(null);
+    if (widget.onTrailUpload != null) {
+      widget.onTrailUpload!([]);
+    }
+  }
+
+  Future<void> _updateTrail(List<Geographic>? newTrail) async {
+    // Remove existing trail line if any
+    if (trailLine != null) {
+      await controller?.removeLine(trailLine!);
+      trailLine = null;
+    }
+
+    // Add new trail line if points provided
+    if (newTrail != null && newTrail.isNotEmpty) {
+      // Convert trail points to LatLng
+      final points = newTrail.map((p) => LatLng(p.lat, p.lon)).toList();
+      trail = newTrail;
+
+      trailLine = await controller?.addLine(
+        LineOptions(
+          geometry: points,
+          lineColor: "#1976D2",
+          lineWidth: 3,
+        ),
+      );
+
+      // Fit map bounds to include trail
+      if (controller != null) {
+        // Calculate bounds
+        var minLat = points.first.latitude;
+        var minLon = points.first.longitude;
+        var maxLat = minLat;
+        var maxLon = minLon;
+
+        for (final point in points) {
+          minLat = min(minLat, point.latitude);
+          minLon = min(minLon, point.longitude);
+          maxLat = max(maxLat, point.latitude);
+          maxLon = max(maxLon, point.longitude);
+        }
+
+        final bounds = LatLngBounds(
+          southwest: LatLng(minLat, minLon),
+          northeast: LatLng(maxLat, maxLon),
+        );
+        await controller!.animateCamera(CameraUpdate.newLatLngBounds(bounds));
+      }
+    } else {
+      trail = null;
+    }
+  }
+
   void _onStyleLoadedCallback() async {
     controller!.onFeatureDrag.add(_onFeatureDrag);
     controller!.onSymbolTapped.add(_onSymbolTapped);
@@ -172,6 +291,11 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
         iconSize: kIsWeb ? 0.5 : 1,
         iconAnchor: 'top',
         draggable: true));
+
+    // Add initial trail if any
+    if (trail != null) {
+      await _updateTrail(trail);
+    }
   }
 
   void _onMapLongClick(Point<double> point, LatLng coordinates) async {
@@ -283,7 +407,10 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
       widget.onPlaceSelect!(selectedPlaceName!);
     }
 
-    Navigator.of(context).pop(rallyPointGeographic);
+    Navigator.of(context).pop({
+      'rallyPoint': rallyPointGeographic,
+      'trail': trail,
+    });
   }
 
   @override
