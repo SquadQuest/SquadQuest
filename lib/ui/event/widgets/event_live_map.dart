@@ -43,8 +43,6 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
   @override
   bool get keepTrailsInView => ref.read(keepFriendsInViewProvider);
 
-  List<Symbol> trailMarkers = [];
-
   @override
   Future<void> loadAdditionalMarkers() async {
     // Load marker images
@@ -89,7 +87,7 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
       );
 
       // Add start marker
-      final startMarker = await controller?.addSymbol(
+      await controller?.addSymbol(
         SymbolOptions(
           geometry: widget.trail!.first,
           iconImage: 'start-marker',
@@ -102,10 +100,9 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
           textOffset: const Offset(0, 0.5),
         ),
       );
-      if (startMarker != null) trailMarkers.add(startMarker);
 
       // Add end marker
-      final endMarker = await controller?.addSymbol(
+      await controller?.addSymbol(
         SymbolOptions(
           geometry: widget.trail!.last,
           iconImage: 'end-marker',
@@ -118,7 +115,6 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
           textOffset: const Offset(0, 0.5),
         ),
       );
-      if (endMarker != null) trailMarkers.add(endMarker);
     }
   }
 
