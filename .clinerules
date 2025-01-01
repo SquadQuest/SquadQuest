@@ -4,8 +4,8 @@
 - A "storybook" build of the app is being used to showcase and iterate on new designs for screens before they are implemented into the app
     - `lib/storybook/screens` contains new screens
     - `lib/storybook/components` contains shared elements for new screens
-    - `lib/storybook/original_screens` archives original screen designs as new designs are implemented
     - `lib/storybook/main.dart` contains the navigation menu for the storybook interface—all screens need to be registered here
+- Real screens are implemented under `lib/ui`. Unless expcilitely told to work on the storybook, assume any tasks are about working on the real screens.
 - Data models are defined for the backend under `supabase/tables` and for the frontend under `lib/models`
 
 ## Coding style

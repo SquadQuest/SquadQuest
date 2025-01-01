@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:go_router/go_router.dart';
 import 'package:squadquest/controllers/chat.dart';
-import 'package:geobase/coordinates.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
@@ -147,7 +146,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       return;
     }
 
-    final result = await showModalBottomSheet<Map<String, dynamic>>(
+    final result = await showModalBottomSheet<RallyPointMapResult>(
       context: context,
       isScrollControlled: true,
       enableDrag: false,
@@ -161,24 +160,21 @@ class _EventScreenState extends ConsumerState<EventScreen> {
 
     if (result == null) return;
 
-    final rallyPoint = result['rallyPoint'] as Geographic?;
-    final trail = (result['trail'] as List<dynamic>?)?.cast<Geographic>();
-
     await ref.read(instancesProvider.notifier).patch(widget.eventId, {
-      'rally_point': rallyPoint == null
+      'rally_point': result.rallyPoint == null
           ? null
-          : 'POINT(${rallyPoint.lon} ${rallyPoint.lat})',
-      'trail': trail == null || trail.isEmpty
+          : 'POINT(${result.rallyPoint!.lon} ${result.rallyPoint!.lat})',
+      'trail': result.trail == null || result.trail!.isEmpty
           ? null
-          : 'LINESTRING(${trail.map((p) => '${p.lon} ${p.lat}').join(',')})',
+          : 'LINESTRING(${result.trail!.map((p) => '${p.lon} ${p.lat}').join(',')})',
     });
 
     ref.invalidate(eventDetailsProvider(widget.eventId));
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content:
-            Text('Rally point ${rallyPoint == null ? 'cleared' : 'updated'}!'),
+        content: Text(
+            'Rally point ${result.rallyPoint == null ? 'cleared' : 'updated'}!'),
       ));
     }
   }
