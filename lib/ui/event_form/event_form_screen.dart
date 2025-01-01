@@ -42,6 +42,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
   final _locationDescriptionController = TextEditingController();
   final _topicProvider = StateProvider<Topic?>((ref) => null);
   final _locationProvider = StateProvider<Geographic?>((ref) => null);
+  final _trailProvider = StateProvider<List<Geographic>?>((ref) => null);
   final _startTimeMinProvider = StateProvider<TimeOfDay?>(
       (ref) => addMinutesToTimeOfDay(TimeOfDay.now(), 60));
   final _startTimeMaxProvider = StateProvider<TimeOfDay?>(
@@ -76,6 +77,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     final TimeOfDay? endTime = ref.read(_endTimeProvider);
     final InstanceVisibility? visibility = ref.read(_visibilityProvider);
     final Geographic? rallyPoint = ref.read(_locationProvider);
+    final List<Geographic>? trail = ref.read(_trailProvider);
 
     // Apply validation rules
     if (startDate == null) {
@@ -187,6 +189,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
           visibility: visibility,
           locationDescription: _locationDescriptionController.text.trim(),
           rallyPoint: rallyPoint,
+          trail: trail,
           link: _linkController.text.trim().isNotEmpty
               ? Uri.parse(_linkController.text.trim())
               : null,
@@ -256,6 +259,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     _locationDescriptionController.text = instance.locationDescription;
     ref.read(_topicProvider.notifier).state = instance.topic;
     ref.read(_locationProvider.notifier).state = instance.rallyPoint;
+    ref.read(_trailProvider.notifier).state = instance.trail;
     startDate = instance.startTimeMin;
     ref.read(_startTimeMinProvider.notifier).state =
         TimeOfDay.fromDateTime(instance.startTimeMin);
@@ -523,6 +527,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
                         const SizedBox(height: 16),
                         EventFormWhere(
                           locationProvider: _locationProvider,
+                          trailProvider: _trailProvider,
                           locationDescriptionController:
                               _locationDescriptionController,
                         ),

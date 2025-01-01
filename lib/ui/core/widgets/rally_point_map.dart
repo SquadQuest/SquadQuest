@@ -14,6 +14,19 @@ import 'package:http/http.dart' as http; // TODO: switch to dio
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/ui/core/widgets/app_bottom_sheet.dart';
 
+/// Result type returned by RallyPointMap when saved
+class RallyPointMapResult {
+  final Geographic? rallyPoint;
+  final String? locationDescription;
+  final List<Geographic>? trail;
+
+  const RallyPointMapResult({
+    this.rallyPoint,
+    this.locationDescription,
+    this.trail,
+  });
+}
+
 const _trailBoundsPadding = 50 / 11000;
 
 class RallyPointMap extends ConsumerStatefulWidget {
@@ -21,7 +34,6 @@ class RallyPointMap extends ConsumerStatefulWidget {
   final LatLng mapCenter;
   final Geographic? initialRallyPoint;
   final List<Geographic>? initialTrail;
-  final Function(String)? onPlaceSelect;
   final Function(List<Geographic>)? onTrailUpload;
 
   const RallyPointMap({
@@ -30,7 +42,6 @@ class RallyPointMap extends ConsumerStatefulWidget {
     this.mapCenter = const LatLng(39.9550, -75.1605),
     this.initialRallyPoint,
     this.initialTrail,
-    this.onPlaceSelect,
     this.onTrailUpload,
   });
 
@@ -493,14 +504,11 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
   }
 
   void _saveChanges() {
-    if (widget.onPlaceSelect != null && selectedPlaceName != null) {
-      widget.onPlaceSelect!(selectedPlaceName!);
-    }
-
-    Navigator.of(context).pop({
-      'rallyPoint': rallyPointGeographic,
-      'trail': trail,
-    });
+    Navigator.of(context).pop(RallyPointMapResult(
+      rallyPoint: rallyPointGeographic,
+      locationDescription: selectedPlaceName,
+      trail: trail,
+    ));
   }
 
   @override

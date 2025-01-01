@@ -14,15 +14,17 @@ class EventFormWhere extends ConsumerWidget {
   const EventFormWhere({
     super.key,
     required this.locationProvider,
+    required this.trailProvider,
     required this.locationDescriptionController,
   });
 
   final StateProvider<Geographic?> locationProvider;
+  final StateProvider<List<Geographic>?> trailProvider;
   final TextEditingController locationDescriptionController;
 
   Future<void> _showRallyPointPicker(
       BuildContext context, WidgetRef ref) async {
-    Geographic? newValue = await showModalBottomSheet(
+    final result = await showModalBottomSheet<RallyPointMapResult>(
       context: context,
       isScrollControlled: true,
       enableDrag: false,
@@ -30,15 +32,18 @@ class EventFormWhere extends ConsumerWidget {
       isDismissible: false,
       builder: (BuildContext context) => RallyPointMap(
         initialRallyPoint: ref.read(locationProvider),
-        onPlaceSelect: (placeName) {
-          if (locationDescriptionController.text.isEmpty) {
-            locationDescriptionController.text = placeName;
-          }
-        },
+        initialTrail: ref.read(trailProvider),
       ),
     );
 
-    ref.read(locationProvider.notifier).state = newValue;
+    if (result != null) {
+      ref.read(locationProvider.notifier).state = result.rallyPoint;
+      ref.read(trailProvider.notifier).state = result.trail;
+      if (result.locationDescription != null &&
+          locationDescriptionController.text.isEmpty) {
+        locationDescriptionController.text = result.locationDescription!;
+      }
+    }
   }
 
   @override
