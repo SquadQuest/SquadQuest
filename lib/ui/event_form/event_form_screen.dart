@@ -427,90 +427,119 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: _editingInstance.when(
-        data: (Instance? instance) =>
-            isNewEvent ? 'Create Event' : 'Edit Event',
-        loading: () => '',
-        error: (_, __) => 'Error loading event',
-      ),
-      loadMask: submitted
-          ? isNewEvent
-              ? 'Posting event...'
-              : 'Saving event...'
-          : loadMask,
-      showLocationSharingSheet: false,
-      actions: isNewEvent
-          ? [
-              IconButton(
-                icon: const Icon(Icons.content_paste),
-                tooltip: 'Import Event from Clipboard',
-                onPressed: _importEvent,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Discard Changes?'),
+            content: const Text(
+                'Are you sure you want to leave? Any changes will be lost.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
               ),
-            ]
-          : null,
-      body: _editingInstance.when(
-        error: (error, __) => Center(child: Text(error.toString())),
-        loading: () => const SizedBox.shrink(),
-        data: (Instance? instance) => Form(
-          key: _formKey,
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: EventFormBanner(
-                  bannerPhotoProvider: _bannerPhotoProvider,
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      EventFormWho(
-                        visibilityProvider: _visibilityProvider,
-                      ),
-                      const SizedBox(height: 16),
-                      EventFormWhat(
-                        titleController: _titleController,
-                        topicProvider: _topicProvider,
-                        linkController: _linkController,
-                        notesController: _notesController,
-                        visibilityProvider: _visibilityProvider,
-                      ),
-                      const SizedBox(height: 16),
-                      EventFormWhen(
-                        startDate: startDate,
-                        onDateSelected: (date) {
-                          setState(() {
-                            startDate = date;
-                          });
-                        },
-                        startTimeMinProvider: _startTimeMinProvider,
-                        startTimeMaxProvider: _startTimeMaxProvider,
-                        endTimeProvider: _endTimeProvider,
-                        isNewEvent: isNewEvent,
-                        instance: instance,
-                      ),
-                      const SizedBox(height: 16),
-                      EventFormWhere(
-                        locationProvider: _locationProvider,
-                        locationDescriptionController:
-                            _locationDescriptionController,
-                      ),
-                      const SizedBox(height: 32),
-                      EventFormSubmit(
-                        onSubmit: () => _submitEvent(context),
-                        isNewEvent: isNewEvent,
-                        isSubmitting: submitted ||
-                            _editingInstance.isLoading ||
-                            loadMask != null,
-                      ),
-                    ],
-                  ),
-                ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Discard'),
               ),
             ],
+          ),
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: AppScaffold(
+        title: _editingInstance.when(
+          data: (Instance? instance) =>
+              isNewEvent ? 'Create Event' : 'Edit Event',
+          loading: () => '',
+          error: (_, __) => 'Error loading event',
+        ),
+        loadMask: submitted
+            ? isNewEvent
+                ? 'Posting event...'
+                : 'Saving event...'
+            : loadMask,
+        showLocationSharingSheet: false,
+        actions: isNewEvent
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.content_paste),
+                  tooltip: 'Import Event from Clipboard',
+                  onPressed: _importEvent,
+                ),
+              ]
+            : null,
+        body: _editingInstance.when(
+          error: (error, __) => Center(child: Text(error.toString())),
+          loading: () => const SizedBox.shrink(),
+          data: (Instance? instance) => Form(
+            key: _formKey,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: EventFormBanner(
+                    bannerPhotoProvider: _bannerPhotoProvider,
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        EventFormWho(
+                          visibilityProvider: _visibilityProvider,
+                        ),
+                        const SizedBox(height: 16),
+                        EventFormWhat(
+                          titleController: _titleController,
+                          topicProvider: _topicProvider,
+                          linkController: _linkController,
+                          notesController: _notesController,
+                          visibilityProvider: _visibilityProvider,
+                        ),
+                        const SizedBox(height: 16),
+                        EventFormWhen(
+                          startDate: startDate,
+                          onDateSelected: (date) {
+                            setState(() {
+                              startDate = date;
+                            });
+                          },
+                          startTimeMinProvider: _startTimeMinProvider,
+                          startTimeMaxProvider: _startTimeMaxProvider,
+                          endTimeProvider: _endTimeProvider,
+                          isNewEvent: isNewEvent,
+                          instance: instance,
+                        ),
+                        const SizedBox(height: 16),
+                        EventFormWhere(
+                          locationProvider: _locationProvider,
+                          locationDescriptionController:
+                              _locationDescriptionController,
+                        ),
+                        const SizedBox(height: 32),
+                        EventFormSubmit(
+                          onSubmit: () => _submitEvent(context),
+                          isNewEvent: isNewEvent,
+                          isSubmitting: submitted ||
+                              _editingInstance.isLoading ||
+                              loadMask != null,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
