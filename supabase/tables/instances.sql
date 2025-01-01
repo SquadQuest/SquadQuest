@@ -18,6 +18,8 @@ create table
     location_description text not null,
     rally_point geography not null,
     rally_point_text text GENERATED ALWAYS AS (ST_AsText (rally_point)) STORED,
+    trail geography(LineString),
+    trail_text text GENERATED ALWAYS AS (ST_AsText(trail)) STORED,
     link text null,
     notes text null,
     banner_photo text null,

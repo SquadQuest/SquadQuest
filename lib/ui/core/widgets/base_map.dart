@@ -71,7 +71,7 @@ abstract class BaseMapState<T extends BaseMap> extends ConsumerState<T> {
     // Load the SDF version of the person marker
     await controller!.addImage(
         'person-marker',
-        (await rootBundle.load('assets/symbols/person-marker.png'))
+        (await rootBundle.load('assets/symbols/marker-person.png'))
             .buffer
             .asUint8List(),
         true);

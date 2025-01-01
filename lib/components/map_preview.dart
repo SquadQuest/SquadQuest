@@ -46,7 +46,7 @@ class _MapPreviewState extends State<MapPreview> {
           onStyleLoadedCallback: () async {
             await _mapController!.addImage(
                 'flag-marker',
-                (await rootBundle.load('assets/symbols/flag-marker.png'))
+                (await rootBundle.load('assets/symbols/marker-flag.png'))
                     .buffer
                     .asUint8List());
 
