@@ -200,6 +200,9 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   }
 
   Future<void> _showChat() async {
+    final session = ref.read(authControllerProvider);
+    if (session == null) return;
+
     final lastSeen =
         await ref.read(chatLastSeenProvider(widget.eventId).future);
 
@@ -342,24 +345,33 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                   child: Consumer(
                     builder: (context, ref, child) {
                       return EventQuickActions(
-                        selectedStatus: myRsvp.valueOrNull?.status,
+                        selectedStatus:
+                            session == null ? null : myRsvp.valueOrNull?.status,
                         eventId: widget.eventId,
-                        onRsvpTap: () => _showRsvpSheet(event),
+                        onRsvpTap: session == null
+                            ? () => context.goNamed(
+                                  'login',
+                                  queryParameters: {
+                                    'redirect': '/events/${widget.eventId}'
+                                  },
+                                )
+                            : () => _showRsvpSheet(event),
                         onMapTap: _showLiveMap,
                         onShareTap: _copyEventLink,
                         onChatTap: _showChat,
-                        showChat: myRsvp.valueOrNull != null,
+                        showChat: session != null && myRsvp.valueOrNull != null,
                       );
                     },
                   ),
                 ),
               ),
 
-              // Host Bulletin
-              EventHostBulletin(
-                eventId: widget.eventId,
-                onTap: () => _showChat(),
-              ),
+              // Host Bulletin (only show for authenticated users)
+              if (session != null)
+                EventHostBulletin(
+                  eventId: widget.eventId,
+                  onTap: () => _showChat(),
+                ),
 
               // Event Description
               if (event.notes != null && event.notes!.trim().isNotEmpty)
@@ -368,11 +380,33 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               // Event Info
               EventInfo(event: event),
 
-              // Attendees
-              EventAttendees(
-                event: event,
-                currentUserId: session!.user.id,
-              ),
+              // Login prompt or Attendees
+              if (session == null)
+                SliverPadding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                  sliver: SliverToBoxAdapter(
+                    child: Center(
+                      child: ElevatedButton(
+                        child:
+                            const Text('Join SquadQuest to RSVP to this event'),
+                        onPressed: () {
+                          context.goNamed(
+                            'login',
+                            queryParameters: {
+                              'redirect': '/events/${widget.eventId}'
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                )
+              else
+                EventAttendees(
+                  event: event,
+                  currentUserId: session.user.id,
+                ),
 
               const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
             ],
