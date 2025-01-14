@@ -16,8 +16,8 @@ async function scrape(url: URL): Promise<Event> {
   );
 
   // Launch browser
-  const browser = await puppeteer.launch({
-    headless: true,
+  const browser = await puppeteer.connect({
+    browserWSEndpoint: "ws://chrome:3000",
   });
 
   try {
@@ -30,35 +30,30 @@ async function scrape(url: URL): Promise<Event> {
       timeout: 60000,
     });
 
-    // Wait for the ld+json script to be present
-    await page.waitForFunction(
-      "document.querySelector(\"script[type='application/ld+json']\")",
-      { timeout: 60000 },
-    );
+    // Get page content
+    const html = await page.content();
 
-    // Extract JSON-LD data directly using page.evaluate
-    const eventData = await page.evaluate(() => {
-      const scripts = document.querySelectorAll(
-        "script[type='application/ld+json']",
-      );
-      console.log("Found scripts:", scripts.length);
+    // Find all ld+json scripts and look for the one containing event data
+    const scripts =
+      html.match(/<script type="application\/ld\+json">(.*?)<\/script>/gs) ||
+      [];
+    let eventData = null;
 
-      const results = [];
-      scripts.forEach((script, i) => {
-        console.log(`Script ${i} content:`, script.textContent);
-        try {
-          const data = JSON.parse(script.textContent || "");
-          console.log(`Script ${i} parsed:`, data);
-          if (data["@type"] === "Event" || data["@type"] === "MusicEvent") {
-            results.push(data);
-          }
-        } catch (e) {
-          console.error(`Failed to parse script ${i}:`, e);
+    for (const script of scripts) {
+      const jsonContent = script.replace(
+        /<script type="application\/ld\+json">/,
+        "",
+      ).replace(/<\/script>/, "");
+      try {
+        const data = JSON.parse(jsonContent);
+        if (data["@type"] === "Event" || data["@type"] === "MusicEvent") {
+          eventData = data;
+          break;
         }
-      });
-
-      return results[0] || null;
-    });
+      } catch (e) {
+        continue;
+      }
+    }
 
     assert(eventData != null, "Failed to extract event data from AXS");
 
