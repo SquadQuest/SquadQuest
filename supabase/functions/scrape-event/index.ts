@@ -19,33 +19,38 @@ serve(async (request: Request) => {
 
   const url = new URL(rawUrl);
 
-  // find source module
-  let scrape: ((url: URL) => Promise<Event>) | null = null;
+  // Try each scraper in order until one succeeds
+  let lastError: Error | null = null;
 
-  for (const [scraperId, scraper] of Object.entries(scrapers)) {
+  for (const scraper of scrapers) {
     if (scraper.canScrape(url)) {
-      console.log(`Scraping with ${scraperId}: ${url}`);
-      scrape = scraper.scrape;
-      break;
+      try {
+        console.log(`Trying scraper: ${url}`);
+        const event = await scraper.scrape(url);
+        return new Response(
+          JSON.stringify(event),
+          {
+            headers: { "Content-Type": "application/json" },
+            status: 200,
+          },
+        );
+      } catch (error) {
+        console.log(`Scraper failed: ${error}`);
+        lastError = error;
+        // Continue to next scraper
+      }
     }
   }
 
-  assert(
-    scrape != null,
-    "SquadQuest does not yet support importing events from this site",
-    404,
-    "no-scraper-available",
-  );
-
-  // scrape event
-  const event = await scrape!(url);
-
-  // return event data
+  // If we get here, no scraper succeeded
   return new Response(
-    JSON.stringify(event),
+    JSON.stringify({
+      error: lastError?.message || "Failed to import event from this site",
+      code: "scraping-failed",
+    }),
     {
       headers: { "Content-Type": "application/json" },
-      status: 200,
+      status: 404,
     },
   );
 });
