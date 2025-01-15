@@ -440,5 +440,9 @@ services:
       LOGFLARE_API_KEY: ${LOGFLARE_API_KEY}
     command: [ "--config", "etc/vector/vector.yml" ]
 
+  chrome:
+    container_name: chrome
+    image: browserless/chrome
+
 volumes:
   db-config:

@@ -138,6 +138,18 @@ GET {{baseUrl}}/scrape-event
     ?url=https%3A%2F%2Fpartiful.com%2Fe%2FKAs8wl96PDSVawhWIJPJ
 Authorization: Bearer {{token}}
 
+### Scrape AXS event
+
+GET {{baseUrl}}/scrape-event
+    ?url=https%3A%2F%2Fwww.axs.com%2Fevents%2F636956%2Flimperatrice-tickets
+Authorization: Bearer {{token}}
+
+### Scrape Songkick event
+
+GET {{baseUrl}}/scrape-event
+    ?url=https%3A%2F%2Fwww.songkick.com%2Fconcerts%2F42336070-thievery-corporation-at-franklin-music-hall
+Authorization: Bearer {{token}}
+
 
 ### Trigger: INSERT event_messages
 

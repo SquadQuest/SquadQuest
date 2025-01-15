@@ -372,20 +372,22 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       return;
     }
 
-    // Basic URL validation
-    Uri? url;
-    try {
-      url = Uri.parse(clipboardText);
-      if (!url.hasScheme || !url.hasAuthority) {
-        throw FormatException('Invalid URL');
-      }
-    } catch (e) {
+    // Extract first URL from text
+    final urlPattern = RegExp(
+      r'''https?:\/\/[^\s)\]}>"']+''',
+      caseSensitive: false,
+    );
+    final match = urlPattern.firstMatch(clipboardText);
+
+    if (match == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Clipboard content is not a valid URL')),
+        const SnackBar(content: Text('No URL found in clipboard content')),
       );
       return;
     }
+
+    final url = Uri.parse(match.group(0)!);
 
     setState(() {
       loadMask = 'Importing event...';
@@ -397,7 +399,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
       final response = await supabase.functions.invoke(
         'scrape-event',
         method: HttpMethod.get,
-        queryParameters: {'url': clipboardText},
+        queryParameters: {'url': url.toString()},
       );
 
       final instance = Instance.fromMap(response.data);
