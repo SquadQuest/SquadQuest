@@ -13,6 +13,7 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/models/topic.dart';
 import 'package:squadquest/services/router.dart';
 import 'package:squadquest/services/supabase.dart';
+import 'package:squadquest/services/scrapers/axs.dart';
 import 'package:squadquest/controllers/instances.dart';
 
 import 'widgets/event_form_banner.dart';
@@ -393,17 +394,33 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     });
 
     try {
-      final supabase = ref.read(supabaseClientProvider);
-      final response = await supabase.functions.invoke(
-        'scrape-event',
-        method: HttpMethod.get,
-        queryParameters: {'url': clipboardText},
-      );
+      Instance? instance;
 
-      final instance = Instance.fromMap(response.data);
+      // Try AXS scraper first
+      if (AxsScraper.canHandle(url)) {
+        try {
+          instance = await AxsScraper.scrape(url);
+        } catch (e) {
+          logger.e('AXS scraper failed', error: e);
+          // Fall through to Supabase function
+        }
+      }
+
+      // Fall back to Supabase function for other sites
+      if (instance == null) {
+        final supabase = ref.read(supabaseClientProvider);
+        final response = await supabase.functions.invoke(
+          'scrape-event',
+          method: HttpMethod.get,
+          queryParameters: {'url': clipboardText},
+        );
+        instance = Instance.fromMap(response.data);
+      }
 
       setState(() {
-        _loadValuesFromInstance(instance);
+        if (instance != null) {
+          _loadValuesFromInstance(instance);
+        }
         _editingInstance = const AsyncValue.data(null);
         loadMask = null;
       });
