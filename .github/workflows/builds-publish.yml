@@ -178,9 +178,8 @@ jobs:
                   --arg version "${BUILD_NAME}" \
                   --arg news "${RELEASE_NEWS}" \
                   --arg notices "${RELEASE_NOTICES}" \
-                  '{
-                    content: "Version \($version) (build \($build)) has been published for review!",
-                    embeds: [
+                  '
+                    [
                       {
                         title: "GitHub Release",
                         url: "https://github.com/SquadQuest/SquadQuest/releases/tag/v\($version)"
@@ -196,7 +195,11 @@ jobs:
                         color: 14177041
                       } end)
                     ]
-                  }' \
+                    | {
+                        content: "Version \($version) (build \($build)) has been published for review!",
+                        embeds: [.[] | values]
+                    }
+                  ' \
                   > /tmp/discord-message.json
 
       - name: Post Discord notification
