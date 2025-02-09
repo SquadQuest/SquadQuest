@@ -1,17 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:squadquest/logger.dart';
-import 'package:squadquest/services/connection.dart';
-import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/profile.dart';
-import 'package:squadquest/ui/splash/splash_screen.dart';
 import 'package:squadquest/ui/login/login_screen.dart';
 import 'package:squadquest/ui/verify/verify_screen.dart';
 import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
@@ -38,16 +34,11 @@ class RouterService {
   RouterService(this.ref);
 
   late final router = GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/',
     navigatorKey: navigatorKey,
     observers: [SentryNavigatorObserver()],
     redirect: _redirect,
     routes: [
-      GoRoute(
-        name: 'splash',
-        path: '/splash',
-        builder: (context, state) => const SplashScreen(),
-      ),
       GoRoute(
         name: 'login',
         path: '/login',
@@ -118,52 +109,19 @@ class RouterService {
     ],
   );
 
-  Future<String?> _redirect(BuildContext context, GoRouterState state) async {
-    final splashComplete = ref.read(splashCompleteProvider);
-    final session = ref.read(authControllerProvider);
-
-    // continue if route is login, verify or splash
-    if (state.topRoute?.name == 'login' ||
-        state.topRoute?.name == 'verify' ||
-        state.topRoute?.name == 'splash') {
-      return null;
-    }
-
-    // save to initial route and return existing location if splash isn't finished
-    if (!splashComplete) {
-      // If we have a non-splash route, preserve it
-      if (state.uri.toString() != '/splash') {
-        _initialLocation = state.uri.toString();
-      }
-
-      final currentLocation =
-          state.uri.toString() == '' ? '/splash' : state.matchedLocation;
-      logger.d({
-        'splash not complete, saving redirect to initialLocation': {
-          'initialLocation': _initialLocation,
-          'currentLocation': currentLocation,
-        }
-      });
-      return currentLocation;
-    }
-
-    logger.d('processing redirect to ${state.uri.toString()}');
-
-    // continue if user is authenticated
-    if (session != null) {
+  String? _redirect(BuildContext context, GoRouterState state) {
+    // continue if route is login or verify
+    if (state.topRoute?.name == 'login' || state.topRoute?.name == 'verify') {
       return null;
     }
 
     // continue unauthenticated if on a public event details screen
     if (state.topRoute?.name == 'event-details' &&
         state.pathParameters['id'] != null) {
-      await supabaseInitialized;
       try {
-        final event = await ref
-            .read(eventDetailsProvider(state.pathParameters['id']!).future);
-
-        // allow unauthenticated access to public events
-        if (event.visibility == InstanceVisibility.public) {
+        final event =
+            ref.read(eventDetailsProvider(state.pathParameters['id']!));
+        if (event.value?.visibility == InstanceVisibility.public) {
           return null;
         }
       } catch (error) {
@@ -171,7 +129,7 @@ class RouterService {
       }
     }
 
-    // otherwise: redirect to login screen
+    // redirect to login if not authenticated
     final redirect = state.uri.toString();
     return state.namedLocation('login',
         queryParameters: redirect == '/'
@@ -181,55 +139,10 @@ class RouterService {
               });
   }
 
-  Future<void> goInitialLocation([String? overrideLocation]) async {
-    final String initialLocation = overrideLocation ?? _initialLocation;
-    final currentRouteName =
-        router.routerDelegate.currentConfiguration.last.route.name;
-
-    logger.t({
-      'goInitialLocation': {
-        'initialLocation': initialLocation,
-        'currentRouteName': currentRouteName,
-      }
-    });
-
-    // send user to profile screen if profile is not set
-    final session = ref.read(authControllerProvider);
-    if (session != null) {
-      try {
-        final profile = await ref.read(profileProvider.future);
-        if (profile == null) {
-          router.goNamed('profile-edit',
-              queryParameters: overrideLocation == null
-                  ? {}
-                  : {'redirect': overrideLocation});
-          return;
-        }
-      } catch (error) {
-        await ConnectionService.showConnectionErrorDialog();
-        await FlutterExitApp.exitApp(iosForceExit: true);
-        return;
-      }
-    }
-
-    // if not authenticated, go directly to initialLocation instead of stacking home first
-    if (session == null) {
-      router.go(initialLocation);
-      return;
-    }
-
-    // put the home screen in the stack first
-    router.go('/');
-
-    // push initial location after the home screen if set
-    if (initialLocation != '/') {
-      // reset initial location
-      _initialLocation = '/';
-
-      // defering this seems to be necessary to ensure the previous route gets loaded
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => router.push(initialLocation));
-    }
+  void goInitialLocation([String? overrideLocation]) {
+    final location = overrideLocation ?? _initialLocation;
+    router.go(location);
+    _initialLocation = '/';
   }
 }
 

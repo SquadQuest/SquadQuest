@@ -25,8 +25,22 @@ export 'package:firebase_messaging/firebase_messaging.dart' show RemoteMessage;
 
 typedef FirebaseStreamRecord = ({String type, RemoteMessage message});
 
-final firebaseAppProvider = Provider<FirebaseApp>((_) {
-  throw UnimplementedError();
+// Core provider that handles initialization
+final firebaseProvider = FutureProvider<FirebaseApp>((ref) async {
+  logger.t('Initializing Firebase');
+
+  final app = await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  return app;
+});
+
+// For existing code that depends on firebaseAppProvider
+final firebaseAppProvider = Provider<FirebaseApp>((ref) {
+  return ref.watch(firebaseProvider).requireValue;
 });
 
 final firebaseMessagingServiceProvider =
@@ -42,20 +56,11 @@ final firebaseMessagingStreamProvider =
   return firebaseMessagingService.stream;
 });
 
-Future<FirebaseApp> buildFirebaseApp() async {
-  logger.t('buildFirebaseApp');
-
-  final app = Firebase.initializeApp(
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Initialize Firebase for background handler
+  final app = await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  return app;
-}
-
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await buildFirebaseApp();
 
   logger.t({
     'message:background': {

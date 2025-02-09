@@ -9,54 +9,25 @@ import 'package:dio/dio.dart';
 
 import 'package:squadquest/logger.dart';
 
-final supabaseAppProvider = Provider<Supabase>((ref) {
-  throw UnimplementedError();
-});
-
+// Core providers
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
-  final supabase = ref.watch(supabaseAppProvider);
-  return supabase.client;
+  return ref.watch(supabaseProvider).requireValue;
 });
 
-final supabaseAuthStateChangesProvider = StreamProvider<AuthState?>((ref) {
-  final supabase = ref.watch(supabaseClientProvider);
-  return supabase.auth.onAuthStateChange;
-});
-
-final Completer _supabaseInitializedCompleter = Completer<void>();
-final supabaseInitialized = _supabaseInitializedCompleter.future;
-
-Future<Supabase> buildSupabaseApp() async {
-  logger.t('buildSupabaseApp');
-
-  // TODO: eventually delete the legacy key logic
+// Initialization provider
+final supabaseProvider = FutureProvider<SupabaseClient>((ref) async {
+  logger.t('Initializing Supabase');
 
   final supabaseUrl = dotenv.get('SUPABASE_URL');
   final supabaseAnonKey = dotenv.get('SUPABASE_ANON_KEY');
-  final supabaseAnonKeyLegacy = dotenv.get('SUPABASE_ANON_KEY_LEGACY');
-  Supabase supabase;
 
-  // execute test API call to determine which key to use
-  final dio = Dio();
-  try {
-    // try new key
-    await dio.get('$supabaseUrl/rest/v1/test?select=success',
-        options: Options(headers: {
-          'apikey': supabaseAnonKey,
-          'Authorization': 'Bearer $supabaseAnonKey'
-        }));
+  final supabase = await Supabase.initialize(
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+  );
 
-    // initialize app with new key
-    supabase =
-        await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
-  } catch (error) {
-    // fallback to legacy key
-    supabase = await Supabase.initialize(
-        url: supabaseUrl, anonKey: supabaseAnonKeyLegacy);
-  }
-
-  final authSubscription =
-      supabase.client.auth.onAuthStateChange.listen((data) {
+  // Set up auth state change listener for Sentry integration
+  supabase.client.auth.onAuthStateChange.listen((data) {
     logger.t({
       'supabase.onAuthStateChange': {
         'event': data.event.toString(),
@@ -73,22 +44,21 @@ Future<Supabase> buildSupabaseApp() async {
             name: data.session?.user.userMetadata?['first_name'],
           );
     Sentry.configureScope((scope) => scope.setUser(sentryUser));
-
-    // complete supabaseInitialized future when session is available
-    if (data.event == AuthChangeEvent.initialSession) {
-      logger.t('supabase initialized');
-      _supabaseInitializedCompleter.complete();
-    }
   });
 
-  authSubscription.onError((error, stackTrace) {
-    logger.e({'supabase.authSubscription.onError': error},
-        stackTrace: stackTrace);
-  });
+  return supabase.client;
+});
 
-  return supabase;
-}
+// Auth state changes stream
+final supabaseAuthStateChangesProvider = StreamProvider<AuthState?>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return client.auth.onAuthStateChange;
+});
 
+// For backward compatibility during migration
+final supabaseInitialized = supabaseProvider.future;
+
+// For testing
 void mockSupabaseInitializedComplete() {
-  _supabaseInitializedCompleter.complete();
+  // no-op as initialization is now handled by the provider
 }

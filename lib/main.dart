@@ -13,7 +13,8 @@ import 'package:device_preview/device_preview.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/firebase.dart';
-import 'package:squadquest/app.dart';
+import 'package:squadquest/services/initialization.dart';
+import 'package:squadquest/ui/core/root_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,25 +25,14 @@ void main() async {
   // Load .env file
   await dotenv.load(fileName: ".env");
 
-  // Initialize Shared Preferences
-  final sharedPreferences = await SharedPreferences.getInstance();
-
-  // Initialize Supabase
-  final supabaseApp = await buildSupabaseApp();
-
-  // Initialize Firebase
-  final firebaseApp = await buildFirebaseApp();
-
   // Initialize a custom provider container
-  final container = ProviderContainer(overrides: [
-    sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-    supabaseAppProvider.overrideWithValue(supabaseApp),
-    firebaseAppProvider.overrideWithValue(firebaseApp),
-  ]);
+  final container = ProviderContainer();
 
-  // Initialize any providers that need to be always-on
+  // Initialize core services
+  await container.read(initializationProvider.future);
+
+  // Initialize messaging service
   container.read(firebaseMessagingServiceProvider);
-  container.read(settingsControllerProvider);
 
   // integrate logger with Sentry
   Logger.addLogListener((LogEvent event) {
@@ -88,7 +78,7 @@ void main() async {
           enabled: !kIsWeb && Platform.isMacOS,
           defaultDevice: Devices.ios.iPhoneSE,
           backgroundColor: Colors.black87,
-          builder: (context) => MyApp(),
+          builder: (context) => const RootAppWidget(),
           tools: const [
             DeviceSection(),
             SystemSection(),
