@@ -66,16 +66,18 @@ void main() async {
     appRunner: () => runApp(
       UncontrolledProviderScope(
         container: container,
-        child: DevicePreview(
-          enabled: !kIsWeb && Platform.isMacOS,
-          defaultDevice: Devices.ios.iPhoneSE,
-          backgroundColor: Colors.black87,
-          builder: (context) => const MyApp(),
-          tools: const [
-            DeviceSection(),
-            SystemSection(),
-          ],
-        ),
+        child: kDebugMode
+            ? DevicePreview(
+                enabled: !kIsWeb && Platform.isMacOS,
+                defaultDevice: Devices.ios.iPhoneSE,
+                backgroundColor: Colors.black87,
+                builder: (context) => const MyApp(),
+                tools: const [
+                  DeviceSection(),
+                  SystemSection(),
+                ],
+              )
+            : const MyApp(),
       ),
     ),
   );
