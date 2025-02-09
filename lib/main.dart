@@ -10,6 +10,7 @@ import 'package:logger/logger.dart';
 import 'package:device_preview/device_preview.dart';
 
 import 'package:squadquest/app.dart';
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/preferences.dart';
 
 void main() async {
@@ -18,36 +19,15 @@ void main() async {
   // Activate path-based routing URL strategy for web
   usePathUrlStrategy();
 
+  // Register error handlers
+  registerErrorHandlers();
+
   // Load .env file
   await dotenv.load(fileName: ".env");
 
   // Initialize SharedPreferences
   final container = ProviderContainer();
   await container.read(preferencesProvider.future);
-
-  // integrate logger with Sentry
-  Logger.addLogListener((LogEvent event) {
-    switch (event.level) {
-      case Level.error:
-      case Level.fatal:
-        Sentry.captureException(event.error, stackTrace: event.stackTrace);
-      case Level.warning:
-        Sentry.captureMessage(event.message.toString(),
-            params: event.message is Map ? event.message : null,
-            level: SentryLevel.warning);
-      default:
-        Sentry.addBreadcrumb(Breadcrumb(
-          message: event.message is String
-              ? event.message
-              : event.message.toString(),
-          data: event.message is Map ? event.message : null,
-          level: switch (event.level) {
-            Level.debug => SentryLevel.debug,
-            _ => SentryLevel.info,
-          },
-        ));
-    }
-  });
 
   // Run the app, wrapped w/ Sentry
   await SentryFlutter.init(
@@ -81,4 +61,61 @@ void main() async {
       ),
     ),
   );
+}
+
+void registerErrorHandlers() {
+  // Show some error UI if any uncaught exception happens
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    logger.e(
+      'Uncaught UI exception',
+      error: details.exception,
+      stackTrace: details.stack,
+    );
+  };
+
+  // Handle errors from the underlying platform/OS
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    logger.e(
+      'Uncaught platform exception',
+      error: error,
+      stackTrace: stack,
+    );
+    return true;
+  };
+
+  // Show some error UI when any widget in the app fails to build
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.red,
+        title: Text('An error occurred'),
+      ),
+      body: Center(child: Text(details.toString())),
+    );
+  };
+
+  // Integrate logger with Sentry
+  Logger.addLogListener((LogEvent event) {
+    switch (event.level) {
+      case Level.error:
+      case Level.fatal:
+        Sentry.captureException(event.error, stackTrace: event.stackTrace);
+      case Level.warning:
+        Sentry.captureMessage(event.message.toString(),
+            params: event.message is Map ? event.message : null,
+            level: SentryLevel.warning);
+      default:
+        Sentry.addBreadcrumb(Breadcrumb(
+          message: event.message is String
+              ? event.message
+              : event.message.toString(),
+          data: event.message is Map ? event.message : null,
+          level: switch (event.level) {
+            Level.debug => SentryLevel.debug,
+            _ => SentryLevel.info,
+          },
+        ));
+    }
+  });
 }

@@ -58,7 +58,6 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
 
       return profile;
     } catch (error, stackTrace) {
-      logger.e({'ProfileController.fetch': error}, stackTrace: stackTrace);
       state = AsyncValue.error(error, stackTrace);
 
       if (throwOnError) {
