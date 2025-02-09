@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 export 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dio/dio.dart';
 
 import 'package:squadquest/logger.dart';
 

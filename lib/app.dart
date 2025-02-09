@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/services/router.dart';
-import 'package:squadquest/services/notifications.dart';
 import 'package:squadquest/theme.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/ui/core/app_startup.dart';
