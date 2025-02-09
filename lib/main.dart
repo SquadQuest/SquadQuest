@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -58,15 +59,17 @@ void main() async {
       options.attachViewHierarchy = true;
     },
     appRunner: () => runApp(
-      DevicePreview(
-        enabled: !kIsWeb && Platform.isMacOS,
-        defaultDevice: Devices.ios.iPhoneSE,
-        backgroundColor: Colors.black87,
-        builder: (context) => const MyApp(),
-        tools: const [
-          DeviceSection(),
-          SystemSection(),
-        ],
+      ProviderScope(
+        child: DevicePreview(
+          enabled: !kIsWeb && Platform.isMacOS,
+          defaultDevice: Devices.ios.iPhoneSE,
+          backgroundColor: Colors.black87,
+          builder: (context) => const MyApp(),
+          tools: const [
+            DeviceSection(),
+            SystemSection(),
+          ],
+        ),
       ),
     ),
   );
