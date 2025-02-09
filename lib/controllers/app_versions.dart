@@ -9,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:squadquest/services/router.dart';
 import 'package:squadquest/services/supabase.dart';
-import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/services/preferences.dart';
 import 'package:squadquest/models/app_version.dart';
 
 enum _AppUpdateDialogType { update, changes }

@@ -7,9 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // TODO: when adding future settings, use e.g. setBool instead of setString for everything
 
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError();
-});
+// Import preferences provider from services
+import 'package:squadquest/services/preferences.dart';
 
 final settingsControllerProvider = Provider<SettingsController>((ref) {
   return SettingsController(ref);

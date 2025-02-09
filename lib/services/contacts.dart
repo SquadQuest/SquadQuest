@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
 import 'package:squadquest/services/router.dart';
-import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/services/preferences.dart';
 
 export 'package:flutter_contacts/flutter_contacts.dart' show Contact;
 

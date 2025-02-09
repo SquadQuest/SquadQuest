@@ -14,7 +14,7 @@ import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/router.dart';
 import 'package:squadquest/firebase_options.dart';
 import 'package:squadquest/controllers/profile.dart';
-import 'package:squadquest/controllers/settings.dart';
+import 'package:squadquest/services/preferences.dart';
 import 'package:squadquest/controllers/calendar.dart';
 import 'package:squadquest/components/forms/notifications.dart';
 import 'package:squadquest/models/instance.dart';
