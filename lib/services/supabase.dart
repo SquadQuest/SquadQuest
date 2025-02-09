@@ -54,11 +54,3 @@ final supabaseAuthStateChangesProvider = StreamProvider<AuthState?>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return client.auth.onAuthStateChange;
 });
-
-// For backward compatibility during migration
-final supabaseInitialized = supabaseProvider.future;
-
-// For testing
-void mockSupabaseInitializedComplete() {
-  // no-op as initialization is now handled by the provider
-}

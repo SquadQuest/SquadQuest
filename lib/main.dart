@@ -2,19 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:logger/logger.dart';
 import 'package:device_preview/device_preview.dart';
 
-import 'package:squadquest/controllers/settings.dart';
-import 'package:squadquest/services/supabase.dart';
-import 'package:squadquest/services/firebase.dart';
-import 'package:squadquest/services/initialization.dart';
-import 'package:squadquest/ui/core/root_app.dart';
+import 'package:squadquest/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,15 +18,6 @@ void main() async {
 
   // Load .env file
   await dotenv.load(fileName: ".env");
-
-  // Initialize a custom provider container
-  final container = ProviderContainer();
-
-  // Initialize core services
-  await container.read(initializationProvider.future);
-
-  // Initialize messaging service
-  container.read(firebaseMessagingServiceProvider);
 
   // integrate logger with Sentry
   Logger.addLogListener((LogEvent event) {
@@ -72,17 +57,17 @@ void main() async {
 
       options.attachViewHierarchy = true;
     },
-    appRunner: () => runApp(UncontrolledProviderScope(
-        container: container,
-        child: DevicePreview(
-          enabled: !kIsWeb && Platform.isMacOS,
-          defaultDevice: Devices.ios.iPhoneSE,
-          backgroundColor: Colors.black87,
-          builder: (context) => const RootAppWidget(),
-          tools: const [
-            DeviceSection(),
-            SystemSection(),
-          ],
-        ))),
+    appRunner: () => runApp(
+      DevicePreview(
+        enabled: !kIsWeb && Platform.isMacOS,
+        defaultDevice: Devices.ios.iPhoneSE,
+        backgroundColor: Colors.black87,
+        builder: (context) => const MyApp(),
+        tools: const [
+          DeviceSection(),
+          SystemSection(),
+        ],
+      ),
+    ),
   );
 }

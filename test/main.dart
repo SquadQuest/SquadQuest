@@ -10,8 +10,6 @@ import 'package:squadquest/services/supabase.dart';
 import 'mocks.dart';
 
 void main() {
-  mockSupabaseInitializedComplete();
-
   runApp(DevicePreview(
     enabled: !kIsWeb && Platform.isMacOS,
     defaultDevice: Devices.ios.iPhoneSE,

@@ -29,7 +29,6 @@ import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
-import 'package:squadquest/ui/splash/splash_screen.dart';
 
 class MockSupabase extends Fake implements SupabaseClient {
   @override
@@ -512,7 +511,6 @@ ProviderScope buildMockEnvironment(Widget screen,
         storybookModeProvider.overrideWith((ref) => storybookMode),
         themeModeProvider.overrideWith((ref) => ThemeMode.dark),
         developerModeProvider.overrideWith((ref) => false),
-        splashCompleteProvider.overrideWith((ref) => true),
         locationSharingEnabledProvider.overrideWith((ref) => false),
         calendarWritingEnabledProvider.overrideWith((ref) => false),
 
