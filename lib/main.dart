@@ -10,6 +10,7 @@ import 'package:logger/logger.dart';
 import 'package:device_preview/device_preview.dart';
 
 import 'package:squadquest/app.dart';
+import 'package:squadquest/services/preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,10 @@ void main() async {
 
   // Load .env file
   await dotenv.load(fileName: ".env");
+
+  // Initialize SharedPreferences
+  final container = ProviderContainer();
+  await container.read(preferencesProvider.future);
 
   // integrate logger with Sentry
   Logger.addLogListener((LogEvent event) {
@@ -59,7 +64,8 @@ void main() async {
       options.attachViewHierarchy = true;
     },
     appRunner: () => runApp(
-      ProviderScope(
+      UncontrolledProviderScope(
+        container: container,
         child: DevicePreview(
           enabled: !kIsWeb && Platform.isMacOS,
           defaultDevice: Devices.ios.iPhoneSE,

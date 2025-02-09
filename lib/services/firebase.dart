@@ -240,7 +240,7 @@ class FirebaseMessagingService {
     logger.t('fcm: requesting permissions...');
     _requestingPermission = true;
 
-    final prefs = ref.read(sharedPreferencesProvider);
+    final prefs = ref.read(preferencesProvider).requireValue;
     final confirmedNotificationPermission =
         prefs.getBool('confirmedNotificationPermission');
 

@@ -29,7 +29,7 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
   }
 
   Future<List<AppVersion>> fetch() async {
-    final prefs = ref.read(sharedPreferencesProvider);
+    final prefs = ref.read(preferencesProvider).requireValue;
     final appUpdatedChangesDismissed =
         prefs.getInt('appUpdatedChangesDismissed') ?? 1;
 
@@ -53,6 +53,7 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
   }
 
   Future<void> showUpdateAlertIfAvailable() async {
+    final prefs = ref.read(preferencesProvider).requireValue;
     final packageInfo = await ref.read(currentAppPackageProvider.future);
     final currentBuild = int.parse(packageInfo.buildNumber);
     final AppVersionChannel? currentChannel = switch (packageInfo) {
@@ -87,7 +88,6 @@ class AppVersionsController extends AsyncNotifier<List<AppVersion>> {
             (version) => version.availability.contains(currentChannel))
         ?.build;
 
-    final prefs = ref.read(sharedPreferencesProvider);
     final updateAppBuildDismissed = prefs.getInt('updateAppBuildDismissed');
     final appUpdatedChangesDismissed =
         prefs.getInt('appUpdatedChangesDismissed');

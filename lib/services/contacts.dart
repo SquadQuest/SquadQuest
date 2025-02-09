@@ -35,7 +35,7 @@ class ContactsService extends AsyncNotifier<List<Contact>> {
       return true;
     }
 
-    final prefs = ref.read(sharedPreferencesProvider);
+    final prefs = ref.read(preferencesProvider).requireValue;
     final confirmedContactsPermission =
         prefs.getBool('confirmedContactsPermission');
 
