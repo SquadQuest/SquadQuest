@@ -92,6 +92,39 @@ class StorybookApp extends StatelessWidget {
               builder: (context) => const MockScreenWithNotificationBanner(),
             ),
 
+            // Communities screens
+            Story(
+              name: 'Communities/Communities List v1',
+              description: 'Browse and join local interest-based communities',
+              builder: (context) => const CommunitiesListScreen(),
+            ),
+            Story(
+              name: 'Communities/Communities List v2',
+              description:
+                  'Enhanced browsing with categories and activity feed',
+              builder: (context) => const CommunitiesListV2Screen(),
+            ),
+            Story(
+              name: 'Communities/Community Details',
+              description:
+                  'Detailed view of a community with events and activities',
+              builder: (context) => const CommunityDetailsScreen(),
+            ),
+            Story(
+              name: 'Communities/Create Community',
+              description:
+                  'Create a new community with recurring events and venue partnerships',
+              builder: (context) => const CreateCommunityScreen(),
+            ),
+
+            // Venue screens
+            Story(
+              name: 'Venues/Venue Profile',
+              description:
+                  'Venue dashboard showing analytics and hosting benefits',
+              builder: (context) => const VenueProfileScreen(),
+            ),
+
             // Navigation
             Story(
               name: 'Redesign/Navigation/Drawer',
@@ -180,39 +213,6 @@ class StorybookApp extends StatelessWidget {
               name: 'Redesign/Friends/Friends List',
               description: 'Improved friends list with requests and status',
               builder: (context) => const FriendsListScreen(),
-            ),
-
-            // Communities screens
-            Story(
-              name: 'Redesign/Communities/Communities List v1',
-              description: 'Browse and join local interest-based communities',
-              builder: (context) => const CommunitiesListScreen(),
-            ),
-            Story(
-              name: 'Redesign/Communities/Communities List v2',
-              description:
-                  'Enhanced browsing with categories and activity feed',
-              builder: (context) => const CommunitiesListV2Screen(),
-            ),
-            Story(
-              name: 'Redesign/Communities/Community Details',
-              description:
-                  'Detailed view of a community with events and activities',
-              builder: (context) => const CommunityDetailsScreen(),
-            ),
-            Story(
-              name: 'Redesign/Communities/Create Community',
-              description:
-                  'Create a new community with recurring events and venue partnerships',
-              builder: (context) => const CreateCommunityScreen(),
-            ),
-
-            // Venue screens
-            Story(
-              name: 'Redesign/Venues/Venue Profile',
-              description:
-                  'Venue dashboard showing analytics and hosting benefits',
-              builder: (context) => const VenueProfileScreen(),
             ),
 
             // Topics screens
