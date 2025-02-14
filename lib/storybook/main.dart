@@ -119,7 +119,7 @@ class StorybookApp extends StatelessWidget {
 
             // Venue screens
             Story(
-              name: 'Venues/Venue Profile',
+              name: 'Communities/Venues/Venue Profile',
               description:
                   'Venue dashboard showing analytics and hosting benefits',
               builder: (context) => const VenueProfileScreen(),
