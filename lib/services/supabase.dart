@@ -47,8 +47,7 @@ final supabaseProvider = FutureProvider<Supabase>((ref) async {
       );
     }
   } catch (error) {
-    logger.w('Failed to test new Supabase key, falling back to legacy key',
-        error: error);
+    logger.t('Failed to test new Supabase key, falling back to legacy key');
     keyToUse = supabaseAnonKeyLegacy;
   }
 
