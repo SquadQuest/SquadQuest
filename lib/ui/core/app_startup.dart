@@ -18,42 +18,10 @@ class AppStartupWidget extends ConsumerWidget {
     final initState = ref.watch(initializationProvider);
 
     return initState.when(
-      loading: () => const SafeArea(
-        child: Scaffold(
-          body: Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [CircularProgressIndicator()],
-            ),
-          ),
-        ),
-      ),
-      error: (error, stack) => SafeArea(
-        child: Scaffold(
-          body: Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'An error occurred while starting the app',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(initializationProvider),
-                    child: Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-      data: (_) {
+      loading: () => _LoadingScreen(),
+      error: (error, stack) => _ErrorScreen(
+          error: error, onRetry: () => ref.invalidate(initializationProvider)),
+      data: (data) {
         final authState = ref.watch(authControllerProvider);
 
         if (authState == null) {
@@ -62,6 +30,61 @@ class AppStartupWidget extends ConsumerWidget {
 
         return onLoaded(context);
       },
+    );
+  }
+}
+
+class _LoadingScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const SafeArea(
+      child: Scaffold(
+        body: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [CircularProgressIndicator()],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorScreen extends StatelessWidget {
+  const _ErrorScreen({
+    required this.error,
+    required this.onRetry,
+  });
+
+  final Object error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'An error occurred while starting the app:\n\n$error',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: onRetry,
+                  child: Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
