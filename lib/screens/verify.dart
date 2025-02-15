@@ -85,61 +85,59 @@ class _VerifyScreenState extends ConsumerState<VerifyScreen> {
       loadMask: submitted ? 'Verifying code...' : null,
       showLocationSharingSheet: false,
       bodyPadding: const EdgeInsets.all(16),
-      body: AutofillGroup(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              Text(
-                'Enter the code sent to the number',
-                style: theme.inputDecorationTheme.hintStyle,
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            Text(
+              'Enter the code sent to the number',
+              style: theme.inputDecorationTheme.hintStyle,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              formatPhone(authController.verifyingPhone!),
+              style: theme.typography.tall.bodyLarge,
+            ),
+            const SizedBox(height: 32),
+            Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(height: 16),
-              Text(
-                formatPhone(authController.verifyingPhone!),
-                style: theme.typography.tall.bodyLarge,
-              ),
-              const SizedBox(height: 32),
-              Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
+              child: Pinput(
+                controller: _tokenController,
+                focusNode: _focusNode,
+                length: 6,
+                hapticFeedbackType: HapticFeedbackType.heavyImpact,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[^0-9]'))
+                ],
+                textInputAction: TextInputAction.done,
+                separatorBuilder: (index) => Container(
+                  height: 64,
+                  width: 1,
                   color: theme.scaffoldBackgroundColor,
-                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Pinput(
-                  controller: _tokenController,
-                  focusNode: _focusNode,
-                  length: 6,
-                  hapticFeedbackType: HapticFeedbackType.heavyImpact,
-                  keyboardType: TextInputType.number,
-                  autofocus: true,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.deny(RegExp(r'[^0-9]'))
-                  ],
-                  textInputAction: TextInputAction.done,
-                  separatorBuilder: (index) => Container(
-                    height: 64,
-                    width: 1,
-                    color: theme.scaffoldBackgroundColor,
-                  ),
-                  defaultPinTheme: defaultPinTheme,
-                  focusedPinTheme: defaultPinTheme.copyWith(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withAlpha(80),
-                    ),
+                defaultPinTheme: defaultPinTheme,
+                focusedPinTheme: defaultPinTheme.copyWith(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withAlpha(80),
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: submitted ? null : () => _submitToken(context),
-                child: const Text(
-                  'Verify',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              )
-            ],
-          ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: submitted ? null : () => _submitToken(context),
+              child: const Text(
+                'Verify',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            )
+          ],
         ),
       ),
     );
