@@ -5,6 +5,6 @@ import 'package:squadquest/logger.dart';
 
 // Core provider for SharedPreferences
 final preferencesProvider = FutureProvider<SharedPreferences>((ref) async {
-  logger.t('Initializing SharedPreferences');
+  log('Initializing SharedPreferences');
   return await SharedPreferences.getInstance();
 });

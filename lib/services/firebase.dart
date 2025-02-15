@@ -27,7 +27,7 @@ typedef FirebaseStreamRecord = ({String type, RemoteMessage message});
 
 // Core provider that handles initialization
 final firebaseProvider = FutureProvider<FirebaseApp>((ref) async {
-  logger.t('Initializing Firebase');
+  log('Initializing Firebase');
 
   final app = await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -114,7 +114,7 @@ class FirebaseMessagingService {
   }
 
   void _init() async {
-    logger.t('FirebaseMessagingService._init');
+    log('FirebaseMessagingService._init');
 
     // load package version/build information
     _platformInfo = await PackageInfo.fromPlatform();
@@ -177,7 +177,7 @@ class FirebaseMessagingService {
       return;
     }
 
-    logger.i('Writing FCM token to profile: $token');
+    log('Writing FCM token to profile: $token');
     _writtenToken = token;
 
     await ref.read(profileProvider.notifier).patch({
@@ -188,27 +188,16 @@ class FirebaseMessagingService {
   }
 
   void _onMessage(RemoteMessage message) {
-    logger.t({
-      'message:received': {
-        'message-id': message.messageId,
-        'message-type': message.messageType,
-        'notification-title': message.notification?.title,
-        'notification-body': message.notification?.body,
-      }
-    });
+    log('Firebase message received');
+    logger.d(message);
 
     _streamController.add((type: 'message-received', message: message));
   }
 
   void _onMessageOpened(RemoteMessage message) {
-    logger.t({
-      'message:opened': {
-        'message-id': message.messageId,
-        'message-type': message.messageType,
-        'notification-title': message.notification?.title,
-        'notification-body': message.notification?.body,
-      }
-    });
+    log('Firebase message opened');
+    logger.d(message);
+
     _streamController.add((type: 'notification-opened', message: message));
   }
 
@@ -222,14 +211,8 @@ class FirebaseMessagingService {
           'json': data['data']?['json'],
         });
 
-    logger.t({
-      'notification:opened-web': {
-        'message-id': message.messageId,
-        'message-type': message.messageType,
-        'notification-title': message.notification?.title,
-        'notification-body': message.notification?.body,
-      }
-    });
+    log('Firebase web notification opened');
+    logger.d(message);
 
     _streamController.add((type: 'notification-opened', message: message));
   }
@@ -237,7 +220,7 @@ class FirebaseMessagingService {
   Future<void> requestPermissions() async {
     if (settings != null || _requestingPermission) return;
 
-    logger.t('fcm: requesting permissions...');
+    log('fcm: requesting permissions...');
     _requestingPermission = true;
 
     final prefs = ref.read(preferencesProvider).requireValue;
@@ -275,7 +258,7 @@ class FirebaseMessagingService {
     }
 
     try {
-      logger.t('requesting permissions');
+      log('requesting permissions');
       settings = await messaging.requestPermission(
         alert: true,
         announcement: false,
@@ -285,7 +268,7 @@ class FirebaseMessagingService {
         provisional: false,
         sound: true,
       );
-      logger.t('got permissions: $settings');
+      log('got permissions: $settings');
     } catch (error) {
       logger.e('fcm: error requesting permissions', error: error);
     }
@@ -295,15 +278,15 @@ class FirebaseMessagingService {
 
     // get FCM device token
     try {
-      logger.t('getting APNS token');
+      log('getting APNS token');
       final apnsToken = await messaging.getAPNSToken();
-      logger.t('got APNS token: $apnsToken');
+      log('got APNS token: $apnsToken');
       token = await messaging.getToken(vapidKey: dotenv.get('FCM_VAPID_KEY'));
-      logger.t('got FCM token: $token');
+      log('got FCM token: $token');
       ref.read(firebaseMessagingTokenProvider.notifier).state = token;
-      logger.t('wrote FCM token to provider');
+      log('wrote FCM token to provider');
       await _writeToken();
-      logger.t('wrote FCM token to profile');
+      log('wrote FCM token to profile');
     } catch (error) {
       logger.e('fcm: error getting token', error: error);
     }

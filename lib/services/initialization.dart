@@ -8,7 +8,7 @@ import 'package:squadquest/services/notifications.dart';
 
 // Main initialization provider that coordinates all service initialization
 final initializationProvider = FutureProvider<void>((ref) async {
-  logger.t('Starting app initialization');
+  log('Starting app initialization');
 
   // Initialize core services concurrently
   await Future.wait([
@@ -24,5 +24,5 @@ final initializationProvider = FutureProvider<void>((ref) async {
   // Initialize notifications service
   ref.read(notificationsServiceProvider);
 
-  logger.t('Core services initialized');
+  log('Core services initialized');
 });

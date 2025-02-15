@@ -15,7 +15,7 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
 
 // Initialization provider
 final supabaseProvider = FutureProvider<Supabase>((ref) async {
-  logger.t('Initializing Supabase');
+  log('Initializing Supabase');
 
   final supabaseUrl = dotenv.get('SUPABASE_URL');
   final supabaseAnonKey = dotenv.get('SUPABASE_ANON_KEY');
@@ -37,7 +37,7 @@ final supabaseProvider = FutureProvider<Supabase>((ref) async {
     );
 
     if (response.statusCode == 200) {
-      logger.t('Successfully tested new Supabase key');
+      log('Successfully tested new Supabase key');
       keyToUse = supabaseAnonKey;
     } else {
       throw DioException(
@@ -47,7 +47,7 @@ final supabaseProvider = FutureProvider<Supabase>((ref) async {
       );
     }
   } catch (error) {
-    logger.t('Failed to test new Supabase key, falling back to legacy key');
+    log('Failed to test new Supabase key, falling back to legacy key');
     keyToUse = supabaseAnonKeyLegacy;
   }
 
@@ -57,17 +57,12 @@ final supabaseProvider = FutureProvider<Supabase>((ref) async {
     anonKey: keyToUse,
   );
 
-  logger.t(
-      'Successfully initialized Supabase with ${keyToUse == supabaseAnonKey ? 'new' : 'legacy'} key');
+  log('Successfully initialized Supabase with ${keyToUse == supabaseAnonKey ? 'new' : 'legacy'} key');
 
   // Set up auth state change listener for Sentry integration
   supabase.client.auth.onAuthStateChange.listen((data) {
-    logger.t({
-      'supabase.onAuthStateChange': {
-        'event': data.event.toString(),
-        'session': data.session,
-      }
-    });
+    log('Supabase authStateChange: ${data.event}');
+    logger.d(data.session);
 
     // integrate with Sentry
     final sentryUser = data.session == null
