@@ -35,8 +35,13 @@ final myRsvpPerEventProvider = FutureProvider.autoDispose
 
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   @override
-  Future<List<InstanceMember>> build() async {
+  FutureOr<List<InstanceMember>> build() async {
     final supabase = ref.read(supabaseClientProvider);
+
+    // ensure a session is available
+    if (supabase.auth.currentUser == null) {
+      return [];
+    }
 
     // subscribe to changes
     supabase
