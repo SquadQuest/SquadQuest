@@ -8,6 +8,7 @@ import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/ui/login/login_screen.dart';
 import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
+import 'package:squadquest/ui/onboarding/onboarding_screen.dart';
 
 class AppStartupWidget extends ConsumerWidget {
   const AppStartupWidget({
@@ -45,6 +46,14 @@ class AppStartupWidget extends ConsumerWidget {
           return _LoadingScreen();
         } else if (profile.value == null) {
           return wrapWithOverlay(ProfileFormScreen());
+        }
+
+        // Show onboarding if not run yet
+        final prefs = ref.read(preferencesProvider).requireValue;
+        final onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
+
+        if (!onboardingComplete) {
+          return OnboardingScreen();
         }
 
         return appRoot;
