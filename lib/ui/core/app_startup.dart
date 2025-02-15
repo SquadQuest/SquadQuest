@@ -18,12 +18,13 @@ class AppStartupWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final initState = ref.watch(initializationProvider);
+    final initState = ref.watch(appInitializationProvider);
 
     return initState.when(
       loading: () => _LoadingScreen(),
       error: (error, stack) => _ErrorScreen(
-          error: error, onRetry: () => ref.invalidate(initializationProvider)),
+          error: error,
+          onRetry: () => ref.invalidate(appInitializationProvider)),
       data: (data) {
         // Show login flow if no auth state
         final authState = ref.watch(authControllerProvider);
