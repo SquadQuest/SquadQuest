@@ -22,7 +22,7 @@ class AboutScreen extends StatelessWidget {
           // Middle layer: Ganja cutout image
           Center(
             child: Image.network(
-              'https://storage.googleapis.com/storybook.squadquest.app/images/ganja-cutout.png?v2',
+              'https://storybook.squadquest.app/images/ganja-cutout.png',
               fit: BoxFit.contain,
               color: Colors.white.withAlpha(150),
               colorBlendMode: BlendMode.modulate,
