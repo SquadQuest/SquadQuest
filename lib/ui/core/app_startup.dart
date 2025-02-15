@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/services/initialization.dart';
+import 'package:squadquest/services/preferences.dart';
 import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/ui/login/login_screen.dart';
+import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
 
 class AppStartupWidget extends ConsumerWidget {
   const AppStartupWidget({
@@ -22,10 +25,20 @@ class AppStartupWidget extends ConsumerWidget {
       error: (error, stack) => _ErrorScreen(
           error: error, onRetry: () => ref.invalidate(initializationProvider)),
       data: (data) {
+        // Show login flow if no auth state
         final authState = ref.watch(authControllerProvider);
 
         if (authState == null) {
           return const LoginScreen();
+        }
+
+        // Show create profile form if no profile
+        final profile = ref.watch(profileProvider);
+
+        if (profile.isLoading) {
+          return _LoadingScreen();
+        } else if (profile.value == null) {
+          return ProfileFormScreen();
         }
 
         return onLoaded(context);
