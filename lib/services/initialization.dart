@@ -5,6 +5,10 @@ import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/firebase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/services/notifications.dart';
+import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/controllers/friends.dart';
+import 'package:squadquest/controllers/rsvps.dart';
+import 'package:squadquest/controllers/topic_memberships.dart';
 
 // Main initialization provider that coordinates all service initialization
 final initializationProvider = FutureProvider<void>((ref) async {
@@ -16,9 +20,13 @@ final initializationProvider = FutureProvider<void>((ref) async {
     ref.watch(firebaseProvider.future),
   ]);
 
-  // Load initial data
+  // Pre-load initial data
   await Future.wait([
-    ref.watch(profilesCacheProvider.notifier).initialized,
+    ref.read(profilesCacheProvider.notifier).initialized,
+    ref.read(profileProvider.future),
+    ref.read(rsvpsProvider.future),
+    ref.read(friendsProvider.future),
+    ref.read(topicMembershipsProvider.future),
   ]);
 
   // Initialize notifications service
