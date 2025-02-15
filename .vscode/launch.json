@@ -23,7 +23,7 @@
             "program": "lib/main.dart",
             "args": [
                 "--target=lib/storybook/main.dart",
-                "--device-id=macos"
+                // "--device-id=macos"
             ]
         },
         {

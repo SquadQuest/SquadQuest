@@ -21,6 +21,11 @@ import 'package:squadquest/storybook/screens/events/event_chat.dart';
 import 'package:squadquest/storybook/screens/events/attendees_demo.dart';
 import 'package:squadquest/storybook/screens/profile/edit_profile.dart';
 import 'package:squadquest/storybook/screens/friends/friends_list.dart';
+import 'package:squadquest/storybook/screens/communities/communities_list.dart';
+import 'package:squadquest/storybook/screens/communities/communities_list.v2.dart';
+import 'package:squadquest/storybook/screens/communities/community_details.dart';
+import 'package:squadquest/storybook/screens/communities/create_community.dart';
+import 'package:squadquest/storybook/screens/venues/venue_profile.dart';
 import 'package:squadquest/storybook/screens/topics/topics_list.v1.dart';
 import 'package:squadquest/storybook/screens/topics/topics_list.v2.dart';
 import 'package:squadquest/storybook/screens/home/home_screen.v1.dart';
@@ -85,6 +90,39 @@ class StorybookApp extends StatelessWidget {
               description:
                   'Banner you might see on screens if you denied notification permission',
               builder: (context) => const MockScreenWithNotificationBanner(),
+            ),
+
+            // Communities screens
+            Story(
+              name: 'Communities/Communities List v1',
+              description: 'Browse and join local interest-based communities',
+              builder: (context) => const CommunitiesListScreen(),
+            ),
+            Story(
+              name: 'Communities/Communities List v2',
+              description:
+                  'Enhanced browsing with categories and activity feed',
+              builder: (context) => const CommunitiesListV2Screen(),
+            ),
+            Story(
+              name: 'Communities/Community Details',
+              description:
+                  'Detailed view of a community with events and activities',
+              builder: (context) => const CommunityDetailsScreen(),
+            ),
+            Story(
+              name: 'Communities/Create Community',
+              description:
+                  'Create a new community with recurring events and venue partnerships',
+              builder: (context) => const CreateCommunityScreen(),
+            ),
+
+            // Venue screens
+            Story(
+              name: 'Communities/Venues/Venue Profile',
+              description:
+                  'Venue dashboard showing analytics and hosting benefits',
+              builder: (context) => const VenueProfileScreen(),
             ),
 
             // Navigation

@@ -170,3 +170,40 @@ jobs:
               -H "Content-Type: application/json" \
               -H "Prefer: return=representation" \
               -d "${REQUEST_BODY}" | jq
+
+      - name: Build Discord notification
+        run: |
+              jq --null-input \
+                  --arg build "${BUILD_NUMBER}" \
+                  --arg version "${BUILD_NAME}" \
+                  --arg news "${RELEASE_NEWS}" \
+                  --arg notices "${RELEASE_NOTICES}" \
+                  '
+                    [
+                      {
+                        title: "GitHub Release",
+                        url: "https://github.com/SquadQuest/SquadQuest/releases/tag/v\($version)"
+                      },
+                      (if $news == "" then null else {
+                        title: "News",
+                        description: $news,
+                        color: 10798649
+                      } end),
+                      (if $notices == "" then null else {
+                        title: "Notices",
+                        description: $notices,
+                        color: 14177041
+                      } end)
+                    ]
+                    | {
+                        content: "Version \($version) (build \($build)) has been published for review!",
+                        embeds: [.[] | values]
+                    }
+                  ' \
+                  > /tmp/discord-message.json
+
+      - name: Post Discord notification
+        uses: tsickert/discord-webhook@v6.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          raw-data: /tmp/discord-message.json

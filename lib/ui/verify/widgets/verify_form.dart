@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pinput/pinput.dart';
 
 import 'package:squadquest/common.dart';
 import 'package:squadquest/controllers/auth.dart';
-
-final RegExp otpCodeRegExp = RegExp(r'^\d{6}$');
 
 class VerifyForm extends StatefulWidget {
   final bool submitted;
@@ -36,6 +35,16 @@ class _VerifyFormState extends State<VerifyForm> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final defaultPinTheme = PinTheme(
+      width: 60,
+      height: 64,
+      textStyle: theme.typography.white.displayLarge,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withAlpha(40),
+      ),
+    );
+
     return Consumer(
       builder: (context, ref, child) {
         final authController = ref.read(authControllerProvider.notifier);
@@ -44,30 +53,44 @@ class _VerifyFormState extends State<VerifyForm> {
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
-                autofocus: true,
-                readOnly: widget.submitted,
-                keyboardType: TextInputType.number,
-                autofillHints: const [AutofillHints.oneTimeCode],
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.pin_outlined),
-                  labelText:
-                      'Enter the code sent to ${formatPhone(authController.verifyingPhone!)}',
+              Text(
+                'Enter the code sent to the number:',
+                style: theme.inputDecorationTheme.hintStyle,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                formatPhone(authController.verifyingPhone!),
+                style: theme.typography.tall.bodyLarge,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.deny(RegExp(r'[^0-9]'))
-                ],
-                validator: (value) {
-                  if (value == null ||
-                      value.isEmpty ||
-                      !otpCodeRegExp.hasMatch(value)) {
-                    return 'Please enter a valid one-time password';
-                  }
-                  return null;
-                },
-                controller: _tokenController,
-                onFieldSubmitted: (_) => _submitToken(),
+                child: Pinput(
+                  controller: _tokenController,
+                  length: 6,
+                  hapticFeedbackType: HapticFeedbackType.heavyImpact,
+                  keyboardType: TextInputType.number,
+                  autofocus: true,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r'[^0-9]'))
+                  ],
+                  textInputAction: TextInputAction.done,
+                  separatorBuilder: (index) => Container(
+                    height: 64,
+                    width: 1,
+                    color: theme.scaffoldBackgroundColor,
+                  ),
+                  defaultPinTheme: defaultPinTheme,
+                  focusedPinTheme: defaultPinTheme.copyWith(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withAlpha(80),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
