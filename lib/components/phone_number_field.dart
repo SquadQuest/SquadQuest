@@ -90,6 +90,8 @@ class _PhoneNumberFormFieldState extends State<PhoneNumberFormField> {
       }
 
       _internalController.text = result;
+      _internalController.selection =
+          TextSelection.fromPosition(TextPosition(offset: result.length));
     }
 
     // update state
