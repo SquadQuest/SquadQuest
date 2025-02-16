@@ -34,6 +34,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
   String? _initialTrailColor;
 
   bool submitted = false;
+  bool signingOut = false;
   late final bool isNewProfile;
 
   void _openColorPicker() {
@@ -204,17 +205,11 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
 
     return AppScaffold(
       title: isNewProfile ? 'Create Profile' : 'Edit Profile',
-      loadMask: submitted ? 'Saving profile...' : null,
-      actions: <Widget>[
-        if (isNewProfile)
-          TextButton(
-            child: const Text('Sign Out'),
-            onPressed: () async {
-              final authController = ref.read(authControllerProvider.notifier);
-              await authController.signOut();
-            },
-          )
-      ],
+      loadMask: submitted
+          ? 'Saving profile...'
+          : signingOut
+              ? 'Signing out...'
+              : null,
       body: Form(
         key: _formKey,
         child: CustomScrollView(
@@ -263,6 +258,22 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                         ),
                       ),
                     ),
+
+                    // Sign Out Button
+                    if (isNewProfile) ...[
+                      const SizedBox(height: 16),
+                      Center(
+                        child: TextButton(
+                          child: Text('Sign in to another account'),
+                          onPressed: () {
+                            setState(() {
+                              signingOut = true;
+                            });
+                            ref.read(authControllerProvider.notifier).signOut();
+                          },
+                        ),
+                      ),
+                    ]
                   ],
                 ),
               ),

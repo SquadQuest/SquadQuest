@@ -129,7 +129,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ],
-      onPopPage: (route, result) => route.didPop(result),
+      onDidRemovePage: (Page<Object?> page) {},
     );
   }
 }
