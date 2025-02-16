@@ -11,10 +11,10 @@ import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
 class AppStartupWidget extends ConsumerWidget {
   const AppStartupWidget({
     super.key,
-    required this.onLoaded,
+    required this.appRoot,
   });
 
-  final WidgetBuilder onLoaded;
+  final Widget appRoot;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,7 +42,7 @@ class AppStartupWidget extends ConsumerWidget {
           return ProfileFormScreen();
         }
 
-        return onLoaded(context);
+        return appRoot;
       },
     );
   }

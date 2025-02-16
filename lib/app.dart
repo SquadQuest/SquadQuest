@@ -25,9 +25,7 @@ class MyApp extends ConsumerWidget {
       routerConfig: routerService.router,
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
-        return AppStartupWidget(
-          onLoaded: (_) => child!,
-        );
+        return AppStartupWidget(appRoot: child!);
       },
     );
   }
