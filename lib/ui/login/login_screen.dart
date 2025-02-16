@@ -98,11 +98,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _ => 'Unexpected error',
       };
 
-      setState(() {
-        submitted = false;
-      });
-
       if (mounted) {
+        setState(() {
+          submitted = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
               'Failed to verify, check code and try again:\n\n$errorMessage'),

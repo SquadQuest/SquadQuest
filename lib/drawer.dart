@@ -333,11 +333,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         onTap: () async {
-          Navigator.pop(context);
-          final authController = ref.read(authControllerProvider.notifier);
-          context.goNamed('login');
-          await ModalRoute.of(context)!.completed;
-          await authController.signOut();
+          await ref.read(authControllerProvider.notifier).signOut();
         },
       ),
     );

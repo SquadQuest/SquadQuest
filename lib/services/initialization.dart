@@ -55,8 +55,11 @@ final sessionInitializationProvider = FutureProvider<void>((ref) async {
 
 final sessionInvalidationProvider = Provider<Function>((ref) {
   return () {
+    log('Beginning session invalidation...');
+    ref.invalidate(profilesCacheProvider);
     for (final provider in _sessionProviders) {
       ref.invalidate(provider);
     }
+    log('Session invalidated');
   };
 });

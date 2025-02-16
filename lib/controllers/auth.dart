@@ -72,13 +72,14 @@ class AuthController extends Notifier<Session?> {
     }
 
     state = response.session;
+    ref.read(sessionInvalidationProvider)();
 
     log('AuthController.verifyOTP: _onAuthenticatedCallbacks: ${_onAuthenticatedCallbacks.length}');
     for (final callback in _onAuthenticatedCallbacks) {
       callback(response.session!);
     }
 
-    await ref.read(sessionInitializationProvider.future);
+    log('AuthController finished login');
   }
 
   Future<void> updateUserAttributes(Map<String, Object> data) async {
@@ -94,6 +95,5 @@ class AuthController extends Notifier<Session?> {
   Future<void> signOut() async {
     await ref.read(supabaseClientProvider).auth.signOut();
     state = null;
-    ref.read(sessionInvalidationProvider)();
   }
 }
