@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/calendar.dart';
@@ -36,6 +37,8 @@ final myRsvpPerEventProvider = FutureProvider.autoDispose
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   @override
   FutureOr<List<InstanceMember>> build() async {
+    log('RsvpsController.fetch');
+
     final supabase = ref.read(supabaseClientProvider);
 
     // ensure a session is available

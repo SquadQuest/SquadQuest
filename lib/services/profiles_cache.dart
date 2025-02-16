@@ -28,7 +28,14 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
   }
 
   Future<void> loadNetwork() async {
+    log('ProfilesCacheService.loadNetwork');
+
     final supabase = ref.read(supabaseClientProvider);
+
+    if (supabase.auth.currentUser == null) {
+      state = {};
+      return;
+    }
 
     try {
       final response = await supabase.functions

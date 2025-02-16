@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
@@ -22,7 +23,14 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
   }
 
   Future<List<Friend>> fetch() async {
+    log('FriendsController.fetch');
+
     final supabase = ref.read(supabaseClientProvider);
+
+    // ensure a session is available
+    if (supabase.auth.currentUser == null) {
+      return [];
+    }
 
     final data = await supabase.from('friends').select();
 
