@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/services/initialization.dart';
 import 'package:squadquest/services/supabase.dart';
 
 export 'package:squadquest/services/supabase.dart' show Session, User;
@@ -21,10 +22,6 @@ class AuthController extends Notifier<Session?> {
   @override
   Session? build() {
     final supabase = ref.read(supabaseClientProvider);
-
-    // ref.listen(supabaseAuthStateChangesProvider, (previous, state) {
-    //   log('AuthController.build.authStateChange: state: ${state.value?.event}, previous: ${previous?.value?.event}');
-    // });
 
     return supabase.auth.currentSession;
   }
@@ -95,5 +92,6 @@ class AuthController extends Notifier<Session?> {
   Future<void> signOut() async {
     await ref.read(supabaseClientProvider).auth.signOut();
     state = null;
+    ref.read(sessionInvalidationProvider)();
   }
 }

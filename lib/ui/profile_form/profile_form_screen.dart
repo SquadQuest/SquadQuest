@@ -205,6 +205,16 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     return AppScaffold(
       title: isNewProfile ? 'Create Profile' : 'Edit Profile',
       loadMask: submitted ? 'Saving profile...' : null,
+      actions: <Widget>[
+        if (isNewProfile)
+          TextButton(
+            child: const Text('Sign Out'),
+            onPressed: () async {
+              final authController = ref.read(authControllerProvider.notifier);
+              await authController.signOut();
+            },
+          )
+      ],
       body: Form(
         key: _formKey,
         child: CustomScrollView(

@@ -2,20 +2,19 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/services/connection.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/controllers/auth.dart';
+import 'package:squadquest/controllers/profile.dart';
 
-import 'widgets/login_form.dart';
+import 'widgets/phone_form.dart';
+import 'widgets/verify_form.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  final String? redirect;
-
-  const LoginScreen({super.key, this.redirect});
+  const LoginScreen({super.key});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -23,6 +22,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool submitted = false;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   void _submitPhone(String phone) async {
     setState(() {
@@ -38,9 +38,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       log('Sent SMS');
 
       if (mounted) {
-        context.pushNamed('verify',
-            queryParameters:
-                widget.redirect == null ? {} : {'redirect': widget.redirect});
+        _navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (context) => AppScaffold(
+              title: 'Verify phone number',
+              loadMask: submitted ? 'Verifying code...' : null,
+              showLocationSharingSheet: false,
+              bodyPadding: const EdgeInsets.all(16),
+              body: VerifyForm(
+                submitted: submitted,
+                onSubmit: _submitToken,
+              ),
+            ),
+          ),
+        );
       }
     } on AuthRetryableFetchException catch (_) {
       await ConnectionService.showConnectionErrorDialog();
@@ -66,17 +77,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  void _submitToken(String token) async {
+    setState(() {
+      submitted = true;
+    });
+
+    log('Verifying OTP');
+
+    final authController = ref.read(authControllerProvider.notifier);
+
+    try {
+      await authController.verifyOTP(
+        token: token,
+      );
+      log('Verified OTP');
+    } catch (error, stackTrace) {
+      logger.e('Error verifying OTP', error: error, stackTrace: stackTrace);
+      final errorMessage = switch (error) {
+        AuthException(:final message) => message,
+        _ => 'Unexpected error',
+      };
+
+      setState(() {
+        submitted = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              'Failed to verify, check code and try again:\n\n$errorMessage'),
+        ));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Log in to SquadQuest',
-      loadMask: submitted ? 'Sending login code...' : null,
-      showLocationSharingSheet: false,
-      bodyPadding: const EdgeInsets.all(16),
-      body: LoginForm(
-        onSubmit: _submitPhone,
-        submitted: submitted,
-      ),
+    return Navigator(
+      key: _navigatorKey,
+      pages: [
+        MaterialPage(
+          child: AppScaffold(
+            title: 'Log in to SquadQuest',
+            loadMask: submitted ? 'Sending login code...' : null,
+            showLocationSharingSheet: false,
+            bodyPadding: const EdgeInsets.all(16),
+            body: PhoneForm(
+              onSubmit: _submitPhone,
+              submitted: submitted,
+            ),
+          ),
+        ),
+      ],
+      onPopPage: (route, result) => route.didPop(result),
     );
   }
 }

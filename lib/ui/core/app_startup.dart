@@ -25,7 +25,7 @@ class AppStartupWidget extends ConsumerWidget {
       error: (error, stack) => _ErrorScreen(
           error: error,
           onRetry: () => ref.invalidate(appInitializationProvider)),
-      data: (data) {
+      data: (_) {
         // Show login flow if no auth state
         final authState = ref.watch(authControllerProvider);
 

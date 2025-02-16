@@ -19,14 +19,6 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
   FutureOr<UserProfile?> build() async {
     log('ProfileController.build');
 
-    // clear profile on logout
-    ref.listen(authControllerProvider, (previous, session) {
-      log('ProfileController.build.authChange: session: ${session == null ? 'no' : 'yes'}, previous: ${previous == null ? 'no' : 'yes'}');
-      if (session == null) {
-        state = const AsyncValue.data(null);
-      }
-    });
-
     return fetch(throwOnError: true);
   }
 
