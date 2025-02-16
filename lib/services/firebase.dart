@@ -38,11 +38,6 @@ final firebaseProvider = FutureProvider<FirebaseApp>((ref) async {
   return app;
 });
 
-// For existing code that depends on firebaseAppProvider
-final firebaseAppProvider = Provider<FirebaseApp>((ref) {
-  return ref.watch(firebaseProvider).requireValue;
-});
-
 final firebaseMessagingServiceProvider =
     Provider<FirebaseMessagingService>((ref) {
   return FirebaseMessagingService(ref);
