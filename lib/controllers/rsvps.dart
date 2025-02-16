@@ -47,13 +47,18 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     }
 
     // subscribe to changes
-    supabase
+    final subscription = supabase
         .from('instance_members')
         .stream(primaryKey: ['id'])
         .eq('member', supabase.auth.currentUser!.id)
         .listen((data) async {
           state = AsyncValue.data(await hydrate(data));
         });
+
+    // cancel subscription when provider is disposed
+    ref.onDispose(() {
+      subscription.cancel();
+    });
 
     return future;
   }
@@ -133,7 +138,6 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
 class InstanceRsvpsController
     extends AutoDisposeFamilyAsyncNotifier<List<InstanceMember>, InstanceID> {
   late InstanceID instanceId;
-  late StreamSubscription _subscription;
 
   InstanceRsvpsController();
 
@@ -142,7 +146,7 @@ class InstanceRsvpsController
     instanceId = arg;
 
     // subscribe to changes
-    _subscription = ref
+    final subscription = ref
         .read(supabaseClientProvider)
         .from('instance_members')
         .stream(primaryKey: ['id'])
@@ -151,7 +155,7 @@ class InstanceRsvpsController
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
-      _subscription.cancel();
+      subscription.cancel();
     });
 
     return future;

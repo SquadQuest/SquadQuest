@@ -8,7 +8,6 @@ import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/models/event_message.dart';
 import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/controllers/rsvps.dart';
-import 'package:squadquest/controllers/auth.dart';
 
 final chatProvider =
     AsyncNotifierProviderFamily<ChatController, List<EventMessage>, InstanceID>(
@@ -48,7 +47,6 @@ final chatMessageCountProvider =
 class ChatController
     extends FamilyAsyncNotifier<List<EventMessage>, InstanceID> {
   late InstanceID instanceId;
-  late StreamSubscription _subscription;
   DateTime? lastSeen;
 
   ChatController();
@@ -58,7 +56,7 @@ class ChatController
     instanceId = arg;
 
     // subscribe to changes
-    _subscription = ref
+    final subscription = ref
         .read(supabaseClientProvider)
         .from('event_messages')
         .stream(primaryKey: ['id'])
@@ -68,7 +66,7 @@ class ChatController
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
-      _subscription.cancel();
+      subscription.cancel();
     });
 
     return future;
@@ -182,7 +180,6 @@ class LatestPinnedMessageController
 class LatestChatController
     extends AutoDisposeFamilyAsyncNotifier<EventMessage, InstanceID> {
   late InstanceID instanceId;
-  late StreamSubscription _subscription;
 
   LatestChatController();
 
@@ -191,7 +188,7 @@ class LatestChatController
     instanceId = arg;
 
     // subscribe to changes
-    _subscription = ref
+    final subscription = ref
         .read(supabaseClientProvider)
         .from('event_messages')
         .stream(primaryKey: ['id'])
@@ -202,7 +199,7 @@ class LatestChatController
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
-      _subscription.cancel();
+      subscription.cancel();
     });
 
     return future;

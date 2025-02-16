@@ -221,4 +221,10 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
       ],
     );
   }
+
+  @override
+  dispose() {
+    subscription?.cancel();
+    super.dispose();
+  }
 }

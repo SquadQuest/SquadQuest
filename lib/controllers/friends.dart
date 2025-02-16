@@ -15,8 +15,15 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
     final supabase = ref.read(supabaseClientProvider);
 
     // subscribe to changes
-    supabase.from('friends').stream(primaryKey: ['id']).listen((data) async {
+    final subscription = supabase
+        .from('friends')
+        .stream(primaryKey: ['id']).listen((data) async {
       state = AsyncValue.data(await hydrate(data));
+    });
+
+    // cancel subscription when provider is disposed
+    ref.onDispose(() {
+      subscription.cancel();
     });
 
     return future;
