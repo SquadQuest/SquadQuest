@@ -39,11 +39,21 @@ class AppStartupWidget extends ConsumerWidget {
         if (profile.isLoading) {
           return _LoadingScreen();
         } else if (profile.value == null) {
-          return ProfileFormScreen();
+          return wrapWithOverlay(ProfileFormScreen());
         }
 
         return appRoot;
       },
+    );
+  }
+
+  Widget wrapWithOverlay(Widget child) {
+    return Overlay(
+      initialEntries: [
+        OverlayEntry(
+          builder: (context) => child,
+        ),
+      ],
     );
   }
 }
