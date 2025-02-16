@@ -77,6 +77,8 @@ class AuthController extends Notifier<Session?> {
     for (final callback in _onAuthenticatedCallbacks) {
       callback(response.session!);
     }
+
+    await ref.read(sessionInitializationProvider.future);
   }
 
   Future<void> updateUserAttributes(Map<String, Object> data) async {
