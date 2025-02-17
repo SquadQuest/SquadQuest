@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:squadquest/app_scaffold.dart';
 import 'widgets/notifications.dart';
 import 'widgets/location.dart';
 import 'widgets/topics.dart';
-
-enum OnboardingStep {
-  notifications,
-  location,
-  topics,
-}
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -18,38 +13,61 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  OnboardingStep _currentStep = OnboardingStep.notifications;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
-  void _goToNextStep() {
-    setState(() {
-      switch (_currentStep) {
-        case OnboardingStep.notifications:
-          _currentStep = OnboardingStep.location;
-        case OnboardingStep.location:
-          _currentStep = OnboardingStep.topics;
-        case OnboardingStep.topics:
-          // TODO: Handle completion
-          break;
-      }
-    });
+  void _goToLocationStep() {
+    if (mounted) {
+      _navigatorKey.currentState!.push(
+        MaterialPageRoute(
+          builder: (context) => AppScaffold(
+            title: 'Location Access',
+            showLocationSharingSheet: false,
+            bodyPadding: const EdgeInsets.all(24),
+            body: OnboardingLocation(
+              onNext: _goToTopicsStep,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _goToTopicsStep() {
+    if (mounted) {
+      _navigatorKey.currentState!.push(
+        MaterialPageRoute(
+          builder: (context) => AppScaffold(
+            title: 'Choose Topics',
+            showLocationSharingSheet: false,
+            bodyPadding: const EdgeInsets.all(24),
+            body: OnboardingTopics(
+              onNext: () {
+                // TODO: Handle completion
+              },
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: switch (_currentStep) {
-          OnboardingStep.notifications => OnboardingNotifications(
-              onNext: _goToNextStep,
+    return Navigator(
+      key: _navigatorKey,
+      pages: [
+        MaterialPage(
+          child: AppScaffold(
+            title: 'Welcome to SquadQuest',
+            showLocationSharingSheet: false,
+            bodyPadding: const EdgeInsets.all(24),
+            body: OnboardingNotifications(
+              onNext: _goToLocationStep,
             ),
-          OnboardingStep.location => OnboardingLocation(
-              onNext: _goToNextStep,
-            ),
-          OnboardingStep.topics => OnboardingTopics(
-              onNext: _goToNextStep,
-            ),
-        },
-      ),
+          ),
+        ),
+      ],
+      onDidRemovePage: (Page<Object?> page) {},
     );
   }
 }
