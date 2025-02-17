@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:squadquest/services/notifications.dart';
 
 import 'package:squadquest/theme.dart';
 import 'package:squadquest/models/user.dart';
@@ -29,9 +31,12 @@ import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/controllers/chat.dart';
 import 'package:squadquest/controllers/profile.dart';
 import 'package:squadquest/controllers/app_versions.dart';
-import 'package:squadquest/ui/splash/splash_screen.dart';
 
-class MockSupabase extends Fake implements SupabaseClient {
+class MockFirebase extends Fake implements FirebaseApp {}
+
+class MockSupabase extends Fake implements Supabase {}
+
+class MockSupabaseClient extends Fake implements SupabaseClient {
   @override
   get auth => MockGotrue();
 }
@@ -71,6 +76,10 @@ class MockProfileController extends ProfileController {
   }
 }
 
+// Mock notifications service
+class MockNotificationsService extends Fake implements NotificationsService {}
+
+// Mock app versions controller
 final mockAppVersion = AppVersion(
   build: 0,
   version: '0.0',
@@ -81,7 +90,6 @@ final mockAppVersion = AppVersion(
   availability: [],
 );
 
-// Mock app versions controller
 class MockAppVersionsController extends AppVersionsController {
   @override
   Future<List<AppVersion>> build() async {
@@ -299,34 +307,43 @@ class MockRouterService extends RouterService {
 }
 
 class MockAuthController extends AuthController {
-  @override
-  Session? build() => mockSession;
+  final bool hasSession;
+  String? _verifyingPhone;
+
+  MockAuthController({this.hasSession = true});
 
   @override
-  String? get verifyingPhone => '+1 555-555-5555';
+  Session? build() => hasSession ? mockSession : null;
+
+  @override
+  String? get verifyingPhone => _verifyingPhone;
 
   @override
   Future<void> signInWithOtp({required String phone}) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 250));
-    throw AuthException('Cannot signIn in mock environment');
+    _verifyingPhone = phone;
+    if (phone == '+12345678900') {
+      await Future.delayed(Duration(milliseconds: 100));
+    }
   }
 
   @override
   Future<void> verifyOTP({required String token}) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 250));
-    throw AuthException('Cannot verify in mock environment');
+    if (token.length != 6) {
+      throw AuthException('Token has expired or is invalid');
+    }
   }
 }
 
 // Mock profiles cache that returns mock users
 class MockProfilesCacheService extends ProfilesCacheService {
   @override
-  ProfilesCache build() => {
-        mockUser.id: mockUser,
-        mockUser2.id: mockUser2,
-      };
+  ProfilesCache build() {
+    initializedCompleter.complete();
+    return {
+      mockUser.id: mockUser,
+      mockUser2.id: mockUser2,
+    };
+  }
 }
 
 // Mock chat controller
@@ -464,10 +481,15 @@ ProviderScope buildMockEnvironment(Widget screen,
     ProviderScope(
       overrides: [
         // Override auth to simulate logged out state
-        authControllerProvider.overrideWith(() => MockAuthController()),
+        authControllerProvider.overrideWith(
+            () => MockAuthController(hasSession: scenario != 'no-session')),
 
         // Override profiles cache
         profilesCacheProvider.overrideWith(() => MockProfilesCacheService()),
+
+        // Override notifications
+        notificationsServiceProvider
+            .overrideWith((ref) => MockNotificationsService()),
 
         // Override topics
         topicsProvider.overrideWith(() => MockTopicsController()),
@@ -512,7 +534,6 @@ ProviderScope buildMockEnvironment(Widget screen,
         storybookModeProvider.overrideWith((ref) => storybookMode),
         themeModeProvider.overrideWith((ref) => ThemeMode.dark),
         developerModeProvider.overrideWith((ref) => false),
-        splashCompleteProvider.overrideWith((ref) => true),
         locationSharingEnabledProvider.overrideWith((ref) => false),
         calendarWritingEnabledProvider.overrideWith((ref) => false),
 
@@ -524,7 +545,7 @@ ProviderScope buildMockEnvironment(Widget screen,
         // Override app initialization
         profileProvider.overrideWith(
           () => MockProfileController(
-            hasProfile: scenario != 'new-profile',
+            hasProfile: scenario != 'new-profile' && scenario != 'no-session',
           ),
         ),
         appVersionsProvider.overrideWith(() => MockAppVersionsController()),
@@ -533,8 +554,12 @@ ProviderScope buildMockEnvironment(Widget screen,
         if (storybookMode)
           routerProvider.overrideWith((ref) => MockRouterService(ref)),
 
+        // Override Firebase
+        firebaseProvider.overrideWith((ref) => MockFirebase()),
+
         // Override Supabase
-        supabaseClientProvider.overrideWithValue(MockSupabase()),
+        supabaseProvider.overrideWith((ref) => MockSupabase()),
+        supabaseClientProvider.overrideWithValue(MockSupabaseClient()),
 
         // scenarios
         ...switch (scenario) {

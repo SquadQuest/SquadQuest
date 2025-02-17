@@ -3,21 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/components/phone_number_field.dart';
 
-class LoginForm extends ConsumerStatefulWidget {
+class PhoneForm extends ConsumerStatefulWidget {
   final void Function(String) onSubmit;
   final bool submitted;
 
-  const LoginForm({
+  const PhoneForm({
     super.key,
     required this.onSubmit,
     required this.submitted,
   });
 
   @override
-  ConsumerState<LoginForm> createState() => _LoginFormState();
+  ConsumerState<PhoneForm> createState() => _PhoneFormState();
 }
 
-class _LoginFormState extends ConsumerState<LoginForm> {
+class _PhoneFormState extends ConsumerState<PhoneForm> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
 

@@ -10,14 +10,12 @@ final topicSubscriptionsProvider =
         TopicSubscriptionsController.new);
 
 class TopicSubscriptionsController extends AsyncNotifier<List<TopicID>> {
-  late StreamSubscription subscription;
-
   @override
   Future<List<TopicID>> build() async {
     final supabase = ref.read(supabaseClientProvider);
 
     // subscribe to changes to subscribed topics
-    subscription = supabase
+    final subscription = supabase
         .from('topic_members')
         .stream(primaryKey: ['topic', 'member'])
         .eq('member', supabase.auth.currentUser!.id)
@@ -25,6 +23,11 @@ class TopicSubscriptionsController extends AsyncNotifier<List<TopicID>> {
           state = AsyncValue.data(
               data.map((row) => row['topic'] as TopicID).toList());
         });
+
+    // cancel subscription when provider is disposed
+    ref.onDispose(() {
+      subscription.cancel();
+    });
 
     return future;
   }

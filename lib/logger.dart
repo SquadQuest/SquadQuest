@@ -6,6 +6,8 @@ const _productionLogging =
 final _logFilter =
     _productionLogging ? DevelopmentFilter() : ProductionFilter();
 
+final loggerSimple = Logger(printer: SimplePrinter(), filter: _logFilter);
+
 final loggerWithStack =
     Logger(printer: PrettyPrinter(methodCount: 3), filter: _logFilter);
 
@@ -22,4 +24,8 @@ void loggerTimed(String message) {
     logger.t(message);
   }
   _lastTimedLog = now;
+}
+
+void log(String message, {Level level = Level.trace}) {
+  loggerSimple.log(level, message);
 }

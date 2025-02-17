@@ -53,6 +53,7 @@ class _VerifyFormState extends State<VerifyForm> {
           key: _formKey,
           child: Column(
             children: [
+              const SizedBox(width: double.infinity),
               Text(
                 'Enter the code sent to the number:',
                 style: theme.inputDecorationTheme.hintStyle,
@@ -90,6 +91,8 @@ class _VerifyFormState extends State<VerifyForm> {
                       color: theme.colorScheme.primary.withAlpha(80),
                     ),
                   ),
+                  onSubmitted: widget.submitted ? null : (_) => _submitToken(),
+                  onCompleted: widget.submitted ? null : (_) => _submitToken(),
                 ),
               ),
               const SizedBox(height: 16),

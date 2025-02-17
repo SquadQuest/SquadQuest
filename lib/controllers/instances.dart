@@ -45,7 +45,9 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     final supabase = ref.read(supabaseClientProvider);
 
     // subscribe to changes
-    supabase.from('instances').stream(primaryKey: ['id']).listen((data) async {
+    final subscription = supabase
+        .from('instances')
+        .stream(primaryKey: ['id']).listen((data) async {
       // convert to model instances
       final instances = await hydrate(data);
 
@@ -59,6 +61,11 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
           ref.invalidate(instanceProvider);
         }
       }
+    });
+
+    // cancel subscription when provider is disposed
+    ref.onDispose(() {
+      subscription.cancel();
     });
 
     return future;
