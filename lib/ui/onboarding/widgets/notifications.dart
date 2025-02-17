@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-class OnboardingNotifications extends StatelessWidget {
+import 'package:squadquest/logger.dart';
+
+class OnboardingNotifications extends StatefulWidget {
   final VoidCallback onNext;
 
   const OnboardingNotifications({
@@ -9,32 +11,69 @@ class OnboardingNotifications extends StatelessWidget {
   });
 
   @override
+  State<OnboardingNotifications> createState() =>
+      _OnboardingNotificationsState();
+}
+
+class _OnboardingNotificationsState extends State<OnboardingNotifications> {
+  bool _friendOutreach = true;
+  bool _eventUpdates = true;
+
+  @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Icon(
-          Icons.notifications_outlined,
-          size: 64,
+        const Align(
+          alignment: Alignment.center,
+          child: Icon(
+            Icons.notifications_outlined,
+            size: 48,
+          ),
         ),
         const SizedBox(height: 24),
         const Text(
-          'Stay Updated',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Enable notifications to stay informed about your events and friend activities',
+          'SquadQuest needs to show notifications to be most useful',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 16),
         ),
         const SizedBox(height: 32),
+        Card(
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              children: [
+                CheckboxListTile(
+                  value: _friendOutreach,
+                  onChanged: (value) =>
+                      setState(() => _friendOutreach = value!),
+                  title: const Text('Outreach from friends'),
+                  secondary: const Icon(Icons.group_outlined),
+                ),
+                CheckboxListTile(
+                  value: _eventUpdates,
+                  onChanged: (value) => setState(() => _eventUpdates = value!),
+                  title: const Text('Updates to your events'),
+                  secondary: const Icon(Icons.event_outlined),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 32),
         ElevatedButton(
-          onPressed: onNext,
+          onPressed: () {
+            log('Enabling notifications with preferences: '
+                'friendOutreach=$_friendOutreach, '
+                'eventUpdates=$_eventUpdates');
+            widget.onNext();
+          },
           child: const Text('Enable Notifications'),
+        ),
+        TextButton(
+          onPressed: widget.onNext,
+          child: const Text('Skip'),
         ),
       ],
     );
