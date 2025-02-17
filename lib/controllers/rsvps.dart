@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/common.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/calendar.dart';
@@ -35,17 +36,29 @@ final myRsvpPerEventProvider = FutureProvider.autoDispose
 
 class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
   @override
-  Future<List<InstanceMember>> build() async {
+  FutureOr<List<InstanceMember>> build() async {
+    log('RsvpsController.fetch');
+
     final supabase = ref.read(supabaseClientProvider);
 
+    // ensure a session is available
+    if (supabase.auth.currentUser == null) {
+      return [];
+    }
+
     // subscribe to changes
-    supabase
+    final subscription = supabase
         .from('instance_members')
         .stream(primaryKey: ['id'])
         .eq('member', supabase.auth.currentUser!.id)
         .listen((data) async {
           state = AsyncValue.data(await hydrate(data));
         });
+
+    // cancel subscription when provider is disposed
+    ref.onDispose(() {
+      subscription.cancel();
+    });
 
     return future;
   }
@@ -125,7 +138,6 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
 class InstanceRsvpsController
     extends AutoDisposeFamilyAsyncNotifier<List<InstanceMember>, InstanceID> {
   late InstanceID instanceId;
-  late StreamSubscription _subscription;
 
   InstanceRsvpsController();
 
@@ -134,7 +146,7 @@ class InstanceRsvpsController
     instanceId = arg;
 
     // subscribe to changes
-    _subscription = ref
+    final subscription = ref
         .read(supabaseClientProvider)
         .from('instance_members')
         .stream(primaryKey: ['id'])
@@ -143,7 +155,7 @@ class InstanceRsvpsController
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
-      _subscription.cancel();
+      subscription.cancel();
     });
 
     return future;

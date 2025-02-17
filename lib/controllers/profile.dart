@@ -19,14 +19,6 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
   FutureOr<UserProfile?> build() async {
     log('ProfileController.build');
 
-    // clear profile on logout
-    ref.listen(authControllerProvider, (previous, session) {
-      log('ProfileController.build.authChange: session: ${session == null ? 'no' : 'yes'}, previous: ${previous == null ? 'no' : 'yes'}');
-      if (session == null) {
-        state = const AsyncValue.data(null);
-      }
-    });
-
     return fetch(throwOnError: true);
   }
 
@@ -43,22 +35,22 @@ class ProfileController extends AsyncNotifier<UserProfile?> {
     state = const AsyncValue.loading();
 
     try {
-      logger.t('ProfileController.fetch: loading');
+      log('ProfileController.fetch: loading');
       final data = await supabase
           .from('profiles')
           .select(_defaultSelect)
           .eq('id', session.user.id);
 
       final profiles = await hydrate(data);
-      logger.t({'ProfileController.fetch: loaded': profiles});
+      log('ProfileController.fetch: loaded ${profiles.length} profile(s)');
 
       final profile = profiles.isNotEmpty ? profiles.first : null;
       state = AsyncValue.data(profile);
-      logger.t({'ProfileController.fetch: set state': profile});
+      log('ProfileController.fetch: setting profile state');
+      logger.d(profile);
 
       return profile;
     } catch (error, stackTrace) {
-      logger.e({'ProfileController.fetch': error}, stackTrace: stackTrace);
       state = AsyncValue.error(error, stackTrace);
 
       if (throwOnError) {

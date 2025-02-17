@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:squadquest/common.dart';
 
+import 'package:squadquest/logger.dart';
+import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/topics_cache.dart';
 import 'package:squadquest/models/topic_member.dart';
@@ -17,7 +18,14 @@ class TopicMembershipsController
   }
 
   Future<List<MyTopicMembership>> fetch() async {
+    log('TopicMembershipsController.fetch');
+
     final supabase = ref.read(supabaseClientProvider);
+
+    // ensure a session is available
+    if (supabase.auth.currentUser == null) {
+      return [];
+    }
 
     final data = await supabase.from('my_topic_memberships').select('*');
 

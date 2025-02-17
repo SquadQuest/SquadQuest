@@ -14,21 +14,30 @@ final profilesCacheProvider =
         ProfilesCacheService.new);
 
 class ProfilesCacheService extends Notifier<ProfilesCache> {
-  final Completer<void> _initializedCompleter = Completer();
-  Future get initialized => _initializedCompleter.future;
+  Completer<void> initializedCompleter = Completer();
+  Future get initialized => initializedCompleter.future;
 
   @override
   ProfilesCache build() {
+    initializedCompleter = Completer();
+
     // load profiles of friends network
     loadNetwork().then((_) {
-      _initializedCompleter.complete();
+      initializedCompleter.complete();
     });
 
     return {};
   }
 
   Future<void> loadNetwork() async {
+    log('ProfilesCacheService.loadNetwork');
+
     final supabase = ref.read(supabaseClientProvider);
+
+    if (supabase.auth.currentUser == null) {
+      state = {};
+      return;
+    }
 
     try {
       final response = await supabase.functions

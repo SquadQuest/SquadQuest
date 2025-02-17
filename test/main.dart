@@ -10,8 +10,6 @@ import 'package:squadquest/services/supabase.dart';
 import 'mocks.dart';
 
 void main() {
-  mockSupabaseInitializedComplete();
-
   runApp(DevicePreview(
     enabled: !kIsWeb && Platform.isMacOS,
     defaultDevice: Devices.ios.iPhoneSE,
@@ -19,7 +17,7 @@ void main() {
     builder: (context) => buildMockEnvironment(
       MyApp(),
       storybookMode: false,
-      // scenario: 'new-profile',
+      scenario: 'no-session',
     ),
     tools: const [
       DeviceSection(),

@@ -3,7 +3,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/drawer.dart';
-import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/components/sheets/location_sharing.dart';
 import 'package:squadquest/models/instance.dart';
@@ -45,7 +44,6 @@ class AppScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(authControllerProvider);
     final isStorybook = ref.watch(storybookModeProvider);
 
     // calculate added padding for measured bottom sheet height

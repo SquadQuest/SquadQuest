@@ -142,6 +142,12 @@ class _MapScreenState extends BaseMapState<MapScreen> {
       useSafeArea: true,
     );
   }
+
+  @override
+  dispose() {
+    subscription?.cancel();
+    super.dispose();
+  }
 }
 
 class DevMenu extends ConsumerWidget {
