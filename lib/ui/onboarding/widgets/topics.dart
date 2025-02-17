@@ -22,18 +22,18 @@ class OnboardingTopics extends StatefulWidget {
 class _OnboardingTopicsState extends State<OnboardingTopics> {
   // Mock topics for testing
   final _mockTopics = [
-    'music.jazz',
-    'music.house',
-    'party.heads',
-    'bike.joyrides',
-    'music.rock',
-    'music.electronic',
-    'party.casual',
-    'bike.racing',
-    'music.classical',
-    'music.indie',
-    'party.themed',
-    'bike.mountain',
+    'Music > Jazz',
+    'Music > House',
+    'Park > Picnic',
+    'Bike > Joy Ride',
+    'Music > Rock',
+    'Music > Electronic',
+    'Party > Casual',
+    'Bike > Racing',
+    'Music > Classical',
+    'Music > Indie',
+    'Party > Themed',
+    'Bike > Mountain',
   ];
 
   final _topicStates = <String, TopicSelectionState>{};
