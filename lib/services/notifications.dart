@@ -26,6 +26,8 @@ class NotificationsService {
   }
 
   void _init() {
+    log('Initializing notifications...');
+
     ref.listen(firebaseMessagingStreamProvider, (previous, record) {
       final (:type, :message) = record.value!;
       final data =

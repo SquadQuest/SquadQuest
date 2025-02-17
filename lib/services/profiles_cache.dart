@@ -14,16 +14,16 @@ final profilesCacheProvider =
         ProfilesCacheService.new);
 
 class ProfilesCacheService extends Notifier<ProfilesCache> {
-  Completer<void> _initializedCompleter = Completer();
-  Future get initialized => _initializedCompleter.future;
+  Completer<void> initializedCompleter = Completer();
+  Future get initialized => initializedCompleter.future;
 
   @override
   ProfilesCache build() {
-    _initializedCompleter = Completer();
+    initializedCompleter = Completer();
 
     // load profiles of friends network
     loadNetwork().then((_) {
-      _initializedCompleter.complete();
+      initializedCompleter.complete();
     });
 
     return {};

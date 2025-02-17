@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/initialization.dart';
 import 'package:squadquest/services/preferences.dart';
 import 'package:squadquest/controllers/auth.dart';
@@ -22,9 +23,13 @@ class AppStartupWidget extends ConsumerWidget {
 
     return initState.when(
       loading: () => _LoadingScreen(),
-      error: (error, stack) => _ErrorScreen(
-          error: error,
-          onRetry: () => ref.invalidate(appInitializationProvider)),
+      error: (error, stack) {
+        logger.e('Error while initializing app',
+            error: error, stackTrace: stack);
+        return _ErrorScreen(
+            error: error,
+            onRetry: () => ref.invalidate(appInitializationProvider));
+      },
       data: (_) {
         // Show login flow if no auth state
         final authState = ref.watch(authControllerProvider);
