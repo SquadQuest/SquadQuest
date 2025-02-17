@@ -65,44 +65,77 @@ class _OnboardingTopicsState extends State<OnboardingTopics> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'What do you want to do more of with your friends?',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16),
-        ),
-        const SizedBox(height: 16),
-        // Legend
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.notifications_active_outlined),
-            SizedBox(width: 4),
-            Text('Notify immediately'),
             SizedBox(width: 16),
-            Icon(Icons.check_box_outlined),
-            SizedBox(width: 4),
-            Text('Show in my feed'),
+            Icon(
+              Icons.interests_outlined,
+              size: 48,
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'What do you want to do more of with your friends?',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            SizedBox(width: 16),
           ],
         ),
-        const SizedBox(height: 16),
-        // Scrollable topic list
+        const SizedBox(height: 32),
         Expanded(
-          child: Card(
-            elevation: 2,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: _mockTopics.length,
-              itemBuilder: (context, index) {
-                final topic = _mockTopics[index];
-                final state =
-                    _topicStates[topic] ?? TopicSelectionState.deselected;
-                return ListTile(
-                  onTap: () => _cycleTopicState(topic),
-                  leading: _buildTopicIcon(state),
-                  title: Text(topic),
-                );
-              },
-            ),
+          child: Column(
+            children: [
+              Expanded(
+                child: Card(
+                  elevation: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Text(
+                          'Most popular topics (find more after you\'re in)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: _mockTopics.length,
+                          itemBuilder: (context, index) {
+                            final topic = _mockTopics[index];
+                            final state = _topicStates[topic] ??
+                                TopicSelectionState.deselected;
+                            return ListTile(
+                              onTap: () => _cycleTopicState(topic),
+                              leading: _buildTopicIcon(state),
+                              title: Text(topic),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.check_box_outlined, size: 16),
+                  SizedBox(width: 4),
+                  Text('Show in my feed', style: TextStyle(fontSize: 12)),
+                  SizedBox(width: 16),
+                  Icon(Icons.notifications_active_outlined, size: 16),
+                  SizedBox(width: 4),
+                  Text('Notify immediately', style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 32),
@@ -111,7 +144,11 @@ class _OnboardingTopicsState extends State<OnboardingTopics> {
             log('Selected topics: ${_topicStates.entries.where((e) => e.value != TopicSelectionState.deselected).map((e) => '${e.key}=${e.value}')}');
             widget.onNext();
           },
-          child: const Text('Continue'),
+          child: const Text('Save my topics'),
+        ),
+        TextButton(
+          onPressed: widget.onNext,
+          child: const Text('Skip'),
         ),
       ],
     );

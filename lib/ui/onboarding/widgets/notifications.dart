@@ -24,18 +24,22 @@ class _OnboardingNotificationsState extends State<OnboardingNotifications> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Align(
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.notifications_outlined,
-            size: 48,
-          ),
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'SquadQuest needs to show notifications to be most useful',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16),
+        Row(
+          children: const [
+            SizedBox(width: 16),
+            Icon(
+              Icons.notifications_outlined,
+              size: 48,
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'SquadQuest needs to show notifications to be most useful',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            SizedBox(width: 16),
+          ],
         ),
         const SizedBox(height: 32),
         Card(
@@ -69,7 +73,7 @@ class _OnboardingNotificationsState extends State<OnboardingNotifications> {
                 'eventUpdates=$_eventUpdates');
             widget.onNext();
           },
-          child: const Text('Enable Notifications'),
+          child: const Text('Allow Notifications'),
         ),
         TextButton(
           onPressed: widget.onNext,
