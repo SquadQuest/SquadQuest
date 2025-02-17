@@ -321,7 +321,9 @@ class MockAuthController extends AuthController {
   @override
   Future<void> signInWithOtp({required String phone}) async {
     _verifyingPhone = phone;
-    await Future.delayed(Duration(milliseconds: 100));
+    if (phone == '+12345678900') {
+      await Future.delayed(Duration(milliseconds: 100));
+    }
   }
 
   @override

@@ -17,7 +17,7 @@ void main() {
     builder: (context) => buildMockEnvironment(
       MyApp(),
       storybookMode: false,
-      // scenario: 'new-profile',
+      scenario: 'no-session',
     ),
     tools: const [
       DeviceSection(),
