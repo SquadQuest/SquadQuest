@@ -15,18 +15,22 @@ class OnboardingLocation extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Align(
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.location_on_outlined,
-            size: 48,
-          ),
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'SquadQuest is great on the move',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16),
+        Row(
+          children: const [
+            SizedBox(width: 16),
+            Icon(
+              Icons.location_on_outlined,
+              size: 48,
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'SquadQuest is great on the move',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            SizedBox(width: 16),
+          ],
         ),
         const SizedBox(height: 32),
         Card(
