@@ -9,10 +9,12 @@ enum TopicSelectionState {
 
 class OnboardingTopics extends StatefulWidget {
   final VoidCallback onNext;
+  final bool enableSubscriptions;
 
   const OnboardingTopics({
     super.key,
     required this.onNext,
+    this.enableSubscriptions = false,
   });
 
   @override
@@ -42,11 +44,19 @@ class _OnboardingTopicsState extends State<OnboardingTopics> {
     setState(() {
       final currentState =
           _topicStates[topic] ?? TopicSelectionState.deselected;
-      _topicStates[topic] = switch (currentState) {
-        TopicSelectionState.deselected => TopicSelectionState.showInFeed,
-        TopicSelectionState.showInFeed => TopicSelectionState.notifyImmediately,
-        TopicSelectionState.notifyImmediately => TopicSelectionState.deselected,
-      };
+      if (widget.enableSubscriptions) {
+        _topicStates[topic] = switch (currentState) {
+          TopicSelectionState.deselected => TopicSelectionState.showInFeed,
+          TopicSelectionState.showInFeed =>
+            TopicSelectionState.notifyImmediately,
+          TopicSelectionState.notifyImmediately =>
+            TopicSelectionState.deselected,
+        };
+      } else {
+        _topicStates[topic] = currentState == TopicSelectionState.deselected
+            ? TopicSelectionState.showInFeed
+            : TopicSelectionState.deselected;
+      }
     });
   }
 
@@ -125,14 +135,17 @@ class _OnboardingTopicsState extends State<OnboardingTopics> {
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.check_box_outlined, size: 16),
-                  SizedBox(width: 4),
-                  Text('Show in my feed', style: TextStyle(fontSize: 12)),
-                  SizedBox(width: 16),
-                  Icon(Icons.notifications_active_outlined, size: 16),
-                  SizedBox(width: 4),
-                  Text('Notify immediately', style: TextStyle(fontSize: 12)),
+                children: [
+                  const Icon(Icons.check_box_outlined, size: 16),
+                  const SizedBox(width: 4),
+                  const Text('Show in my feed', style: TextStyle(fontSize: 12)),
+                  if (widget.enableSubscriptions) ...[
+                    const SizedBox(width: 16),
+                    const Icon(Icons.notifications_active_outlined, size: 16),
+                    const SizedBox(width: 4),
+                    const Text('Notify immediately',
+                        style: TextStyle(fontSize: 12)),
+                  ],
                 ],
               ),
             ],
