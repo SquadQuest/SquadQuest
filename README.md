@@ -26,11 +26,11 @@ SquadQuest *is not* a startup. The need to monetize your data or engagement to r
 ## Screenshots
 
 <p float="left">
-  <img src="./screenshots/map-river.png" width="150" alt="Map screen: River event" />
-  <img src="./screenshots/event.png" width="150" alt="Event screen" />
-  <img src="./screenshots/home.png" width="150" alt="Home screen" />
-  <img src="./screenshots/topics.png" width="150" alt="Topics screen" />
-  <img src="./screenshots/profile.png" width="150" alt="Profile screen" />
+    <img src="./screenshots/map-river.png" width="150" alt="Map screen: River event" />
+    <img src="./screenshots/event.png" width="150" alt="Event screen" />
+    <img src="./screenshots/home.png" width="150" alt="Home screen" />
+    <img src="./screenshots/topics.png" width="150" alt="Topics screen" />
+    <img src="./screenshots/profile.png" width="150" alt="Profile screen" />
 </p>
 
 ## Features
@@ -70,23 +70,33 @@ This project uses [asdf](https://asdf-vm.com/) for managing tool versions, inclu
 2. Navigate to the project directory
 3. Install the required Flutter version using asdf:
 
-   ```bash
-   asdf install
-   ```
+    ```bash
+    asdf install
+    ```
 
-   This will automatically install Flutter 3.27.0 as specified in the `.tool-versions` file.
+    This will automatically install Flutter 3.27.0 as specified in the `.tool-versions` file.
 
 4. Verify the installation:
 
-   ```bash
-   flutter --version
-   ```
+    ```bash
+    flutter --version
+    ```
 
 5. Install dependencies:
 
-   ```bash
-   flutter pub get
-   ```
+    ```bash
+    flutter pub get
+    ```
+
+6. Obtain secrets:
+
+    Production versions of these are all available in the SquadQuest vault.
+
+    For development, you'll need to [run your own Supabase instance](supabase/docker-compose.yml) and provision an app with FCM access in Firebase:
+
+    - `android/app/google-services.json`: Obtained from Firebase
+    - `{ios,macos}/Runner/GoogleService-Info.plist`: Obtained from Firebase
+    - `.env`: Copy `.env.example` and fill in details for development Supabase instance
 
 ### Running the app
 
