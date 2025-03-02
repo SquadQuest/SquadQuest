@@ -6,7 +6,11 @@ Bring your social circle to life with SquadQuest: the free, privacy-first app fo
 - [Screenshots](#screenshots)
 - [Features](#features)
 - [Install](#install)
-  - [Testing Beta Releases](#testing-beta-releases)
+- [Development Setup](#development-setup)
+    - [Prerequisites](#prerequisites)
+    - [Setting up the project](#setting-up-the-project)
+    - [Running the app](#running-the-app)
+    - [Testing Beta Releases](#testing-beta-releases)
 - [Roadmap](#roadmap)
 
 ## What is SquadQuest?
@@ -22,11 +26,11 @@ SquadQuest *is not* a startup. The need to monetize your data or engagement to r
 ## Screenshots
 
 <p float="left">
-  <img src="./screenshots/map-river.png" width="150" alt="Map screen: River event" />
-  <img src="./screenshots/event.png" width="150" alt="Event screen" />
-  <img src="./screenshots/home.png" width="150" alt="Home screen" />
-  <img src="./screenshots/topics.png" width="150" alt="Topics screen" />
-  <img src="./screenshots/profile.png" width="150" alt="Profile screen" />
+    <img src="./screenshots/map-river.png" width="150" alt="Map screen: River event" />
+    <img src="./screenshots/event.png" width="150" alt="Event screen" />
+    <img src="./screenshots/home.png" width="150" alt="Home screen" />
+    <img src="./screenshots/topics.png" width="150" alt="Topics screen" />
+    <img src="./screenshots/profile.png" width="150" alt="Profile screen" />
 </p>
 
 ## Features
@@ -47,6 +51,59 @@ SquadQuest *is not* a startup. The need to monetize your data or engagement to r
 - [via Play Store for Android mobile devices](https://play.google.com/store/apps/details?id=app.squadquest)
 - Use SquadQuest in your browser: <https://squadquest.app>
 
+## Development Setup
+
+This project uses [asdf](https://asdf-vm.com/) for managing tool versions, including Flutter.
+
+### Prerequisites
+
+1. Install asdf following the [installation guide](https://asdf-vm.com/guide/getting-started.html)
+2. Install the Flutter plugin for asdf:
+
+   ```bash
+   asdf plugin add flutter
+   ```
+
+### Setting up the project
+
+1. Clone the repository
+2. Navigate to the project directory
+3. Install the required Flutter version using asdf:
+
+    ```bash
+    asdf install
+    ```
+
+    This will automatically install Flutter 3.27.0 as specified in the `.tool-versions` file.
+
+4. Verify the installation:
+
+    ```bash
+    flutter --version
+    ```
+
+5. Install dependencies:
+
+    ```bash
+    flutter pub get
+    ```
+
+6. Obtain secrets:
+
+    Production versions of these are all available in the SquadQuest vault.
+
+    For development, you'll need to [run your own Supabase instance](supabase/docker-compose.yml) and provision an app with FCM access in Firebase:
+
+    - `android/app/google-services.json`: Obtained from Firebase
+    - `{ios,macos}/Runner/GoogleService-Info.plist`: Obtained from Firebase
+    - `.env`: Copy `.env.example` and fill in details for development Supabase instance
+
+### Running the app
+
+```bash
+flutter run
+```
+
 ### Testing Beta Releases
 
 - [Install latest Beta release for Apple mobile devices via TestFlight](https://testflight.apple.com/join/1xppwmKm)
@@ -56,7 +113,6 @@ SquadQuest *is not* a startup. The need to monetize your data or engagement to r
 - [Install latest Beta release for Android mobile devices via APK download](https://github.com/SquadQuest/SquadQuest/releases/latest/download/SquadQuest.apk)
 
     Updating: Installing this way requires manual updates to get new versions by coming back here and clicking this link again
-
 
 ## Roadmap
 

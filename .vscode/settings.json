@@ -1,5 +1,5 @@
 {
-  "dart.flutterSdkPath": ".fvm/versions/3.27.0",
+  "dart.flutterSdkPath": "~/.asdf/installs/flutter/3.27.0",
   "dart.analysisExcludedFolders": [
     ".fvm",
     ".pub",
