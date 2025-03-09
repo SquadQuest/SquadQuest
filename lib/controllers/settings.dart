@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/services/preferences.dart';
+import 'package:squadquest/controllers/calendar.dart';
+import 'package:squadquest/controllers/instances.dart';
+import 'package:squadquest/controllers/rsvps.dart';
 
 // TODO: when adding future settings, use e.g. setBool instead of setString for everything
 
@@ -67,10 +70,23 @@ class SettingsController {
           'locationSharingEnabled', locationSharingEnabled.toString());
     });
 
-    ref.listen(calendarWritingEnabledProvider, (_, calendarWritingEnabled) {
+    ref.listen(calendarWritingEnabledProvider,
+        (_, calendarWritingEnabled) async {
       log('SettingsController.calendarWritingEnabled=$calendarWritingEnabled');
       prefs.setString(
           'calendarWritingEnabled', calendarWritingEnabled.toString());
+
+      // Trigger full sync when calendar writing is enabled
+      if (calendarWritingEnabled) {
+        final calendarController = CalendarController.instance;
+        final instances = await ref.read(instancesProvider.future);
+        final rsvps = await ref.read(rsvpsProvider.future);
+
+        await calendarController.performFullSync(
+          instances: instances,
+          rsvps: rsvps,
+        );
+      }
     });
   }
 
