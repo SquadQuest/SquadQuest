@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:squadquest/controllers/settings.dart';
 
 import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/supabase.dart';
@@ -27,6 +28,8 @@ final appInitializationProvider = FutureProvider<void>((ref) async {
     ref.read(supabaseProvider.future),
     ref.read(firebaseProvider.future),
   ]);
+
+  ref.read(settingsControllerProvider);
 
   log('Core services initialized');
 
