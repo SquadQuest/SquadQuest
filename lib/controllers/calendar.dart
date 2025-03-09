@@ -21,9 +21,10 @@ abstract interface class CalendarController {
   // Avoid self instance
   CalendarController._();
   factory CalendarController._getByPlatform() {
-    if (defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS) {
-      return _MobileCalendarController();
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      return _CalendarController();
     }
     throw UnsupportedError(
         'CalendarController is not supported on this platform');
@@ -31,6 +32,16 @@ abstract interface class CalendarController {
 
   static CalendarController get instance =>
       _instance ??= CalendarController._getByPlatform();
+
+  /// Returns true if enough time has passed since the last sync to perform another sync.
+  bool canSync();
+
+  /// Performs a full sync of all events in the calendar with the app's data.
+  /// This ensures that all events in the calendar match the user's RSVPs.
+  Future<void> performFullSync({
+    required List<Instance> instances,
+    required List<InstanceMember> rsvps,
+  });
 
   /// Returns true if the device has permission to access the calendar.
   Future<bool> isAvailable();
@@ -42,8 +53,8 @@ abstract interface class CalendarController {
   /// instance and subscription. The event will have in its description a link to
   /// the instance's page on squadquest app.
   Future<void> upsertEvent({
-    required InstanceMember subscription,
     required Instance instance,
+    required InstanceMember? subscription,
   });
 
   /// Deletes an event from the device's calendar based on the provided instance.
@@ -67,8 +78,8 @@ class _CalendarOperation {
   });
 }
 
-/// {@macro calendar_controller}
-class _MobileCalendarController implements CalendarController {
+class _CalendarController implements CalendarController {
+  static const Duration syncCooldown = Duration(minutes: 5);
   static const defaultCalendarAccountName = "SquadQuest";
   static const defaultCalendarName = "SquadQuest Events";
 
@@ -77,8 +88,10 @@ class _MobileCalendarController implements CalendarController {
   final DeviceCalendarPlugin _calendar = DeviceCalendarPlugin();
   bool? _permissionGranted;
   String _currentTimezone = 'UTC';
+  DateTime? _lastSyncTime;
+  bool _isSyncing = false;
 
-  _MobileCalendarController() {
+  _CalendarController() {
     _initializeTimezone();
   }
 
@@ -94,6 +107,12 @@ class _MobileCalendarController implements CalendarController {
   }
 
   @override
+  bool canSync() {
+    return _lastSyncTime == null ||
+        DateTime.now().difference(_lastSyncTime!) > syncCooldown;
+  }
+
+  @override
   Future<bool> isAvailable() async {
     return (await _calendar.hasPermissions()).data ?? false;
   }
@@ -103,7 +122,102 @@ class _MobileCalendarController implements CalendarController {
     return (await _calendar.requestPermissions()).data ?? false;
   }
 
-  /// Handles calendar operations in a separate isolate to prevent UI blocking
+  @override
+  Future<void> performFullSync({
+    required List<Instance> instances,
+    required List<InstanceMember> rsvps,
+  }) async {
+    logger.d('Starting full calendar sync');
+
+    // Prevent concurrent syncs
+    if (_isSyncing) {
+      logger.d('Sync already in progress, skipping');
+      return;
+    }
+
+    try {
+      _isSyncing = true;
+      _lastSyncTime = DateTime.now();
+
+      // Check permissions first
+      _permissionGranted = await requestPermission();
+      if (_permissionGranted != true) {
+        logger.d('Calendar permission not granted, skipping sync');
+        return;
+      }
+
+      if (instances.isEmpty || rsvps.isEmpty) {
+        logger.d('No events or RSVPs to sync');
+        return;
+      }
+
+      // Calculate the cutoff time for events (1 week ago)
+      final maxStartTime = _lastSyncTime!.subtract(const Duration(days: 7));
+
+      // Create a map of instance ID to instance for quick lookup
+      final instanceMap = {
+        for (var instance in instances) instance.id!: instance
+      };
+
+      // Process each RSVP
+      int rsvpsProcessed = 0;
+      for (final rsvp in rsvps) {
+        // Skip if we don't have the instance
+        final instance = instanceMap[rsvp.instanceId];
+        if (instance == null) continue;
+
+        try {
+          // Skip events that started more than a week ago
+          if (instance.startTimeMin.isBefore(maxStartTime)) {
+            continue;
+          }
+
+          rsvpsProcessed++;
+
+          // Skip events the user has declined
+          if (rsvp.status == InstanceMemberStatus.no) {
+            await _performCalendarOperation(_CalendarOperation(
+              instance: instance,
+              isDelete: true,
+              timezone: _currentTimezone,
+              calendar: _calendar,
+            ));
+            continue;
+          }
+
+          // Skip canceled events
+          if (instance.status == InstanceStatus.canceled) {
+            await _performCalendarOperation(_CalendarOperation(
+              instance: instance,
+              isDelete: true,
+              timezone: _currentTimezone,
+              calendar: _calendar,
+            ));
+            continue;
+          }
+
+          // Create or update the calendar event
+          await _performCalendarOperation(_CalendarOperation(
+            instance: instance,
+            subscription: rsvp,
+            isDelete: false,
+            timezone: _currentTimezone,
+            calendar: _calendar,
+          ));
+        } catch (e) {
+          logger.e('Error syncing event ${instance.id}', error: e);
+          // Continue with other events even if one fails
+        }
+      }
+
+      logger.d('Calendar sync completed, $rsvpsProcessed RSVPs processed');
+    } catch (e, stack) {
+      logger.e('Calendar sync failed', error: e, stackTrace: stack);
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
   Future<void> _performCalendarOperation(_CalendarOperation op) async {
     final location = getLocation(op.timezone);
 
@@ -204,7 +318,7 @@ class _MobileCalendarController implements CalendarController {
       }
     } catch (e, stack) {
       logger.e('Calendar operation failed', error: e, stackTrace: stack);
-      rethrow; // Ensure the error is propagated
+      rethrow;
     }
   }
 

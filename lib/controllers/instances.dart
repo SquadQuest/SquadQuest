@@ -8,6 +8,8 @@ import 'package:squadquest/common.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/services/profiles_cache.dart';
 import 'package:squadquest/services/topics_cache.dart';
+import 'package:squadquest/controllers/calendar.dart';
+import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/controllers/topics.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 import 'package:squadquest/models/instance.dart';
@@ -53,6 +55,9 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
 
       // convert to model instances and update state
       state = AsyncValue.data(instances);
+
+      // Trigger calendar sync
+      await _triggerCalendarSync(instances);
 
       // invalidate event details providers
       for (final instance in instances) {
@@ -154,6 +159,27 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
         .save(savedInstance, InstanceMemberStatus.yes);
 
     return savedInstance;
+  }
+
+  Future<void> _triggerCalendarSync(List<Instance> instances) async {
+    // Only sync if calendar writing is enabled
+    final calendarWritingEnabled = ref.read(calendarWritingEnabledProvider);
+    if (!calendarWritingEnabled) return;
+
+    final calendarController = CalendarController.instance;
+
+    // Check if we should sync based on cooldown
+    if (!calendarController.canSync()) return;
+
+    // Get all RSVPs for the current user
+    final rsvps = await ref.read(rsvpsProvider.future);
+    if (rsvps.isEmpty) return;
+
+    // Perform the full sync
+    await calendarController.performFullSync(
+      instances: instances,
+      rsvps: rsvps,
+    );
   }
 
   Future<Instance> patch(InstanceID id, Map<String, dynamic> patchData) async {
