@@ -56,7 +56,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         .eq('member', widget.userId)
         .inFilter('status', ['maybe', 'yes', 'omw'])
         .gt('instance.start_time_max', DateTime.now())
-        .order('start_time_max', referencedTable: 'instance', ascending: false)
         .then((rsvpsData) async {
           final instancesData = rsvpsData
               .map((rsvpData) => rsvpData['instance'])
@@ -72,8 +71,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               instancesData, [(idKey: 'topic', modelKey: 'topic')]);
 
           setState(() {
-            rsvpsAsync =
-                AsyncValue.data(rsvpsData.map(InstanceMember.fromMap).toList());
+            rsvpsAsync = AsyncValue.data(
+                rsvpsData.map(InstanceMember.fromMap).toList()
+                  ..sort((a, b) => a.instance!.startTimeMax
+                      .compareTo(b.instance!.startTimeMax)));
           });
         });
 
