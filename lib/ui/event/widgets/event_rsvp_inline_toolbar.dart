@@ -73,7 +73,7 @@ class _EventRsvpInlineToolbarState extends State<EventRsvpInlineToolbar> {
 
   @override
   Widget build(BuildContext context) {
-    return AStack(
+    return Stack(
       clipBehavior: Clip.none,
       children: [
         // Anchor pointer row (matches quick actions layout)
