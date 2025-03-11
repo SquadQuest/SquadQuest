@@ -37,25 +37,34 @@ class _EventRsvpInlineToolbarState extends State<EventRsvpInlineToolbar> {
     required IconData icon,
     required String label,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _handleSubmit(status, _noteController.text),
+    return Builder(
+      builder: (context) => Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 64,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 24),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: const TextStyle(fontSize: 10),
-                textAlign: TextAlign.center,
-              ),
-            ],
+        child: InkWell(
+          onTap: () => _handleSubmit(status, _noteController.text),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: 64,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -64,18 +73,32 @@ class _EventRsvpInlineToolbarState extends State<EventRsvpInlineToolbar> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return AStack(
       clipBehavior: Clip.none,
       children: [
-        // Anchor pointer
+        // Anchor pointer row (matches quick actions layout)
         Positioned(
-          left: 32,
-          top: -8,
-          child: CustomPaint(
-            size: const Size(16, 8),
-            painter: _AnchorPainter(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            ),
+          top: -7,
+          left: 0,
+          right: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Container(
+                width: 64,
+                alignment: Alignment.center,
+                child: CustomPaint(
+                  size: const Size(20, 10),
+                  painter: _AnchorPainter(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 64), // Map button
+              const SizedBox(width: 64), // Chat button
+              const SizedBox(width: 64), // Share button
+            ],
           ),
         ),
 
@@ -83,12 +106,13 @@ class _EventRsvpInlineToolbarState extends State<EventRsvpInlineToolbar> {
         Card(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           elevation: 3,
+          margin: const EdgeInsets.fromLTRB(8, 2, 8, 0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Text(
                   "You're invited! Can you make it?",
                   style: TextStyle(
@@ -99,7 +123,7 @@ class _EventRsvpInlineToolbarState extends State<EventRsvpInlineToolbar> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: TextFormField(
                   controller: _noteController,
                   decoration: InputDecoration(
@@ -110,6 +134,34 @@ class _EventRsvpInlineToolbarState extends State<EventRsvpInlineToolbar> {
                         .colorScheme
                         .surfaceContainerHighest
                         .withAlpha(80),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outlineVariant
+                            .withAlpha(80),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outlineVariant
+                            .withAlpha(80),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.edit_note_outlined,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   style: const TextStyle(fontSize: 14),
                   maxLines: 1,
@@ -120,7 +172,7 @@ class _EventRsvpInlineToolbarState extends State<EventRsvpInlineToolbar> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
