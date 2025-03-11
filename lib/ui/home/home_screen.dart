@@ -53,7 +53,7 @@ final _filteredEventsWithStatsProvider =
             // public events you're subscribed to
             (event.visibility != InstanceVisibility.public ||
                 topics.contains(event.topicId)),
-      EventFilter.pending => rsvp?.status == InstanceMemberStatus.invited &&
+      EventFilter.invited => rsvp?.status == InstanceMemberStatus.invited &&
           event.getTimeGroup(now) != InstanceTimeGroup.past,
       EventFilter.going => [
           InstanceMemberStatus.maybe,
@@ -99,7 +99,7 @@ final _rsvpStatusesProvider =
 
 enum EventFilter {
   feed('Feed', 'Events you\'re invited to or match your interests'),
-  pending('Pending', 'Events awaiting your response'),
+  invited('Invited', 'Events awaiting your response'),
   going('Going', 'Events you\'re attending'),
   hosting('Hosting', 'Events you\'re organizing'),
   public('Public', 'All public events');
