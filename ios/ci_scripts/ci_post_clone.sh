@@ -7,8 +7,10 @@ set -e
 cd "${CI_PRIMARY_REPOSITORY_PATH}" # change working directory to the root of your cloned repo.
 
 # Place secrets Xcode Cloud secret environment variables
+echo "Setting up environment..."
 echo "${FLUTTER_ENV_BASE64}" | base64 -d >./.env
 echo "${GOOGLE_SERVICES_BASE64}" | base64 -d >./ios/Runner/GoogleService-Info.plist
+cat .env
 
 # Write version from tag
 if [ -n "${CI_TAG}" ]; then
