@@ -21,7 +21,7 @@ void main() {
 
       // Verify filter tabs are present
       expect(find.text('Feed'), findsOneWidget);
-      expect(find.text('Pending'), findsOneWidget);
+      expect(find.text('Invited'), findsOneWidget);
       expect(find.text('Going'), findsOneWidget);
       expect(find.text('Hosting'), findsOneWidget);
       expect(find.text('Public'), findsOneWidget);
@@ -124,8 +124,8 @@ void main() {
       );
       expect(find.byType(EventCard), findsExactly(1));
 
-      // Switch to Pending tab
-      await tester.tap(find.text('Pending'));
+      // Switch to Invited tab
+      await tester.tap(find.text('Invited'));
       await tester.pumpAndSettle();
 
       expect(

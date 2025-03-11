@@ -6,7 +6,7 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/controllers/instances.dart';
 import 'package:squadquest/controllers/rsvps.dart';
 
-final _pendingEventsCountProvider = Provider<int>((ref) {
+final _invitedEventsCountProvider = Provider<int>((ref) {
   final eventsAsync = ref.watch(instancesProvider);
   final now = DateTime.now();
   final rsvpsList = ref.watch(rsvpsProvider).valueOrNull ?? [];
@@ -37,7 +37,7 @@ class HomeFilterBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pendingCount = ref.watch(_pendingEventsCountProvider);
+    final invitedCount = ref.watch(_invitedEventsCountProvider);
 
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -54,11 +54,11 @@ class HomeFilterBar extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final filter = filters[index];
                 final isSelected = selectedIndex == index;
-                final isPendingFilter = filter.label == 'Pending';
+                final isInvitedFilter = filter.label == 'Invited';
 
                 return FilterChip(
                   selected: isSelected,
-                  label: isPendingFilter && pendingCount > 0
+                  label: isInvitedFilter && invitedCount > 0
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -82,7 +82,7 @@ class HomeFilterBar extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                pendingCount.toString(),
+                                invitedCount.toString(),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isSelected

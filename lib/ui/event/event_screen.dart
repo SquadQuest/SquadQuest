@@ -63,7 +63,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         }
       });
 
-    // start timer to refreshh indicators periodically
+    // start timer to refresh indicators periodically
     refreshIndicatorsTimer =
         Timer.periodic(const Duration(seconds: 15), (Timer t) {
       ref.invalidate(eventPointsProvider(widget.eventId));
@@ -356,6 +356,10 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                                   },
                                 )
                             : () => _showRsvpSheet(event),
+                        onRsvpStatusSelected: session == null
+                            ? null
+                            : (status, note) =>
+                                _saveRsvp(status, event, note: note),
                         onMapTap: _showLiveMap,
                         onShareTap: _copyEventLink,
                         onChatTap: _showChat,
