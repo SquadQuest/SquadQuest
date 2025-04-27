@@ -36,16 +36,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   AsyncValue<List<UserProfile>> mutualsAsync = const AsyncValue.loading();
   final Map<TopicID, bool> pendingChanges = {};
 
-  @override
-  void initState() {
-    super.initState();
-
+  Future<void> _loadData() async {
     final supabase = ref.read(supabaseClientProvider);
     final profilesCache = ref.read(profilesCacheProvider.notifier);
     final topicsCache = ref.read(topicsCacheProvider.notifier);
 
     // load profile
-    profilesCache.getById(widget.userId).then((profile) async {
+    try {
+      final profile = await profilesCache.getById(widget.userId);
       setState(() {
         profileAsync = AsyncValue.data(profile);
       });
@@ -68,60 +66,73 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           mutualsAsync = const AsyncValue.data([]);
         });
       }
-    });
 
-    // load RSVPs
-    supabase
-        .from('instance_members')
-        .select('*, instance!inner(*)')
-        .eq('member', widget.userId)
-        .inFilter('status', ['maybe', 'yes', 'omw'])
-        .gt('instance.start_time_max', DateTime.now())
-        .then((rsvpsData) async {
-          final instancesData = rsvpsData
-              .map((rsvpData) => rsvpData['instance'])
-              .cast<Map<String, dynamic>>()
-              .toList();
+      // load RSVPs
+      final rsvpsData = await supabase
+          .from('instance_members')
+          .select('*, instance!inner(*)')
+          .eq('member', widget.userId)
+          .inFilter('status', ['maybe', 'yes', 'omw']).gt(
+              'instance.start_time_max', DateTime.now());
 
-          // populate profile data
-          await profilesCache.populateData(
-              instancesData, [(idKey: 'created_by', modelKey: 'created_by')]);
+      final instancesData = rsvpsData
+          .map((rsvpData) => rsvpData['instance'])
+          .cast<Map<String, dynamic>>()
+          .toList();
 
-          // populate topic data
-          await topicsCache.populateData(
-              instancesData, [(idKey: 'topic', modelKey: 'topic')]);
+      // populate profile data
+      await profilesCache.populateData(
+          instancesData, [(idKey: 'created_by', modelKey: 'created_by')]);
 
-          setState(() {
-            rsvpsAsync = AsyncValue.data(
-                rsvpsData.map(InstanceMember.fromMap).toList()
-                  ..sort((a, b) => a.instance!.startTimeMax
-                      .compareTo(b.instance!.startTimeMax)));
-          });
+      // populate topic data
+      await topicsCache
+          .populateData(instancesData, [(idKey: 'topic', modelKey: 'topic')]);
+
+      setState(() {
+        rsvpsAsync = AsyncValue.data(rsvpsData
+            .map(InstanceMember.fromMap)
+            .toList()
+          ..sort((a, b) =>
+              a.instance!.startTimeMax.compareTo(b.instance!.startTimeMax)));
+      });
+
+      // load topics
+      try {
+        final response = await supabase.functions.invoke('get-friend-profile',
+            method: HttpMethod.get,
+            queryParameters: {'user_id': widget.userId});
+
+        final topicMembershipsData =
+            response.data['topic_subscriptions'].cast<Map<String, dynamic>>();
+        final populatedData = await topicsCache.populateData(
+            topicMembershipsData, [(idKey: 'topic', modelKey: 'topic')]);
+        populatedData
+            .sort((a, b) => a['topic'].name.compareTo(b['topic'].name));
+
+        setState(() {
+          myTopicMembershipsAsync = AsyncValue.data(
+              populatedData.map(MyTopicMembership.fromMap).toList());
         });
-
-    // load topics
-    supabase.functions.invoke('get-friend-profile',
-        method: HttpMethod.get,
-        queryParameters: {'user_id': widget.userId}).then((response) async {
-      final topicMembershipsData =
-          response.data['topic_subscriptions'].cast<Map<String, dynamic>>();
-      final populatedData = await topicsCache.populateData(
-          topicMembershipsData, [(idKey: 'topic', modelKey: 'topic')]);
-      populatedData.sort((a, b) => a['topic'].name.compareTo(b['topic'].name));
-
+      } on FunctionException catch (error, stackTrace) {
+        setState(() {
+          myTopicMembershipsAsync = AsyncValue.error(
+              Exception(error.details
+                  .toString()
+                  .replaceAll(RegExp(r'^[a-z\-]+: '), '')),
+              stackTrace);
+        });
+      }
+    } catch (error, stackTrace) {
       setState(() {
-        myTopicMembershipsAsync = AsyncValue.data(
-            populatedData.map(MyTopicMembership.fromMap).toList());
+        profileAsync = AsyncValue.error(error, stackTrace);
       });
-    }).onError((FunctionException error, stackTrace) {
-      setState(() {
-        myTopicMembershipsAsync = AsyncValue.error(
-            Exception(error.details
-                .toString()
-                .replaceAll(RegExp(r'^[a-z\-]+: '), '')),
-            stackTrace);
-      });
-    });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
   }
 
   Future<void> _onTopicToggle(
@@ -172,8 +183,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               profileAsync = const AsyncValue.loading();
               rsvpsAsync = const AsyncValue.loading();
               myTopicMembershipsAsync = const AsyncValue.loading();
+              mutualsAsync = const AsyncValue.loading();
             });
-            initState();
+            await _loadData();
           },
           child: CustomScrollView(
             slivers: [
