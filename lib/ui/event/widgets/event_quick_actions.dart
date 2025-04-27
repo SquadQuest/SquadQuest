@@ -17,6 +17,7 @@ class EventQuickActions extends ConsumerWidget {
   final VoidCallback onShareTap;
   final VoidCallback onChatTap;
   final bool showChat;
+  final bool showRsvp;
 
   const EventQuickActions({
     super.key,
@@ -27,6 +28,7 @@ class EventQuickActions extends ConsumerWidget {
     required this.onShareTap,
     required this.onChatTap,
     this.showChat = true,
+    this.showRsvp = true,
     this.onRsvpStatusSelected,
   });
 
@@ -41,14 +43,15 @@ class EventQuickActions extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildActionButton(
-              context,
-              onTap: onRsvpTap,
-              selected: selectedStatus != null &&
-                  selectedStatus != InstanceMemberStatus.invited,
-              icon: _getRsvpIcon(),
-              label: selectedStatus?.name.toUpperCase() ?? 'RSVP',
-            ),
+            if (showRsvp)
+              _buildActionButton(
+                context,
+                onTap: onRsvpTap,
+                selected: selectedStatus != null &&
+                    selectedStatus != InstanceMemberStatus.invited,
+                icon: _getRsvpIcon(),
+                label: selectedStatus?.name.toUpperCase() ?? 'RSVP',
+              ),
             _buildActionButton(
               context,
               onTap: onMapTap,

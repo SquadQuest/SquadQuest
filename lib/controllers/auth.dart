@@ -11,6 +11,8 @@ export 'package:squadquest/services/supabase.dart' show Session, User;
 final authControllerProvider =
     NotifierProvider<AuthController, Session?>(AuthController.new);
 
+final authRequestedProvider = StateProvider<bool>((ref) => false);
+
 class AuthController extends Notifier<Session?> {
   final List<Function(Session)> _onAuthenticatedCallbacks = [];
 

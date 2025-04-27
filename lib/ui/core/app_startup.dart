@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:squadquest/controllers/instances.dart';
 
 import 'package:squadquest/logger.dart';
+import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/services/initialization.dart';
-import 'package:squadquest/services/preferences.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/ui/event/event_screen.dart';
 import 'package:squadquest/ui/login/login_screen.dart';
 import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
 
@@ -15,7 +17,7 @@ class AppStartupWidget extends ConsumerWidget {
     required this.appRoot,
   });
 
-  final Widget appRoot;
+  final dynamic appRoot;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,10 +33,35 @@ class AppStartupWidget extends ConsumerWidget {
             onRetry: () => ref.invalidate(appInitializationProvider));
       },
       data: (_) {
-        // Show login flow if no auth state
         final authState = ref.watch(authControllerProvider);
 
+        // Show login flow if no auth state
         if (authState == null) {
+          final authRequested = ref.watch(authRequestedProvider);
+
+          // load event if not logged in and show if it's public, unless auth has been requested
+          if (!authRequested) {
+            final routePathSegments =
+                appRoot.routeInformationProvider.value.uri.pathSegments;
+
+            if (routePathSegments.length == 2 &&
+                routePathSegments[0] == 'events') {
+              final event =
+                  ref.watch(eventDetailsProvider(routePathSegments[1]));
+
+              if (event.isLoading) {
+                return _LoadingScreen();
+              } else if (event.hasError) {
+                return _ErrorScreen(
+                    error: 'The event you attempted to open is not available');
+              }
+
+              if (event.value!.visibility == InstanceVisibility.public) {
+                return wrapWithOverlay(EventScreen(eventId: event.value!.id!));
+              }
+            }
+          }
+
           return const LoginScreen();
         }
 
@@ -53,12 +80,12 @@ class AppStartupWidget extends ConsumerWidget {
   }
 
   Widget wrapWithOverlay(Widget child) {
-    return Overlay(
-      initialEntries: [
-        OverlayEntry(
+    return Navigator(
+      onGenerateRoute: (_) {
+        return MaterialPageRoute(
           builder: (context) => child,
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -83,11 +110,11 @@ class _LoadingScreen extends StatelessWidget {
 class _ErrorScreen extends StatelessWidget {
   const _ErrorScreen({
     required this.error,
-    required this.onRetry,
+    this.onRetry,
   });
 
   final Object error;
-  final VoidCallback onRetry;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -104,11 +131,13 @@ class _ErrorScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: onRetry,
-                  child: Text('Retry'),
-                ),
+                if (onRetry != null) ...[
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: onRetry,
+                    child: Text('Retry'),
+                  ),
+                ],
               ],
             ),
           ),
