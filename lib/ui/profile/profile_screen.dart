@@ -17,6 +17,7 @@ import 'package:squadquest/models/topic_member.dart';
 import 'widgets/profile_header.dart';
 import 'widgets/profile_upcoming_events.dart';
 import 'widgets/profile_topics.dart';
+import 'widgets/profile_mutual_friends.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   final UserID userId;
@@ -32,6 +33,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   AsyncValue<List<InstanceMember>> rsvpsAsync = const AsyncValue.loading();
   AsyncValue<List<MyTopicMembership>> myTopicMembershipsAsync =
       const AsyncValue.loading();
+  AsyncValue<List<UserProfile>> mutualsAsync = const AsyncValue.loading();
   final Map<TopicID, bool> pendingChanges = {};
 
   @override
@@ -43,10 +45,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final topicsCache = ref.read(topicsCacheProvider.notifier);
 
     // load profile
-    profilesCache.getById(widget.userId).then((profile) {
+    profilesCache.getById(widget.userId).then((profile) async {
       setState(() {
         profileAsync = AsyncValue.data(profile);
       });
+
+      // load mutual friends
+      if (profile.mutuals != null && profile.mutuals!.isNotEmpty) {
+        try {
+          final mutualsMap =
+              await profilesCache.fetchProfiles(profile.mutuals!.toSet());
+          setState(() {
+            mutualsAsync = AsyncValue.data(mutualsMap.values.toList());
+          });
+        } catch (error, stackTrace) {
+          setState(() {
+            mutualsAsync = AsyncValue.error(error, stackTrace);
+          });
+        }
+      } else {
+        setState(() {
+          mutualsAsync = const AsyncValue.data([]);
+        });
+      }
     });
 
     // load RSVPs
@@ -161,6 +182,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: ProfileHeader(profile: profile),
+                ),
+              ),
+
+              // Mutual Friends
+              SliverToBoxAdapter(
+                child: mutualsAsync.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => Center(child: Text(error.toString())),
+                  data: (mutuals) => mutuals.isEmpty
+                      ? const SizedBox.shrink()
+                      : ProfileMutualFriends(mutuals: mutuals),
                 ),
               ),
 
