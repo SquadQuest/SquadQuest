@@ -16,41 +16,87 @@ create table
 
 alter table public.friends enable row level security;
 
-create or replace view friends_mutuals as
-with accepted_friends as (
-  select requester, requestee
-  from friends
-  where status = 'accepted'
+create or replace view friends_network as
+with direct_friends as (
+  SELECT requester AS friend
+  FROM friends
+  WHERE requestee = auth.uid() AND status IN ('accepted', 'requested')
+  UNION
+  SELECT requestee AS friend
+  FROM friends
+  WHERE requester = auth.uid() AND status = 'accepted'
 ),
-mutual_connections as (
-  select
-    f1.requester,
-    f1.requestee,
-    f2.requestee as mutual_friend
-  from accepted_friends f1
-  join accepted_friends f2 on
-    (f2.requester = f1.requestee and f2.requestee != f1.requester)
-  where exists (
-    select 1 from accepted_friends f3
-    where f3.requester = f1.requester and f3.requestee = f2.requestee
+friends_of_friends as (
+  SELECT DISTINCT
+    f.requestee as friend,
+    array_agg(DISTINCT df.friend) as mutuals
+  FROM friends f
+  JOIN direct_friends df ON f.requester = df.friend
+  WHERE f.status = 'accepted'
+    AND f.requestee != auth.uid()
+    AND f.requestee NOT IN (SELECT friend FROM direct_friends)
+  GROUP BY f.requestee
+  UNION
+  SELECT DISTINCT
+    f.requester as friend,
+    array_agg(DISTINCT df.friend) as mutuals
+  FROM friends f
+  JOIN direct_friends df ON f.requestee = df.friend
+  WHERE f.status = 'accepted'
+    AND f.requester != auth.uid()
+    AND f.requester NOT IN (SELECT friend FROM direct_friends)
+  GROUP BY f.requester
+),
+mutual_friends as (
+  SELECT
+    df.friend,
+    array_agg(DISTINCT
+      CASE
+        WHEN f2.requester = df.friend THEN f2.requestee
+        ELSE f2.requester
+      END
+    ) as mutuals
+  FROM direct_friends df
+  JOIN friends f1 ON (f1.requester = df.friend OR f1.requestee = df.friend)
+  JOIN friends f2 ON (
+    (f2.requester = auth.uid() AND f2.requestee = CASE
+      WHEN f1.requester = df.friend THEN f1.requestee
+      ELSE f1.requester
+    END)
+    OR
+    (f2.requestee = auth.uid() AND f2.requester = CASE
+      WHEN f1.requester = df.friend THEN f1.requestee
+      ELSE f1.requester
+    END)
   )
-  union
-  select
-    f1.requester,
-    f1.requestee,
-    f2.requester as mutual_friend
-  from accepted_friends f1
-  join accepted_friends f2 on
-    (f2.requestee = f1.requestee and f2.requester != f1.requester)
-  where exists (
-    select 1 from accepted_friends f3
-    where f3.requester = f1.requester and f3.requestee = f2.requester
-  )
+  WHERE f1.status = 'accepted'
+    AND f2.status = 'accepted'
+  GROUP BY df.friend
+),
+direct_friends_with_profile as (
+  SELECT
+    df.friend as id,
+    jsonb_build_object(
+      'first_name', p.first_name,
+      'last_name', p.last_name,
+      'photo', p.photo,
+      'trail_color', p.trail_color
+    ) as profile,
+    COALESCE(mf.mutuals, ARRAY[]::uuid[]) as mutuals
+  FROM direct_friends df
+  JOIN profiles p ON p.id = df.friend
+  LEFT JOIN mutual_friends mf ON mf.friend = df.friend
+),
+fof_with_profile as (
+  SELECT
+    fof.friend as id,
+    jsonb_build_object(
+      'first_name', p.first_name
+    ) as profile,
+    fof.mutuals
+  FROM friends_of_friends fof
+  JOIN profiles p ON p.id = fof.friend
 )
-select
-  requester,
-  requestee,
-  array_agg(distinct mutual_friend) as mutuals,
-  array_length(array_agg(distinct mutual_friend), 1) as mutuals_count
-from mutual_connections
-group by requester, requestee;
+SELECT id, profile, mutuals FROM direct_friends_with_profile
+UNION ALL
+SELECT id, profile, mutuals FROM fof_with_profile;

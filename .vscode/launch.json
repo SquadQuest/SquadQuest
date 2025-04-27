@@ -235,6 +235,25 @@
             "envFile": "${workspaceFolder}/supabase/functions/.env"
         },
         {
+            "request": "launch",
+            "name": "Deno: get-friends-network",
+            "type": "node",
+            "program": "${workspaceFolder}/supabase/functions/get-friends-network/index.ts",
+            "cwd": "${workspaceFolder}/supabase/functions/get-friends-network",
+            "env": {
+                "PORT": "8001"
+            },
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-wait",
+                "--allow-all"
+            ],
+            "attachSimplePort": 9229,
+            "outputCapture": "std",
+            "envFile": "${workspaceFolder}/supabase/functions/.env"
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch api-test",
