@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:squadquest/controllers/instances.dart';
 
 import 'package:squadquest/logger.dart';
@@ -7,6 +8,7 @@ import 'package:squadquest/models/instance.dart';
 import 'package:squadquest/services/initialization.dart';
 import 'package:squadquest/controllers/auth.dart';
 import 'package:squadquest/controllers/profile.dart';
+import 'package:squadquest/services/router.dart';
 import 'package:squadquest/ui/event/event_screen.dart';
 import 'package:squadquest/ui/login/login_screen.dart';
 import 'package:squadquest/ui/profile_form/profile_form_screen.dart';
@@ -52,8 +54,12 @@ class AppStartupWidget extends ConsumerWidget {
               if (event.isLoading) {
                 return _LoadingScreen();
               } else if (event.hasError) {
-                return _ErrorScreen(
-                    error: 'The event you attempted to open is not available');
+                return _EventErrorScreen(onHome: () {
+                  final router = ref.read(routerProvider);
+                  router.router.goNamed('home');
+
+                  ref.read(authRequestedProvider.notifier).state = true;
+                });
               }
 
               if (event.value!.visibility == InstanceVisibility.public) {
@@ -80,13 +86,11 @@ class AppStartupWidget extends ConsumerWidget {
   }
 
   Widget wrapWithOverlay(Widget child) {
-    return Navigator(
-      onGenerateRoute: (_) {
-        return MaterialPageRoute(
-          builder: (context) => child,
-        );
-      },
-    );
+    return Navigator(pages: [
+      MaterialPage(
+        child: child,
+      )
+    ]);
   }
 }
 
@@ -110,11 +114,11 @@ class _LoadingScreen extends StatelessWidget {
 class _ErrorScreen extends StatelessWidget {
   const _ErrorScreen({
     required this.error,
-    this.onRetry,
+    required this.onRetry,
   });
 
   final Object error;
-  final VoidCallback? onRetry;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -131,14 +135,50 @@ class _ErrorScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                if (onRetry != null) ...[
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: onRetry,
-                    child: Text('Retry'),
-                  ),
-                ],
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: onRetry,
+                  child: Text('Retry'),
+                ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EventErrorScreen extends StatelessWidget {
+  const _EventErrorScreen({
+    required this.onHome,
+  });
+
+  final VoidCallback onHome;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'The event you\'re attempting to view is not available',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                // if (navigatorKey.currentContext != null) ...[
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: onHome,
+                  child: Text('Go to home screen'),
+                ),
+              ],
+              // ],
             ),
           ),
         ),
