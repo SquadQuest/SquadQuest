@@ -323,7 +323,7 @@ services:
     image: supabase/edge-runtime:v1.67.4
     restart: unless-stopped
     volumes:
-      - ./volumes/functions:/home/deno/functions:Z
+      - ./functions:/home/deno/functions:Z
     depends_on:
       analytics:
         condition: service_healthy
