@@ -67,6 +67,8 @@ serve(async (req: Request) => {
   const servicePath = `/home/deno/functions/${service_name}`
   console.error(`serving the request with ${servicePath}`)
 
+  const cpuTimeSoftLimitMs = 10000;
+  const cpuTimeHardLimitMs = 20000;
   const memoryLimitMb = 150
   const workerTimeoutMs = 1 * 60 * 1000
   const noModuleCache = false
@@ -79,6 +81,8 @@ serve(async (req: Request) => {
       servicePath,
       memoryLimitMb,
       workerTimeoutMs,
+      cpuTimeSoftLimitMs,
+      cpuTimeHardLimitMs,
       noModuleCache,
       importMapPath,
       envVars,
