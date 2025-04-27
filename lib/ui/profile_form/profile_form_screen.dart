@@ -95,13 +95,13 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                     height: 512,
                   ));
         } catch (error) {
-          logger.e(error);
+          logger.e('Failed to upload profile photo', error: error);
+
+          if (!context.mounted) return;
 
           setState(() {
             submitted = false;
           });
-
-          if (!context.mounted) return;
 
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Failed to upload profile photo:\n\n$error'),
@@ -138,11 +138,13 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
         await ref.read(profilesCacheProvider.notifier).loadNetwork();
       }
     } catch (error) {
+      logger.e('Failed to save profile', error: error);
+
+      if (!context.mounted) return;
+
       setState(() {
         submitted = false;
       });
-
-      if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Failed to update profile:\n\n$error'),
