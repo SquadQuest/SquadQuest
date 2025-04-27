@@ -16,9 +16,41 @@ import 'widgets/add_friend_dialog.dart';
 import 'widgets/friends_empty_state.dart';
 import 'widgets/friend_requests_section.dart';
 import 'widgets/friends_list_section.dart';
+import 'widgets/friends_search_bar.dart';
 
-class FriendsScreen extends ConsumerWidget {
+class FriendsScreen extends ConsumerStatefulWidget {
   const FriendsScreen({super.key});
+
+  @override
+  ConsumerState<FriendsScreen> createState() => _FriendsScreenState();
+}
+
+class _FriendsScreenState extends ConsumerState<FriendsScreen> {
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchQuery = '';
+        _searchController.clear();
+      }
+    });
+  }
+
+  void _updateSearchQuery(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+  }
 
   Future<void> _showPhoneNumberPicker(BuildContext context) async {
     final phoneNumber = await showDialog<String>(
@@ -225,7 +257,7 @@ class FriendsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final session = ref.watch(authControllerProvider);
     final friendsList = ref.watch(friendsProvider);
 
@@ -235,75 +267,125 @@ class FriendsScreen extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Friends',
-      body: RefreshIndicator(
-        onRefresh: () async {
-          return ref.read(friendsProvider.notifier).refresh();
-        },
-        child: friendsList.when(
-          data: (friends) {
-            if (friends.isEmpty) {
-              return FriendsEmptyState(
-                onAddFriend: () => _showAddFriendDialog(context, ref),
-              );
-            }
+      actions: friendsList.when(
+        data: (friends) => [
+          if (friends.isNotEmpty)
+            IconButton(
+              icon: Icon(_isSearching ? Icons.close : Icons.search),
+              onPressed: _toggleSearch,
+            ),
+        ],
+        loading: () => [],
+        error: (_, __) => [],
+      ),
+      body: Column(
+        children: [
+          FriendsSearchBar(
+            isVisible: _isSearching,
+            controller: _searchController,
+            onChanged: _updateSearchQuery,
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                return ref.read(friendsProvider.notifier).refresh();
+              },
+              child: friendsList.when(
+                data: (friends) {
+                  if (friends.isEmpty) {
+                    return FriendsEmptyState(
+                      onAddFriend: () => _showAddFriendDialog(context, ref),
+                    );
+                  }
 
-            final requests = friends
-                .where((f) =>
-                    f.status == FriendStatus.requested &&
-                    f.requestee?.id == session.user.id)
-                .toList();
+                  final requests = friends
+                      .where((f) =>
+                          f.status == FriendStatus.requested &&
+                          f.requestee?.id == session.user.id)
+                      .toList();
 
-            final acceptedFriends = friends
-                .where((f) => f.status == FriendStatus.accepted)
-                .toList();
+                  final acceptedFriends = friends
+                      .where((f) => f.status == FriendStatus.accepted)
+                      .where((f) {
+                    if (!_isSearching || _searchQuery.isEmpty) return true;
+                    final otherProfile = f.getOtherProfile(session.user.id);
+                    if (otherProfile == null) return false;
+                    return otherProfile.displayName
+                        .toLowerCase()
+                        .contains(_searchQuery.toLowerCase());
+                  }).toList();
 
-            return CustomScrollView(
-              slivers: [
-                // Friend Requests Section
-                SliverToBoxAdapter(
-                  child: FriendRequestsSection(
-                    requests: requests,
-                    onRespond: (friend, accept) async {
-                      try {
-                        await ref
-                            .read(friendsProvider.notifier)
-                            .respondToFriendRequest(
-                                friend,
-                                accept
-                                    ? FriendStatus.accepted
-                                    : FriendStatus.declined);
+                  if (acceptedFriends.isEmpty && _isSearching) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          'No friends found matching "$_searchQuery"',
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
 
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(accept
-                              ? 'Friend request accepted!'
-                              : 'Friend request declined'),
-                        ));
-                      } catch (error) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              'Failed to respond to friend request:\n\n$error'),
-                        ));
-                      }
-                    },
-                  ),
-                ),
+                  return CustomScrollView(
+                    slivers: [
+                      if (!_isSearching)
+                        SliverToBoxAdapter(
+                          child: FriendRequestsSection(
+                            requests: requests,
+                            onRespond: (friend, accept) async {
+                              try {
+                                await ref
+                                    .read(friendsProvider.notifier)
+                                    .respondToFriendRequest(
+                                        friend,
+                                        accept
+                                            ? FriendStatus.accepted
+                                            : FriendStatus.declined);
 
-                // Friends List Section
-                SliverToBoxAdapter(
-                  child: FriendsListSection(
-                    friends: acceptedFriends,
-                    currentUserId: session.user.id,
-                    onAddFriend: () => _showAddFriendDialog(context, ref),
-                  ),
-                ),
-              ],
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) => Center(child: Text('Error: $error')),
-        ),
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: Text(accept
+                                      ? 'Friend request accepted!'
+                                      : 'Friend request declined'),
+                                ));
+                              } catch (error) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: Text(
+                                      'Failed to respond to friend request:\n\n$error'),
+                                ));
+                              }
+                            },
+                          ),
+                        ),
+
+                      // Friends List Section
+                      SliverToBoxAdapter(
+                        child: FriendsListSection(
+                          friends: acceptedFriends,
+                          currentUserId: session.user.id,
+                          onAddFriend: () => _showAddFriendDialog(context, ref),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stackTrace) =>
+                    Center(child: Text('Error: $error')),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

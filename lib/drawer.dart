@@ -82,7 +82,7 @@ final _sections = [
       _DrawerItem(
         icon: Icons.map_outlined,
         selectedIcon: Icons.map,
-        label: 'Find Friends',
+        label: 'Buddy Map',
         route: 'map',
       ),
     ],

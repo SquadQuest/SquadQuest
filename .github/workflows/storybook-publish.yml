@@ -26,7 +26,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Flutter Version Management CLI
-        uses: flutter-actions/setup-fvm@v1
+        uses: flutter-actions/setup-fvm@v1.0
 
       - name: Install Flutter SDK
         run: fvm install

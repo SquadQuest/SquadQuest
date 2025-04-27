@@ -74,7 +74,7 @@ This project uses [asdf](https://asdf-vm.com/) for managing tool versions, inclu
     asdf install
     ```
 
-    This will automatically install Flutter 3.27.0 as specified in the `.tool-versions` file.
+    This will automatically install Flutter 3.29.3 as specified in the `.tool-versions` file.
 
 4. Verify the installation:
 
