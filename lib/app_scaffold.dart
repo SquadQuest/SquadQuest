@@ -65,7 +65,10 @@ class AppScaffold extends ConsumerWidget {
                 actions: actions,
               )
             : null,
-        drawer: showDrawer == true && !isStorybook ? const AppDrawer() : null,
+        drawer: (showDrawer == true || !Navigator.of(context).canPop()) &&
+                !isStorybook
+            ? const AppDrawer()
+            : null,
         floatingActionButtonLocation: floatingActionButtonLocation,
         floatingActionButton: floatingActionButton == null
             ? null
