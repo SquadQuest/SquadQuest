@@ -6,14 +6,16 @@ import 'package:squadquest/models/friend.dart';
 
 class FriendsListSection extends StatelessWidget {
   final List<Friend> friends;
-  final VoidCallback onAddFriend;
+  final VoidCallback? onAddFriend;
   final UserID currentUserId;
+  final String? searchQuery;
 
   const FriendsListSection({
     super.key,
     required this.friends,
-    required this.onAddFriend,
+    this.onAddFriend,
     required this.currentUserId,
+    this.searchQuery,
   });
 
   @override
@@ -23,21 +25,37 @@ class FriendsListSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                'Friends',
-                style: Theme.of(context).textTheme.titleLarge,
+          if (searchQuery == null) ...[
+            Row(
+              children: [
+                Text(
+                  'Friends',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const Spacer(),
+                if (onAddFriend != null)
+                  FilledButton.icon(
+                    onPressed: onAddFriend,
+                    icon: const Icon(Icons.person_add),
+                    label: const Text('Add Friend'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (friends.isEmpty && searchQuery != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'No friends found matching "$searchQuery"',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              const Spacer(),
-              FilledButton.icon(
-                onPressed: onAddFriend,
-                icon: const Icon(Icons.person_add),
-                label: const Text('Add Friend'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+            ),
           ...friends.map((friend) {
             final profile = friend.getOtherProfile(currentUserId)!;
 
@@ -56,7 +74,7 @@ class FriendsListSection extends StatelessWidget {
                   ),
                 ],
               ),
-              title: Text('${profile.firstName} ${profile.lastName}'),
+              title: Text(profile.displayName),
               onTap: () {
                 context.pushNamed('profile-view',
                     pathParameters: {'id': profile.id});
