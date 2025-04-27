@@ -15,3 +15,42 @@ create table
   );
 
 alter table public.friends enable row level security;
+
+create or replace view friends_mutuals as
+with accepted_friends as (
+  select requester, requestee
+  from friends
+  where status = 'accepted'
+),
+mutual_connections as (
+  select
+    f1.requester,
+    f1.requestee,
+    f2.requestee as mutual_friend
+  from accepted_friends f1
+  join accepted_friends f2 on
+    (f2.requester = f1.requestee and f2.requestee != f1.requester)
+  where exists (
+    select 1 from accepted_friends f3
+    where f3.requester = f1.requester and f3.requestee = f2.requestee
+  )
+  union
+  select
+    f1.requester,
+    f1.requestee,
+    f2.requester as mutual_friend
+  from accepted_friends f1
+  join accepted_friends f2 on
+    (f2.requestee = f1.requestee and f2.requester != f1.requester)
+  where exists (
+    select 1 from accepted_friends f3
+    where f3.requester = f1.requester and f3.requestee = f2.requester
+  )
+)
+select
+  requester,
+  requestee,
+  array_agg(distinct mutual_friend) as mutuals,
+  array_length(array_agg(distinct mutual_friend), 1) as mutuals_count
+from mutual_connections
+group by requester, requestee;
