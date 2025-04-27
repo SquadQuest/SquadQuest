@@ -19,6 +19,8 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
 
   @override
   ProfilesCache build() {
+    log('ProfilesCacheService.build');
+
     initializedCompleter = Completer();
 
     // load profiles of friends network
