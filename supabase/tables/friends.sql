@@ -29,7 +29,7 @@ with direct_friends as (
 friends_of_friends as (
   SELECT DISTINCT
     f.requestee as friend,
-    array_agg(DISTINCT df.friend) as mutuals
+    array_agg(DISTINCT df.friend) FILTER (WHERE df.friend != auth.uid()) as mutuals
   FROM friends f
   JOIN direct_friends df ON f.requester = df.friend
   WHERE f.status = 'accepted'
@@ -39,7 +39,7 @@ friends_of_friends as (
   UNION
   SELECT DISTINCT
     f.requester as friend,
-    array_agg(DISTINCT df.friend) as mutuals
+    array_agg(DISTINCT df.friend) FILTER (WHERE df.friend != auth.uid()) as mutuals
   FROM friends f
   JOIN direct_friends df ON f.requestee = df.friend
   WHERE f.status = 'accepted'
@@ -55,6 +55,11 @@ mutual_friends as (
         WHEN f2.requester = df.friend THEN f2.requestee
         ELSE f2.requester
       END
+    ) FILTER (WHERE
+      CASE
+        WHEN f2.requester = df.friend THEN f2.requestee
+        ELSE f2.requester
+      END != auth.uid()
     ) as mutuals
   FROM direct_friends df
   JOIN friends f1 ON (f1.requester = df.friend OR f1.requestee = df.friend)
