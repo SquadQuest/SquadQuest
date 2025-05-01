@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:squadquest/controllers/auth.dart';
 
 import 'package:squadquest/drawer.dart';
 import 'package:squadquest/controllers/settings.dart';
 import 'package:squadquest/components/sheets/location_sharing.dart';
 import 'package:squadquest/models/instance.dart';
+import 'package:squadquest/services/router.dart';
 
 final _bottomPaddingProvider = StateProvider<double?>((ref) => null);
 
@@ -44,6 +47,7 @@ class AppScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.read(authControllerProvider);
     final isStorybook = ref.watch(storybookModeProvider);
 
     // calculate added padding for measured bottom sheet height
@@ -65,7 +69,12 @@ class AppScaffold extends ConsumerWidget {
                 actions: actions,
               )
             : null,
-        drawer: showDrawer == true && !isStorybook ? const AppDrawer() : null,
+        drawer: session != null &&
+                (showDrawer == true ||
+                    navigatorKey.currentContext?.canPop() == false) &&
+                !isStorybook
+            ? const AppDrawer()
+            : null,
         floatingActionButtonLocation: floatingActionButtonLocation,
         floatingActionButton: floatingActionButton == null
             ? null

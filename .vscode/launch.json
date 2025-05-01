@@ -31,7 +31,11 @@
             "type": "dart",
             "request": "launch",
             "program": "lib/main.dart",
-            "flutterMode": "debug"
+            "flutterMode": "debug",
+            "args": [
+                // Android-only, set an initial route:
+                // "--route=/events/8ec13f97-9b40-45cb-8471-ac7992b7fae0"
+            ]
         },
         {
             "name": "Create Screens",

@@ -348,6 +348,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                         selectedStatus:
                             session == null ? null : myRsvp.valueOrNull?.status,
                         eventId: widget.eventId,
+                        showRsvp: session != null,
                         onRsvpTap: session == null
                             ? () => context.goNamed(
                                   'login',
@@ -362,13 +363,36 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                                 _saveRsvp(status, event, note: note),
                         onMapTap: _showLiveMap,
                         onShareTap: _copyEventLink,
-                        onChatTap: _showChat,
                         showChat: session != null && myRsvp.valueOrNull != null,
+                        onChatTap: _showChat,
                       );
                     },
                   ),
                 ),
               ),
+
+              // Login prompt
+              if (session == null)
+                SliverPadding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                  sliver: SliverToBoxAdapter(
+                    child: Center(
+                      child: ElevatedButton(
+                        child: const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text(
+                            'Log in to SquadQuest to RSVP to this event and see who is attending',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        onPressed: () {
+                          ref.read(authRequestedProvider.notifier).state = true;
+                        },
+                      ),
+                    ),
+                  ),
+                ),
 
               // Host Bulletin (only show for authenticated users)
               if (session != null)
@@ -384,29 +408,8 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               // Event Info
               EventInfo(event: event),
 
-              // Login prompt or Attendees
-              if (session == null)
-                SliverPadding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-                  sliver: SliverToBoxAdapter(
-                    child: Center(
-                      child: ElevatedButton(
-                        child:
-                            const Text('Join SquadQuest to RSVP to this event'),
-                        onPressed: () {
-                          context.goNamed(
-                            'login',
-                            queryParameters: {
-                              'redirect': '/events/${widget.eventId}'
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                )
-              else
+              // Attendees
+              if (session != null)
                 EventAttendees(
                   event: event,
                   currentUserId: session.user.id,

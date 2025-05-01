@@ -120,6 +120,13 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
 
   @override
   Future<void> loadTrails() async {
+    // skip loading points if not logged in
+    final session = ref.read(authControllerProvider);
+    if (session == null) {
+      renderTrails([]);
+      return;
+    }
+
     final supabase = ref.read(supabaseClientProvider);
 
     subscription = supabase
@@ -177,13 +184,8 @@ class _EventLiveMapState extends BaseMapState<EventLiveMap> {
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(authControllerProvider);
     final keepRallyPointInView = ref.watch(keepRallyPointInViewProvider);
     final keepFriendsInView = ref.watch(keepFriendsInViewProvider);
-
-    if (session == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
 
     return AppBottomSheet(
       height: widget.height,
