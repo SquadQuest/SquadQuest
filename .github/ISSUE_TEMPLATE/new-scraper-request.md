@@ -2,7 +2,7 @@
 name: New Scraper Request
 about: Request support for scraping events from a new website
 title: 'Add scraper: [SITE NAME]'
-labels: enhancement, scraper, good-first-issue
+labels: enhancement, scraper, good first issue
 assignees: ''
 ---
 
