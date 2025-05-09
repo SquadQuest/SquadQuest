@@ -3,6 +3,44 @@ import 'dart:math';
 import 'package:squadquest/models/location_point.dart';
 
 class PointFilter {
+  /// Analyzes a sequence of points to detect zigzag patterns
+  /// Returns the number of direction changes found
+  static int _analyzePattern(
+      List<Geographic> points, double minDeltaThreshold) {
+    if (points.length < 3) return 0;
+
+    var directionChanges = 0;
+    var lastDirection = _getDirection(points[0], points[1]);
+
+    for (int i = 1; i < points.length - 1; i++) {
+      var currentDirection = _getDirection(points[i], points[i + 1]);
+
+      // Skip tiny movements
+      if (currentDirection.lon.abs() < minDeltaThreshold &&
+          currentDirection.lat.abs() < minDeltaThreshold) {
+        continue;
+      }
+
+      // Check for direction change in either longitude or latitude
+      if ((lastDirection.lon * currentDirection.lon < 0) ||
+          (lastDirection.lat * currentDirection.lat < 0)) {
+        directionChanges++;
+      }
+
+      lastDirection = currentDirection;
+    }
+
+    return directionChanges;
+  }
+
+  /// Gets the direction vector between two points
+  static _Direction _getDirection(Geographic p1, Geographic p2) {
+    return _Direction(
+      lon: p2.lon - p1.lon,
+      lat: p2.lat - p1.lat,
+    );
+  }
+
   /// Filters location points by:
   /// 1. Detecting and compressing zigzag patterns into centroids
   /// 2. Detecting large gaps in tracking and truncating points after the gap
@@ -25,6 +63,8 @@ class PointFilter {
     if (points.length < 2) return points;
 
     final result = <LocationPoint>[];
+    final minDeltaThreshold =
+        zigzagRadius * 0.1; // 10% of radius as minimum change
 
     // Always include the newest point
     result.add(points.first);
@@ -38,39 +78,58 @@ class PointFilter {
         Position? centroid;
         bool isZigZag = false;
 
-        // Try to detect a zigzag pattern using a small window (3-5 points)
-        for (int j = i + 1; j < min(i + 5, points.length); j++) {
+        // Use a larger window to detect patterns
+        for (int windowSize = 5;
+            windowSize <= 10 && i + windowSize < points.length;
+            windowSize++) {
           var windowPoints =
-              points.sublist(i, j + 1).map((p) => p.location).toList();
+              points.sublist(i, i + windowSize).map((p) => p.location).toList();
 
-          var line = LineString.from(windowPoints);
-          centroid = line.centroid2D();
+          // Count direction changes in the window
+          int directionChanges =
+              _analyzePattern(windowPoints, minDeltaThreshold);
 
-          if (centroid != null) {
-            // Check if all points in window are within radius of centroid
-            bool allNearCenter = windowPoints.every((point) {
-              var distanceLine = LineString.from([point, centroid!]);
-              return distanceLine.length2D() <= zigzagRadius;
-            });
+          // Consider it a zigzag if we see at least 2 direction changes
+          // (which means 3 segments going in alternating directions)
+          if (directionChanges >= 2) {
+            var line = LineString.from(windowPoints);
+            centroid = line.centroid2D();
 
-            if (allNearCenter && windowPoints.length >= 3) {
-              clusterEnd = j;
-              isZigZag = true;
+            if (centroid != null) {
+              // Verify points are within radius of centroid
+              bool allNearCenter = windowPoints.every((point) {
+                var distanceLine = LineString.from([point, centroid!]);
+                return distanceLine.length2D() <= zigzagRadius;
+              });
 
-              // Once we've found a zigzag pattern, try to extend it
-              // Continue checking subsequent points as long as they stay within radius
-              // A point outside the radius will naturally break the cluster,
-              // whether it's a large gap or just the end of the zigzag pattern
-              for (int k = j + 1; k < points.length; k++) {
-                var point = points[k].location;
-                var distanceLine = LineString.from([point, centroid]);
-                if (distanceLine.length2D() <= zigzagRadius) {
-                  clusterEnd = k;
-                } else {
+              if (allNearCenter) {
+                clusterEnd = i + windowSize - 1;
+                isZigZag = true;
+
+                // Try to extend the pattern
+                int extendedEnd = clusterEnd;
+                while (extendedEnd + 3 < points.length) {
+                  var extendedPoints = points
+                      .sublist(extendedEnd - 1, extendedEnd + 3)
+                      .map((p) => p.location)
+                      .toList();
+
+                  // Check if extension continues the pattern
+                  if (_analyzePattern(extendedPoints, minDeltaThreshold) > 0) {
+                    var lastPoint = points[extendedEnd + 2].location;
+                    var distanceLine = LineString.from([lastPoint, centroid!]);
+
+                    if (distanceLine.length2D() <= zigzagRadius) {
+                      extendedEnd += 2;
+                      continue;
+                    }
+                  }
                   break;
                 }
+
+                clusterEnd = extendedEnd;
+                break;
               }
-              break;
             }
           }
         }
@@ -135,4 +194,12 @@ class PointFilter {
 
     return result;
   }
+}
+
+/// Helper class to represent a direction vector
+class _Direction {
+  final double lon;
+  final double lat;
+
+  _Direction({required this.lon, required this.lat});
 }
