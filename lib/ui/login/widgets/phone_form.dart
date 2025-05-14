@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:squadquest/components/phone_number_field.dart';
+import 'native_install_prompt.dart';
 
 class PhoneForm extends ConsumerStatefulWidget {
   final void Function(String) onSubmit;
@@ -56,6 +58,10 @@ class _PhoneFormState extends ConsumerState<PhoneForm> {
               'Only people who know your phone number already can send you a friend request,'
               ' and only people you\'ve accepted friend requests from can see any of your personal details.'),
           const SizedBox(height: 16),
+          if (kIsWeb) ...[
+            const NativeInstallPrompt(),
+            const SizedBox(height: 16),
+          ],
         ],
       ),
     );
