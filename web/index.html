@@ -151,39 +151,11 @@
     <div id="loading-spinner"></div>
   </div>
 
-  <div id="welcome" class="preflight-modal" style="display: none">
-    <h1>Welcome to SquadQuest!</h1>
-    <p>
-      Bring your social circle to life: the free, privacy-first app for planning real-world hangouts.
-    </p>
-    <p>
-      SquadQuest works best if you install it as an app:
-    </p>
-    <p>
-      <a class="appstore-link" href="https://play.google.com/store/apps/details?id=app.squadquest"><img
-          src="images/google-dark-on-white.png"></a>
-      <a class="appstore-link" href="https://apps.apple.com/us/app/squadquest/id6504465196"><img
-          src="images/apple-dark-on-white.png"></a>
-    </p>
-    <div id="add-to-homescreen" style="display: none">
-      <hr>
-      <p>
-        Since you're on iOS, the next-best thing is to add the website to your homescreen. This
-        is the only way notifications can work on iOS without installing the app:
-      </p>
-      <p>Click the 📤 button at the bottom of your screen and then scrolling down to and select "Add to Home Screen"</p>
-    </div>
-    <hr>
-    <p>You can also just use SquadQuest in your browser, but not all functionality will be available:</p>
-    <p>
-      <a class="launch-app" href="javascript:launchFlutterApp()">Continue in browser</a>
-    </p>
-  </div>
-
   <script>
     // load FCM service worker and proxy notification events
     if ("serviceWorker" in navigator) {
-      const serviceWorkerVersion = {{flutter_service_worker_version}} || 1;
+      const serviceWorkerVersion = {{ flutter_service_worker_version }
+    } || 1;
 
     window.addEventListener("load", function () {
       navigator.serviceWorker.register(`./firebase-messaging-sw.js?v=${serviceWorkerVersion}`);
