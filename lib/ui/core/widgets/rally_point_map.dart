@@ -394,12 +394,14 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
     selectedPlaceName = null;
   }
 
-  _onFeatureDrag(dynamic id,
-      {required Point<double> point,
-      required LatLng origin,
-      required LatLng current,
-      required LatLng delta,
-      required DragEventType eventType}) async {
+  void _onFeatureDrag(
+      Point<double> point,
+      LatLng origin,
+      LatLng current,
+      LatLng delta,
+      String id,
+      Annotation? annotation,
+      DragEventType eventType) async {
     if (rallyPoint == null) {
       await controller!.updateSymbol(
           dragSymbol!,

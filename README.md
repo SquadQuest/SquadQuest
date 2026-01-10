@@ -7,10 +7,10 @@ Bring your social circle to life with SquadQuest: the free, privacy-first app fo
 - [Features](#features)
 - [Install](#install)
 - [Development Setup](#development-setup)
-    - [Prerequisites](#prerequisites)
-    - [Setting up the project](#setting-up-the-project)
-    - [Running the app](#running-the-app)
-    - [Testing Beta Releases](#testing-beta-releases)
+  - [Prerequisites](#prerequisites)
+  - [Setting up the project](#setting-up-the-project)
+  - [Running the app](#running-the-app)
+  - [Testing Beta Releases](#testing-beta-releases)
 - [Roadmap](#roadmap)
 
 ## What is SquadQuest?
@@ -74,7 +74,7 @@ This project uses [asdf](https://asdf-vm.com/) for managing tool versions, inclu
     asdf install
     ```
 
-    This will automatically install Flutter 3.29.3 as specified in the `.tool-versions` file.
+    This will automatically install Flutter as specified in the `.tool-versions` file.
 
 4. Verify the installation:
 
