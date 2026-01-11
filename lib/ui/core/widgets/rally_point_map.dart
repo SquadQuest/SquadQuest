@@ -468,17 +468,22 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
     final box = await controller?.getVisibleRegion();
 
     // search OSM data
-    final response = await http.get(Uri(
-        scheme: 'https',
-        host: 'nominatim.openstreetmap.org',
-        path: '/search',
-        queryParameters: {
-          'format': 'json',
-          'q': search.trim(),
-          'viewbox':
-              '${box!.northeast.longitude},${box.northeast.latitude},${box.southwest.longitude},${box.southwest.latitude}',
-          'bounded': '1'
-        }));
+    final response = await http.get(
+        Uri(
+            scheme: 'https',
+            host: 'nominatim.openstreetmap.org',
+            path: '/search',
+            queryParameters: {
+              'format': 'json',
+              'q': search.trim(),
+              'viewbox':
+                  '${box!.northeast.longitude},${box.northeast.latitude},${box.southwest.longitude},${box.southwest.latitude}',
+              'bounded': '1'
+            }),
+        headers: {
+          'User-Agent': 'SquadQuest (https://github.com/SquadQuest/SquadQuest)',
+          'Referer': 'https://squadquest.app',
+        });
     final responseData = jsonDecode(response.body);
 
     setState(() {
