@@ -19,6 +19,7 @@ fi
 
 # Install Flutter using fvm
 curl -fsSL https://fvm.app/install.sh | bash
+export PATH="/Users/local/fvm/bin:$PATH"
 fvm install
 fvm use --skip-pub-get
 
