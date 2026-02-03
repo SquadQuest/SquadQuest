@@ -141,6 +141,12 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
       ],
       time: DateTime.now().subtract(const Duration(minutes: 5)),
     ),
+    // Message after the event activity
+    _MockMessage(
+      sender: 'Sarah',
+      content: 'Just got here, grabbed court 3! 🎾',
+      time: DateTime.now().subtract(const Duration(minutes: 2)),
+    ),
   ];
 
   @override
@@ -818,9 +824,15 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
     );
   }
 
-  Widget _buildEventActivityCard(_EventActivity activity, ColorScheme colorScheme) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+  Widget _buildEventActivityCard(
+      _EventActivity activity, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
@@ -938,6 +950,16 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
             ),
           ),
         ),
+      ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 16, top: 4),
+            child: Text(
+              _formatTime(activity.time),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
       ),
     );
   }
