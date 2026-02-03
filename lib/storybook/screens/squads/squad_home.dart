@@ -78,8 +78,10 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
     );
   });
 
-  // Mock chat messages
-  final List<_MockMessage> _messages = [
+  // Mock chat items (messages and event activities)
+  String? _userRsvp; // Track user's RSVP state for the mock event
+
+  late final List<_ChatItem> _chatItems = [
     _MockMessage(
       sender: 'Sarah',
       content: 'Great paddle session yesterday! 🏓',
@@ -124,6 +126,20 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
       sender: 'Lisa',
       content: 'Count me in!',
       time: DateTime.now().subtract(const Duration(hours: 2)),
+    ),
+    // Event activity card - "starting now"
+    _EventActivity(
+      eventTitle: 'Paddle Session',
+      eventTime: 'Starting now',
+      omwUsers: [
+        _RsvpUser(name: 'Mike', initial: 'M', color: Colors.blue),
+        _RsvpUser(name: 'Lisa', initial: 'L', color: Colors.purple),
+      ],
+      arrivedUsers: [
+        _RsvpUser(name: 'Sarah', initial: 'S', color: Colors.orange),
+        _RsvpUser(name: 'John', initial: 'J', color: Colors.green),
+      ],
+      time: DateTime.now().subtract(const Duration(minutes: 5)),
     ),
   ];
 
@@ -192,7 +208,7 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
     if (_messageController.text.trim().isEmpty) return;
 
     setState(() {
-      _messages.add(_MockMessage(
+      _chatItems.add(_MockMessage(
         sender: 'You',
         content: _messageController.text.trim(),
         time: DateTime.now(),
@@ -279,14 +295,27 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
                   controller: _chatScrollController,
                   reverse: true,
                   padding: const EdgeInsets.all(8),
-                  itemCount: _messages.length,
+                  itemCount: _chatItems.length,
                   itemBuilder: (context, index) {
-                    final message = _messages[_messages.length - 1 - index];
-                    final previousMessage = index < _messages.length - 1
-                        ? _messages[_messages.length - 2 - index]
+                    final item = _chatItems[_chatItems.length - 1 - index];
+
+                    // Handle event activity cards
+                    if (item is _EventActivity) {
+                      return _buildEventActivityCard(item, colorScheme);
+                    }
+
+                    // Handle regular messages
+                    final message = item as _MockMessage;
+                    final previousItem = index < _chatItems.length - 1
+                        ? _chatItems[_chatItems.length - 2 - index]
                         : null;
+                    final nextItem =
+                        index > 0 ? _chatItems[_chatItems.length - index] : null;
+
+                    final previousMessage =
+                        previousItem is _MockMessage ? previousItem : null;
                     final nextMessage =
-                        index > 0 ? _messages[_messages.length - index] : null;
+                        nextItem is _MockMessage ? nextItem : null;
 
                     final isFirstInGroup =
                         previousMessage?.sender != message.sender;
@@ -789,6 +818,210 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
     );
   }
 
+  Widget _buildEventActivityCard(_EventActivity activity, ColorScheme colorScheme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.primary.withAlpha(100),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            // Would open event details
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header: Event info
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        activity.eventTime,
+                        style: TextStyle(
+                          color: colorScheme.onPrimary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        activity.eventTitle,
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Status rows: OMW and Arrived
+                Row(
+                  children: [
+                    // OMW users
+                    if (activity.omwUsers.isNotEmpty) ...[
+                      Icon(
+                        Icons.directions_car,
+                        size: 16,
+                        color: colorScheme.tertiary,
+                      ),
+                      const SizedBox(width: 4),
+                      _buildUserAvatarStack(activity.omwUsers),
+                      const SizedBox(width: 12),
+                    ],
+
+                    // Arrived users
+                    if (activity.arrivedUsers.isNotEmpty) ...[
+                      Icon(
+                        Icons.check_circle,
+                        size: 16,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 4),
+                      _buildUserAvatarStack(activity.arrivedUsers),
+                    ],
+
+                    const Spacer(),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Quick RSVP buttons
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildRsvpChip('Going', 'going', Icons.thumb_up_outlined,
+                          colorScheme),
+                      const SizedBox(width: 6),
+                      _buildRsvpChip(
+                          'OMW', 'omw', Icons.directions_car, colorScheme),
+                      const SizedBox(width: 6),
+                      _buildRsvpChip('Arrived', 'arrived',
+                          Icons.check_circle_outline, colorScheme),
+                      const SizedBox(width: 6),
+                      _buildRsvpChip(
+                          'Maybe', 'maybe', Icons.help_outline, colorScheme),
+                      const SizedBox(width: 6),
+                      _buildRsvpChip(
+                          "Can't", 'cant', Icons.close, colorScheme),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserAvatarStack(List<_RsvpUser> users) {
+    return SizedBox(
+      width: users.length * 18.0 + 6,
+      height: 24,
+      child: Stack(
+        children: [
+          for (int i = 0; i < users.length; i++)
+            Positioned(
+              left: i * 14.0,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: users[i].color,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    users[i].initial,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRsvpChip(
+      String label, String value, IconData icon, ColorScheme colorScheme) {
+    final isSelected = _userRsvp == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _userRsvp = isSelected ? null : value;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? colorScheme.primaryContainer : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessageInput(ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(8),
@@ -887,14 +1120,48 @@ class _MockEventIdea {
   });
 }
 
-class _MockMessage {
+// Base class for chat items
+sealed class _ChatItem {
+  final DateTime time;
+  _ChatItem({required this.time});
+}
+
+class _MockMessage extends _ChatItem {
   final String sender;
   final String content;
-  final DateTime time;
 
   _MockMessage({
     required this.sender,
     required this.content,
-    required this.time,
+    required super.time,
+  });
+}
+
+class _EventActivity extends _ChatItem {
+  final String eventTitle;
+  final String eventTime;
+  final List<_RsvpUser> omwUsers;
+  final List<_RsvpUser> arrivedUsers;
+  final String? userRsvp; // null, 'going', 'maybe', 'omw', 'arrived', 'cant'
+
+  _EventActivity({
+    required this.eventTitle,
+    required this.eventTime,
+    required this.omwUsers,
+    required this.arrivedUsers,
+    this.userRsvp,
+    required super.time,
+  });
+}
+
+class _RsvpUser {
+  final String name;
+  final String initial;
+  final Color color;
+
+  _RsvpUser({
+    required this.name,
+    required this.initial,
+    required this.color,
   });
 }
