@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'file_path=$(cat | jq -r \".tool_input.file_path\"); [[ \"$file_path\" == *.dart ]] && dart format \"$file_path\" 2>&1 || true'",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

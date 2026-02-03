@@ -3,6 +3,13 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
+    "inputs": [
+        {
+            "id": "vmServiceUri",
+            "type": "promptString",
+            "description": "VM service URI (ask MCP for it)"
+        }
+    ],
     "configurations": [
         {
             "name": "Flutter: Run event screen tests",
@@ -25,6 +32,12 @@
                 "--target=lib/storybook/main.dart",
                 // "--device-id=macos"
             ]
+        },
+        {
+            "name": "Flutter: Attach",
+            "type": "dart",
+            "request": "attach",
+            "vmServiceUri": "${input:vmServiceUri}"
         },
         {
             "name": "Flutter",
