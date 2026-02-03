@@ -27,33 +27,54 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
   final String _squadName = 'Paddle Kru';
   final int _memberCount = 8;
 
-  // Mock calendar data - events per day (null = no events, negative = includes idea)
-  final List<_CalendarDay> _calendarDays = List.generate(14, (index) {
+  // Mock calendar data with events and ideas
+  late final List<_CalendarDay> _calendarDays = List.generate(14, (index) {
     final date = DateTime.now().add(Duration(days: index));
-    int? eventCount;
-    bool hasIdea = false;
+    List<_MockEvent> events = [];
+    List<_MockEventIdea> ideas = [];
 
-    // Add some mock events
+    // Add some mock events and ideas
     if (index == 0) {
-      eventCount = 1;
+      events = [
+        _MockEvent(title: 'Paddle Session', time: '6:00 PM', attendeeCount: 5),
+      ];
     } else if (index == 2) {
-      eventCount = 2;
+      events = [
+        _MockEvent(title: 'Morning Paddle', time: '7:00 AM', attendeeCount: 3),
+        _MockEvent(title: 'Evening Games', time: '7:00 PM', attendeeCount: 6),
+      ];
     } else if (index == 4) {
-      eventCount = 1;
-      hasIdea = true;
+      ideas = [
+        _MockEventIdea(
+            title: 'Beach Volleyball?', proposedBy: 'Sarah', votes: 4),
+      ];
     } else if (index == 7) {
-      eventCount = 1;
+      events = [
+        _MockEvent(
+            title: 'Weekend Tournament', time: '10:00 AM', attendeeCount: 8),
+      ];
     } else if (index == 10) {
-      eventCount = 1;
-      hasIdea = true;
+      ideas = [
+        _MockEventIdea(
+            title: 'Try new courts downtown', proposedBy: 'Mike', votes: 3),
+      ];
     } else if (index == 12) {
-      eventCount = 2;
+      events = [
+        _MockEvent(title: 'Paddle & Brunch', time: '9:00 AM', attendeeCount: 6),
+        _MockEvent(title: 'Sunset Session', time: '5:30 PM', attendeeCount: 4),
+      ];
     }
+
+    final eventCount =
+        events.isNotEmpty || ideas.isNotEmpty ? events.length + ideas.length : null;
+    final hasIdea = ideas.isNotEmpty;
 
     return _CalendarDay(
       date: date,
       eventCount: eventCount,
       hasIdea: hasIdea,
+      events: events,
+      ideas: ideas,
     );
   });
 
@@ -250,7 +271,7 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
           // Calendar Strip
           _buildCalendarStrip(colorScheme),
 
-          // Chat Messages
+          // Chat Messages with Day Detail Drawer overlay
           Expanded(
             child: Stack(
               children: [
@@ -278,6 +299,14 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
                       colorScheme,
                     );
                   },
+                ),
+
+                // Day Detail Drawer
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildDayDetailDrawer(colorScheme),
                 ),
 
                 // Scroll to Bottom Button
@@ -387,6 +416,170 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDayDetailDrawer(ColorScheme colorScheme) {
+    final isOpen = _selectedDayIndex != null;
+    final day = isOpen ? _calendarDays[_selectedDayIndex!] : null;
+
+    return AnimatedSlide(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      offset: isOpen ? Offset.zero : const Offset(0, -1),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: isOpen ? 1.0 : 0.0,
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(40),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: day == null
+              ? const SizedBox.shrink()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Events section
+                    if (day.events.isNotEmpty) ...[
+                      Text(
+                        'Events',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...day.events.map((event) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 4,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        event.title,
+                                        style: TextStyle(
+                                          color: colorScheme.onSurface,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${event.time} · ${event.attendeeCount} going',
+                                        style: TextStyle(
+                                          color: colorScheme.onSurfaceVariant,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ],
+                            ),
+                          )),
+                    ],
+
+                    // Ideas section
+                    if (day.ideas.isNotEmpty) ...[
+                      if (day.events.isNotEmpty) const SizedBox(height: 8),
+                      Text(
+                        'Ideas Being Polled',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...day.ideas.map((idea) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 4,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(2),
+                                    border: Border.all(
+                                      color: colorScheme.tertiary,
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        idea.title,
+                                        style: TextStyle(
+                                          color: colorScheme.onSurface,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Proposed by ${idea.proposedBy} · ${idea.votes} votes',
+                                        style: TextStyle(
+                                          color: colorScheme.onSurfaceVariant,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.how_to_vote_outlined,
+                                  color: colorScheme.tertiary,
+                                ),
+                              ],
+                            ),
+                          )),
+                    ],
+
+                    // Empty state
+                    if (day.events.isEmpty && day.ideas.isEmpty)
+                      Center(
+                        child: Text(
+                          'No events or ideas for this day',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -658,11 +851,39 @@ class _CalendarDay {
   final DateTime date;
   final int? eventCount;
   final bool hasIdea;
+  final List<_MockEvent> events;
+  final List<_MockEventIdea> ideas;
 
   _CalendarDay({
     required this.date,
     this.eventCount,
     this.hasIdea = false,
+    this.events = const [],
+    this.ideas = const [],
+  });
+}
+
+class _MockEvent {
+  final String title;
+  final String time;
+  final int attendeeCount;
+
+  _MockEvent({
+    required this.title,
+    required this.time,
+    required this.attendeeCount,
+  });
+}
+
+class _MockEventIdea {
+  final String title;
+  final String proposedBy;
+  final int votes;
+
+  _MockEventIdea({
+    required this.title,
+    required this.proposedBy,
+    required this.votes,
   });
 }
 
