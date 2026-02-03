@@ -33,6 +33,7 @@ import 'package:squadquest/storybook/screens/home/home_screen.v2.dart';
 import 'package:squadquest/storybook/screens/settings/settings_screen.dart';
 import 'package:squadquest/storybook/screens/drawer/drawer_demo.dart';
 import 'package:squadquest/storybook/screens/about.dart';
+import 'package:squadquest/storybook/screens/squads/squad_home.dart';
 
 import 'mocks.dart';
 
@@ -227,6 +228,13 @@ class StorybookApp extends StatelessWidget {
               description: 'With search',
               builder: (context) => const TopicsListScreenV2(),
             ),
+            // Squads screens
+            Story(
+              name: 'Squads/Squad Home',
+              description: 'Squad home screen with calendar and chat',
+              builder: (context) => const SquadHomeScreen(),
+            ),
+
             Story(
               name: 'About',
               description: 'About screen with starfield background and logo',
