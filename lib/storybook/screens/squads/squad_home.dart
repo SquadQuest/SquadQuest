@@ -16,6 +16,7 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
   final ScrollController _calendarScrollController = ScrollController();
   bool _showScrollToBottom = false;
   int _eventsAfterVisible = 0;
+  int? _selectedDayIndex; // null = no selection
 
   // Constants for calendar layout
   static const double _dayTileWidth = 52;
@@ -323,7 +324,8 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
             itemBuilder: (context, index) {
               final day = _calendarDays[index];
               final isToday = index == 0;
-              return _buildDayTile(day, isToday, colorScheme);
+              final isSelected = index == _selectedDayIndex;
+              return _buildDayTile(day, index, isToday, isSelected, colorScheme);
             },
           ),
           // Right edge indicator with slide animation
@@ -390,98 +392,135 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
   }
 
   Widget _buildDayTile(
-      _CalendarDay day, bool isToday, ColorScheme colorScheme) {
-    return Container(
-      width: 52,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      decoration: BoxDecoration(
-        color: isToday
-            ? colorScheme.primaryContainer
-            : colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
-        border:
-            isToday ? Border.all(color: colorScheme.primary, width: 2) : null,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Top section: Weekday + Day number
-          Column(
-            children: [
-              Text(
-                _getWeekdayAbbr(day.date),
-                style: TextStyle(
-                  color: isToday
-                      ? colorScheme.onPrimaryContainer
-                      : colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                  fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+    _CalendarDay day,
+    int index,
+    bool isToday,
+    bool isSelected,
+    ColorScheme colorScheme,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedDayIndex = _selectedDayIndex == index ? null : index;
+        });
+      },
+      child: Container(
+        width: 52,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Main tile
+            Positioned.fill(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                decoration: BoxDecoration(
+                color: isSelected
+                    ? colorScheme.primaryContainer
+                    : colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.surfaceContainerHigh,
+                  width: 2,
                 ),
               ),
-              Text(
-                '${day.date.day}',
-                style: TextStyle(
-                  color: isToday
-                      ? colorScheme.onPrimaryContainer
-                      : colorScheme.onSurface,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-
-          // Bottom section: Event badge OR Today indicator
-          if (day.eventCount != null)
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: Stack(
-                alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: day.hasIdea
-                          ? Colors.transparent
-                          : colorScheme.primary,
-                      shape: BoxShape.circle,
-                      border: day.hasIdea
-                          ? Border.all(color: colorScheme.primary, width: 1.5)
-                          : null,
-                    ),
+                  // Top section: Weekday + Day number
+                  Column(
+                    children: [
+                      Text(
+                        _getWeekdayAbbr(day.date),
+                        style: TextStyle(
+                          color: isSelected
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '${day.date.day}',
+                        style: TextStyle(
+                          color: isSelected
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurface,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${day.eventCount}',
-                    style: TextStyle(
-                      color: day.hasIdea
-                          ? colorScheme.primary
-                          : colorScheme.onPrimary,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+
+                  // Bottom section: Event badge
+                  if (day.eventCount != null)
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: day.hasIdea
+                                  ? Colors.transparent
+                                  : colorScheme.primary,
+                              shape: BoxShape.circle,
+                              border: day.hasIdea
+                                  ? Border.all(
+                                      color: colorScheme.primary, width: 1.5)
+                                  : null,
+                            ),
+                          ),
+                          Text(
+                            '${day.eventCount}',
+                            style: TextStyle(
+                              color: day.hasIdea
+                                  ? colorScheme.primary
+                                  : colorScheme.onPrimary,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 14),
                 ],
               ),
-            )
-          else if (isToday)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                'Today',
-                style: TextStyle(
-                  color: colorScheme.onPrimary,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
+            ),
+            ),
+
+            // Today badge overlay at top
+            if (isToday)
+              Positioned(
+                top: -4,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiary,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Today',
+                      style: TextStyle(
+                        color: colorScheme.onTertiary,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            )
-          else
-            const SizedBox(height: 14),
-        ],
+          ],
+        ),
       ),
     );
   }
