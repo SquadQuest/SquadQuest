@@ -132,7 +132,8 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
     // Calculate which tile index is at the right edge of the visible area
     // Reserve space for the indicator (52px) and padding (8px)
     final visibleWidth = viewportWidth - 52 - _calendarPadding;
-    final lastVisibleIndex = ((scrollOffset + visibleWidth) / tileFullWidth).floor();
+    final lastVisibleIndex =
+        ((scrollOffset + visibleWidth) / tileFullWidth).floor();
 
     // Sum events for days beyond the last visible index
     int count = 0;
@@ -199,7 +200,6 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return weekdays[date.weekday - 1];
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -333,7 +333,8 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
             bottom: 0,
             child: AnimatedSlide(
               duration: const Duration(milliseconds: 200),
-              offset: _eventsAfterVisible > 0 ? Offset.zero : const Offset(1, 0),
+              offset:
+                  _eventsAfterVisible > 0 ? Offset.zero : const Offset(1, 0),
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
                 opacity: _eventsAfterVisible > 0 ? 1.0 : 0.0,
@@ -353,7 +354,8 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
                     alignment: Alignment.centerRight,
                     child: Container(
                       margin: const EdgeInsets.only(right: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 4),
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
@@ -387,7 +389,8 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
     );
   }
 
-  Widget _buildDayTile(_CalendarDay day, bool isToday, ColorScheme colorScheme) {
+  Widget _buildDayTile(
+      _CalendarDay day, bool isToday, ColorScheme colorScheme) {
     return Container(
       width: 52,
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -397,9 +400,8 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
             ? colorScheme.primaryContainer
             : colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(12),
-        border: isToday
-            ? Border.all(color: colorScheme.primary, width: 2)
-            : null,
+        border:
+            isToday ? Border.all(color: colorScheme.primary, width: 2) : null,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -439,7 +441,9 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: day.hasIdea ? Colors.transparent : colorScheme.primary,
+                      color: day.hasIdea
+                          ? Colors.transparent
+                          : colorScheme.primary,
                       shape: BoxShape.circle,
                       border: day.hasIdea
                           ? Border.all(color: colorScheme.primary, width: 1.5)
@@ -525,10 +529,8 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
                       ? colorScheme.primary
                       : colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(
-                        !isMe && !isFirstInGroup ? 5 : 20),
-                    topRight:
-                        Radius.circular(isMe && !isFirstInGroup ? 5 : 20),
+                    topLeft: Radius.circular(!isMe && !isFirstInGroup ? 5 : 20),
+                    topRight: Radius.circular(isMe && !isFirstInGroup ? 5 : 20),
                     bottomLeft: const Radius.circular(20),
                     bottomRight: const Radius.circular(20),
                   ),
