@@ -113,23 +113,25 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
         _showScrollToBottom = _chatScrollController.position.pixels > 100;
       });
     });
+    _calendarScrollController.addListener(_updateEventsCount);
+
+    // Calculate initial count after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateEventsCount());
   }
 
-  double _calendarWidth = 0;
+  void _updateEventsCount() {
+    if (!_calendarScrollController.hasClients) return;
 
-  int _calculateEventsAfterVisible() {
-    if (_calendarWidth == 0) return 0;
-
-    final scrollOffset = _calendarScrollController.hasClients
-        ? _calendarScrollController.offset
-        : 0.0;
+    final position = _calendarScrollController.position;
+    final scrollOffset = position.pixels;
+    final viewportWidth = position.viewportDimension;
 
     // Each tile takes 60px (52 width + 8 margin total)
     final tileFullWidth = _dayTileWidth + (_dayTileMargin * 2);
 
     // Calculate which tile index is at the right edge of the visible area
-    // Reserve space for the indicator on the right (52px) and padding (8px each side)
-    final visibleWidth = _calendarWidth - 52 - _calendarPadding;
+    // Reserve space for the indicator (52px) and padding (8px)
+    final visibleWidth = viewportWidth - 52 - _calendarPadding;
     final lastVisibleIndex = ((scrollOffset + visibleWidth) / tileFullWidth).floor();
 
     // Sum events for days beyond the last visible index
@@ -140,7 +142,11 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
       }
     }
 
-    return count;
+    if (count != _eventsAfterVisible) {
+      setState(() {
+        _eventsAfterVisible = count;
+      });
+    }
   }
 
   @override
@@ -306,108 +312,77 @@ class _SquadHomeScreenState extends ConsumerState<SquadHomeScreen>
           ),
         ),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Update width and calculate initial count
-          if (_calendarWidth != constraints.maxWidth) {
-            _calendarWidth = constraints.maxWidth;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              final count = _calculateEventsAfterVisible();
-              if (count != _eventsAfterVisible) {
-                setState(() {
-                  _eventsAfterVisible = count;
-                });
-              }
-            });
-          }
-
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  final count = _calculateEventsAfterVisible();
-                  if (count != _eventsAfterVisible) {
-                    setState(() {
-                      _eventsAfterVisible = count;
-                    });
-                  }
-                  return false;
-                },
-                child: ListView.builder(
-                  controller: _calendarScrollController,
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  itemCount: _calendarDays.length,
-                  itemBuilder: (context, index) {
-                    final day = _calendarDays[index];
-                    final isToday = index == 0;
-
-                    return _buildDayTile(day, isToday, colorScheme);
-                  },
-                ),
-              ),
-
-              // Right edge indicator with slide animation
-              Positioned(
-                right: 0,
-                top: 0,
-                bottom: 0,
-                child: AnimatedSlide(
-                  duration: const Duration(milliseconds: 200),
-                  offset: _eventsAfterVisible > 0 ? Offset.zero : const Offset(1, 0),
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 200),
-                    opacity: _eventsAfterVisible > 0 ? 1.0 : 0.0,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ListView.builder(
+            controller: _calendarScrollController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            itemCount: _calendarDays.length,
+            itemBuilder: (context, index) {
+              final day = _calendarDays[index];
+              final isToday = index == 0;
+              return _buildDayTile(day, isToday, colorScheme);
+            },
+          ),
+          // Right edge indicator with slide animation
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 200),
+              offset: _eventsAfterVisible > 0 ? Offset.zero : const Offset(1, 0),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _eventsAfterVisible > 0 ? 1.0 : 0.0,
+                child: Container(
+                  width: 52,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        colorScheme.surfaceContainerHighest.withAlpha(0),
+                        colorScheme.surfaceContainerHighest,
+                      ],
+                    ),
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerRight,
                     child: Container(
-                      width: 52,
+                      margin: const EdgeInsets.only(right: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            colorScheme.surfaceContainerHighest.withAlpha(0),
-                            colorScheme.surfaceContainerHighest,
-                          ],
-                        ),
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 4),
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$_eventsAfterVisible+',
+                            style: TextStyle(
+                              color: colorScheme.onPrimaryContainer,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '$_eventsAfterVisible+',
-                                style: TextStyle(
-                                  color: colorScheme.onPrimaryContainer,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_right,
-                                size: 14,
-                                color: colorScheme.onPrimaryContainer,
-                              ),
-                            ],
+                          Icon(
+                            Icons.chevron_right,
+                            size: 14,
+                            color: colorScheme.onPrimaryContainer,
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
