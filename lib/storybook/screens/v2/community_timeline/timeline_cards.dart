@@ -15,150 +15,196 @@ extension _TimelineCards on _CommunityTimelineScreenState {
     final showButtons = !hasResponse || isExpanded;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: GestureDetector(
-        onTap: () => openThread(idea.id),
-        child: CustomPaint(
-          painter: _DashedBorderPainter(
-            color: colorScheme.tertiary.withAlpha(150),
-            strokeWidth: 1.5,
-            dashLength: 6,
-            gapLength: 4,
-            borderRadius: 16,
-          ),
-          child: Container(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Captain avatar
+          Container(
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
+              color: idea.captain.color,
+              shape: BoxShape.circle,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header row: icon + activity type + chevron
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: colorScheme.tertiary.withAlpha(30),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.lightbulb_outline,
-                          size: 16,
-                          color: colorScheme.tertiary,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: colorScheme.tertiary.withAlpha(30),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          idea.activityType,
-                          style: TextStyle(
-                            color: colorScheme.tertiary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (idea.proposedTimes.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: colorScheme.tertiaryContainer,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.how_to_vote_outlined,
-                                  size: 11,
-                                  color: colorScheme.onTertiaryContainer),
-                              const SizedBox(width: 3),
-                              Text(
-                                'Voting',
-                                style: TextStyle(
-                                  color: colorScheme.onTertiaryContainer,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      const Spacer(),
-                      Icon(Icons.chevron_right,
-                          size: 18, color: colorScheme.onSurfaceVariant),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Captain + audience
-                  buildAudienceRow(
-                      idea.captain, idea.audienceLabel, colorScheme),
-
-                  const SizedBox(height: 6),
-
-                  // Interest count + thread count
-                  Row(
-                    children: [
-                      if (idea.interestedCount > 0) ...[
-                        Icon(Icons.favorite_border,
-                            size: 14, color: colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 3),
-                        Text(
-                          '${idea.interestedCount} interested',
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      if (idea.threadMessageCount > 0) ...[
-                        Icon(Icons.chat_bubble_outline,
-                            size: 13, color: colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 3),
-                        Text(
-                          '${idea.threadMessageCount} replies',
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                      const Spacer(),
-                      Text(
-                        formatTime(idea.timestamp),
-                        style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Response section
-                  buildResponseSection(idea.id, hasResponse, isExpanded,
-                      showButtons, colorScheme),
-                ],
+            child: Center(
+              child: Text(
+                idea.captain.initial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
-        ),
+          const SizedBox(width: 8),
+          // Content column
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Author line
+                Row(
+                  children: [
+                    Text(
+                      idea.captain.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      ' shared with ',
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        idea.audienceLabel,
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      formatTime(idea.timestamp),
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+
+                // Compact idea tile
+                GestureDetector(
+                  onTap: () => openThread(idea.id),
+                  child: CustomPaint(
+                    painter: _DashedBorderPainter(
+                      color: colorScheme.tertiary.withAlpha(150),
+                      strokeWidth: 1.5,
+                      dashLength: 6,
+                      gapLength: 4,
+                      borderRadius: 12,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Type + activity + voting badge
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.lightbulb_outline,
+                                size: 15,
+                                color: colorScheme.tertiary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                idea.activityType,
+                                style: TextStyle(
+                                  color: colorScheme.tertiary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (idea.proposedTimes.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.tertiaryContainer,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.how_to_vote_outlined,
+                                          size: 10,
+                                          color:
+                                              colorScheme.onTertiaryContainer),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        'Voting',
+                                        style: TextStyle(
+                                          color:
+                                              colorScheme.onTertiaryContainer,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              const Spacer(),
+                              Icon(Icons.chevron_right,
+                                  size: 16,
+                                  color: colorScheme.onSurfaceVariant),
+                            ],
+                          ),
+
+                          // Stats row
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              if (idea.interestedCount > 0) ...[
+                                Icon(Icons.favorite_border,
+                                    size: 12,
+                                    color: colorScheme.onSurfaceVariant),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${idea.interestedCount}',
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              if (idea.threadMessageCount > 0) ...[
+                                Icon(Icons.chat_bubble_outline,
+                                    size: 11,
+                                    color: colorScheme.onSurfaceVariant),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${idea.threadMessageCount}',
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Response section (below the tile)
+                const SizedBox(height: 6),
+                buildResponseSection(
+                    idea.id, hasResponse, isExpanded, showButtons, colorScheme),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -173,156 +219,63 @@ extension _TimelineCards on _CommunityTimelineScreenState {
     final showButtons = !hasResponse || isExpanded;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: GestureDetector(
-        onTap: () => openThread(activity.id),
-        child: Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: colorScheme.primary.withAlpha(80),
-              width: 1.5,
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Captain avatar
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: activity.captain.color,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                activity.captain.initial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
+          const SizedBox(width: 8),
+          // Content column
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header row: icon + activity type + confirmed badge
+                // Author line
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.event_available,
-                        size: 16,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        activity.activityType,
-                        style: TextStyle(
-                          color: colorScheme.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check_circle,
-                              size: 11, color: colorScheme.onPrimaryContainer),
-                          const SizedBox(width: 3),
-                          Text(
-                            'Confirmed',
-                            style: TextStyle(
-                              color: colorScheme.onPrimaryContainer,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(Icons.chevron_right,
-                        size: 18, color: colorScheme.onSurfaceVariant),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                // Confirmed time + location
-                Row(
-                  children: [
-                    Icon(Icons.schedule,
-                        size: 14, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
                     Text(
-                      activity.confirmedTime,
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
+                      activity.captain.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
                         fontSize: 13,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.location_on_outlined,
-                        size: 14, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
+                    Text(
+                      ' shared with ',
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
                     Expanded(
                       child: Text(
-                        activity.confirmedLocation,
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                // Captain + audience
-                buildAudienceRow(
-                    activity.captain, activity.audienceLabel, colorScheme),
-
-                const SizedBox(height: 6),
-
-                // Going count + thread count
-                Row(
-                  children: [
-                    Icon(Icons.check_circle_outline,
-                        size: 14, color: colorScheme.primary),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${activity.goingCount} going',
-                      style: TextStyle(
-                        color: colorScheme.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    if (activity.threadMessageCount > 0) ...[
-                      Icon(Icons.chat_bubble_outline,
-                          size: 13, color: colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${activity.threadMessageCount} replies',
+                        activity.audienceLabel,
                         style: TextStyle(
                           color: colorScheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                    const Spacer(),
+                    ),
+                    const SizedBox(width: 4),
                     Text(
                       formatTime(activity.timestamp),
                       style: TextStyle(
@@ -332,16 +285,143 @@ extension _TimelineCards on _CommunityTimelineScreenState {
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
 
-                const SizedBox(height: 10),
+                // Compact activity tile
+                GestureDetector(
+                  onTap: () => openThread(activity.id),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: colorScheme.primary.withAlpha(80),
+                        width: 1.5,
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Type + activity + confirmed badge
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.event_available,
+                              size: 15,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              activity.activityType,
+                              style: TextStyle(
+                                color: colorScheme.primary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle,
+                                      size: 10,
+                                      color: colorScheme.onPrimaryContainer),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    'Confirmed',
+                                    style: TextStyle(
+                                      color: colorScheme.onPrimaryContainer,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(Icons.chevron_right,
+                                size: 16, color: colorScheme.onSurfaceVariant),
+                          ],
+                        ),
 
-                // Response section
+                        // Time + location
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.schedule,
+                                size: 12, color: colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 3),
+                            Text(
+                              activity.confirmedTime,
+                              style: TextStyle(
+                                color: colorScheme.onSurface,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(Icons.location_on_outlined,
+                                size: 12, color: colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                activity.confirmedLocation,
+                                style: TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (activity.goingCount > 0) ...[
+                              Icon(Icons.check_circle_outline,
+                                  size: 12, color: colorScheme.primary),
+                              const SizedBox(width: 2),
+                              Text(
+                                '${activity.goingCount}',
+                                style: TextStyle(
+                                  color: colorScheme.primary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                            if (activity.threadMessageCount > 0) ...[
+                              const SizedBox(width: 6),
+                              Icon(Icons.chat_bubble_outline,
+                                  size: 11,
+                                  color: colorScheme.onSurfaceVariant),
+                              const SizedBox(width: 2),
+                              Text(
+                                '${activity.threadMessageCount}',
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Response section (below the tile)
+                const SizedBox(height: 6),
                 buildResponseSection(activity.id, hasResponse, isExpanded,
                     showButtons, colorScheme),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
