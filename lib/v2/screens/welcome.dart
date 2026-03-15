@@ -15,25 +15,32 @@ class _WelcomeWizardState extends State<WelcomeWizard> {
 
   static const _pages = [
     _WelcomePage(
+      icon: Icons.rocket_launch_outlined,
+      iconColor: Colors.deepOrange,
+      title: 'Rally the squad. Go hang.',
+      body:
+          "SquadQuest is a tool for coordinating in-person hangouts with people you already know using event-focused group chats.\n\nIt's free, privacy-first, and built by the people, for the people.",
+    ),
+    _WelcomePage(
       icon: Icons.lightbulb_outline,
       iconColor: Colors.amber,
       title: 'Share ideas, not invitations',
       body:
-          "Post an idea for an activity and your friends who share that interest get a casual heads-up — not a formal invite they feel pressured to accept or decline.",
+          "Have an idea for something to do? Share it with friends who are into that activity. No pressure \u2014 just a casual heads-up, not a formal invite.",
     ),
     _WelcomePage(
       icon: Icons.how_to_vote_outlined,
       iconColor: Colors.purple,
-      title: 'Find the right time together',
+      title: 'Plan together',
       body:
-          "Suggest times and locations, let friends vote, and confirm when it works. No more back-and-forth group texts trying to pin down a plan.",
+          "Suggest times and places, let friends vote, and lock it in when it works. Like a group text with superpowers.",
     ),
     _WelcomePage(
-      icon: Icons.group_outlined,
+      icon: Icons.lock_outline,
       iconColor: Colors.teal,
-      title: 'Your squads, your people',
+      title: 'Privacy you can trust',
       body:
-          "Create squads for your regular crews — your hiking group, your game night crew, your paddle squad. Coordinate naturally, like a group text with superpowers.",
+          "Only people who have your phone number can connect with you. We're open source, ad-free, and we'll never sell your info.\n\nThis tool is built by the people, for the people.",
     ),
   ];
 
