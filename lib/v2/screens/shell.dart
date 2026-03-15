@@ -33,23 +33,27 @@ class _AppShellState extends ConsumerState<AppShell> {
             index: _currentTab,
             children: _screens,
           ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _currentTab,
-            onDestinationSelected: (index) {
-              setState(() => _currentTab = index);
-            },
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: 'Home',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.interests_outlined),
-                selectedIcon: Icon(Icons.interests),
-                label: 'Interests',
-              ),
-            ],
+          bottomNavigationBar: MediaQuery.removePadding(
+            context: context,
+            removeBottom: true,
+            child: NavigationBar(
+              selectedIndex: _currentTab,
+              onDestinationSelected: (index) {
+                setState(() => _currentTab = index);
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home),
+                  label: 'Home',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.interests_outlined),
+                  selectedIcon: Icon(Icons.interests),
+                  label: 'Interests',
+                ),
+              ],
+            ),
           ),
         ),
 
