@@ -4,13 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import 'package:squadquest/theme.dart';
 
-import 'screens/community_timeline.dart';
+import 'screens/shell.dart';
 
 final _router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const CommunityTimelineScreen(),
+      builder: (context, state) => const AppShell(),
     ),
   ],
 );
