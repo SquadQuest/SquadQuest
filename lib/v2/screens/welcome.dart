@@ -17,7 +17,7 @@ class _WelcomeWizardState extends State<WelcomeWizard> {
     _WelcomePage(
       icon: Icons.rocket_launch_outlined,
       iconColor: Colors.deepOrange,
-      title: 'The goal',
+      title: 'Rally the squad. Go hang.',
       body:
           "SquadQuest isn't a business. We built this tool to coordinate in-person activities with our friends using event-focused group chats.\n\nIt's free to use and privacy-first. Only mutually-confirmed friends can see your details and activity.",
     ),
