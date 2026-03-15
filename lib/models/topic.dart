@@ -9,10 +9,16 @@ class Topic {
   Topic({
     required this.id,
     required this.name,
+    this.displayName,
+    this.embedding,
   });
 
   final TopicID? id;
   final String name;
+  final String? displayName;
+  final List<double>? embedding;
+
+  String get label => displayName ?? name;
 
   bool get isNull => id == null && name.isEmpty;
   bool get isNotNull => !isNull;
@@ -21,11 +27,17 @@ class Topic {
     return Topic(
       id: map['id'] as TopicID,
       name: map['name'] as String,
+      displayName: map['display_name'] as String?,
+      embedding: map['embedding'] != null
+          ? (map['embedding'] as List)
+              .map((e) => (e as num).toDouble())
+              .toList()
+          : null,
     );
   }
 
   Map<String, dynamic> toMap() {
-    final data = {
+    final data = <String, dynamic>{
       'name': name,
     };
 
@@ -33,11 +45,19 @@ class Topic {
       data['id'] = id!;
     }
 
+    if (displayName != null) {
+      data['display_name'] = displayName;
+    }
+
+    if (embedding != null) {
+      data['embedding'] = embedding;
+    }
+
     return data;
   }
 
   @override
   String toString() {
-    return 'Topic{id: $id, name: $name}';
+    return 'Topic{id: $id, name: $name, displayName: $displayName}';
   }
 }

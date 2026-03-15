@@ -28,6 +28,12 @@ import 'package:squadquest/storybook/screens/communities/create_community.dart';
 import 'package:squadquest/storybook/screens/venues/venue_profile.dart';
 import 'package:squadquest/storybook/screens/topics/topics_list.v1.dart';
 import 'package:squadquest/storybook/screens/topics/topics_list.v2.dart';
+import 'package:squadquest/storybook/screens/topics/topics_list.v3.dart';
+import 'package:squadquest/storybook/screens/topics/topics_list.v4.dart';
+import 'package:squadquest/storybook/screens/topics/topics_list.v5.dart';
+import 'package:squadquest/storybook/screens/topics/topics_list.v6.dart';
+import 'package:squadquest/storybook/screens/topics/topics_search.dart';
+import 'package:squadquest/storybook/screens/topics/topics_list.v7.dart';
 import 'package:squadquest/storybook/screens/home/home_screen.v1.dart';
 import 'package:squadquest/storybook/screens/home/home_screen.v2.dart';
 import 'package:squadquest/storybook/screens/settings/settings_screen.dart';
@@ -228,6 +234,38 @@ class StorybookApp extends StatelessWidget {
               name: 'Redesign/Topics/Topics List v2',
               description: 'With search',
               builder: (context) => const TopicsListScreenV2(),
+            ),
+            Story(
+              name: 'Redesign/Topics/Topics List v3',
+              description: 'Hierarchical tree with expandable categories',
+              builder: (context) => const TopicsListScreenV3(),
+            ),
+            Story(
+              name: 'Redesign/Topics/Topics List v4',
+              description: 'Flat tags with chip cloud layout',
+              builder: (context) => const TopicsListScreenV4(),
+            ),
+            Story(
+              name: 'Redesign/Topics/Topics List v5',
+              description: 'Two-level category grid with horizontal bar',
+              builder: (context) => const TopicsListScreenV5(),
+            ),
+            Story(
+              name: 'Redesign/Topics/Topics List v6',
+              description: 'Multi-tag faceted browse with filter dimensions',
+              builder: (context) => const TopicsListScreenV6(),
+            ),
+            Story(
+              name: 'Redesign/Topics/Topics List v7',
+              description:
+                  'Category grid with search, semantic suggestions, and neighborhoods',
+              builder: (context) => const TopicsListScreenV7(),
+            ),
+            Story(
+              name: 'Redesign/Topics/Search & Neighborhoods',
+              description:
+                  'Search-first topics with semantic suggestions and neighborhoods',
+              builder: (context) => const TopicsSearchScreen(),
             ),
             // Squads screens
             Story(
