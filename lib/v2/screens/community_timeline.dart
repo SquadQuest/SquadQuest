@@ -732,29 +732,37 @@ class _CommunityTimelineScreenState
                   iconSize: 22,
                 ),
 
-                // Text field
+                // Text field or hint
                 Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    enabled: _isSquadContext,
-                    decoration: InputDecoration(
-                      hintText: _isSquadContext
-                          ? 'Message $_currentTitle...'
-                          : 'Tap the lightbulb to share an idea',
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                    minLines: 1,
-                    maxLines: 4,
-                  ),
+                  child: _isSquadContext
+                      ? TextField(
+                          controller: _messageController,
+                          decoration: InputDecoration(
+                            hintText: 'Message $_currentTitle...',
+                            filled: true,
+                            fillColor: colorScheme.surfaceContainerHighest,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                          ),
+                          minLines: 1,
+                          maxLines: 4,
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            'Tap the lightbulb to share an idea',
+                            style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
                 ),
 
                 // Send button (squad only)
