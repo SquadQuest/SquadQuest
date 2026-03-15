@@ -681,98 +681,96 @@ class _CommunityTimelineScreenState
           ),
         ],
       ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Idea composer panel (slides up when active)
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 200),
-              crossFadeState: _showIdeaComposer
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              firstChild: _buildIdeaComposer(colorScheme),
-              secondChild: const SizedBox.shrink(),
-            ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Idea composer panel (slides up when active)
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 200),
+            crossFadeState: _showIdeaComposer
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: _buildIdeaComposer(colorScheme),
+            secondChild: const SizedBox.shrink(),
+          ),
 
-            // Audience indicator
-            _buildMainAudienceIndicator(colorScheme),
+          // Audience indicator
+          _buildMainAudienceIndicator(colorScheme),
 
-            // Input bar
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  // Photo button (squad only)
-                  if (_isSquadContext)
-                    IconButton(
-                      icon: const Icon(Icons.photo_outlined),
-                      onPressed: () {},
-                      color: colorScheme.onSurfaceVariant,
-                      iconSize: 22,
-                    ),
-
-                  // Idea button
+          // Input bar
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                // Photo button (squad only)
+                if (_isSquadContext)
                   IconButton(
-                    icon: Icon(
-                      _showIdeaComposer
-                          ? Icons.lightbulb
-                          : Icons.lightbulb_outline,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _showIdeaComposer = !_showIdeaComposer;
-                        if (!_showIdeaComposer) {
-                          _selectedActivityType = null;
-                        }
-                      });
-                    },
-                    color: _showIdeaComposer
-                        ? colorScheme.tertiary
-                        : colorScheme.onSurfaceVariant,
+                    icon: const Icon(Icons.photo_outlined),
+                    onPressed: () {},
+                    color: colorScheme.onSurfaceVariant,
                     iconSize: 22,
                   ),
 
-                  // Text field
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      enabled: _isSquadContext,
-                      decoration: InputDecoration(
-                        hintText: _isSquadContext
-                            ? 'Message $_currentTitle...'
-                            : 'Tap the lightbulb to share an idea',
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                      ),
-                      minLines: 1,
-                      maxLines: 4,
-                    ),
+                // Idea button
+                IconButton(
+                  icon: Icon(
+                    _showIdeaComposer
+                        ? Icons.lightbulb
+                        : Icons.lightbulb_outline,
                   ),
+                  onPressed: () {
+                    setState(() {
+                      _showIdeaComposer = !_showIdeaComposer;
+                      if (!_showIdeaComposer) {
+                        _selectedActivityType = null;
+                      }
+                    });
+                  },
+                  color: _showIdeaComposer
+                      ? colorScheme.tertiary
+                      : colorScheme.onSurfaceVariant,
+                  iconSize: 22,
+                ),
 
-                  // Send button (squad only)
-                  if (_isSquadContext) ...[
-                    const SizedBox(width: 4),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.send),
-                      color: colorScheme.primary,
-                      iconSize: 22,
+                // Text field
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    enabled: _isSquadContext,
+                    decoration: InputDecoration(
+                      hintText: _isSquadContext
+                          ? 'Message $_currentTitle...'
+                          : 'Tap the lightbulb to share an idea',
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                     ),
-                  ],
+                    minLines: 1,
+                    maxLines: 4,
+                  ),
+                ),
+
+                // Send button (squad only)
+                if (_isSquadContext) ...[
+                  const SizedBox(width: 4),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.send),
+                    color: colorScheme.primary,
+                    iconSize: 22,
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
