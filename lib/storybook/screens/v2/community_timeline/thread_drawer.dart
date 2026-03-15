@@ -61,8 +61,8 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
 
   Widget _buildThreadHeader(_TimelineItem item, ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.only(
-        top: 12,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 12,
         left: 16,
         right: 8,
         bottom: 12,
@@ -511,53 +511,56 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
 
   Widget _buildThreadInput(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.only(
+        left: 8,
+        right: 8,
+        top: 8,
+        bottom: 8 + MediaQuery.of(context).padding.bottom,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
           top: BorderSide(color: colorScheme.outlineVariant, width: 1),
         ),
       ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.photo_outlined),
-              onPressed: () {},
-              iconSize: 20,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            Expanded(
-              child: TextField(
-                controller: threadMessageController,
-                decoration: InputDecoration(
-                  hintText: 'Reply...',
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  isDense: true,
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.photo_outlined),
+            onPressed: () {},
+            iconSize: 20,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          Expanded(
+            child: TextField(
+              controller: threadMessageController,
+              decoration: InputDecoration(
+                hintText: 'Reply...',
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
                 ),
-                minLines: 1,
-                maxLines: 4,
-                style: const TextStyle(fontSize: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                isDense: true,
               ),
+              minLines: 1,
+              maxLines: 4,
+              style: const TextStyle(fontSize: 14),
             ),
-            const SizedBox(width: 4),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.send),
-              iconSize: 20,
-              color: colorScheme.primary,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.send),
+            iconSize: 20,
+            color: colorScheme.primary,
+          ),
+        ],
       ),
     );
   }

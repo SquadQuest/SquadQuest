@@ -378,37 +378,46 @@ class _CommunityTimelineScreenState
 
     return AppScaffold(
       showAppBar: false,
-      body: Column(
+      body: Stack(
         children: [
-          _buildCustomAppBar(colorScheme),
-          Expanded(
-            child: Stack(
-              children: [
-                _buildTimeline(colorScheme),
-                if (_showScrollToBottom)
-                  Positioned(
-                    right: 16,
-                    bottom: 16,
-                    child: FloatingActionButton.small(
-                      onPressed: _scrollToBottom,
-                      child: const Icon(Icons.keyboard_arrow_down),
-                    ),
-                  ),
-                if (_showSquadDropdown) _buildSquadDropdown(colorScheme),
-                if (activeThreadItemId != null)
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTap: closeThread,
-                      child: Container(
-                        color: Colors.black.withAlpha(80),
+          // Main content layer
+          Column(
+            children: [
+              _buildCustomAppBar(colorScheme),
+              Expanded(
+                child: Stack(
+                  children: [
+                    _buildTimeline(colorScheme),
+                    if (_showScrollToBottom)
+                      Positioned(
+                        right: 16,
+                        bottom: 16,
+                        child: FloatingActionButton.small(
+                          onPressed: _scrollToBottom,
+                          child: const Icon(Icons.keyboard_arrow_down),
+                        ),
                       ),
-                    ),
-                  ),
-                buildThreadDrawer(colorScheme),
-              ],
-            ),
+                    if (_showSquadDropdown) _buildSquadDropdown(colorScheme),
+                  ],
+                ),
+              ),
+              _buildInputArea(colorScheme),
+            ],
           ),
-          _buildInputArea(colorScheme),
+
+          // Thread scrim (covers everything)
+          if (activeThreadItemId != null)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: closeThread,
+                child: Container(
+                  color: Colors.black.withAlpha(80),
+                ),
+              ),
+            ),
+
+          // Thread drawer (covers everything)
+          buildThreadDrawer(colorScheme),
         ],
       ),
     );
