@@ -102,7 +102,7 @@ class _CommunityTimelineScreenState
       audienceLabel: 'you and 7 others',
       proposedTimes: ['Saturday 10am', 'Sunday 2pm'],
       proposedLocations: ['Willamette River'],
-      allowSuggestions: false,
+      allowSuggestions: true,
       interestedCount: 5,
       threadMessageCount: 6,
     ),
