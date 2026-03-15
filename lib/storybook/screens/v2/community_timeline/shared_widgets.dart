@@ -292,3 +292,60 @@ extension _SharedWidgets on _CommunityTimelineScreenState {
     );
   }
 }
+
+// ============================================================================
+// Dashed Border Painter
+// ============================================================================
+
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double dashLength;
+  final double gapLength;
+  final double borderRadius;
+
+  _DashedBorderPainter({
+    required this.color,
+    this.strokeWidth = 1.5,
+    this.dashLength = 6,
+    this.gapLength = 4,
+    this.borderRadius = 16,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        strokeWidth / 2,
+        strokeWidth / 2,
+        size.width - strokeWidth,
+        size.height - strokeWidth,
+      ),
+      Radius.circular(borderRadius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics().first;
+    final totalLength = metrics.length;
+
+    double distance = 0;
+    while (distance < totalLength) {
+      final end = (distance + dashLength).clamp(0.0, totalLength);
+      final dashPath = metrics.extractPath(distance, end);
+      canvas.drawPath(dashPath, paint);
+      distance += dashLength + gapLength;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) =>
+      color != oldDelegate.color ||
+      strokeWidth != oldDelegate.strokeWidth ||
+      dashLength != oldDelegate.dashLength ||
+      gapLength != oldDelegate.gapLength;
+}
