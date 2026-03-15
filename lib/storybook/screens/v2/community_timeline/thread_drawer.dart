@@ -45,6 +45,9 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
             : Column(
                 children: [
                   _buildThreadHeader(activeItem, colorScheme),
+                  if (activeItem is _IdeaItem &&
+                      activeItem.proposedTimes.isNotEmpty)
+                    _buildVoteBar(activeItem, colorScheme),
                   Expanded(
                     child: _buildThreadContent(activeItem, colorScheme),
                   ),
@@ -253,53 +256,210 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
   }
 
   // ==========================================================================
-  // Thread Content
+  // Vote Bar (persistent, between header and chat)
+  // ==========================================================================
+
+  Widget _buildVoteBar(_IdeaItem idea, ColorScheme colorScheme) {
+    final timeVotes =
+        idea.id == 'idea_paddleboard' ? paddleboardTimeVotes : <_VoteOption>[];
+    final locationVotes = idea.id == 'idea_paddleboard'
+        ? paddleboardLocationVotes
+        : <_VoteOption>[];
+
+    // Find leading options
+    final leadingTime = timeVotes.isNotEmpty
+        ? timeVotes.reduce((a, b) => a.voters.length >= b.voters.length ? a : b)
+        : null;
+    final leadingLocation = locationVotes.isNotEmpty
+        ? locationVotes
+            .reduce((a, b) => a.voters.length >= b.voters.length ? a : b)
+        : null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        border: Border(
+          bottom: BorderSide(color: colorScheme.outlineVariant, width: 1),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Collapsed: quick-vote chips + expand toggle
+          GestureDetector(
+            onTap: toggleVotingExpanded,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(Icons.how_to_vote_outlined,
+                      size: 15, color: colorScheme.tertiary),
+                  const SizedBox(width: 8),
+                  // Quick-vote chips
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          if (leadingTime != null)
+                            _buildQuickVoteChip(
+                              Icons.schedule,
+                              leadingTime.label,
+                              leadingTime.id,
+                              userTimeVotes.contains(leadingTime.id),
+                              () => toggleTimeVote(leadingTime.id),
+                              '${leadingTime.voters.length}',
+                              colorScheme,
+                            ),
+                          if (leadingTime != null && leadingLocation != null)
+                            const SizedBox(width: 6),
+                          if (leadingLocation != null)
+                            _buildQuickVoteChip(
+                              Icons.location_on_outlined,
+                              leadingLocation.label,
+                              leadingLocation.id,
+                              userLocationVotes.contains(leadingLocation.id),
+                              () => toggleLocationVote(leadingLocation.id),
+                              '${leadingLocation.voters.length}',
+                              colorScheme,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    turns: showVotingExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 20,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expanded: full voting detail
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 200),
+            crossFadeState: showVotingExpanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
+              child: Column(
+                children: [
+                  if (timeVotes.isNotEmpty)
+                    _buildVotingSection(
+                      'When?',
+                      timeVotes,
+                      userTimeVotes,
+                      toggleTimeVote,
+                      idea.allowSuggestions,
+                      colorScheme,
+                    ),
+                  if (timeVotes.isNotEmpty && locationVotes.isNotEmpty)
+                    const SizedBox(height: 12),
+                  if (locationVotes.isNotEmpty)
+                    _buildVotingSection(
+                      'Where?',
+                      locationVotes,
+                      userLocationVotes,
+                      toggleLocationVote,
+                      idea.allowSuggestions,
+                      colorScheme,
+                    ),
+                ],
+              ),
+            ),
+            secondChild: const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickVoteChip(
+    IconData icon,
+    String label,
+    String voteId,
+    bool voted,
+    VoidCallback onTap,
+    String count,
+    ColorScheme colorScheme,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: voted
+              ? colorScheme.primaryContainer
+              : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: voted ? colorScheme.primary : colorScheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 12,
+                color:
+                    voted ? colorScheme.primary : colorScheme.onSurfaceVariant),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: voted
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSurface,
+                fontSize: 11,
+                fontWeight: voted ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              count,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 10,
+              ),
+            ),
+            if (voted) ...[
+              const SizedBox(width: 2),
+              Icon(Icons.check, size: 11, color: colorScheme.primary),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================================
+  // Thread Content (chat only, no voting)
   // ==========================================================================
 
   Widget _buildThreadContent(_TimelineItem item, ColorScheme colorScheme) {
-    // Get thread messages based on item
     final messages = item.id == 'idea_paddleboard'
         ? paddleboardThreadMessages
         : genericThreadMessages;
-
-    final showVoting = item is _IdeaItem && item.proposedTimes.isNotEmpty;
 
     return ListView(
       controller: threadScrollController,
       padding: const EdgeInsets.all(12),
       children: [
-        // Voting section (for ideas with proposed times/locations)
-        if (showVoting) ...[
-          _buildVotingSection(
-            'When?',
-            item.id == 'idea_paddleboard' ? paddleboardTimeVotes : [],
-            userTimeVotes,
-            toggleTimeVote,
-            item.allowSuggestions,
-            colorScheme,
-          ),
-          const SizedBox(height: 12),
-          _buildVotingSection(
-            'Where?',
-            item.id == 'idea_paddleboard' ? paddleboardLocationVotes : [],
-            userLocationVotes,
-            toggleLocationVote,
-            item.allowSuggestions,
-            colorScheme,
-          ),
-          const SizedBox(height: 12),
-          Divider(color: colorScheme.outlineVariant),
-          const SizedBox(height: 8),
-        ],
-
-        // Thread messages
         ...messages.map((msg) => _buildThreadMessage(msg, colorScheme)),
       ],
     );
   }
 
   // ==========================================================================
-  // Voting Section
+  // Voting Section (expanded detail)
   // ==========================================================================
 
   Widget _buildVotingSection(

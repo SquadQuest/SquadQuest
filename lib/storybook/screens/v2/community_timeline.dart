@@ -72,6 +72,7 @@ class _CommunityTimelineScreenState
   // Voting state
   final Set<String> userTimeVotes = {'time_paddle_sun'};
   final Set<String> userLocationVotes = {'loc_paddle_willamette'};
+  bool showVotingExpanded = false;
 
   // Scroll state
   bool _showScrollToBottom = false;
@@ -321,6 +322,7 @@ class _CommunityTimelineScreenState
     setState(() {
       activeThreadItemId = itemId;
       _showSquadDropdown = false;
+      showVotingExpanded = false;
     });
   }
 
@@ -366,6 +368,10 @@ class _CommunityTimelineScreenState
         userLocationVotes.add(voteId);
       }
     });
+  }
+
+  void toggleVotingExpanded() {
+    setState(() => showVotingExpanded = !showVotingExpanded);
   }
 
   // ========================================================================
