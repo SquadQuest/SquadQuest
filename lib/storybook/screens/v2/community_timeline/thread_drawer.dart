@@ -285,9 +285,10 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Collapsed: quick-vote chips + expand toggle
+          // Collapsed summary row — tap anywhere to expand
           GestureDetector(
             onTap: toggleVotingExpanded,
+            behavior: HitTestBehavior.opaque,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
@@ -295,36 +296,31 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
                   Icon(Icons.how_to_vote_outlined,
                       size: 15, color: colorScheme.tertiary),
                   const SizedBox(width: 8),
-                  // Quick-vote chips
+                  // Summary chips (display only)
                   Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          if (leadingTime != null)
-                            _buildQuickVoteChip(
-                              Icons.schedule,
-                              leadingTime.label,
-                              leadingTime.id,
-                              userTimeVotes.contains(leadingTime.id),
-                              () => toggleTimeVote(leadingTime.id),
-                              '${leadingTime.voters.length}',
-                              colorScheme,
-                            ),
-                          if (leadingTime != null && leadingLocation != null)
-                            const SizedBox(width: 6),
-                          if (leadingLocation != null)
-                            _buildQuickVoteChip(
+                    child: Row(
+                      children: [
+                        if (leadingTime != null)
+                          _buildVoteSummaryChip(
+                            Icons.schedule,
+                            leadingTime.label,
+                            '${leadingTime.voters.length}',
+                            userTimeVotes.contains(leadingTime.id),
+                            colorScheme,
+                          ),
+                        if (leadingTime != null && leadingLocation != null)
+                          const SizedBox(width: 6),
+                        if (leadingLocation != null)
+                          Flexible(
+                            child: _buildVoteSummaryChip(
                               Icons.location_on_outlined,
                               leadingLocation.label,
-                              leadingLocation.id,
-                              userLocationVotes.contains(leadingLocation.id),
-                              () => toggleLocationVote(leadingLocation.id),
                               '${leadingLocation.voters.length}',
+                              userLocationVotes.contains(leadingLocation.id),
                               colorScheme,
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -382,60 +378,47 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
     );
   }
 
-  Widget _buildQuickVoteChip(
+  Widget _buildVoteSummaryChip(
     IconData icon,
     String label,
-    String voteId,
-    bool voted,
-    VoidCallback onTap,
     String count,
+    bool userVoted,
     ColorScheme colorScheme,
   ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: voted
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: voted ? colorScheme.primary : colorScheme.outlineVariant,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon,
-                size: 12,
-                color:
-                    voted ? colorScheme.primary : colorScheme.onSurfaceVariant),
-            const SizedBox(width: 4),
-            Text(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
               label,
               style: TextStyle(
-                color: voted
-                    ? colorScheme.onPrimaryContainer
-                    : colorScheme.onSurface,
+                color: colorScheme.onSurface,
                 fontSize: 11,
-                fontWeight: voted ? FontWeight.w600 : FontWeight.normal,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(width: 4),
-            Text(
-              count,
-              style: TextStyle(
-                color: colorScheme.onSurfaceVariant,
-                fontSize: 10,
-              ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            count,
+            style: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 10,
             ),
-            if (voted) ...[
-              const SizedBox(width: 2),
-              Icon(Icons.check, size: 11, color: colorScheme.primary),
-            ],
+          ),
+          if (userVoted) ...[
+            const SizedBox(width: 2),
+            Icon(Icons.check, size: 11, color: colorScheme.primary),
           ],
-        ),
+        ],
       ),
     );
   }
