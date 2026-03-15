@@ -22,13 +22,6 @@ class _WelcomeWizardState extends State<WelcomeWizard> {
           "SquadQuest is a tool for coordinating in-person hangouts with people you already know using event-focused group chats.\n\nIt's free, privacy-first, and built by the people, for the people.",
     ),
     _WelcomePage(
-      icon: Icons.lightbulb_outline,
-      iconColor: Colors.amber,
-      title: 'Share ideas, not invitations',
-      body:
-          "Have an idea for something to do? Share it with friends who are into that activity. No pressure \u2014 just a casual heads-up, not a formal invite.",
-    ),
-    _WelcomePage(
       icon: Icons.how_to_vote_outlined,
       iconColor: Colors.purple,
       title: 'Plan together',
@@ -40,7 +33,7 @@ class _WelcomeWizardState extends State<WelcomeWizard> {
       iconColor: Colors.teal,
       title: 'Privacy you can trust',
       body:
-          "Only people who have your phone number can connect with you. We're open source, ad-free, and we'll never sell your info.\n\nThis tool is built by the people, for the people.",
+          "Only mutually-confirmed friends can see your activity. We're open source, ad-free, and we'll never sell your info.\n\nThis tool is built by and for its users.",
     ),
   ];
 
