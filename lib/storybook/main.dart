@@ -34,6 +34,7 @@ import 'package:squadquest/storybook/screens/settings/settings_screen.dart';
 import 'package:squadquest/storybook/screens/drawer/drawer_demo.dart';
 import 'package:squadquest/storybook/screens/about.dart';
 import 'package:squadquest/storybook/screens/squads/squad_home.dart';
+import 'package:squadquest/storybook/screens/v2/community_timeline.dart';
 
 import 'mocks.dart';
 
@@ -233,6 +234,14 @@ class StorybookApp extends StatelessWidget {
               name: 'Squads/Squad Home',
               description: 'Squad home screen with calendar and chat',
               builder: (context) => const SquadHomeScreen(),
+            ),
+
+            // V2 Redesign
+            Story(
+              name: 'V2 Redesign/Community Timeline',
+              description:
+                  'Full V2 paradigm: ideas, activities, threads, squad selector',
+              builder: (context) => const CommunityTimelineScreen(),
             ),
 
             Story(

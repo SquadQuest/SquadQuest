@@ -34,6 +34,15 @@
             ]
         },
         {
+            "name": "Flutter: V2",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "args": [
+                "--target=lib/v2/main.dart",
+            ]
+        },
+        {
             "name": "Flutter: Attach",
             "type": "dart",
             "request": "attach",
