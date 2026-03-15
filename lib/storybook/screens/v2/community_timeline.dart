@@ -65,6 +65,10 @@ class _CommunityTimelineScreenState
   // Thread state
   String? activeThreadItemId;
 
+  // Idea composer state
+  bool _showIdeaComposer = false;
+  String? _selectedActivityType;
+
   // Voting state
   final Set<String> userTimeVotes = {'time_paddle_sun'};
   final Set<String> userLocationVotes = {'loc_paddle_willamette'};
@@ -404,7 +408,7 @@ class _CommunityTimelineScreenState
               ],
             ),
           ),
-          _buildMessageInput(colorScheme),
+          _buildInputArea(colorScheme),
         ],
       ),
     );
@@ -480,11 +484,6 @@ class _CommunityTimelineScreenState
             ),
           ),
           const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            tooltip: 'New Idea',
-            onPressed: () {},
-          ),
         ],
       ),
     );
@@ -652,14 +651,11 @@ class _CommunityTimelineScreenState
   }
 
   // ========================================================================
-  // Message Input
+  // Unified Input Area
   // ========================================================================
 
-  Widget _buildMessageInput(ColorScheme colorScheme) {
-    final enabled = _isSquadContext;
-
+  Widget _buildInputArea(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         boxShadow: [
@@ -671,44 +667,260 @@ class _CommunityTimelineScreenState
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (enabled)
-              IconButton(
-                icon: const Icon(Icons.photo_outlined),
-                onPressed: () {},
-                color: colorScheme.onSurfaceVariant,
-              ),
-            Expanded(
-              child: TextField(
-                controller: _messageController,
-                enabled: enabled,
-                decoration: InputDecoration(
-                  hintText: enabled
-                      ? 'Message $_currentTitle...'
-                      : 'Open a thread to reply',
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
+            // Idea composer panel (slides up when active)
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 200),
+              crossFadeState: _showIdeaComposer
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              firstChild: _buildIdeaComposer(colorScheme),
+              secondChild: const SizedBox.shrink(),
+            ),
+
+            // Input bar
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  // Photo button (squad only)
+                  if (_isSquadContext)
+                    IconButton(
+                      icon: const Icon(Icons.photo_outlined),
+                      onPressed: () {},
+                      color: colorScheme.onSurfaceVariant,
+                      iconSize: 22,
+                    ),
+
+                  // Idea button
+                  IconButton(
+                    icon: Icon(
+                      _showIdeaComposer
+                          ? Icons.lightbulb
+                          : Icons.lightbulb_outline,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _showIdeaComposer = !_showIdeaComposer;
+                        if (!_showIdeaComposer) {
+                          _selectedActivityType = null;
+                        }
+                      });
+                    },
+                    color: _showIdeaComposer
+                        ? colorScheme.tertiary
+                        : colorScheme.onSurfaceVariant,
+                    iconSize: 22,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+
+                  // Text field
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      enabled: _isSquadContext,
+                      decoration: InputDecoration(
+                        hintText: _isSquadContext
+                            ? 'Message $_currentTitle...'
+                            : 'Tap the lightbulb to share an idea',
+                        filled: true,
+                        fillColor: colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                      ),
+                      minLines: 1,
+                      maxLines: 4,
+                    ),
                   ),
-                ),
-                minLines: 1,
-                maxLines: 4,
+
+                  // Send button (squad only)
+                  if (_isSquadContext) ...[
+                    const SizedBox(width: 4),
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.send),
+                      color: colorScheme.primary,
+                      iconSize: 22,
+                    ),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            if (enabled)
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.send),
-                color: colorScheme.primary,
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ========================================================================
+  // Idea Composer
+  // ========================================================================
+
+  static const _activityTypes = [
+    'Hiking',
+    'Pickleball',
+    'Board Games',
+    'Rock Climbing',
+    'Paddleboarding',
+    'Picnic',
+    'Tennis',
+    'Biking',
+    'Yoga',
+    'Cooking',
+    'Movie Night',
+    'Beach',
+  ];
+
+  Widget _buildIdeaComposer(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: colorScheme.tertiary.withAlpha(60), width: 1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Label
+          Row(
+            children: [
+              Icon(Icons.lightbulb_outline,
+                  size: 15, color: colorScheme.tertiary),
+              const SizedBox(width: 6),
+              Text(
+                'Share an idea',
+                style: TextStyle(
+                  color: colorScheme.tertiary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Activity type picker (horizontal scroll)
+          SizedBox(
+            height: 32,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _activityTypes.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 6),
+              itemBuilder: (context, index) {
+                final type = _activityTypes[index];
+                final isSelected = _selectedActivityType == type;
+                return GestureDetector(
+                  onTap: () {
+                    setState(
+                        () => _selectedActivityType = isSelected ? null : type);
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? colorScheme.tertiary
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? colorScheme.tertiary
+                            : colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Text(
+                      type,
+                      style: TextStyle(
+                        color: isSelected
+                            ? colorScheme.onTertiary
+                            : colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Optional: add times/locations
+          Row(
+            children: [
+              _buildIdeaOptionChip(
+                Icons.schedule_outlined,
+                'Add times',
+                colorScheme,
+              ),
+              const SizedBox(width: 8),
+              _buildIdeaOptionChip(
+                Icons.location_on_outlined,
+                'Add locations',
+                colorScheme,
+              ),
+              const Spacer(),
+              // Share button
+              FilledButton.tonal(
+                onPressed: _selectedActivityType != null
+                    ? () {
+                        setState(() {
+                          _showIdeaComposer = false;
+                          _selectedActivityType = null;
+                        });
+                      }
+                    : null,
+                style: FilledButton.styleFrom(
+                  backgroundColor: colorScheme.tertiary,
+                  foregroundColor: colorScheme.onTertiary,
+                  disabledBackgroundColor: colorScheme.tertiary.withAlpha(40),
+                  disabledForegroundColor: colorScheme.tertiary.withAlpha(100),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  minimumSize: const Size(0, 34),
+                ),
+                child: const Text('Share', style: TextStyle(fontSize: 13)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIdeaOptionChip(
+      IconData icon, String label, ColorScheme colorScheme) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.outlineVariant),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
       ),
