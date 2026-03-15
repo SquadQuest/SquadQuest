@@ -695,6 +695,9 @@ class _CommunityTimelineScreenState
               secondChild: const SizedBox.shrink(),
             ),
 
+            // Audience indicator
+            _buildMainAudienceIndicator(colorScheme),
+
             // Input bar
             Padding(
               padding: const EdgeInsets.all(8),
@@ -772,6 +775,30 @@ class _CommunityTimelineScreenState
         ),
       ),
     );
+  }
+
+  // ========================================================================
+  // Audience Indicator (main input)
+  // ========================================================================
+
+  Widget _buildMainAudienceIndicator(ColorScheme colorScheme) {
+    final IconData icon;
+    final String text;
+
+    if (_showIdeaComposer) {
+      icon = Icons.visibility_outlined;
+      text = _isSquadContext
+          ? 'This idea will be shared with $_currentTitle'
+          : 'This idea will be shared with all your friends';
+    } else if (_isSquadContext) {
+      icon = Icons.group_outlined;
+      text = 'Visible to $_currentTitle members';
+    } else {
+      icon = Icons.people_outline;
+      text = 'Your friends see your ideas · threads are private';
+    }
+
+    return buildAudienceIndicator(colorScheme, icon: icon, text: text);
   }
 
   // ========================================================================

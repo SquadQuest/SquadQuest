@@ -291,6 +291,37 @@ extension _SharedWidgets on _CommunityTimelineScreenState {
       ),
     );
   }
+
+  // ==========================================================================
+  // Audience Indicator
+  // ==========================================================================
+
+  Widget buildAudienceIndicator(
+    ColorScheme colorScheme, {
+    required IconData icon,
+    required String text,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 13, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 11,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ============================================================================

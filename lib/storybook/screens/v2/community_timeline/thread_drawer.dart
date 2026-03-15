@@ -654,54 +654,67 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
 
   Widget _buildThreadInput(ColorScheme colorScheme) {
     return Container(
-      padding: EdgeInsets.only(
-        left: 8,
-        right: 8,
-        top: 8,
-        bottom: 8 + MediaQuery.of(context).padding.bottom,
-      ),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
           top: BorderSide(color: colorScheme.outlineVariant, width: 1),
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            icon: const Icon(Icons.photo_outlined),
-            onPressed: () {},
-            iconSize: 20,
-            color: colorScheme.onSurfaceVariant,
+          // Thread audience indicator
+          buildAudienceIndicator(
+            colorScheme,
+            icon: Icons.lock_outline,
+            text: 'Only participants in this thread can see replies',
           ),
-          Expanded(
-            child: TextField(
-              controller: threadMessageController,
-              decoration: InputDecoration(
-                hintText: 'Reply...',
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                isDense: true,
-              ),
-              minLines: 1,
-              maxLines: 4,
-              style: const TextStyle(fontSize: 14),
+          Padding(
+            padding: EdgeInsets.only(
+              left: 8,
+              right: 8,
+              top: 4,
+              bottom: 8 + MediaQuery.of(context).padding.bottom,
             ),
-          ),
-          const SizedBox(width: 4),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.send),
-            iconSize: 20,
-            color: colorScheme.primary,
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.photo_outlined),
+                  onPressed: () {},
+                  iconSize: 20,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: threadMessageController,
+                    decoration: InputDecoration(
+                      hintText: 'Reply...',
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      isDense: true,
+                    ),
+                    minLines: 1,
+                    maxLines: 4,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.send),
+                  iconSize: 20,
+                  color: colorScheme.primary,
+                ),
+              ],
+            ),
           ),
         ],
       ),
