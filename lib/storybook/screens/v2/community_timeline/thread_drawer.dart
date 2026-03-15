@@ -61,8 +61,8 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
 
   Widget _buildThreadHeader(_TimelineItem item, ColorScheme colorScheme) {
     return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
+      padding: const EdgeInsets.only(
+        top: 12,
         left: 16,
         right: 8,
         bottom: 12,
