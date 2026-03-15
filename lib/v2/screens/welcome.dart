@@ -17,23 +17,23 @@ class _WelcomeWizardState extends State<WelcomeWizard> {
     _WelcomePage(
       icon: Icons.rocket_launch_outlined,
       iconColor: Colors.deepOrange,
-      title: 'Rally the squad. Go hang.',
+      title: 'The goal',
       body:
-          "SquadQuest is a tool for coordinating in-person hangouts with people you already know using event-focused group chats.\n\nIt's free, privacy-first, and built by the people, for the people.",
+          "SquadQuest isn't a business. We built this tool to coordinate in-person activities with our friends using event-focused group chats.\n\nIt's free to use and privacy-first. Only mutually-confirmed friends can see your details and activity.",
     ),
     _WelcomePage(
       icon: Icons.how_to_vote_outlined,
       iconColor: Colors.purple,
-      title: 'Plan together',
+      title: 'How it works',
       body:
-          "Suggest times and places, let friends vote, and lock it in when it works. Like a group text with superpowers.",
+          "Share an idea for something to do, suggest times and places, and let friends vote. When it works for everyone, lock it in and go.",
     ),
     _WelcomePage(
-      icon: Icons.lock_outline,
+      icon: Icons.volunteer_activism_outlined,
       iconColor: Colors.teal,
-      title: 'Privacy you can trust',
+      title: 'How is this free?',
       body:
-          "Only mutually-confirmed friends can see your activity. We're open source, ad-free, and we'll never sell your info.\n\nThis tool is built by and for its users.",
+          "SquadQuest is open source and cheap to host. We don't need ads, subscription fees, or investors, and we won't ever sell your info or market to you.\n\nThis tool is built by and for its users.",
     ),
   ];
 
