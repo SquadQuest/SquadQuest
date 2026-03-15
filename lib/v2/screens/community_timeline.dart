@@ -374,6 +374,15 @@ class _CommunityTimelineScreenState
     setState(() => showVotingExpanded = !showVotingExpanded);
   }
 
+  void _toggleIdeaComposer() {
+    setState(() {
+      _showIdeaComposer = !_showIdeaComposer;
+      if (!_showIdeaComposer) {
+        _selectedActivityType = null;
+      }
+    });
+  }
+
   // ========================================================================
   // Build
   // ========================================================================
@@ -700,42 +709,29 @@ class _CommunityTimelineScreenState
           // Input bar
           Padding(
             padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                // Photo button (squad only)
-                if (_isSquadContext)
-                  IconButton(
-                    icon: const Icon(Icons.photo_outlined),
-                    onPressed: () {},
-                    color: colorScheme.onSurfaceVariant,
-                    iconSize: 22,
-                  ),
-
-                // Idea button
-                IconButton(
-                  icon: Icon(
-                    _showIdeaComposer
-                        ? Icons.lightbulb
-                        : Icons.lightbulb_outline,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _showIdeaComposer = !_showIdeaComposer;
-                      if (!_showIdeaComposer) {
-                        _selectedActivityType = null;
-                      }
-                    });
-                  },
-                  color: _showIdeaComposer
-                      ? colorScheme.tertiary
-                      : colorScheme.onSurfaceVariant,
-                  iconSize: 22,
-                ),
-
-                // Text field or hint
-                Expanded(
-                  child: _isSquadContext
-                      ? TextField(
+            child: _isSquadContext
+                ? Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.photo_outlined),
+                        onPressed: () {},
+                        color: colorScheme.onSurfaceVariant,
+                        iconSize: 22,
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          _showIdeaComposer
+                              ? Icons.lightbulb
+                              : Icons.lightbulb_outline,
+                        ),
+                        onPressed: _toggleIdeaComposer,
+                        color: _showIdeaComposer
+                            ? colorScheme.tertiary
+                            : colorScheme.onSurfaceVariant,
+                        iconSize: 22,
+                      ),
+                      Expanded(
+                        child: TextField(
                           controller: _messageController,
                           decoration: InputDecoration(
                             hintText: 'Message $_currentTitle...',
@@ -752,31 +748,49 @@ class _CommunityTimelineScreenState
                           ),
                           minLines: 1,
                           maxLines: 4,
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text(
-                            'Tap the lightbulb to share an idea',
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.send),
+                        color: colorScheme.primary,
+                        iconSize: 22,
+                      ),
+                    ],
+                  )
+                : GestureDetector(
+                    onTap: _toggleIdeaComposer,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _showIdeaComposer
+                                ? Icons.lightbulb
+                                : Icons.lightbulb_outline,
+                            size: 20,
+                            color: _showIdeaComposer
+                                ? colorScheme.tertiary
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Share an idea...',
                             style: TextStyle(
                               color: colorScheme.onSurfaceVariant,
-                              fontSize: 14,
+                              fontSize: 15,
                             ),
                           ),
-                        ),
-                ),
-
-                // Send button (squad only)
-                if (_isSquadContext) ...[
-                  const SizedBox(width: 4),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.send),
-                    color: colorScheme.primary,
-                    iconSize: 22,
+                        ],
+                      ),
+                    ),
                   ),
-                ],
-              ],
-            ),
           ),
         ],
       ),
