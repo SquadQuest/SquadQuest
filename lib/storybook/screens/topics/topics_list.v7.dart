@@ -24,6 +24,7 @@ class _MockTopic {
   final String id;
   final String slug;
   final String displayName;
+  final String? verb;
   final List<String> categories;
   final int events;
   final IconData icon;
@@ -32,10 +33,14 @@ class _MockTopic {
     required this.id,
     required this.slug,
     required this.displayName,
+    this.verb,
     required this.categories,
     required this.events,
     required this.icon,
   });
+
+  String get fullDisplayName =>
+      verb != null ? '$verb $displayName' : displayName;
 }
 
 // Semantic similarity map: query substring → [(topicId, similarity)]
@@ -135,6 +140,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '1',
           slug: 'basketball',
           displayName: 'Basketball',
+          verb: 'Play',
           categories: ['Sports'],
           events: 8,
           icon: Icons.sports_basketball),
@@ -142,6 +148,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '2',
           slug: 'soccer',
           displayName: 'Soccer',
+          verb: 'Play',
           categories: ['Sports'],
           events: 12,
           icon: Icons.sports_soccer),
@@ -149,6 +156,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '3',
           slug: 'tennis',
           displayName: 'Tennis',
+          verb: 'Play',
           categories: ['Sports'],
           events: 5,
           icon: Icons.sports_tennis),
@@ -156,6 +164,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '4',
           slug: 'trail-running',
           displayName: 'Trail Running',
+          verb: 'Go',
           categories: ['Sports', 'Outdoors'],
           events: 6,
           icon: Icons.directions_run),
@@ -163,6 +172,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '5',
           slug: 'road-running',
           displayName: 'Road Running',
+          verb: 'Go',
           categories: ['Sports'],
           events: 4,
           icon: Icons.directions_run),
@@ -170,6 +180,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '6',
           slug: 'swimming',
           displayName: 'Swimming',
+          verb: 'Go',
           categories: ['Sports'],
           events: 3,
           icon: Icons.pool),
@@ -177,6 +188,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '7',
           slug: 'hiking',
           displayName: 'Hiking',
+          verb: 'Go',
           categories: ['Outdoors'],
           events: 9,
           icon: Icons.hiking),
@@ -191,6 +203,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '9',
           slug: 'camping',
           displayName: 'Camping',
+          verb: 'Go',
           categories: ['Outdoors'],
           events: 3,
           icon: Icons.cabin),
@@ -198,6 +211,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '10',
           slug: 'kayaking',
           displayName: 'Kayaking',
+          verb: 'Go',
           categories: ['Sports', 'Outdoors'],
           events: 2,
           icon: Icons.kayaking),
@@ -226,6 +240,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '14',
           slug: 'card-games',
           displayName: 'Card Games',
+          verb: 'Play',
           categories: ['Games'],
           events: 3,
           icon: Icons.style),
@@ -233,6 +248,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '15',
           slug: 'cooking',
           displayName: 'Cooking',
+          verb: 'Learn',
           categories: ['Food & Drink'],
           events: 8,
           icon: Icons.soup_kitchen),
@@ -261,6 +277,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '19',
           slug: 'painting',
           displayName: 'Painting',
+          verb: 'Make',
           categories: ['Arts'],
           events: 3,
           icon: Icons.brush),
@@ -268,6 +285,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '20',
           slug: 'live-music',
           displayName: 'Live Music',
+          verb: 'Watch',
           categories: ['Arts', 'Social'],
           events: 10,
           icon: Icons.music_note),
@@ -275,6 +293,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
           id: '21',
           slug: 'movie-nights',
           displayName: 'Movie Nights',
+          verb: 'Watch',
           categories: ['Social'],
           events: 7,
           icon: Icons.movie),
@@ -489,48 +508,72 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
       ..._semanticResults.where((s) => s.similarity > 0.7),
     ];
 
-    if (highMatches.isNotEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Similar topic exists'),
+    String? selectedVerb;
+    const verbOptions = ['Play', 'Watch', 'Learn', 'Make', 'Go'];
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(
+              highMatches.isNotEmpty ? 'Similar topic exists' : 'Create Topic'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                  'This looks similar to existing ${highMatches.length == 1 ? 'topic' : 'topics'}:'),
+              if (highMatches.isNotEmpty) ...[
+                Text(
+                    'This looks similar to existing ${highMatches.length == 1 ? 'topic' : 'topics'}:'),
+                const SizedBox(height: 8),
+                ...highMatches.map((m) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text('• ${m.label}',
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                    )),
+                const SizedBox(height: 12),
+                const Text('Create a new topic anyway?'),
+                const SizedBox(height: 16),
+              ],
+              Text('Verb', style: Theme.of(context).textTheme.labelMedium),
               const SizedBox(height: 8),
-              ...highMatches.map((m) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text('• ${m.label}',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                  )),
-              const SizedBox(height: 12),
-              const Text('Create a new topic anyway?'),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('None'),
+                    selected: selectedVerb == null,
+                    onSelected: (_) =>
+                        setDialogState(() => selectedVerb = null),
+                  ),
+                  ...verbOptions.map((verb) => ChoiceChip(
+                        label: Text(verb),
+                        selected: selectedVerb == verb,
+                        onSelected: (_) =>
+                            setDialogState(() => selectedVerb = verb),
+                      )),
+                ],
+              ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context, true);
-                _createTopic(displayName);
+                Navigator.pop(dialogContext, true);
+                _createTopic(displayName, verb: selectedVerb);
               },
-              child: const Text('Create anyway'),
+              child: Text(highMatches.isNotEmpty ? 'Create anyway' : 'Create'),
             ),
           ],
         ),
-      );
-    } else {
-      _createTopic(displayName);
-    }
+      ),
+    );
   }
 
-  void _createTopic(String displayName) {
+  void _createTopic(String displayName, {String? verb}) {
     final slug = displayName
         .toLowerCase()
         .trim()
@@ -542,6 +585,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
       id: newId,
       slug: slug,
       displayName: displayName,
+      verb: verb,
       categories: [_selectedCategory == 'All' ? 'Social' : _selectedCategory],
       events: 0,
       icon: Icons.tag,
@@ -931,6 +975,14 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
                 ],
               ),
               const Spacer(),
+              if (topic.verb != null)
+                Text(
+                  topic.verb!.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurface.withAlpha(120),
+                        letterSpacing: 1.2,
+                      ),
+                ),
               Text(
                 topic.displayName,
                 style: const TextStyle(
@@ -1013,7 +1065,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
                           child: Icon(related.icon,
                               size: 20, color: relatedCategoryColor),
                         ),
-                        title: Text(related.displayName),
+                        title: Text(related.fullDisplayName),
                         subtitle: Text('${related.events} events'),
                         trailing: Switch(
                           value: isSubscribed,
@@ -1126,7 +1178,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
     return Column(
       children: [
         ListTile(
-          title: Text(suggestion.label),
+          title: Text(topic?.fullDisplayName ?? suggestion.label),
           subtitle:
               subtitle != null ? Text(subtitle, style: subtitleStyle) : null,
           trailing: Row(
@@ -1193,7 +1245,7 @@ class _TopicsListScreenV7State extends ConsumerState<TopicsListScreenV7> {
 
             return ListTile(
               dense: true,
-              title: Text(related.displayName),
+              title: Text(related.fullDisplayName),
               trailing: Switch(
                 value: isSubscribed,
                 onChanged: (_) => _toggleSubscription(related.id),
