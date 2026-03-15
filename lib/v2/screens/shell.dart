@@ -29,7 +29,6 @@ class _AppShellState extends ConsumerState<AppShell> {
       children: [
         // Main app with bottom tabs
         Scaffold(
-          extendBody: true,
           body: IndexedStack(
             index: _currentTab,
             children: _screens,
