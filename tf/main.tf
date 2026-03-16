@@ -62,6 +62,14 @@ resource "google_dns_record_set" "dev" {
   rrdatas      = ["chris-devbox.phl.io."]
 }
 
+resource "google_dns_record_set" "supabase" {
+  managed_zone = google_dns_managed_zone.squadquest.name
+  name         = "supabase.squadquest.app."
+  type         = "CNAME"
+  ttl          = 300
+  rrdatas      = ["chris-devbox.phl.io."]
+}
+
 resource "google_dns_record_set" "functions_dev" {
   managed_zone = google_dns_managed_zone.squadquest.name
   name         = "functions.dev.squadquest.app."
