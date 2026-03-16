@@ -38,6 +38,47 @@ resource "google_dns_record_set" "v2" {
   rrdatas      = [google_compute_global_address.frontend.address]
 }
 
+# GitHub Pages (apex domain)
+resource "google_dns_record_set" "apex" {
+  managed_zone = google_dns_managed_zone.squadquest.name
+  name         = "squadquest.app."
+  type         = "A"
+  ttl          = 300
+  # GitHub Pages IPs: https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site
+  rrdatas = [
+    "185.199.108.153",
+    "185.199.109.153",
+    "185.199.110.153",
+    "185.199.111.153",
+  ]
+}
+
+# Dev environment
+resource "google_dns_record_set" "dev" {
+  managed_zone = google_dns_managed_zone.squadquest.name
+  name         = "dev.squadquest.app."
+  type         = "CNAME"
+  ttl          = 300
+  rrdatas      = ["chris-devbox.phl.io."]
+}
+
+resource "google_dns_record_set" "functions_dev" {
+  managed_zone = google_dns_managed_zone.squadquest.name
+  name         = "functions.dev.squadquest.app."
+  type         = "CNAME"
+  ttl          = 300
+  rrdatas      = ["chris-devbox.phl.io."]
+}
+
+# Postmark email bounces
+resource "google_dns_record_set" "pm_bounces" {
+  managed_zone = google_dns_managed_zone.squadquest.name
+  name         = "pm-bounces.squadquest.app."
+  type         = "CNAME"
+  ttl          = 300
+  rrdatas      = ["pm.mtasv.net."]
+}
+
 # =============================================================================
 # Storage Buckets
 # =============================================================================
