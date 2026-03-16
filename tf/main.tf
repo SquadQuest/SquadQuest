@@ -53,6 +53,15 @@ resource "google_dns_record_set" "apex" {
   ]
 }
 
+# GitHub Pages domain verification
+resource "google_dns_record_set" "github_pages_challenge" {
+  managed_zone = google_dns_managed_zone.squadquest.name
+  name         = "_github-pages-challenge-themightychris.squadquest.app."
+  type         = "TXT"
+  ttl          = 300
+  rrdatas      = ["\"8b6ffb5122d45f8c0f9974e68a8d3a\""]
+}
+
 # Dev environment
 resource "google_dns_record_set" "dev" {
   managed_zone = google_dns_managed_zone.squadquest.name
