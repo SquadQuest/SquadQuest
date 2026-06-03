@@ -53,13 +53,21 @@ resource "google_dns_record_set" "apex" {
   ]
 }
 
-# GitHub Pages domain verification
-resource "google_dns_record_set" "github_pages_challenge" {
+resource "google_dns_record_set" "www" {
   managed_zone = google_dns_managed_zone.squadquest.name
-  name         = "_github-pages-challenge-themightychris.squadquest.app."
+  name         = "www.squadquest.app."
+  type         = "CNAME"
+  ttl          = 300
+  rrdatas      = ["squadquest.github.io."]
+}
+
+# GitHub Pages domain verification (org-level)
+resource "google_dns_record_set" "github_pages_challenge_org" {
+  managed_zone = google_dns_managed_zone.squadquest.name
+  name         = "_github-pages-challenge-SquadQuest.squadquest.app."
   type         = "TXT"
   ttl          = 300
-  rrdatas      = ["\"8b6ffb5122d45f8c0f9974e68a8d3a\""]
+  rrdatas      = ["\"ca45149711193709b4658fe140f9d5\""]
 }
 
 # Dev environment
