@@ -43,8 +43,11 @@ jobs:
       - name: Replace index.html with v2-index.html
         run: mv web/v2-index.html web/index.html
 
+      # --pwa-strategy=none disables the offline-first service worker. For a
+      # fast-iterating demo it otherwise serves a stale build until the second
+      # reload (and bypasses DevTools "Disable cache"), so we ship without it.
       - name: Build v2 for web
-        run: fvm flutter build web --dart-define=PRODUCTION_LOGGING=true --target=lib/v2/main.dart
+        run: fvm flutter build web --pwa-strategy=none --dart-define=PRODUCTION_LOGGING=true --target=lib/v2/main.dart
 
       - uses: 'google-github-actions/auth@v2'
         with:
@@ -56,3 +59,7 @@ jobs:
             path: 'build/web'
             destination: 'v2.squadquest.app'
             parent: false
+            # Always revalidate against origin so deploys show up immediately
+            # (CDN is off and traffic is tiny, so this is cheap).
+            headers: |-
+              cache-control: 'no-cache'
