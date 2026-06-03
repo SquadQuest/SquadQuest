@@ -102,9 +102,6 @@ class _CommunityTimelineScreenState
   // A community event staged for "bring friends" — pre-fills the idea composer.
   _EventRef? _pendingEventRef;
 
-  // Destination chosen in the bring-friends composer: 'friends' or a squad name.
-  String _composerAudience = 'friends';
-
   // User responses to ideas/activities
   final Map<String, String?> userResponses = {
     'idea_rock_climbing': 'interested',
@@ -616,7 +613,6 @@ class _CommunityTimelineScreenState
     setState(() {
       activeThreadItemId = null;
       _selectedContext = 'friends';
-      _composerAudience = 'friends';
       _showSquadDropdown = false;
       _selectedActivityType = event.activityType;
       _pendingEventRef = _EventRef(
@@ -639,18 +635,17 @@ class _CommunityTimelineScreenState
     final type = _selectedActivityType;
     if (type == null) return;
 
-    // When bringing friends, the destination comes from the composer's audience
-    // selector; otherwise it's just the current context.
-    final destination =
-        _pendingEventRef != null ? _composerAudience : _selectedContext;
-    final toSquad = _squads.any((s) => s.name == destination);
+    // Destination is always the current context — the bring-friends selector
+    // and the title-bar selector both drive _selectedContext, so the feed
+    // behind the composer is the feed you're posting into.
+    final toSquad = _isSquadContext;
 
     final newIdea = _IdeaItem(
       id: 'idea_new_${_newIdeaSeq++}',
       timestamp: DateTime.now(),
       activityType: type,
       captain: _you,
-      audienceLabel: toSquad ? destination : 'all friends',
+      audienceLabel: toSquad ? _selectedContext : 'all friends',
       proposedTimes: const [],
       proposedLocations: const [],
       allowSuggestions: _pendingEventRef == null,
@@ -661,8 +656,6 @@ class _CommunityTimelineScreenState
 
     setState(() {
       (toSquad ? squadItems : friendsItems).add(newIdea);
-      // Switch to the destination so the freshly posted idea is visible.
-      _selectedContext = toSquad ? destination : 'friends';
       _showIdeaComposer = false;
       _selectedActivityType = null;
       _pendingEventRef = null;
@@ -1159,8 +1152,7 @@ class _CommunityTimelineScreenState
     if (_showIdeaComposer) {
       icon = Icons.visibility_outlined;
       if (_pendingEventRef != null) {
-        final dest =
-            _composerAudience == 'friends' ? 'all friends' : _composerAudience;
+        final dest = _isSquadContext ? _selectedContext : 'all friends';
         text =
             'Sharing with $dest · about a ${_pendingEventRef!.communityName} event';
       } else {
@@ -1328,14 +1320,15 @@ class _CommunityTimelineScreenState
   }
 
   /// Destination picker shown in the bring-friends composer: post the
-  /// brought-along idea to My Friends or to one of your squads.
+  /// brought-along idea to My Friends or to one of your squads. Selecting here
+  /// switches the view too, so the feed behind the composer is the destination.
   Widget _buildAudienceSelector(ColorScheme colorScheme) {
     Widget chip(String value, String label, IconData icon) {
-      final selected = _composerAudience == value;
+      final selected = _selectedContext == value;
       return Padding(
         padding: const EdgeInsets.only(right: 6),
         child: GestureDetector(
-          onTap: () => setState(() => _composerAudience = value),
+          onTap: () => setState(() => _selectedContext = value),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
