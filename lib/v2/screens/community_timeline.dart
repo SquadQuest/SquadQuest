@@ -102,6 +102,9 @@ class _CommunityTimelineScreenState
   // A community event staged for "bring friends" — pre-fills the idea composer.
   _EventRef? _pendingEventRef;
 
+  // Destination chosen in the bring-friends composer: 'friends' or a squad name.
+  String _composerAudience = 'friends';
+
   // User responses to ideas/activities
   final Map<String, String?> userResponses = {
     'idea_rock_climbing': 'interested',
@@ -613,6 +616,7 @@ class _CommunityTimelineScreenState
     setState(() {
       activeThreadItemId = null;
       _selectedContext = 'friends';
+      _composerAudience = 'friends';
       _showSquadDropdown = false;
       _selectedActivityType = event.activityType;
       _pendingEventRef = _EventRef(
@@ -635,12 +639,18 @@ class _CommunityTimelineScreenState
     final type = _selectedActivityType;
     if (type == null) return;
 
+    // When bringing friends, the destination comes from the composer's audience
+    // selector; otherwise it's just the current context.
+    final destination =
+        _pendingEventRef != null ? _composerAudience : _selectedContext;
+    final toSquad = _squads.any((s) => s.name == destination);
+
     final newIdea = _IdeaItem(
       id: 'idea_new_${_newIdeaSeq++}',
       timestamp: DateTime.now(),
       activityType: type,
       captain: _you,
-      audienceLabel: _isSquadContext ? _selectedContext : 'all friends',
+      audienceLabel: toSquad ? destination : 'all friends',
       proposedTimes: const [],
       proposedLocations: const [],
       allowSuggestions: _pendingEventRef == null,
@@ -650,7 +660,9 @@ class _CommunityTimelineScreenState
     );
 
     setState(() {
-      (_isSquadContext ? squadItems : friendsItems).add(newIdea);
+      (toSquad ? squadItems : friendsItems).add(newIdea);
+      // Switch to the destination so the freshly posted idea is visible.
+      _selectedContext = toSquad ? destination : 'friends';
       _showIdeaComposer = false;
       _selectedActivityType = null;
       _pendingEventRef = null;
@@ -1147,9 +1159,10 @@ class _CommunityTimelineScreenState
     if (_showIdeaComposer) {
       icon = Icons.visibility_outlined;
       if (_pendingEventRef != null) {
-        text = _isSquadContext
-            ? 'Sharing with $_currentTitle · about a ${_pendingEventRef!.communityName} event'
-            : 'Sharing with all friends · about a ${_pendingEventRef!.communityName} event';
+        final dest =
+            _composerAudience == 'friends' ? 'all friends' : _composerAudience;
+        text =
+            'Sharing with $dest · about a ${_pendingEventRef!.communityName} event';
       } else {
         text = _isSquadContext
             ? 'This idea will be shared with $_currentTitle'
@@ -1269,20 +1282,29 @@ class _CommunityTimelineScreenState
 
           const SizedBox(height: 10),
 
-          // Optional: add times/locations
+          // Bring-friends: pick where to post (My Friends or a squad). The
+          // event already fixes time/place, so no add-times/locations options.
+          if (_pendingEventRef != null) ...[
+            _buildAudienceSelector(colorScheme),
+            const SizedBox(height: 10),
+          ],
+
           Row(
             children: [
-              _buildIdeaOptionChip(
-                Icons.schedule_outlined,
-                'Add times',
-                colorScheme,
-              ),
-              const SizedBox(width: 8),
-              _buildIdeaOptionChip(
-                Icons.location_on_outlined,
-                'Add locations',
-                colorScheme,
-              ),
+              // Add times/locations only apply when proposing a fresh idea.
+              if (_pendingEventRef == null) ...[
+                _buildIdeaOptionChip(
+                  Icons.schedule_outlined,
+                  'Add times',
+                  colorScheme,
+                ),
+                const SizedBox(width: 8),
+                _buildIdeaOptionChip(
+                  Icons.location_on_outlined,
+                  'Add locations',
+                  colorScheme,
+                ),
+              ],
               const Spacer(),
               // Share button
               FilledButton.tonal(
@@ -1295,16 +1317,85 @@ class _CommunityTimelineScreenState
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   minimumSize: const Size(0, 34),
                 ),
-                child: Text(
-                  _pendingEventRef != null ? 'Share with friends' : 'Share',
-                  style: const TextStyle(fontSize: 13),
-                ),
+                child: const Text('Share', style: TextStyle(fontSize: 13)),
               ),
             ],
           ),
           const SizedBox(height: 4),
         ],
       ),
+    );
+  }
+
+  /// Destination picker shown in the bring-friends composer: post the
+  /// brought-along idea to My Friends or to one of your squads.
+  Widget _buildAudienceSelector(ColorScheme colorScheme) {
+    Widget chip(String value, String label, IconData icon) {
+      final selected = _composerAudience == value;
+      return Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: GestureDetector(
+          onTap: () => setState(() => _composerAudience = value),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: selected ? colorScheme.tertiary : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected
+                    ? colorScheme.tertiary
+                    : colorScheme.outlineVariant,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon,
+                    size: 13,
+                    color: selected
+                        ? colorScheme.onTertiary
+                        : colorScheme.onSurfaceVariant),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: selected
+                        ? colorScheme.onTertiary
+                        : colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Post to',
+          style: TextStyle(
+            color: colorScheme.onSurfaceVariant,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 30,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              chip('friends', 'My Friends', Icons.people_outline),
+              ..._squads.map((s) => chip(s.name, s.name, Icons.group)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
