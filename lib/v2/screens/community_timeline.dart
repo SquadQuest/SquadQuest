@@ -108,7 +108,7 @@ class _CommunityTimelineScreenState
     'activity_picnic': 'in',
     'hikers_activity_waterfall': 'in',
     'games_activity_friday': 'interested',
-    'squad_activity_practice': 'in',
+    'pk_activity_dawn': 'in',
   };
 
   // Items where user tapped to re-expand response buttons
@@ -224,34 +224,34 @@ class _CommunityTimelineScreenState
   // squad timeline is a real group chat: arbitrary text + photos alongside
   // ideas and activities. Each squad has a distinct personality.
   late final Map<String, List<_TimelineItem>> squadFeeds = {
-    // Paddle Kru — paddleboarding + pickleball crew
+    // Paddle Kru — stand-up paddleboarding crew
     'Paddle Kru': [
       _SquadTextMessage(
         id: 'pk_msg_session',
         timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
         sender: _sarah,
-        content: 'Great session today! Those new paddles are amazing 🛶',
+        content: 'Great session today! The water was glassy 🏄‍♀️',
         photos: ['paddle_photo_1.jpg'],
         threadMessageCount: 3,
       ),
       _IdeaItem(
-        id: 'squad_idea_tournament',
+        id: 'pk_idea_sunrise',
         timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-        activityType: 'Pickleball',
+        activityType: 'Paddleboarding',
         captain: _mike,
         audienceLabel: 'Paddle Kru',
-        proposedTimes: ['Saturday 10am', 'Saturday 2pm'],
-        proposedLocations: ['Montavilla Courts', 'Sellwood Park'],
+        proposedTimes: ['Saturday 7am', 'Sunday 8am'],
+        proposedLocations: ['Willamette — Sellwood', 'Ross Island loop'],
         allowSuggestions: true,
         interestedCount: 4,
         threadMessageCount: 5,
       ),
       _SquadTextMessage(
-        id: 'pk_msg_courts',
+        id: 'pk_msg_water',
         timestamp: DateTime.now().subtract(const Duration(hours: 3)),
         sender: _alex,
         content:
-            'Has anyone tried the new courts at Sellwood? Heard they just resurfaced them.',
+            'Anyone been on the river this week? Wondering how strong the current is after the rain.',
         threadMessageCount: 0,
       ),
       _SquadTextMessage(
@@ -259,25 +259,25 @@ class _CommunityTimelineScreenState
         timestamp: DateTime.now().subtract(const Duration(hours: 5)),
         sender: _lisa,
         content: null,
-        photos: ['courts_photo_1.jpg', 'courts_photo_2.jpg'],
+        photos: ['river_photo_1.jpg', 'river_photo_2.jpg'],
         threadMessageCount: 1,
       ),
       _ActivityItem(
-        id: 'squad_activity_practice',
+        id: 'pk_activity_dawn',
         timestamp: DateTime.now().subtract(const Duration(hours: 20)),
-        activityType: 'Pickleball',
+        activityType: 'Paddleboarding',
         captain: _dave,
         audienceLabel: 'Paddle Kru',
-        confirmedTime: 'Tomorrow 6pm',
-        confirmedLocation: 'Alberta Park',
+        confirmedTime: 'Tomorrow 7am',
+        confirmedLocation: 'Willamette — Sellwood launch',
         goingCount: 5,
         threadMessageCount: 4,
       ),
       _SquadTextMessage(
-        id: 'pk_msg_fees',
+        id: 'pk_msg_gear',
         timestamp: DateTime.now().subtract(const Duration(hours: 22)),
         sender: _dave,
-        content: 'Reminder: bring \$5 for court fees tomorrow 🎾',
+        content: 'Reminder: bring your own leash and PFD tomorrow 🦺',
         threadMessageCount: 0,
       ),
     ],
@@ -532,23 +532,22 @@ class _CommunityTimelineScreenState
             voters: [_sarah, _mike, _john, _lisa]),
       ],
     ),
-    'squad_idea_tournament': (
+    'pk_idea_sunrise': (
       times: [
         _VoteOption(
-            id: 'time_pk_sat10',
-            label: 'Saturday 10am',
-            voters: [_sarah, _alex]),
+            id: 'time_pk_sat7', label: 'Saturday 7am', voters: [_sarah, _alex]),
         _VoteOption(
-            id: 'time_pk_sat2',
-            label: 'Saturday 2pm',
+            id: 'time_pk_sun8',
+            label: 'Sunday 8am',
             voters: [_mike, _dave, _lisa]),
       ],
       locations: [
         _VoteOption(
-            id: 'loc_pk_mont',
-            label: 'Montavilla Courts',
+            id: 'loc_pk_sellwood',
+            label: 'Willamette — Sellwood',
             voters: [_mike, _sarah]),
-        _VoteOption(id: 'loc_pk_sell', label: 'Sellwood Park', voters: [_alex]),
+        _VoteOption(
+            id: 'loc_pk_ross', label: 'Ross Island loop', voters: [_alex]),
       ],
     ),
     'hikers_idea_summit': (
