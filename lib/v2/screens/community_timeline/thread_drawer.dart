@@ -19,7 +19,7 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
     if (isOpen) {
       final allItems = [
         ...friendsItems,
-        ...squadItems,
+        ...squadFeeds.values.expand((e) => e),
         ...communityEvents.values.expand((e) => e),
       ];
       final found =
@@ -337,11 +337,9 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
   // ==========================================================================
 
   Widget _buildVoteBar(_IdeaItem idea, ColorScheme colorScheme) {
-    final timeVotes =
-        idea.id == 'idea_paddleboard' ? paddleboardTimeVotes : <_VoteOption>[];
-    final locationVotes = idea.id == 'idea_paddleboard'
-        ? paddleboardLocationVotes
-        : <_VoteOption>[];
+    final votes = ideaVotes[idea.id];
+    final timeVotes = votes?.times ?? <_VoteOption>[];
+    final locationVotes = votes?.locations ?? <_VoteOption>[];
 
     // Find leading options
     final leadingTime = timeVotes.isNotEmpty

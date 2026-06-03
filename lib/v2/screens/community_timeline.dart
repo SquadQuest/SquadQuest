@@ -106,6 +106,9 @@ class _CommunityTimelineScreenState
   final Map<String, String?> userResponses = {
     'idea_rock_climbing': 'interested',
     'activity_picnic': 'in',
+    'hikers_activity_waterfall': 'in',
+    'games_activity_friday': 'interested',
+    'squad_activity_practice': 'in',
   };
 
   // Items where user tapped to re-expand response buttons
@@ -119,8 +122,11 @@ class _CommunityTimelineScreenState
   String? _selectedActivityType;
 
   // Voting state
-  final Set<String> userTimeVotes = {'time_paddle_sun'};
-  final Set<String> userLocationVotes = {'loc_paddle_willamette'};
+  final Set<String> userTimeVotes = {'time_paddle_sun', 'time_gn_fri'};
+  final Set<String> userLocationVotes = {
+    'loc_paddle_willamette',
+    'loc_gn_sarah',
+  };
   bool showVotingExpanded = false;
 
   // Scroll state
@@ -214,55 +220,182 @@ class _CommunityTimelineScreenState
     ),
   ];
 
-  late final List<_TimelineItem> squadItems = [
-    _SquadTextMessage(
-      id: 'squad_msg_1',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
-      sender: _sarah,
-      content: 'Great session today! Those new paddles are amazing',
-      photos: ['paddle_photo_1.jpg'],
-      threadMessageCount: 3,
-    ),
-    _IdeaItem(
-      id: 'squad_idea_tournament',
-      timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-      activityType: 'Pickleball',
-      captain: _mike,
-      audienceLabel: 'Paddle Kru',
-      proposedTimes: ['Saturday 10am', 'Saturday 2pm'],
-      proposedLocations: ['Montavilla Courts', 'Sellwood Park'],
-      allowSuggestions: true,
-      interestedCount: 4,
-      threadMessageCount: 5,
-    ),
-    _SquadTextMessage(
-      id: 'squad_msg_2',
-      timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-      sender: _alex,
-      content:
-          'Has anyone tried the new courts at Sellwood? Heard they just resurfaced them.',
-      threadMessageCount: 0,
-    ),
-    _SquadTextMessage(
-      id: 'squad_msg_3',
-      timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-      sender: _lisa,
-      content: null,
-      photos: ['courts_photo_1.jpg', 'courts_photo_2.jpg'],
-      threadMessageCount: 1,
-    ),
-    _ActivityItem(
-      id: 'squad_activity_practice',
-      timestamp: DateTime.now().subtract(const Duration(hours: 20)),
-      activityType: 'Pickleball',
-      captain: _dave,
-      audienceLabel: 'Paddle Kru',
-      confirmedTime: 'Tomorrow 6pm',
-      confirmedLocation: 'Alberta Park',
-      goingCount: 5,
-      threadMessageCount: 4,
-    ),
-  ];
+  // Each squad has its own feed, keyed by squad name. Unlike communities, a
+  // squad timeline is a real group chat: arbitrary text + photos alongside
+  // ideas and activities. Each squad has a distinct personality.
+  late final Map<String, List<_TimelineItem>> squadFeeds = {
+    // Paddle Kru — paddleboarding + pickleball crew
+    'Paddle Kru': [
+      _SquadTextMessage(
+        id: 'pk_msg_session',
+        timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
+        sender: _sarah,
+        content: 'Great session today! Those new paddles are amazing 🛶',
+        photos: ['paddle_photo_1.jpg'],
+        threadMessageCount: 3,
+      ),
+      _IdeaItem(
+        id: 'squad_idea_tournament',
+        timestamp: DateTime.now().subtract(const Duration(hours: 1)),
+        activityType: 'Pickleball',
+        captain: _mike,
+        audienceLabel: 'Paddle Kru',
+        proposedTimes: ['Saturday 10am', 'Saturday 2pm'],
+        proposedLocations: ['Montavilla Courts', 'Sellwood Park'],
+        allowSuggestions: true,
+        interestedCount: 4,
+        threadMessageCount: 5,
+      ),
+      _SquadTextMessage(
+        id: 'pk_msg_courts',
+        timestamp: DateTime.now().subtract(const Duration(hours: 3)),
+        sender: _alex,
+        content:
+            'Has anyone tried the new courts at Sellwood? Heard they just resurfaced them.',
+        threadMessageCount: 0,
+      ),
+      _SquadTextMessage(
+        id: 'pk_msg_photos',
+        timestamp: DateTime.now().subtract(const Duration(hours: 5)),
+        sender: _lisa,
+        content: null,
+        photos: ['courts_photo_1.jpg', 'courts_photo_2.jpg'],
+        threadMessageCount: 1,
+      ),
+      _ActivityItem(
+        id: 'squad_activity_practice',
+        timestamp: DateTime.now().subtract(const Duration(hours: 20)),
+        activityType: 'Pickleball',
+        captain: _dave,
+        audienceLabel: 'Paddle Kru',
+        confirmedTime: 'Tomorrow 6pm',
+        confirmedLocation: 'Alberta Park',
+        goingCount: 5,
+        threadMessageCount: 4,
+      ),
+      _SquadTextMessage(
+        id: 'pk_msg_fees',
+        timestamp: DateTime.now().subtract(const Duration(hours: 22)),
+        sender: _dave,
+        content: 'Reminder: bring \$5 for court fees tomorrow 🎾',
+        threadMessageCount: 0,
+      ),
+    ],
+
+    // Weekend Hikers — trail crew
+    'Weekend Hikers': [
+      _SquadTextMessage(
+        id: 'wh_msg_poles',
+        timestamp: DateTime.now().subtract(const Duration(minutes: 20)),
+        sender: _katie,
+        content: 'Anyone got trekking poles I can borrow this weekend? 🥾',
+        threadMessageCount: 2,
+      ),
+      _IdeaItem(
+        id: 'hikers_idea_summit',
+        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+        activityType: 'Hiking',
+        captain: _john,
+        audienceLabel: 'Weekend Hikers',
+        proposedTimes: ['Saturday 7am', 'Sunday 8am'],
+        proposedLocations: ['Angels Rest', 'Dog Mountain'],
+        allowSuggestions: true,
+        interestedCount: 6,
+        threadMessageCount: 7,
+      ),
+      _SquadTextMessage(
+        id: 'wh_msg_sunset',
+        timestamp: DateTime.now().subtract(const Duration(hours: 4)),
+        sender: _maya,
+        content: 'Sunset from last week\'s hike was unreal 🌄',
+        photos: ['sunset_photo.jpg'],
+        threadMessageCount: 4,
+      ),
+      _ActivityItem(
+        id: 'hikers_activity_waterfall',
+        timestamp: DateTime.now().subtract(const Duration(days: 1)),
+        activityType: 'Hiking',
+        captain: _rachel,
+        audienceLabel: 'Weekend Hikers',
+        confirmedTime: 'Saturday 9am',
+        confirmedLocation: 'Multnomah Falls loop',
+        goingCount: 9,
+        threadMessageCount: 6,
+      ),
+      _SquadTextMessage(
+        id: 'wh_msg_trail',
+        timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 3)),
+        sender: _dave,
+        content:
+            'Trail report: Eagle Creek is muddy after the rain — wear good boots.',
+        threadMessageCount: 1,
+      ),
+      _SquadTextMessage(
+        id: 'wh_msg_boots',
+        timestamp: DateTime.now().subtract(const Duration(days: 2)),
+        sender: _alex,
+        content: 'New boots finally broken in 👟',
+        photos: ['boots_photo.jpg'],
+        threadMessageCount: 0,
+      ),
+    ],
+
+    // Game Night Crew — board + tabletop games
+    'Game Night Crew': [
+      _SquadTextMessage(
+        id: 'gn_msg_catan',
+        timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
+        sender: _jordan,
+        content: 'Last night\'s Catan comeback was historic 🎲😤',
+        threadMessageCount: 4,
+      ),
+      _IdeaItem(
+        id: 'games_idea_nextnight',
+        timestamp: DateTime.now().subtract(const Duration(hours: 3)),
+        activityType: 'Board Games',
+        captain: _mike,
+        audienceLabel: 'Game Night Crew',
+        proposedTimes: ['Friday 7pm', 'Saturday 7pm'],
+        proposedLocations: ["Mike's place", "Sarah's place"],
+        allowSuggestions: true,
+        interestedCount: 3,
+        threadMessageCount: 5,
+      ),
+      _SquadTextMessage(
+        id: 'gn_msg_wingspan',
+        timestamp: DateTime.now().subtract(const Duration(hours: 6)),
+        sender: _sarah,
+        content: 'New game arrived: Wingspan! 🐦',
+        photos: ['wingspan_photo.jpg'],
+        threadMessageCount: 2,
+      ),
+      _ActivityItem(
+        id: 'games_activity_friday',
+        timestamp: DateTime.now().subtract(const Duration(days: 1)),
+        activityType: 'Board Games',
+        captain: _lisa,
+        audienceLabel: 'Game Night Crew',
+        confirmedTime: 'Friday 7:30pm',
+        confirmedLocation: "Lisa's place",
+        goingCount: 5,
+        threadMessageCount: 8,
+      ),
+      _SquadTextMessage(
+        id: 'gn_msg_snacks',
+        timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 1)),
+        sender: _you,
+        content: 'I\'ll bring snacks 🍕',
+        threadMessageCount: 0,
+      ),
+      _SquadTextMessage(
+        id: 'gn_msg_coop',
+        timestamp: DateTime.now().subtract(const Duration(days: 2)),
+        sender: _mike,
+        content: 'Should we try a co-op game next time? Pandemic?',
+        threadMessageCount: 2,
+      ),
+    ],
+  };
 
   // Community event timelines, keyed by community name. Every item is a
   // born-confirmed recurring event broadcast by the community's leaders.
@@ -377,27 +510,84 @@ class _CommunityTimelineScreenState
     ),
   ];
 
-  // Thread votes for paddleboard idea
-  final List<_VoteOption> paddleboardTimeVotes = [
-    _VoteOption(
-      id: 'time_paddle_sat',
-      label: 'Saturday 10am',
-      voters: [_sarah, _mike, _alex],
+  // Voting data per idea id, so any idea with proposed times/locations gets a
+  // working vote bar (not just the paddleboard one).
+  late final Map<String,
+      ({List<_VoteOption> times, List<_VoteOption> locations})> ideaVotes = {
+    'idea_paddleboard': (
+      times: [
+        _VoteOption(
+            id: 'time_paddle_sat',
+            label: 'Saturday 10am',
+            voters: [_sarah, _mike, _alex]),
+        _VoteOption(
+            id: 'time_paddle_sun',
+            label: 'Sunday 2pm',
+            voters: [_john, _lisa, _rachel, _dave, _katie]),
+      ],
+      locations: [
+        _VoteOption(
+            id: 'loc_paddle_willamette',
+            label: 'Willamette River',
+            voters: [_sarah, _mike, _john, _lisa]),
+      ],
     ),
-    _VoteOption(
-      id: 'time_paddle_sun',
-      label: 'Sunday 2pm',
-      voters: [_john, _lisa, _rachel, _dave, _katie],
+    'squad_idea_tournament': (
+      times: [
+        _VoteOption(
+            id: 'time_pk_sat10',
+            label: 'Saturday 10am',
+            voters: [_sarah, _alex]),
+        _VoteOption(
+            id: 'time_pk_sat2',
+            label: 'Saturday 2pm',
+            voters: [_mike, _dave, _lisa]),
+      ],
+      locations: [
+        _VoteOption(
+            id: 'loc_pk_mont',
+            label: 'Montavilla Courts',
+            voters: [_mike, _sarah]),
+        _VoteOption(id: 'loc_pk_sell', label: 'Sellwood Park', voters: [_alex]),
+      ],
     ),
-  ];
-
-  final List<_VoteOption> paddleboardLocationVotes = [
-    _VoteOption(
-      id: 'loc_paddle_willamette',
-      label: 'Willamette River',
-      voters: [_sarah, _mike, _john, _lisa],
+    'hikers_idea_summit': (
+      times: [
+        _VoteOption(
+            id: 'time_hk_sat7',
+            label: 'Saturday 7am',
+            voters: [_john, _rachel, _dave, _maya]),
+        _VoteOption(
+            id: 'time_hk_sun8', label: 'Sunday 8am', voters: [_katie, _alex]),
+      ],
+      locations: [
+        _VoteOption(
+            id: 'loc_hk_angels',
+            label: 'Angels Rest',
+            voters: [_john, _rachel, _maya]),
+        _VoteOption(
+            id: 'loc_hk_dog', label: 'Dog Mountain', voters: [_dave, _katie]),
+      ],
     ),
-  ];
+    'games_idea_nextnight': (
+      times: [
+        _VoteOption(
+            id: 'time_gn_fri',
+            label: 'Friday 7pm',
+            voters: [_jordan, _sarah, _you]),
+        _VoteOption(
+            id: 'time_gn_sat', label: 'Saturday 7pm', voters: [_mike, _lisa]),
+      ],
+      locations: [
+        _VoteOption(
+            id: 'loc_gn_mike', label: "Mike's place", voters: [_mike, _jordan]),
+        _VoteOption(
+            id: 'loc_gn_sarah',
+            label: "Sarah's place",
+            voters: [_sarah, _lisa, _you]),
+      ],
+    ),
+  };
 
   // Generic thread messages for other items
   final List<_ThreadMessage> genericThreadMessages = [
@@ -454,7 +644,7 @@ class _CommunityTimelineScreenState
   List<_TimelineItem> get _currentItems {
     if (_isFriendsContext) return friendsItems;
     if (_isCommunityContext) return communityEvents[_selectedContext] ?? [];
-    return squadItems;
+    return squadFeeds[_selectedContext] ?? [];
   }
 
   String get _currentTitle =>
@@ -655,7 +845,7 @@ class _CommunityTimelineScreenState
     );
 
     setState(() {
-      (toSquad ? squadItems : friendsItems).add(newIdea);
+      (toSquad ? squadFeeds[_selectedContext]! : friendsItems).add(newIdea);
       _showIdeaComposer = false;
       _selectedActivityType = null;
       _pendingEventRef = null;
