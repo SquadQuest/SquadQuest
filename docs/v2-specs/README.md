@@ -48,12 +48,12 @@ There is no explicit "dismiss" or "decline" button — not responding is the pas
 
 Responses are shown **inline on the timeline**. Unresponded items show all three buttons in a row beneath the card. After responding, the buttons collapse to a small chip showing your response (tappable to change).
 
-### The Timeline ("My Community")
+### The Timeline ("My Friends")
 
 The main screen is a **chat-like timeline**:
 
 - Input at the bottom, scroll up for history (reverse ListView)
-- Title bar says "My Community" — this is the global view of all your double-opt-in friends
+- Title bar says "My Friends" — this is the global view of all your double-opt-in friends (everyone you're connected with)
 - Items on this timeline are **only ideas and activities** — no arbitrary text messages (that's what threads and squads are for)
 - Each item shows its **audience context**: "Katie shared with all friends" or "Katie shared with you and 3 others" — this is compact, outside the card, as an author line (like a message sender)
 
@@ -73,28 +73,78 @@ The thread drawer contains:
 
 Threads are where the real conversation happens — the main timeline stays clean with just ideas/activities.
 
-### Squad Selector
+### Context Selector
 
-The title bar is **tappable** to reveal a dropdown selector:
+The title bar is **tappable** to reveal a dropdown with three kinds of context:
 
-- "My Community" (default) — global view, all friends
-- Named squads — persistent multi-member groups
+- **My Friends** (default) — global view, all your double-opt-in friends
+- **Squads** — closed, persistent multi-member groups
+- **Communities** — open, followable groups whose leaders broadcast events
+- **Discover communities** — a stub entry point for finding new communities (communities are *found*, not added)
 
 **Squads** are the evolution of the group text thread:
 
 - Captain-controlled membership (captain adds people)
-- Within squads, you **CAN post arbitrary text messages** to the main timeline (unlike the global community view)
+- **Closed** — only members see the timeline
+- Within squads, you **CAN post arbitrary text messages** to the main timeline (unlike the global friends view)
 - Text messages in squads are threadable (same drawer UI, just without voting/activity features)
 - Squad-level ideas/activities are visible to all squad members
 - Any message can have **photo attachments** (text+photos, or photos-only, rendered as one unit like Slack)
+
+### Communities (the home for public events)
+
+Communities are the controlled way public events come back into v2 — the thing v1 got wrong, done right. Where v1 blended public events into the same feed as everything else (training users to assume "if I post, it's public and I'm hosting"), v2 quarantines them behind an explicit context switch.
+
+**Communities** are open, followable groups (the parallel construct to squads):
+
+- **Open** — anyone can follow; follower counts can be large
+- **Leaders broadcast only** — only community leaders post events. Followers RSVP and can comment in threads, but cannot post to the main community timeline. This is the crisp contrast with squads (where everyone posts) and matches how real groups work (a venue, a ride series, a yoga collective publish *to* their followers).
+- The input area in a community context is replaced by a read-only **follower banner** ("Following · only leaders post events here") — there's no composer.
+
+**Community events** are a distinct timeline item (`_CommunityEventItem`), not a friend idea/activity:
+
+- **Born confirmed** — they skip the idea/voting stage entirely (a venue doesn't put its Monday jazz jam up for a vote)
+- **Recurring** — they carry a recurrence ("Every other Wed", "Weekly · Mondays", "Tue / Thu / Sat / Sun")
+- **Owned by the community**, audience = followers
+
+**Dual attendance + the RSVP visibility gradient.** This is the centerpiece for dissolving the "I don't want strangers seeing me" fear. An event surfaces two numbers with two meanings:
+
+1. **Private "I'm in"** — responding to a friend's brought-along idea (see below) is a promise *to your friends*, visible only to them
+2. **Counted (anonymous)** — tapping "Going" on the event counts you toward the **distinct headcount** ("64 going") without revealing who you are
+3. **Public RSVP** — a separate, explicit "Show name" toggle promotes your attendance to the public **face-pile** ("Maya, Jordan +6 publicly")
+
+Tapping "Going" moves you to tier 2 automatically (you're genuinely attending); it never pushes you to tier 3. The gap between the headcount and the face-pile is intentional and reassuring. Going publicly implies going; un-going clears public.
+
+**Seed examples** (modeled on real Philly groups): Wednesday Night Rides (bi-weekly social bike ride), Black Squirrel Club (Fishtown music venue), Philly River Flow (donation riverside yoga).
+
+### Bringing Friends to a Community Event (the bridge)
+
+The bridge is what makes communities *feed* the friends-first core instead of being a separate bulletin board. A "**Bring friends**" action on any community event:
+
+- Switches context to **My Friends** and opens the idea composer **pre-filled** from the event (activity type, with the event attached as a read-only reference chip)
+- Posts a **friends-scoped idea** that *embeds* the community event — the public event stays owned by the community; what lands on the friends timeline is a private, friends-scoped envelope
+- The idea's **thread is the private logistics room** ("ride over from Clark Park at 6?") — the most private space in the app wrapped around the most public object, with a clean membrane between them
+
+**The firewall invariant** (never violate): *the My-Friends composer only ever emits friends-scoped ideas; public exposure of self or event requires explicit community-context or public-RSVP action.* What crosses the fence from a friends-scoped action is at most an anonymous +1 to a headcount — never your identity.
+
+**Growth loop**: friends discover communities by seeing each other bring events into the friends timeline → tap the embedded event → follow the community.
+
+### Idea → Activity Transition (captain "lock it in")
+
+The transition from a tentative idea to a confirmed activity is the heart of the original snowball pitch, and is now demonstrated in the mockup:
+
+- A **"Lock it in"** captain CTA appears in the idea's vote bar (expanded). It picks the leading/voted time + location and promotes the idea to a confirmed activity — modeled as **two states of the same record** (the idea is resolved on the fly to an activity, reusing all activity rendering).
+- A **brought-along idea** (linked to a community event) follows the *same arc*, but its time/place are pre-locked by the event, so the only open variable is "are we doing it." Its confirm bar reads "Time & place set by the event" and locking it in promotes it to an activity **linked to the community event**. It is never a dangling perpetual idea.
 
 ### Audience Visibility
 
 A persistent, contextual **audience indicator** sits above every input area. It updates based on what you're about to do:
 
-- **Community context**: "Your friends see your ideas · threads are private"
+- **My Friends context**: "Your friends see your ideas · threads are private"
 - **Squad context**: "Visible to Paddle Kru members"
 - **Idea composer open**: "This idea will be shared with all your friends" / "...with Paddle Kru"
+- **Bringing friends to an event**: "Sharing with all friends · about a Wednesday Night Rides event"
+- **Community context**: read-only follower banner ("Following · only leaders post events here")
 - **Thread drawer**: "Only participants in this thread can see replies"
 
 This addresses the #1 fear that held people back in v1: uncertainty about who would see their posts.
@@ -170,6 +220,10 @@ Run with: `flutter run -t lib/v2/main.dart`
 - Inline idea composer with activity type picker
 - Contextual audience indicators above all input areas
 - Photo attachments on messages (rendered as placeholders)
+- **Idea → activity transition**: captain "lock it in" CTA promotes an idea to a confirmed activity (standard voting ideas + brought-along ideas)
+- **Communities**: three seeded communities, follower-only read context, born-confirmed recurring event cards
+- **Dual attendance + RSVP visibility gradient**: anonymous headcount + opt-in public face-pile (Going / Show name toggles)
+- **Bring-friends bridge**: community event → pre-filled idea composer with embedded event reference; brought-along idea seeded on the friends timeline
 
 ### Not Yet Implemented
 
@@ -179,6 +233,8 @@ Run with: `flutter run -t lib/v2/main.dart`
 - Friend connection flow
 - Push notifications for ideas/activities
 - Activity taxonomy management
-- Captain controls (confirming time/location to promote idea → activity)
 - Deep linking
 - Actual photo upload/display
+- Community discovery / search (the "Discover communities" entry is a stub)
+- Leader-side tooling (creating/managing a community and its events)
+- Community event threads are read-only-ish (RSVP + bring-friends in header; chat reuses generic mock messages)
