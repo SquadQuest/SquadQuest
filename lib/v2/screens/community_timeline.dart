@@ -11,6 +11,7 @@ part 'community_timeline/thread_drawer.dart';
 // Mock People
 // ============================================================================
 
+final _you = _MockPerson(name: 'You', initial: 'Y', color: Colors.blueGrey);
 final _katie = _MockPerson(name: 'Katie', initial: 'K', color: Colors.pink);
 final _mike = _MockPerson(name: 'Mike', initial: 'M', color: Colors.blue);
 final _sarah = _MockPerson(name: 'Sarah', initial: 'S', color: Colors.orange);
@@ -19,6 +20,8 @@ final _john = _MockPerson(name: 'John', initial: 'J', color: Colors.green);
 final _alex = _MockPerson(name: 'Alex', initial: 'A', color: Colors.teal);
 final _rachel = _MockPerson(name: 'Rachel', initial: 'R', color: Colors.red);
 final _dave = _MockPerson(name: 'Dave', initial: 'D', color: Colors.indigo);
+final _maya = _MockPerson(name: 'Maya', initial: 'M', color: Colors.deepPurple);
+final _jordan = _MockPerson(name: 'Jordan', initial: 'J', color: Colors.amber);
 
 // ============================================================================
 // Mock Squads
@@ -28,6 +31,38 @@ final _squads = [
   _MockSquad(name: 'Paddle Kru', memberCount: 8),
   _MockSquad(name: 'Weekend Hikers', memberCount: 12),
   _MockSquad(name: 'Game Night Crew', memberCount: 5),
+];
+
+// ============================================================================
+// Mock Communities
+//
+// Open, followable groups whose leaders broadcast recurring events. Modeled on
+// real Philly groups: a social bike ride, a music venue, and a donation yoga
+// collective.
+// ============================================================================
+
+final _communities = [
+  _MockCommunity(
+    name: 'Wednesday Night Rides',
+    followerCount: 342,
+    color: Colors.teal,
+    icon: Icons.directions_bike,
+    tagline: 'Bi-weekly social bike rides',
+  ),
+  _MockCommunity(
+    name: 'Black Squirrel Club',
+    followerCount: 891,
+    color: Colors.deepPurple,
+    icon: Icons.music_note,
+    tagline: 'Live music in a Fishtown steam plant',
+  ),
+  _MockCommunity(
+    name: 'Philly River Flow',
+    followerCount: 214,
+    color: Colors.lightGreen,
+    icon: Icons.self_improvement,
+    tagline: 'Donation yoga on the Schuylkill banks',
+  ),
 ];
 
 // ============================================================================
@@ -49,9 +84,23 @@ class _CommunityTimelineScreenState
   final TextEditingController threadMessageController = TextEditingController();
   final ScrollController threadScrollController = ScrollController();
 
-  // Context selection
-  String _selectedContext = 'community';
+  // Context selection. 'friends' is the default global view; otherwise holds a
+  // squad name or a community name.
+  String _selectedContext = 'friends';
   bool _showSquadDropdown = false;
+
+  // Ideas the captain has confirmed (idea → activity). Keyed by idea id, value
+  // is the locked-in time + location.
+  final Map<String, ({String time, String location})> confirmedPlans = {};
+
+  // Community-event RSVP state (the visibility gradient):
+  //  - goingEvents: you're attending (counts toward the anonymous headcount)
+  //  - publicEvents: you've also chosen to make your attendance visible
+  final Set<String> goingEvents = {};
+  final Set<String> publicEvents = {};
+
+  // A community event staged for "bring friends" — pre-fills the idea composer.
+  _EventRef? _pendingEventRef;
 
   // User responses to ideas/activities
   final Map<String, String?> userResponses = {
@@ -81,7 +130,7 @@ class _CommunityTimelineScreenState
   // Mock Timeline Data
   // ========================================================================
 
-  late final List<_TimelineItem> communityItems = [
+  late final List<_TimelineItem> friendsItems = [
     _IdeaItem(
       id: 'idea_hiking',
       timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
@@ -93,6 +142,29 @@ class _CommunityTimelineScreenState
       allowSuggestions: true,
       interestedCount: 3,
       threadMessageCount: 2,
+    ),
+    // A friend brought along to a community event: the ride's time/place are
+    // already locked by Wednesday Night Rides, so this idea just gathers who's
+    // coming. It carries an embedded reference to the public event.
+    _IdeaItem(
+      id: 'idea_bring_ride',
+      timestamp: DateTime.now().subtract(const Duration(minutes: 40)),
+      activityType: 'Biking',
+      captain: _you,
+      audienceLabel: 'all friends',
+      proposedTimes: [],
+      proposedLocations: [],
+      allowSuggestions: false,
+      interestedCount: 2,
+      threadMessageCount: 4,
+      eventRef: _EventRef(
+        communityName: 'Wednesday Night Rides',
+        eventTitle: 'Cherry Blossoms Ride',
+        communityIcon: Icons.directions_bike,
+        communityColor: Colors.teal,
+        eventTime: 'Wed Apr 1 · 6:30pm',
+        eventLocation: 'Clark Park → Kelly Drive',
+      ),
     ),
     _IdeaItem(
       id: 'idea_paddleboard',
@@ -191,6 +263,82 @@ class _CommunityTimelineScreenState
       threadMessageCount: 4,
     ),
   ];
+
+  // Community event timelines, keyed by community name. Every item is a
+  // born-confirmed recurring event broadcast by the community's leaders.
+  late final Map<String, List<_TimelineItem>> communityEvents = {
+    'Wednesday Night Rides': [
+      _CommunityEventItem(
+        id: 'evt_cherry_blossoms',
+        timestamp: DateTime.now().subtract(const Duration(hours: 3)),
+        community: _communities[0],
+        title: 'Cherry Blossoms Ride',
+        activityType: 'Biking',
+        time: 'Wed Apr 1 · 6:30pm',
+        recurrence: 'Every other Wed',
+        location: 'Clark Park → Kelly Drive · 10.2mi · Easy',
+        goingCount: 64,
+        publicGoing: [_maya, _jordan, _alex, _rachel],
+        threadMessageCount: 11,
+      ),
+      _CommunityEventItem(
+        id: 'evt_protected_lanes',
+        timestamp: DateTime.now().subtract(const Duration(days: 12)),
+        community: _communities[0],
+        title: 'West Philly Protected Lanes',
+        activityType: 'Biking',
+        time: 'Wed Apr 15 · 6:30pm',
+        recurrence: 'Every other Wed',
+        location: 'Dilworth Park · 7.4mi · Standard',
+        goingCount: 38,
+        publicGoing: [_dave, _sarah],
+        threadMessageCount: 5,
+      ),
+    ],
+    'Black Squirrel Club': [
+      _CommunityEventItem(
+        id: 'evt_jazz_jam',
+        timestamp: DateTime.now().subtract(const Duration(hours: 8)),
+        community: _communities[1],
+        title: 'Monday Jazz Jam',
+        activityType: 'Live Music',
+        time: 'Mon · 7:00pm',
+        recurrence: 'Weekly · Mondays',
+        location: '1049 Sarah St, Fishtown',
+        goingCount: 127,
+        publicGoing: [_lisa, _mike, _katie, _john],
+        threadMessageCount: 9,
+      ),
+      _CommunityEventItem(
+        id: 'evt_samba',
+        timestamp: DateTime.now().subtract(const Duration(days: 1)),
+        community: _communities[1],
+        title: 'Roda de Samba e Choro',
+        activityType: 'Live Music',
+        time: 'Sat Jun 14 · 8:00pm',
+        recurrence: 'One-off',
+        location: '1049 Sarah St, Fishtown',
+        goingCount: 73,
+        publicGoing: [_rachel, _maya],
+        threadMessageCount: 4,
+      ),
+    ],
+    'Philly River Flow': [
+      _CommunityEventItem(
+        id: 'evt_riverside_vinyasa',
+        timestamp: DateTime.now().subtract(const Duration(hours: 5)),
+        community: _communities[2],
+        title: 'Riverside Vinyasa',
+        activityType: 'Yoga',
+        time: 'Sat · 10:00am',
+        recurrence: 'Tue / Thu / Sat / Sun',
+        location: 'Schuylkill Banks · 25th & Locust · donation',
+        goingCount: 41,
+        publicGoing: [_sarah, _lisa, _jordan],
+        threadMessageCount: 6,
+      ),
+    ],
+  };
 
   // Thread mock data for the paddleboard idea
   final List<_ThreadMessage> paddleboardThreadMessages = [
@@ -293,13 +441,24 @@ class _CommunityTimelineScreenState
   // Helpers
   // ========================================================================
 
-  List<_TimelineItem> get _currentItems =>
-      _selectedContext == 'community' ? communityItems : squadItems;
+  bool get _isFriendsContext => _selectedContext == 'friends';
 
-  bool get _isSquadContext => _selectedContext != 'community';
+  bool get _isSquadContext => _squads.any((s) => s.name == _selectedContext);
+
+  bool get _isCommunityContext =>
+      _communities.any((c) => c.name == _selectedContext);
+
+  _MockCommunity? get _currentCommunity =>
+      _communities.where((c) => c.name == _selectedContext).firstOrNull;
+
+  List<_TimelineItem> get _currentItems {
+    if (_isFriendsContext) return friendsItems;
+    if (_isCommunityContext) return communityEvents[_selectedContext] ?? [];
+    return squadItems;
+  }
 
   String get _currentTitle =>
-      _selectedContext == 'community' ? 'My Community' : _selectedContext;
+      _isFriendsContext ? 'My Friends' : _selectedContext;
 
   String formatTime(DateTime time) {
     final now = DateTime.now();
@@ -379,7 +538,127 @@ class _CommunityTimelineScreenState
       _showIdeaComposer = !_showIdeaComposer;
       if (!_showIdeaComposer) {
         _selectedActivityType = null;
+        _pendingEventRef = null;
       }
+    });
+  }
+
+  // ========================================================================
+  // Idea → Activity transition
+  // ========================================================================
+
+  /// Resolves a timeline item to its current state. A confirmed idea is
+  /// promoted on the fly to an activity so all the existing activity rendering
+  /// (timeline card + thread header) is reused — modeling the spec's
+  /// "two states of the same record".
+  _TimelineItem resolveItem(_TimelineItem item) {
+    if (item is _IdeaItem && confirmedPlans.containsKey(item.id)) {
+      final plan = confirmedPlans[item.id]!;
+      return _ActivityItem(
+        id: item.id,
+        timestamp: item.timestamp,
+        activityType: item.activityType,
+        captain: item.captain,
+        audienceLabel: item.audienceLabel,
+        confirmedTime: plan.time,
+        confirmedLocation: plan.location,
+        goingCount: item.interestedCount,
+        threadMessageCount: item.threadMessageCount,
+        eventRef: item.eventRef,
+      );
+    }
+    return item;
+  }
+
+  /// Captain locks in a time + location, promoting the idea to a confirmed
+  /// activity.
+  void confirmIdea(String ideaId, String time, String location) {
+    setState(() {
+      confirmedPlans[ideaId] = (time: time, location: location);
+      showVotingExpanded = false;
+    });
+  }
+
+  // ========================================================================
+  // Community event RSVP (visibility gradient)
+  // ========================================================================
+
+  void toggleGoing(String eventId) {
+    setState(() {
+      if (goingEvents.contains(eventId)) {
+        goingEvents.remove(eventId);
+        publicEvents.remove(eventId); // can't be public if not going
+      } else {
+        goingEvents.add(eventId);
+      }
+    });
+  }
+
+  void togglePublic(String eventId) {
+    setState(() {
+      if (publicEvents.contains(eventId)) {
+        publicEvents.remove(eventId);
+      } else {
+        publicEvents.add(eventId);
+        goingEvents.add(eventId); // going publicly implies going
+      }
+    });
+  }
+
+  /// Bring friends to a community event: switch to the My Friends context and
+  /// open the idea composer pre-filled with the event. What lands on the
+  /// friends timeline is a friends-scoped idea referencing the public event —
+  /// the event itself stays owned by the community.
+  void bringFriendsToEvent(_CommunityEventItem event) {
+    setState(() {
+      activeThreadItemId = null;
+      _selectedContext = 'friends';
+      _showSquadDropdown = false;
+      _selectedActivityType = event.activityType;
+      _pendingEventRef = _EventRef(
+        communityName: event.community.name,
+        eventTitle: event.title,
+        communityIcon: event.community.icon,
+        communityColor: event.community.color,
+        eventTime: event.time,
+        eventLocation: event.location,
+      );
+      _showIdeaComposer = true;
+    });
+  }
+
+  int _newIdeaSeq = 0;
+
+  /// Posts the composed idea to the current timeline. If an event was staged
+  /// via "bring friends", the new idea carries the embedded event reference.
+  void _shareIdea() {
+    final type = _selectedActivityType;
+    if (type == null) return;
+
+    final newIdea = _IdeaItem(
+      id: 'idea_new_${_newIdeaSeq++}',
+      timestamp: DateTime.now(),
+      activityType: type,
+      captain: _you,
+      audienceLabel: _isSquadContext ? _selectedContext : 'all friends',
+      proposedTimes: const [],
+      proposedLocations: const [],
+      allowSuggestions: _pendingEventRef == null,
+      interestedCount: 0,
+      threadMessageCount: 0,
+      eventRef: _pendingEventRef,
+    );
+
+    setState(() {
+      (_isSquadContext ? squadItems : friendsItems).add(newIdea);
+      _showIdeaComposer = false;
+      _selectedActivityType = null;
+      _pendingEventRef = null;
+    });
+
+    // Jump to the newest item.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_timelineScrollController.hasClients) _scrollToBottom();
     });
   }
 
@@ -488,6 +767,21 @@ class _CommunityTimelineScreenState
                         ),
                       ),
                     ),
+                  )
+                else if (_isCommunityContext && _currentCommunity != null)
+                  Container(
+                    width: 28,
+                    height: 28,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: _currentCommunity!.color.withAlpha(40),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _currentCommunity!.icon,
+                      size: 16,
+                      color: _currentCommunity!.color,
+                    ),
                   ),
                 Text(
                   _currentTitle,
@@ -540,38 +834,21 @@ class _CommunityTimelineScreenState
           children: [
             _buildDropdownItem(
               icon: Icons.people_outline,
-              label: 'My Community',
-              subtitle: 'All friends',
-              isSelected: _selectedContext == 'community',
+              label: 'My Friends',
+              subtitle: 'Everyone you\'re connected with',
+              isSelected: _isFriendsContext,
               onTap: () {
                 setState(() {
-                  _selectedContext = 'community';
+                  _selectedContext = 'friends';
                   _showSquadDropdown = false;
                 });
               },
               colorScheme: colorScheme,
             ),
-            Divider(
-                height: 1,
-                indent: 16,
-                endIndent: 16,
-                color: colorScheme.outlineVariant),
-            Padding(
-              padding: const EdgeInsets.only(left: 16, top: 12, bottom: 4),
-              child: Row(
-                children: [
-                  Text(
-                    'SQUADS',
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildDropdownDivider(colorScheme),
+
+            // Squads — closed groups where everyone posts
+            _buildDropdownSectionHeader('SQUADS', colorScheme),
             ..._squads.map((squad) => _buildDropdownItem(
                   icon: Icons.group,
                   label: squad.name,
@@ -585,12 +862,66 @@ class _CommunityTimelineScreenState
                   },
                   colorScheme: colorScheme,
                 )),
+
+            _buildDropdownDivider(colorScheme),
+
+            // Communities — open groups you follow; leaders broadcast events
+            _buildDropdownSectionHeader('COMMUNITIES', colorScheme),
+            ..._communities.map((community) => _buildDropdownItem(
+                  icon: community.icon,
+                  label: community.name,
+                  subtitle: '${community.followerCount} following',
+                  isSelected: _selectedContext == community.name,
+                  iconColor: community.color,
+                  onTap: () {
+                    setState(() {
+                      _selectedContext = community.name;
+                      _showSquadDropdown = false;
+                    });
+                  },
+                  colorScheme: colorScheme,
+                )),
+            _buildDropdownItem(
+              icon: Icons.travel_explore,
+              label: 'Discover communities',
+              subtitle: 'Find groups near you',
+              isSelected: false,
+              onTap: () {
+                setState(() => _showSquadDropdown = false);
+              },
+              colorScheme: colorScheme,
+            ),
             const SizedBox(height: 8),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildDropdownDivider(ColorScheme colorScheme) => Divider(
+        height: 1,
+        indent: 16,
+        endIndent: 16,
+        color: colorScheme.outlineVariant,
+      );
+
+  Widget _buildDropdownSectionHeader(String label, ColorScheme colorScheme) =>
+      Padding(
+        padding: const EdgeInsets.only(left: 16, top: 12, bottom: 4),
+        child: Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildDropdownItem({
     required IconData icon,
@@ -599,6 +930,7 @@ class _CommunityTimelineScreenState
     required bool isSelected,
     required VoidCallback onTap,
     required ColorScheme colorScheme,
+    Color? iconColor,
   }) {
     return Material(
       color: Colors.transparent,
@@ -614,7 +946,7 @@ class _CommunityTimelineScreenState
                 size: 20,
                 color: isSelected
                     ? colorScheme.primary
-                    : colorScheme.onSurfaceVariant,
+                    : (iconColor ?? colorScheme.onSurfaceVariant),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -663,12 +995,13 @@ class _CommunityTimelineScreenState
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        final item = items[items.length - 1 - index];
+        final item = resolveItem(items[items.length - 1 - index]);
 
         return switch (item) {
           _IdeaItem() => buildIdeaCard(item, colorScheme),
           _ActivityItem() => buildActivityCard(item, colorScheme),
           _SquadTextMessage() => buildSquadMessage(item, colorScheme),
+          _CommunityEventItem() => buildCommunityEventCard(item, colorScheme),
         };
       },
     );
@@ -679,6 +1012,12 @@ class _CommunityTimelineScreenState
   // ========================================================================
 
   Widget _buildInputArea(ColorScheme colorScheme) {
+    // Communities are broadcast-only: followers don't post to the timeline,
+    // so there's no composer — just a banner reinforcing the read-only context.
+    if (_isCommunityContext) {
+      return _buildFollowerBanner(colorScheme);
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -807,9 +1146,15 @@ class _CommunityTimelineScreenState
 
     if (_showIdeaComposer) {
       icon = Icons.visibility_outlined;
-      text = _isSquadContext
-          ? 'This idea will be shared with $_currentTitle'
-          : 'This idea will be shared with all your friends';
+      if (_pendingEventRef != null) {
+        text = _isSquadContext
+            ? 'Sharing with $_currentTitle · about a ${_pendingEventRef!.communityName} event'
+            : 'Sharing with all friends · about a ${_pendingEventRef!.communityName} event';
+      } else {
+        text = _isSquadContext
+            ? 'This idea will be shared with $_currentTitle'
+            : 'This idea will be shared with all your friends';
+      }
     } else if (_isSquadContext) {
       icon = Icons.group_outlined;
       text = 'Visible to $_currentTitle members';
@@ -859,7 +1204,7 @@ class _CommunityTimelineScreenState
                   size: 15, color: colorScheme.tertiary),
               const SizedBox(width: 6),
               Text(
-                'Share an idea',
+                _pendingEventRef != null ? 'Bring friends' : 'Share an idea',
                 style: TextStyle(
                   color: colorScheme.tertiary,
                   fontSize: 13,
@@ -869,6 +1214,12 @@ class _CommunityTimelineScreenState
             ],
           ),
           const SizedBox(height: 10),
+
+          // Attached community event (when bringing friends along)
+          if (_pendingEventRef != null) ...[
+            _buildComposerEventChip(_pendingEventRef!, colorScheme),
+            const SizedBox(height: 10),
+          ],
 
           // Activity type picker (horizontal scroll)
           SizedBox(
@@ -935,14 +1286,7 @@ class _CommunityTimelineScreenState
               const Spacer(),
               // Share button
               FilledButton.tonal(
-                onPressed: _selectedActivityType != null
-                    ? () {
-                        setState(() {
-                          _showIdeaComposer = false;
-                          _selectedActivityType = null;
-                        });
-                      }
-                    : null,
+                onPressed: _selectedActivityType != null ? _shareIdea : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: colorScheme.tertiary,
                   foregroundColor: colorScheme.onTertiary,
@@ -951,7 +1295,10 @@ class _CommunityTimelineScreenState
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   minimumSize: const Size(0, 34),
                 ),
-                child: const Text('Share', style: TextStyle(fontSize: 13)),
+                child: Text(
+                  _pendingEventRef != null ? 'Share with friends' : 'Share',
+                  style: const TextStyle(fontSize: 13),
+                ),
               ),
             ],
           ),
@@ -982,6 +1329,98 @@ class _CommunityTimelineScreenState
                 color: colorScheme.onSurfaceVariant,
                 fontSize: 12,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Read-only event reference shown inside the idea composer when bringing
+  /// friends to a community event — the event's time/place are fixed, so this
+  /// just anchors the idea to the public event.
+  Widget _buildComposerEventChip(_EventRef ref, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: ref.communityColor.withAlpha(20),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: ref.communityColor.withAlpha(80)),
+      ),
+      child: Row(
+        children: [
+          Icon(ref.communityIcon, size: 16, color: ref.communityColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ref.eventTitle,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  ref.communityName,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.link, size: 14, color: colorScheme.onSurfaceVariant),
+        ],
+      ),
+    );
+  }
+
+  /// Communities are broadcast-only — followers see events but don't post.
+  Widget _buildFollowerBanner(ColorScheme colorScheme) {
+    final community = _currentCommunity;
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(25),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 12,
+          bottom: 12 + MediaQuery.of(context).padding.bottom,
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle,
+                size: 18, color: community?.color ?? colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Following · only leaders post events here',
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: const Text('Following', style: TextStyle(fontSize: 13)),
             ),
           ],
         ),

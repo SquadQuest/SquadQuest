@@ -14,12 +14,17 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
     final screenWidth = MediaQuery.of(context).size.width;
     final drawerWidth = screenWidth * 0.85;
 
-    // Find the active item
+    // Find the active item, resolving a confirmed idea to its activity state.
     _TimelineItem? activeItem;
     if (isOpen) {
-      final allItems = [...communityItems, ...squadItems];
-      activeItem =
+      final allItems = [
+        ...friendsItems,
+        ...squadItems,
+        ...communityEvents.values.expand((e) => e),
+      ];
+      final found =
           allItems.where((item) => item.id == activeThreadItemId).firstOrNull;
+      activeItem = found == null ? null : resolveItem(found);
     }
 
     return AnimatedPositioned(
@@ -48,6 +53,10 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
                   if (activeItem is _IdeaItem &&
                       activeItem.proposedTimes.isNotEmpty)
                     _buildVoteBar(activeItem, colorScheme),
+                  // Brought-along ideas have no vote bar — their time/place are
+                  // fixed by the event — so the captain confirm lives here.
+                  if (activeItem is _IdeaItem && activeItem.eventRef != null)
+                    _buildEventLockBar(activeItem, colorScheme),
                   Expanded(
                     child: _buildThreadContent(activeItem, colorScheme),
                   ),
@@ -124,6 +133,21 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
                           'Thread',
                           style: TextStyle(
                             color: colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  _CommunityEventItem() => Row(
+                      children: [
+                        Icon(item.community.icon,
+                            size: 18, color: item.community.color),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Community event',
+                          style: TextStyle(
+                            color: item.community.color,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -234,6 +258,59 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                ],
+              ),
+            _CommunityEventItem() => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.repeat,
+                          size: 13, color: colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(item.recurrence,
+                          style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: 12)),
+                      const SizedBox(width: 10),
+                      Icon(Icons.schedule,
+                          size: 13, color: colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(item.time,
+                          style: TextStyle(
+                              color: colorScheme.onSurface, fontSize: 12)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined,
+                          size: 13, color: colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(item.location,
+                            style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                                fontSize: 12),
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // RSVP visibility gradient + bring friends, in the header
+                  _buildEventActions(
+                    item,
+                    goingEvents.contains(item.id),
+                    publicEvents.contains(item.id),
+                    colorScheme,
+                  ),
                 ],
               ),
           },
@@ -368,10 +445,99 @@ extension _ThreadDrawer on _CommunityTimelineScreenState {
                       idea.allowSuggestions,
                       colorScheme,
                     ),
+                  // Captain action: lock in the leading time/place to confirm.
+                  const SizedBox(height: 12),
+                  _buildLockItInButton(
+                    onConfirm: () => confirmIdea(
+                      idea.id,
+                      (leadingTime ?? timeVotes.firstOrNull)?.label ?? 'TBD',
+                      (leadingLocation ?? locationVotes.firstOrNull)?.label ??
+                          'TBD',
+                    ),
+                    colorScheme: colorScheme,
+                  ),
                 ],
               ),
             ),
             secondChild: const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Captain CTA that promotes an idea to a confirmed activity. The caption
+  /// makes the idea→activity transition explicit.
+  Widget _buildLockItInButton({
+    required VoidCallback onConfirm,
+    required ColorScheme colorScheme,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FilledButton.icon(
+            onPressed: onConfirm,
+            icon: const Icon(Icons.check_circle, size: 18),
+            label: const Text('Lock it in'),
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              minimumSize: const Size(double.infinity, 40),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'As captain, confirm the plan — it becomes a scheduled activity.',
+            style: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Confirm bar for a brought-along idea: the time/place are already fixed by
+  /// the community event, so confirming just commits the group — promoting the
+  /// idea to an activity linked to the event.
+  Widget _buildEventLockBar(_IdeaItem idea, ColorScheme colorScheme) {
+    final ref = idea.eventRef!;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        border: Border(
+          bottom: BorderSide(color: colorScheme.outlineVariant, width: 1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.lock_clock,
+                  size: 14, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Time & place set by the event · ${ref.eventTime}',
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _buildLockItInButton(
+            onConfirm: () =>
+                confirmIdea(idea.id, ref.eventTime, ref.eventLocation),
+            colorScheme: colorScheme,
           ),
         ],
       ),

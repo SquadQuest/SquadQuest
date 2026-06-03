@@ -158,6 +158,12 @@ extension _TimelineCards on _CommunityTimelineScreenState {
                             ],
                           ),
 
+                          // Embedded community event (brought-along plan)
+                          if (idea.eventRef != null) ...[
+                            const SizedBox(height: 8),
+                            buildEventRefChip(idea.eventRef!, colorScheme),
+                          ],
+
                           // Stats row
                           const SizedBox(height: 4),
                           Row(
@@ -409,6 +415,12 @@ extension _TimelineCards on _CommunityTimelineScreenState {
                             ],
                           ],
                         ),
+
+                        // Embedded community event (brought-along plan)
+                        if (activity.eventRef != null) ...[
+                          const SizedBox(height: 8),
+                          buildEventRefChip(activity.eventRef!, colorScheme),
+                        ],
                       ],
                     ),
                   ),
@@ -423,6 +435,352 @@ extension _TimelineCards on _CommunityTimelineScreenState {
           ),
         ],
       ),
+    );
+  }
+
+  // ==========================================================================
+  // Community Event Card
+  //
+  // A born-confirmed recurring event broadcast by a community leader. Shows the
+  // dual attendance model (anonymous headcount + opt-in public face-pile) and
+  // the RSVP visibility gradient, plus the "Bring friends" bridge.
+  // ==========================================================================
+
+  Widget buildCommunityEventCard(
+      _CommunityEventItem event, ColorScheme colorScheme) {
+    final community = event.community;
+    final going = goingEvents.contains(event.id);
+    final isPublic = publicEvents.contains(event.id);
+
+    // The displayed headcount reflects you joining (anonymously) on top of the
+    // seeded total.
+    final headcount = event.goingCount + (going ? 1 : 0);
+    // The public face-pile gains your avatar only if you've gone public.
+    final publicFaces = [
+      if (isPublic) _you,
+      ...event.publicGoing,
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Community badge
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: community.color.withAlpha(40),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(community.icon, size: 18, color: community.color),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Author line: community + recurrence
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        community.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(Icons.repeat,
+                        size: 12, color: colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 2),
+                    Flexible(
+                      child: Text(
+                        event.recurrence,
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+
+                // Event card (solid, confirmed style)
+                GestureDetector(
+                  onTap: () => openThread(event.id),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: community.color.withAlpha(90),
+                        width: 1.5,
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title + event badge
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                event.title,
+                                style: TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: community.color.withAlpha(30),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Event',
+                                style: TextStyle(
+                                  color: community.color,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.chevron_right,
+                                size: 16, color: colorScheme.onSurfaceVariant),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        // Time + location
+                        Row(
+                          children: [
+                            Icon(Icons.schedule,
+                                size: 12, color: colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 3),
+                            Text(
+                              event.time,
+                              style: TextStyle(
+                                color: colorScheme.onSurface,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on_outlined,
+                                size: 12, color: colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                event.location,
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 8),
+                        Divider(height: 1, color: colorScheme.outlineVariant),
+                        const SizedBox(height: 8),
+
+                        // Dual attendance: anonymous headcount + public faces
+                        _buildAttendanceRow(
+                            headcount, publicFaces, colorScheme),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+                // RSVP visibility gradient + bring friends
+                _buildEventActions(event, going, isPublic, colorScheme),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceRow(
+      int headcount, List<_MockPerson> publicFaces, ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Icon(Icons.people, size: 14, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Text(
+          '$headcount going',
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 10),
+        if (publicFaces.isNotEmpty) ...[
+          buildMiniAvatarStack(publicFaces, colorScheme),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              _publicFacesLabel(publicFaces),
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 11,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ] else
+          Flexible(
+            child: Text(
+              'no one publicly yet',
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _publicFacesLabel(List<_MockPerson> faces) {
+    final names = faces.take(2).map((p) => p.name).join(', ');
+    final extra = faces.length - 2;
+    return extra > 0 ? '$names +$extra publicly' : '$names publicly';
+  }
+
+  Widget _buildEventActions(
+    _CommunityEventItem event,
+    bool going,
+    bool isPublic,
+    ColorScheme colorScheme,
+  ) {
+    return Row(
+      children: [
+        // Going toggle (tier 2: anonymous count)
+        GestureDetector(
+          onTap: () => toggleGoing(event.id),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: going ? colorScheme.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: going ? colorScheme.primary : colorScheme.outlineVariant,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  going ? Icons.check_circle : Icons.check_circle_outline,
+                  size: 14,
+                  color: going
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  going ? "I'm going" : 'Going?',
+                  style: TextStyle(
+                    color: going
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        // Public toggle (tier 3: visibility promotion) — only once going
+        if (going)
+          GestureDetector(
+            onTap: () => togglePublic(event.id),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: isPublic
+                    ? colorScheme.tertiaryContainer
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isPublic
+                      ? colorScheme.tertiary
+                      : colorScheme.outlineVariant,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPublic ? Icons.visibility : Icons.visibility_off_outlined,
+                    size: 14,
+                    color: isPublic
+                        ? colorScheme.onTertiaryContainer
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isPublic ? 'Public' : 'Show name',
+                    style: TextStyle(
+                      color: isPublic
+                          ? colorScheme.onTertiaryContainer
+                          : colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        const Spacer(),
+        // Bring friends bridge
+        GestureDetector(
+          onTap: () => bringFriendsToEvent(event),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.group_add_outlined,
+                  size: 16, color: colorScheme.primary),
+              const SizedBox(width: 4),
+              Text(
+                'Bring friends',
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

@@ -198,6 +198,55 @@ extension _SharedWidgets on _CommunityTimelineScreenState {
   }
 
   // ==========================================================================
+  // Embedded Community Event Reference
+  //
+  // Shown inside a friend-scoped idea/activity that's bringing friends to a
+  // community event. The event is read-only context; the surrounding idea is
+  // the private, friends-scoped envelope.
+  // ==========================================================================
+
+  Widget buildEventRefChip(_EventRef ref, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: ref.communityColor.withAlpha(20),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: ref.communityColor.withAlpha(70)),
+      ),
+      child: Row(
+        children: [
+          Icon(ref.communityIcon, size: 15, color: ref.communityColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ref.eventTitle,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${ref.communityName} · community event',
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 10,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================================
   // Photo Attachments
   // ==========================================================================
 
