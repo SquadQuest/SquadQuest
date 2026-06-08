@@ -76,6 +76,71 @@ of work starts with a plan file; its last commit before merge flips `status` to 
   `scripts/specops` (dashboard), `next`, `dag`. The session hook loads the dashboard at
   startup. Full protocol: SpecOps skill `references/plans-protocol.md`. See `plans/README.md`.
 
+## Working agreements (for all contributors)
+
+These apply to every contributor working in this repo.
+
+### Tool management (`asdf`)
+
+Tool versions are pinned in `.tool-versions`. **Never hand-edit that file** — run
+`asdf set <tool> <version>` then `asdf install`. Prefer a floating selector unless there's a
+compelling reason to pin an exact version: `asdf set opentofu latest`, or
+`asdf set nodejs latest:22` to track the newest within a major. If a tool seems missing even
+though it's listed, the fix is `asdf install`, not a manual install.
+
+### Package managers — one per surface
+
+| Surface | Manager | Add dep | Lockfile to commit |
+|---|---|---|---|
+| Flutter app (`lib/`) | `flutter` / `dart pub` | `flutter pub add <pkg>` | `pubspec.lock` |
+| `server/` (forthcoming v2 backend) | `bun` | `bun add <pkg>` | `bun.lock` |
+
+Never hand-edit `pubspec.yaml` / `package.json` — use the manager so compatible versions are
+selected, and commit the lockfile alongside the manifest change.
+
+### JSON processing
+
+Use `jq` for every JSON filter/shaping operation. Don't write one-shot node/python/ruby
+scripts to manipulate JSON.
+
+### Terraform / infra
+
+`tf/` is **OpenTofu** — use `tofu`, never `terraform`. Always pass `-concise` on `plan` and
+`apply`.
+
+### Browser + GitHub tools
+
+- Browser automation: use `chrome-devtools-axi` via Bash — not Playwright/Puppeteer.
+- GitHub operations: use `gh-axi` instead of `gh` (token-efficient output + contextual
+  suggestions). When adding/modifying `.github/workflows/`, use `gh-axi repo view <owner>/<action>`
+  to confirm the latest recommended action version before pinning.
+
+### Source control
+
+Conventional commits with surface-scoped scopes so history reads as a per-surface changelog:
+
+| Scope | Covers |
+|---|---|
+| `feat(v2):` / `fix(v2):` / `refactor(v2):` | `lib/v2/` |
+| `feat(storybook):` | `lib/storybook/` |
+| `feat(server):` / `fix(server):` | `server/` (the v2 backend) |
+| `docs(specs):` | `specs/` |
+| `docs(plans):` | `plans/` |
+| `chore(specops):` | SpecOps tooling (hook, drift auditor, CLI wiring) |
+| `chore(tf):` / `feat(tf):` | `tf/` (frontend hosting / infra) |
+| `ci(v2):` / `chore(ci):` | `.github/workflows/` |
+| `feat:` / `fix:` (unscoped) or `(v1)` | the v1 production app (`lib/ui/`, `lib/main.dart`) |
+
+- **Commit often, in logical units.** Don't let unrelated work pile up uncommitted — commit
+  each logical set of changes as soon as it's coherent. A session touching both `specs/` and
+  `lib/v2/` is at least two commits.
+- Always run `git status` before staging, and **stage explicit paths — never `git add -A`
+  or `git add .`**.
+- When a command modifies files (`flutter pub add`, `bun install`, `bunx`/codegen), commit
+  those generated changes *first* in a commit whose body names the exact command, then make
+  hand edits in a separate commit.
+- Branch off `develop` for non-trivial work; open PRs into `develop`.
+
 ## Coding style
 
 - Do not use the deprecated `withOpacity` function, use `withAlpha` instead
