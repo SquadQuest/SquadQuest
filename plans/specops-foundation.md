@@ -9,7 +9,7 @@ specs:
   - specs/api/conventions.md
   - specs/behaviors/v1-migration.md
 issues: []
-pr:
+pr: 405
 ---
 
 # Plan: Adopt SpecOps + author the v2 foundation specs
