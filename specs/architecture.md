@@ -1,0 +1,99 @@
+# Architecture
+
+Foundational tech and topology decisions for SquadQuest v2.
+
+## Entrypoints (Flutter client)
+
+The Flutter app has three coexisting entrypoints sharing one `pubspec.yaml`, models,
+theme, and native configs (bundle IDs, signing):
+
+| Entrypoint | Command | Purpose |
+|---|---|---|
+| **v1 app** | `flutter run -t lib/main.dart` | Current production app; **frozen** at v2 launch (see Transition) |
+| **Storybook** | `flutter run -t lib/storybook/main.dart` | Design iteration with mock data |
+| **v2 app** | `flutter run -t lib/v2/main.dart` | The v2 client (currently mock data; real backend integration is upcoming) |
+
+Screens are designed in storybook, then copied into `lib/v2/screens/` and iterated freely.
+
+## Backend: custom Fastify/Bun + Postgres (not Supabase)
+
+v2 runs on a **purpose-built backend we own**, not Supabase:
+
+- **API**: Fastify + TypeScript on **Bun**, living in a new `server/` directory in this
+  monorepo (alongside the Flutter app and the v1 `supabase/`).
+- **Database**: Postgres (managed host — Neon / Fly Postgres / RDS-class; *swappable*, it's
+  just Postgres). Schema evolution is **migration-first** — the schema is free to churn
+  because nothing outside the API binds to it.
+- **Auth**: phone-OTP → server-issued JWT (access + refresh). OTP delivery via an SMS
+  provider (Twilio Verify-class; *swappable*). We own the auth surface.
+- **Storage**: object store for photos (R2 / S3 / GCS; *swappable*) with signed URLs.
+- **Realtime**: Server-Sent Events for server→client feed/thread updates, plain POSTs for
+  writes, fan-out via Postgres `LISTEN/NOTIFY` (Redis pub/sub if/when multi-instance
+  fan-out demands it). WebSockets are the upgrade path if bidirectional needs emerge.
+  Realtime is an enhancement, never load-bearing (see Principles).
+
+### Why not Supabase
+
+v1's fatal flaw was **clients querying Supabase tables directly** (PostgREST + realtime),
+which bound every mobile build to the schema; with unbounded app-update timelines the
+schema froze the day it had users. Once the client talks only to a versioned API, the
+headline Supabase feature (client-direct CRUD + realtime) is exactly what we're *not*
+using — leaving managed Postgres + auth + storage, which we'd rather own in our comfort
+stack (Fastify/Bun) than rebuild as Deno Edge Functions. See
+[principles: client binds to the versioned API](principles.md#the-client-binds-to-the-versioned-api-never-the-schema).
+
+## The versioned API contract
+
+The client binds to a **versioned API**, never the schema. Summary (full model + the
+`/v1/ideas` worked example in [`api/conventions.md`](api/conventions.md)):
+
+- **URL major version** `https://api.squadquest.app/v1/…` — the coarse contract boundary,
+  bumped only for a wholesale redesign (years apart, if ever).
+- **Within `/v1`: additive / tolerant-reader.** Never remove/retype/repurpose a field a
+  released client reads. Break by **superseding** (new path/field + deprecate + delete once
+  the upgrade floor passes), not in place.
+- **Every request carries the client build** (`X-SquadQuest-Client: <platform>/<version>+<build>`)
+  for telemetry, optional per-build response shaping, and the upgrade floor.
+- **`min_supported_build` → `426 Upgrade Required`** is the humane floor *and* the
+  garbage-collector that lets superseded paths actually be deleted.
+
+## Transition from v1
+
+v2 is a **fresh backend** (per the above), launched as an **app-store update** to v1 (same
+bundle ID / signing). Because the backend is fresh, accounts are fresh — users re-authenticate
+by phone, which doubles as the identity bridge to their v1 data.
+
+- **v1 is archived**: the existing v1 app stays deployed as a **read-only web build**, the
+  home for old events. The v1 native app is superseded by the v2 update.
+- **Carry into v2**: profiles + the double-opt-in friend graph + topic interests, via a
+  one-time **bulk pre-migration** (claimed on first login, keyed by phone). **Archive**:
+  events / RSVPs / event-messages.
+- Full mechanics in [`behaviors/v1-migration.md`](behaviors/v1-migration.md). Governed by
+  [preserve the social graph; archive the content](principles.md#preserve-the-social-graph-archive-the-content)
+  and [phone is the identity bridge](principles.md#phone-number-is-the-identity-bridge).
+
+## Repo layout (target)
+
+```
+SquadQuest/
+├── lib/
+│   ├── main.dart            # v1 (frozen)
+│   ├── storybook/           # design iteration
+│   └── v2/                  # v2 client (screens, router, providers)
+├── server/                  # NEW — v2 backend (Fastify/Bun + Postgres)
+│   ├── src/
+│   │   ├── domain/          # one current domain model + business logic
+│   │   ├── routes/v1/       # endpoint wiring under the /v1 boundary
+│   │   ├── contracts/       # per-build request parsers + response serializers (edge adapters)
+│   │   └── realtime/        # SSE + LISTEN/NOTIFY fan-out
+│   └── migrations/          # first-class, forward-only schema migrations
+├── supabase/                # v1 backend (archived/read-only; source for the migration)
+├── specs/                   # this directory
+└── plans/                   # work DAG
+```
+
+## Client stack
+
+Flutter + Riverpod (state) + go_router (routing), per the existing v2 app. The data layer
+shifts from mock providers to a typed API client targeting `/v1`; the API client is the
+single place that knows wire shapes, keeping screens decoupled from the contract.
