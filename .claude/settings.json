@@ -11,6 +11,18 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/chris/.agents/skills/specops/scripts/specops.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
