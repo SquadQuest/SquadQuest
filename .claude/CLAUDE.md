@@ -1,56 +1,53 @@
 # SquadQuest
 
-A Flutter app powered by a Supabase backend with three coexisting entrypoints:
-
-## Entrypoints
-
-| Entrypoint | Run command | Purpose |
-|---|---|---|
-| **v1 app** | `flutter run -t lib/main.dart` | Current production app (`lib/ui/` screens) |
-| **Storybook** | `flutter run -t lib/storybook/main.dart` | Design exploration with mock data |
-| **v2 app** | `flutter run -t lib/v2/main.dart` | V2 redesign demo/app (see below) |
-
-All three share the same `pubspec.yaml`, `lib/models/`, `lib/controllers/`, `lib/services/`, theme, and native configs (bundle IDs, signing). They differ only in their routing, screens, and provider overrides.
-
-## V2 Redesign
+SquadQuest v2: a Flutter client (`app/`) talking to a custom Fastify/Bun + Postgres backend
+(`server/`) over a versioned API. **`specs/` is the source of truth** — see
+**`specs/README.md`** (philosophy in `specs/principles.md`, stack + v1→v2 transition in
+`specs/architecture.md`).
 
 A ground-up re-envisioning focused on private/friends-only activity coordination, with
-public events reintroduced only inside opt-in Communities. **`specs/` is the source of
-truth** for v2 — see **`specs/README.md`** (philosophy in `specs/principles.md`, stack +
-v1→v2 transition in `specs/architecture.md`).
+public events reintroduced only inside opt-in Communities.
 
-- **`lib/v2/`** — v2 app code (entrypoint, router, screens); currently mock data
-- **`lib/v2/screens/`** — screens copied from storybook and iterated freely
-- Screens are designed in storybook first, then copied into `lib/v2/screens/`
-- **v2 runs on a fresh, custom backend** — Fastify/Bun + Postgres in `server/` (forthcoming),
-  **not** Supabase. The client binds only to a versioned API, never the schema. v1's Supabase
-  backend is archived read-only; profiles + friend graph + topics migrate over (keyed by
-  phone), events do not. See `specs/architecture.md` and `specs/behaviors/v1-migration.md`.
+## Layout
 
-## Storybook
+| Path | What |
+|---|---|
+| `app/` | v2 Flutter client (android/ios/macos/web). Run: `cd app && flutter run` |
+| `server/` | v2 backend — Fastify + TypeScript on Bun. Run: `cd server && bun run dev` |
+| `specs/` | source of truth (principles, architecture, data-model, api/, screens/, behaviors/) |
+| `plans/` | work-in-flight DAG |
+| `tf/` | frontend hosting infra (OpenTofu) |
 
-Used to showcase and iterate on new screen designs before implementation:
+## Client (`app/`)
 
-- `lib/storybook/screens/` — design iteration screens
-- `lib/storybook/components/` — shared storybook elements
-- `lib/storybook/main.dart` — navigation menu (all screens registered here)
+- Flutter + Riverpod + go_router. The data layer is a typed API client targeting `/v1` — the
+  single place that knows wire shapes, keeping screens decoupled from the contract.
+- Bundle id `app.squadquest` is preserved from v1 so v2 ships as an app-store update.
 
-## V1 App
+## Backend (`server/`)
 
-The current production app:
+- Fastify + TypeScript on Bun + Postgres (not Supabase). The client binds **only** to the
+  versioned `/v1` API, never the schema (see `specs/api/conventions.md`). Realtime is SSE +
+  Postgres `LISTEN/NOTIFY`, treated as an enhancement (never load-bearing).
+- Auth/storage/realtime are owned in-house; phone-OTP → JWT.
 
-- `lib/ui/` — production screens
-- `lib/main.dart` — production entrypoint
-- Unless explicitly told to work on storybook or v2, assume tasks are about v1
+## v1 → v2
 
-## Shared Code
+This trunk (`develop`) is the v2 rebuild. The v1 Supabase backend and the original root
+Flutter app (incl. the `lib/v2` mock) are **not** here — they live on the protected **`v1`**
+branch, which serves two roles:
 
-- `lib/models/` — data models (frontend)
-- `lib/controllers/` — Riverpod state management
-- `lib/services/` — core services (supabase, auth, notifications, router)
-- `lib/theme.dart` — Material theme definitions
-- `lib/app_scaffold.dart` — shared layout scaffold
-- `supabase/` — backend (tables, functions, migrations)
+- **Reference/archive** for porting (the migration reads it; v2 screens get re-ported from it).
+- **Where production keeps shipping.** v1 is still the live app (app stores +
+  <https://squadquest.app>) until v2 launches.
+
+> [!IMPORTANT]
+> Any fix or update needed before v2 is ready ships to the **`v1`** branch, not to
+> `develop`. Don't add v1 features to this trunk.
+
+v2 carries profiles + friend graph + topics over via a bulk pre-migration keyed by **phone**;
+events are not ported. v2 reuses v1's bundle id (`app.squadquest`) to ship as an update. See
+`specs/behaviors/v1-migration.md`.
 
 ## Spec-Driven Development (SpecOps)
 
@@ -92,8 +89,8 @@ though it's listed, the fix is `asdf install`, not a manual install.
 
 | Surface | Manager | Add dep | Lockfile to commit |
 |---|---|---|---|
-| Flutter app (`lib/`) | `flutter` / `dart pub` | `flutter pub add <pkg>` | `pubspec.lock` |
-| `server/` (forthcoming v2 backend) | `bun` | `bun add <pkg>` | `bun.lock` |
+| `app/` (Flutter client) | `flutter` / `dart pub` | `flutter pub add <pkg>` | `pubspec.lock` |
+| `server/` (v2 backend) | `bun` | `bun add <pkg>` | `bun.lock` |
 
 Never hand-edit `pubspec.yaml` / `package.json` — use the manager so compatible versions are
 selected, and commit the lockfile alongside the manifest change.
@@ -121,19 +118,18 @@ Conventional commits with surface-scoped scopes so history reads as a per-surfac
 
 | Scope | Covers |
 |---|---|
-| `feat(v2):` / `fix(v2):` / `refactor(v2):` | `lib/v2/` |
-| `feat(storybook):` | `lib/storybook/` |
-| `feat(server):` / `fix(server):` | `server/` (the v2 backend) |
+| `feat(app):` / `fix(app):` / `refactor(app):` | `app/` (Flutter client) |
+| `feat(server):` / `fix(server):` | `server/` (v2 backend) |
 | `docs(specs):` | `specs/` |
 | `docs(plans):` | `plans/` |
 | `chore(specops):` | SpecOps tooling (hook, drift auditor, CLI wiring) |
 | `chore(tf):` / `feat(tf):` | `tf/` (frontend hosting / infra) |
-| `ci(v2):` / `chore(ci):` | `.github/workflows/` |
-| `feat:` / `fix:` (unscoped) or `(v1)` | the v1 production app (`lib/ui/`, `lib/main.dart`) |
+| `chore(ci):` | `.github/workflows/` |
+| `docs(repo):` | root README / CLAUDE.md / cross-cutting repo docs |
 
 - **Commit often, in logical units.** Don't let unrelated work pile up uncommitted — commit
   each logical set of changes as soon as it's coherent. A session touching both `specs/` and
-  `lib/v2/` is at least two commits.
+  `app/` is at least two commits.
 - Always run `git status` before staging, and **stage explicit paths — never `git add -A`
   or `git add .`**.
 - When a command modifies files (`flutter pub add`, `bun install`, `bunx`/codegen), commit
