@@ -1,4 +1,4 @@
-name: 'PR: Test Flutter'
+name: 'PR: Test'
 
 on:
   push:
@@ -14,40 +14,37 @@ permissions:
   contents: 'read'
 
 jobs:
-  pr-test:
-    runs-on: macos-latest
-
+  app:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      # Flutter version mirrors .tool-versions (subosito can't read it directly).
+      # Keep in sync with the `flutter` pin in /.tool-versions.
+      - uses: subosito/flutter-action@v2
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
 
-      - name: Set up Flutter Version Management CLI
-        uses: flutter-actions/setup-fvm@v1.0
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
 
-      - name: Install Flutter SDK
-        run: fvm install
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Activate Flutter SDK
-        run: fvm use --skip-pub-get
-
-      - name: Get depedencies
-        run: fvm flutter pub get
-
-      - name: Generate .env
-        run: touch .env
-
-      - name: Run tests
-        run: fvm flutter test
-
-      - name: Upload test failure artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          name: test-failures
-          path: test/**/failures/
-          if-no-files-found: ignore
+          bun-version-file: .tool-versions
+
+      - run: bun install --frozen-lockfile
+      - run: bun run type-check
