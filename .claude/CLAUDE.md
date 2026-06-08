@@ -33,10 +33,21 @@ public events reintroduced only inside opt-in Communities.
 
 ## v1 → v2
 
-The v1 Supabase backend and the original root Flutter app (incl. the `lib/v2` mock) are **not**
-in this trunk — they're archived on the protected **`v1`** branch. v2 carries profiles +
-friend graph + topics over via a bulk pre-migration keyed by **phone**; events are not
-ported. See `specs/behaviors/v1-migration.md`.
+This trunk (`develop`) is the v2 rebuild. The v1 Supabase backend and the original root
+Flutter app (incl. the `lib/v2` mock) are **not** here — they live on the protected **`v1`**
+branch, which serves two roles:
+
+- **Reference/archive** for porting (the migration reads it; v2 screens get re-ported from it).
+- **Where production keeps shipping.** v1 is still the live app (app stores +
+  <https://squadquest.app>) until v2 launches.
+
+> [!IMPORTANT]
+> Any fix or update needed before v2 is ready ships to the **`v1`** branch, not to
+> `develop`. Don't add v1 features to this trunk.
+
+v2 carries profiles + friend graph + topics over via a bulk pre-migration keyed by **phone**;
+events are not ported. v2 reuses v1's bundle id (`app.squadquest`) to ship as an update. See
+`specs/behaviors/v1-migration.md`.
 
 ## Spec-Driven Development (SpecOps)
 

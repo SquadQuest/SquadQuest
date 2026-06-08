@@ -2,6 +2,14 @@
 
 Bring your social circle to life with SquadQuest: the free, privacy-first app for planning real-world hangouts.
 
+> [!IMPORTANT]
+> **🚧 This trunk (`develop`) is being rebuilt as SquadQuest v2** — a ground-up re-envisioning around private, friends-first activity coordination, with public events reintroduced only inside opt-in Communities. v2 is a Flutter client in [`app/`](app/) talking to a custom Fastify/Bun + Postgres backend in [`server/`](server/), with **[`specs/`](specs/README.md) as the source of truth**.
+>
+> - **The shipping v1 app lives on the [`v1` branch](https://github.com/SquadQuest/SquadQuest/tree/v1)** (protected). It remains the production app — in the app stores and at <https://squadquest.app> — until v2 is ready. **Any fixes or updates needed before v2 launches ship to `v1`**, not to this trunk.
+> - v2 keeps v1's app-store identity (`app.squadquest`) so it lands as an update. Profiles + the friend graph + topic interests migrate over keyed by **phone**; events do not (the v1 backend is archived read-only). See [`specs/behaviors/v1-migration.md`](specs/behaviors/v1-migration.md).
+> - A live v2 preview deploys from `develop` to <https://v2.squadquest.app>.
+> - **The sections below describe the v1 app** and are kept for reference until this README is rewritten for v2.
+
 - [What is SquadQuest?](#what-is-squadquest)
 - [Screenshots](#screenshots)
 - [Features](#features)
