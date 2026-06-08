@@ -1,0 +1,23 @@
+{
+  "name": "squadquest-server",
+  "version": "0.1.0",
+  "description": "SquadQuest v2 backend — Fastify + TypeScript on Bun",
+  "type": "module",
+  "module": "src/index.ts",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.0",
+    "@fastify/env": "^5.0.0",
+    "fastify": "^5.2.0",
+    "fastify-plugin": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.0"
+  }
+}
