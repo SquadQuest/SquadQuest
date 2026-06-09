@@ -47,6 +47,42 @@ This creates a `.tool-versions` file in the project root. Never use the official
 | [offline-first.md](references/offline-first.md) | Adding drift for local SQLite, offline download/collect/sync |
 | [storybook.md](references/storybook.md) | Setting up storybook, adding stories, mock data |
 | [gotchas.md](references/gotchas.md) | Common mistakes and platform-specific issues |
+| [mcp-driving-and-screenshots.md](references/mcp-driving-and-screenshots.md) | Launching, driving (tap/type), debugging, and screenshotting a running app via the Dart MCP — and delivering screenshots to the user |
+
+## Companion Skills
+
+This skill defines the stack; pair it with the foundational Dart & Flutter agent skills that
+apply to **essentially any project** on it. Install them into a project with `npx skills`
+(the agent is auto-detected, so `-y` runs non-interactively):
+
+```bash
+# Quality, testing & debugging foundations
+npx skills add dart-lang/skills \
+  -s dart-run-static-analysis \
+  -s dart-add-unit-test \
+  -s dart-fix-runtime-errors -y
+
+npx skills add flutter/skills \
+  -s flutter-apply-architecture-best-practices \
+  -s flutter-add-widget-test \
+  -s flutter-add-integration-test -y
+```
+
+| Skill | Why it's foundational |
+|---|---|
+| `dart-run-static-analysis` | `dart analyze` + `dart fix --apply` — during dev and before every commit |
+| `dart-add-unit-test` | unit tests for logic with `package:test` |
+| `dart-fix-runtime-errors` | stack-trace → fix → `hot_reload` loop |
+| `flutter-apply-architecture-best-practices` | layered UI/logic/data structure (complements [patterns.md](references/patterns.md)) |
+| `flutter-add-widget-test` | component-level tests with `WidgetTester` |
+| `flutter-add-integration-test` | Flutter Driver / `integration_test` harness — pairs with [mcp-driving-and-screenshots.md](references/mcp-driving-and-screenshots.md) |
+
+Everything else is **project-dependent** — pick based on what the app actually does (JSON
+serialization, declarative routing, localization, responsive layout, HTTP, drift, coverage,
+mocks, pattern matching, …). Browse the full catalogs and `--list` to choose:
+
+- **Dart:** <https://github.com/dart-lang/skills> — `npx skills add dart-lang/skills --list`
+- **Flutter:** <https://github.com/flutter/skills> — `npx skills add flutter/skills --list`
 
 ## Quick Reference
 
