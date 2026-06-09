@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../api/api_exception.dart';
 import '../../models/topic.dart';
+import '../../providers/active_context.dart';
 import '../../providers/providers.dart';
 
 /// Compose a new idea (specs/api/ideas-activities.md). Friends/all_friends audience
@@ -43,6 +44,7 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
       _busy = true;
       _error = null;
     });
+    final ctx = ref.read(activeContextProvider);
     try {
       await ref
           .read(activityRepositoryProvider)
@@ -51,8 +53,17 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
             allowSuggestions: _allowSuggestions,
             timeOptions: _split(_time.text),
             locationOptions: _split(_location.text),
+            squadId: switch (ctx) {
+              SquadContext(:final id) => id,
+              FriendsContext() => null,
+            },
           );
-      ref.invalidate(friendsTimelineProvider);
+      switch (ctx) {
+        case FriendsContext():
+          ref.invalidate(friendsTimelineProvider);
+        case SquadContext(:final id):
+          ref.invalidate(squadTimelineProvider(id));
+      }
       if (mounted) context.pop();
     } on ApiException catch (e) {
       setState(() => _error = e.message);
@@ -66,6 +77,12 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
   @override
   Widget build(BuildContext context) {
     final topics = ref.watch(topicsProvider);
+    final ctx = ref.watch(activeContextProvider);
+    // Audience clarity at the moment of action (context-selector principle).
+    final destination = switch (ctx) {
+      FriendsContext() => 'Visible to all your friends',
+      SquadContext(:final name) => 'Visible to $name members',
+    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('New idea')),
@@ -74,6 +91,22 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Container(
+              key: const Key('composeDestination'),
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.visibility_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(destination)),
+                ],
+              ),
+            ),
             topics.when(
               loading: () => const Center(
                 child: Padding(

@@ -7,6 +7,7 @@ import 'providers/auth_controller.dart';
 import 'screens/activity/activity_detail_screen.dart';
 import 'screens/compose/compose_idea_screen.dart';
 import 'screens/login/login_screen.dart';
+import 'screens/squads/create_squad_screen.dart';
 import 'screens/timeline/timeline_screen.dart';
 
 /// Auth-gated router. Redirects to /login until signed in, to /splash while the
@@ -32,6 +33,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/', builder: (_, _) => const TimelineScreen()),
       GoRoute(path: '/ideas/new', builder: (_, _) => const ComposeIdeaScreen()),
+      GoRoute(
+        path: '/squads/new',
+        builder: (_, _) => const CreateSquadScreen(),
+      ),
       GoRoute(
         path: '/activity/:id',
         builder: (_, state) =>

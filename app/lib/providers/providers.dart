@@ -2,10 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_client.dart';
 import '../config.dart';
+import '../models/friend.dart';
+import '../models/squad.dart';
 import '../models/topic.dart';
 import '../repositories/activity_repository.dart';
 import '../repositories/auth_repository.dart';
+import '../repositories/friend_repository.dart';
 import '../repositories/profile_repository.dart';
+import '../repositories/squad_repository.dart';
 import '../repositories/timeline_repository.dart';
 import '../repositories/token_store.dart';
 import '../repositories/topic_repository.dart';
@@ -49,12 +53,35 @@ final activityRepositoryProvider = Provider<ActivityRepository>(
   (ref) => ApiActivityRepository(apiClient: ref.watch(apiClientProvider)),
 );
 
+final squadRepositoryProvider = Provider<SquadRepository>(
+  (ref) => ApiSquadRepository(apiClient: ref.watch(apiClientProvider)),
+);
+
+final friendRepositoryProvider = Provider<FriendRepository>(
+  (ref) => ApiFriendRepository(apiClient: ref.watch(apiClientProvider)),
+);
+
 /// The My Friends timeline (specs/screens/friends-timeline.md).
 final friendsTimelineProvider = FutureProvider<TimelinePage>(
   (ref) => ref.watch(timelineRepositoryProvider).friends(),
 );
 
+/// A squad's timeline (specs/screens/squads.md), keyed by squad id.
+final squadTimelineProvider = FutureProvider.family<TimelinePage, String>(
+  (ref, squadId) => ref.watch(timelineRepositoryProvider).squad(squadId),
+);
+
+/// The user's squads (for the context selector).
+final squadsProvider = FutureProvider<List<Squad>>(
+  (ref) => ref.watch(squadRepositoryProvider).list(),
+);
+
 /// Activity types for the compose-idea form (specs/api/ideas-activities.md).
 final topicsProvider = FutureProvider<List<Topic>>(
   (ref) => ref.watch(topicRepositoryProvider).list(),
+);
+
+/// The user's accepted friends (for squad member selection).
+final friendsProvider = FutureProvider<List<Friend>>(
+  (ref) => ref.watch(friendRepositoryProvider).list(),
 );
