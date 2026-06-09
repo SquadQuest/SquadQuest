@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [v2-backend-stage2-activities]
 specs:
   - specs/api/conventions.md
@@ -8,7 +8,7 @@ specs:
   - specs/screens/friends-timeline.md
   - specs/screens/welcome-wizard.md
 issues: []
-pr:
+pr: 412
 ---
 
 # Plan: v2 client Stage 1 — auth + friends timeline (wired to /v1)
@@ -43,12 +43,14 @@ and the login portion of `specs/screens/welcome-wizard.md`.
 
 ## Validation
 
-- [ ] `cd app && flutter analyze && flutter test` clean (+ CI `app` job).
-- [ ] End-to-end via MCP: server seeded with user+friend+idea; app driven through
-      phone→OTP(dev log)→verify → timeline renders the seeded idea (widget_inspector +
-      screenshot).
-- [ ] signed-out redirect → login; empty-timeline state renders.
-- [ ] token persists across relaunch (secure storage); 401 triggers refresh.
+- [x] `cd app && flutter analyze && flutter test` clean (+ CI `app` + `server` jobs green on #412).
+- [x] End-to-end via MCP: server seeded with user+friend+idea; app driven through
+      phone→OTP(dev log)→verify → timeline rendered the seeded idea
+      ("Katie · Go Paddleboarding · Idea · all friends") via widget_inspector + screenshot.
+- [x] signed-out redirect → login (verified on launch); empty-timeline state (widget test).
+- [~] token persistence + 401-refresh: single-flight refresh implemented; **not** exercised
+      end-to-end. On unsigned macOS the keychain rejects writes so tokens live in-memory only
+      (no cross-relaunch persistence) — signed builds persist. See Follow-ups.
 
 ## Risks / unknowns
 
@@ -58,8 +60,37 @@ and the login portion of `specs/screens/welcome-wizard.md`.
 
 ## Notes
 
-(closeout)
+Shipped as PR #412 (4 commits: vendor mobile-flutter skill, deps, client impl, tests+plan);
+CI green. Structure follows the **mobile-flutter** skill (loaded mid-stage): top-level
+`lib/{api,models,repositories,providers,screens}` + `app.dart`, **abstract repositories with
+Api impls + fakes-via-Riverpod-override** (the timeline widget test uses a `FakeTimelineRepository`).
+This replaced the initial ad-hoc `lib/src/{data,features}` layout.
+
+Bugs caught during MCP-driven verification: `POST /v1/ideas`-style snake_case→camelCase wasn't
+the issue here, but the login `verifyOtp` path surfaced two real macOS issues (below).
+
+macOS findings (deliberate divergences from the skill's gotchas, worth feeding back):
+
+- Added `com.apple.security.network.client` (outbound API) to both entitlement files.
+- `flutter_secure_storage` on an **unsigned** dev build fails: `-34018` (data-protection
+  keychain needs an application-identifier entitlement = signing) and `-25308` (file-based
+  ACL). Mitigations applied: `MacOsOptions(usesDataProtectionKeychain: false)`, drop
+  `app-sandbox` in **Debug** only (Release keeps it), and `TokenStore` swallows keychain
+  failures → in-memory session so auth never breaks.
+- flutter_driver tap timed out on the autofocused field (blinking-cursor keeps frames
+  pending) → `set_frame_sync(false)` before driving.
+
+Config uses `--dart-define=API_BASE_URL` (build-time) rather than the skill's `.env` — a
+deliberate choice for a non-secret endpoint; flagged for the user.
 
 ## Follow-ups
 
-(closeout)
+- **Tracked as (skill feedback):** feed the macOS gotchas back into the `mobile-flutter` skill —
+  (a) unsigned keychain needs `usesDataProtectionKeychain:false` + Debug sandbox-off OR a
+  signing team; (b) `set_frame_sync(false)` before flutter_driver interactions; (c) `.env` vs
+  `--dart-define` guidance.
+- **Deferred (needs signing):** verify real keychain persistence across relaunch + the
+  401→refresh→retry path end-to-end once a macOS development team / app signing is configured.
+- **Deferred to plan:** re-port the polished v2 mock UI (cards/thread drawer/composer) from the
+  `v1` branch; idea composer + respond/vote/confirm/options from the client; communities/squads/
+  threads screens; SSE realtime; push; profile editing; friend-connection/QR.
