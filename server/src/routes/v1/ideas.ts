@@ -2,8 +2,20 @@ import type { FastifyPluginAsync } from 'fastify'
 import { eq } from 'drizzle-orm'
 
 import { activity } from '../../db/schema/index.ts'
-import { ActivityService, type CreateIdeaInput } from '../../domain/activity/service.ts'
+import { ActivityService } from '../../domain/activity/service.ts'
 import { serializeActivity } from '../../contracts/activity.ts'
+
+// Wire (snake_case) body for POST /ideas — mapped to the domain's CreateIdeaInput.
+interface CreateIdeaBody {
+  activity_type_id: string
+  scope?: 'friends' | 'squad'
+  squad_id?: string
+  audience: { kind: 'all_friends' | 'people'; person_ids?: string[] }
+  allow_suggestions?: boolean
+  time_options?: string[]
+  location_options?: string[]
+  community_event_id?: string
+}
 
 // Ideas/activities lifecycle. See specs/api/ideas-activities.md. All authed.
 const ideaRoutes: FastifyPluginAsync = async (fastify) => {
@@ -15,11 +27,21 @@ const ideaRoutes: FastifyPluginAsync = async (fastify) => {
     return serializeActivity(fastify.db, viewerId, row!)
   }
 
-  fastify.post<{ Body: CreateIdeaInput }>(
+  fastify.post<{ Body: CreateIdeaBody }>(
     '/ideas',
     { preHandler: fastify.authenticate },
     async (request, reply) => {
-      const id = await svc.createIdea(request.profileId!, request.body)
+      const b = request.body
+      const id = await svc.createIdea(request.profileId!, {
+        activityTypeId: b.activity_type_id,
+        scope: b.scope,
+        squadId: b.squad_id,
+        audience: { kind: b.audience.kind, personIds: b.audience.person_ids },
+        allowSuggestions: b.allow_suggestions,
+        timeOptions: b.time_options,
+        locationOptions: b.location_options,
+        communityEventId: b.community_event_id,
+      })
       reply.code(201)
       return respond(request.profileId!, id)
     },
