@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'models/activity.dart';
 import 'providers/auth_controller.dart';
+import 'screens/activity/activity_detail_screen.dart';
+import 'screens/compose/compose_idea_screen.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/timeline/timeline_screen.dart';
 
@@ -28,6 +31,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (_, _) => const _Splash()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/', builder: (_, _) => const TimelineScreen()),
+      GoRoute(path: '/ideas/new', builder: (_, _) => const ComposeIdeaScreen()),
+      GoRoute(
+        path: '/activity/:id',
+        builder: (_, state) =>
+            ActivityDetailScreen(activity: state.extra as Activity?),
+      ),
     ],
   );
 });
