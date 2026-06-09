@@ -216,6 +216,7 @@ class _OptionTile extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: IconButton(
+        key: Key('vote_${option.id}'),
         icon: Icon(option.youVoted ? Icons.thumb_up : Icons.thumb_up_outlined),
         onPressed: busy ? null : () => onVote(!option.youVoted),
       ),
@@ -224,6 +225,7 @@ class _OptionTile extends StatelessWidget {
       trailing: onConfirm == null
           ? null
           : TextButton(
+              key: Key('confirm_${option.id}'),
               onPressed: busy ? null : onConfirm,
               child: const Text('Confirm'),
             ),
