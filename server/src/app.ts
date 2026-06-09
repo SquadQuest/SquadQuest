@@ -3,12 +3,16 @@ import fp from 'fastify-plugin'
 import cors from '@fastify/cors'
 
 import envPlugin from './plugins/env.ts'
+import dbPlugin from './db/index.ts'
 import v1Routes from './routes/v1/index.ts'
 
 export const app: FastifyPluginAsync = async (fastify) => {
   // Environment config must load first (validates + decorates fastify.config).
   await fastify.register(envPlugin)
   fastify.log.level = fastify.config.LOG_LEVEL
+
+  // Database (decorates fastify.db + fastify.sql).
+  await fastify.register(dbPlugin)
 
   await fastify.register(cors, {
     origin: fastify.config.NODE_ENV === 'production' ? false : true,
