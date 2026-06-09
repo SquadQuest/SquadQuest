@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../models/activity.dart';
 import '../../providers/auth_controller.dart';
@@ -25,6 +26,12 @@ class TimelineScreen extends ConsumerWidget {
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        key: const Key('composeIdeaFab'),
+        tooltip: 'New idea',
+        onPressed: () => context.push('/ideas/new'),
+        child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
         onRefresh: () async => ref.refresh(friendsTimelineProvider.future),
@@ -92,6 +99,7 @@ class _ActivityTile extends StatelessWidget {
         : 'Idea · ${a.audienceSummary ?? ''}';
 
     return ListTile(
+      onTap: () => context.push('/activity/${a.id}', extra: a),
       leading: CircleAvatar(
         child: Text((a.captainName ?? '?').characters.first),
       ),
