@@ -22,6 +22,13 @@
       "when": 1781025288002,
       "tag": "0002_greedy_odin",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781039259462,
+      "tag": "0003_fine_kid_colt",
+      "breakpoints": true
     }
   ]
 }
