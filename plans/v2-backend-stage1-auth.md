@@ -6,7 +6,7 @@ specs:
   - specs/api/auth.md
   - specs/data-model.md
 issues: []
-pr: 407
+pr: 408
 ---
 
 # Plan: v2 backend Stage 1 — API foundation + auth + identity
@@ -53,7 +53,7 @@ communities; squads/messages; SSE realtime; real SMS provider; storage/signed UR
       "not on v2 yet" row (hand-seeded shell + friendship).
 - [x] below-floor `X-SquadQuest-Client` → `426` with upgrade envelope; unauthed `/v1/me` →
       `401`.
-- [x] `bun test` green (9 tests); `pr-test` server job → verified on PR #407.
+- [x] `bun test` green (9 tests); `pr-test` server job → verified on PR #408.
 
 ## Risks / unknowns
 
@@ -64,7 +64,7 @@ communities; squads/messages; SSE realtime; real SMS provider; storage/signed UR
 
 ## Notes
 
-Shipped as PR #407 (5 commits: deps, schema+plumbing, conventions middleware, auth+identity,
+Shipped as PR #408 (5 commits: deps, schema+plumbing, conventions middleware, auth+identity,
 tests+CI). Drizzle/Bun/postgres-js + drizzle-kit generate/migrate work cleanly (risk
 cleared). Dev Postgres runs on host port **5532** (5432 is commonly taken by other projects).
 Access tokens are JWT (15m); refresh tokens are opaque, hashed, rotating, DB-backed. CI: the
