@@ -8,16 +8,23 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "bun test",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.0",
     "@fastify/env": "^5.0.0",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.2.0",
-    "fastify-plugin": "^5.0.0"
+    "fastify-plugin": "^5.0.0",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.7.0"
   }
 }
