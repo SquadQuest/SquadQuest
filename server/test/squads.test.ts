@@ -133,6 +133,8 @@ test('squad idea shows on the squad timeline, never on My Friends', async () => 
   })
   expect(created.statusCode).toBe(201)
   expect(created.json().scope).toBe('squad')
+  // audience reads as squad-scoped, never "all friends"
+  expect(created.json().audience).toEqual({ kind: 'squad', summary: 'Paddlers members' })
 
   // member sees it on the squad timeline
   const memberFeed = await server.inject({
@@ -141,6 +143,7 @@ test('squad idea shows on the squad timeline, never on My Friends', async () => 
     headers: member.auth,
   })
   expect(memberFeed.json().items).toHaveLength(1)
+  expect(memberFeed.json().items[0].audience.kind).toBe('squad')
 
   // it must NOT leak onto anyone's My Friends timeline (private-first)
   for (const u of [cap, member, outsider]) {
