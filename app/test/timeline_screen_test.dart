@@ -14,11 +14,11 @@ class FakeTimelineRepository implements TimelineRepository {
   @override
   Future<TimelinePage> friends({int limit = 50, String? before}) async => _page;
   @override
-  Future<TimelinePage> squad(
+  Future<SquadFeedPage> squadFeed(
     String squadId, {
     int limit = 50,
     String? before,
-  }) async => _page;
+  }) async => const SquadFeedPage(items: []);
 }
 
 Widget _harness(TimelinePage page) => ProviderScope(

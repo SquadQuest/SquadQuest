@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'models/activity.dart';
+import 'models/message.dart';
 import 'providers/auth_controller.dart';
 import 'screens/activity/activity_detail_screen.dart';
 import 'screens/compose/compose_idea_screen.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/squads/create_squad_screen.dart';
+import 'screens/thread/thread_screen.dart';
 import 'screens/timeline/timeline_screen.dart';
 
 /// Auth-gated router. Redirects to /login until signed in, to /splash while the
@@ -41,6 +43,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/activity/:id',
         builder: (_, state) =>
             ActivityDetailScreen(activity: state.extra as Activity?),
+      ),
+      GoRoute(
+        path: '/thread/:targetType/:targetId',
+        builder: (_, state) => ThreadScreen(
+          targetType: state.pathParameters['targetType']!,
+          targetId: state.pathParameters['targetId']!,
+          root: state.extra as Message?,
+        ),
       ),
     ],
   );

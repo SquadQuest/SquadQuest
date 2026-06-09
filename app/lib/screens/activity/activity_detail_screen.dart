@@ -5,6 +5,7 @@ import '../../api/api_exception.dart';
 import '../../models/activity.dart';
 import '../../providers/auth_controller.dart';
 import '../../providers/providers.dart';
+import '../../widgets/thread_view.dart';
 
 /// Activity detail (specs/api/ideas-activities.md + response-system). Seeded from
 /// the [Activity] passed by the timeline; every action returns the updated activity,
@@ -161,6 +162,14 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                     ),
                   ),
                 ],
+
+                const Divider(height: 32),
+                Text(
+                  'Discussion',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                ThreadView(targetType: 'activity', targetId: a.id),
               ],
             ),
     );
