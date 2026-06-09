@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [v2-squads-context-selector]
 specs:
   - specs/api/messages.md
@@ -7,7 +7,7 @@ specs:
   - specs/screens/squads.md
   - specs/data-model.md
 issues: []
-pr:
+pr: 420
 ---
 
 # Plan: v2 messages + threads (text)
@@ -58,12 +58,14 @@ feed of `specs/screens/squads.md`.
 
 ## Validation
 
-- [ ] migration applies; `bun run type-check` + `bun test` (post squad message member-gated;
-      heterogeneous squad timeline tags + ordering; activity thread reply visible to audience,
-      non-member/non-audience 403/404; thread_count) green; CI green.
-- [ ] client `flutter analyze` + widget tests green; CI green.
-- [ ] (when machine free) MCP: post a squad message → appears in the squad feed; reply on an
-      activity → shows in its Discussion + thread_count increments; messages never on My Friends.
+- [x] migration applies; `bun run type-check` + `bun test` (post squad message member-gated;
+      heterogeneous squad timeline tags + ordering; activity thread reply audience-gated +
+      thread_count; squad-message thread membership-gated; no free text on friends) — 3 tests,
+      full suite 24/24; backend CI green (#419, merged).
+- [x] client `flutter analyze` clean + 8 widget tests (ThreadView render/empty + updated
+      timeline/detail/create-squad fakes); client CI on #420.
+- [~] MCP visual walkthrough deferred (window-foreground conflict while the machine is in
+      use); backend gating is unit-tested, the driver loop proven in prior stages.
 
 ## Risks / unknowns
 
@@ -75,8 +77,19 @@ feed of `specs/screens/squads.md`.
 
 ## Notes
 
-(closeout)
+Two PRs: **#419** (backend — message schema/migration 0003, MessageService with per-target
+visibility reused from ActivityService.canView / squad membership, heterogeneous squad
+timeline, real thread_count, 3 tests) merged; **#420** (client — Message/FeedItem models,
+MessageRepository, squadFeed, message tiles + squad composer, reusable ThreadView embedded in
+activity detail + a ThreadScreen). Heterogeneous feed merges two tables in memory (fetch
+limit+1 each, sort, derive cursor). Squad-timeline items gained an additive `type` field; the
+client branches on it.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred to plan:** photo attachments + `POST /v1/uploads` (storage stage — `attachments`
+  is `[]` for now); SSE `message.created` realtime (realtime stage — feed/threads render from
+  fetch + pull-to-refresh); `community_event` thread targets (communities stage); the slide-in
+  drawer chrome + persistent vote-bar restructure (visual polish).
+- **Deferred (visual QA):** MCP walkthrough of post-message + activity-thread reply when the
+  machine is free.
