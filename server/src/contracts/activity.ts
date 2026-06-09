@@ -9,6 +9,7 @@ import {
   response,
   profile,
   topic,
+  squad,
 } from '../db/schema/index.ts'
 
 type ActivityRow = typeof activity.$inferSelect
@@ -39,6 +40,13 @@ export async function serializeActivities(
   const votes = optionIds.length
     ? await db.select().from(optionVote).where(inArray(optionVote.optionId, optionIds))
     : []
+
+  // Squad names for squad-scoped rows (for the audience label).
+  const squadIds = [...new Set(rows.map((r) => r.squadId).filter((id): id is string => !!id))]
+  const squads = squadIds.length
+    ? await db.select().from(squad).where(inArray(squad.id, squadIds))
+    : []
+  const squadNameById = new Map(squads.map((s) => [s.id, s.name]))
 
   const captainById = new Map(captains.map((c) => [c.id, c]))
   const typeById = new Map(types.map((t) => [t.id, t]))
@@ -89,12 +97,25 @@ export async function serializeActivities(
     const opts = optionsByActivity.get(r.id) ?? []
     const counts = respCounts.get(r.id) ?? { in: 0, interested: 0 }
 
-    const audienceSummary =
-      r.audienceKind === 'all_friends'
-        ? 'all friends'
-        : `${audienceCount.get(r.id) ?? 0} ${
-            (audienceCount.get(r.id) ?? 0) === 1 ? 'person' : 'people'
-          }`
+    // Audience label reflects scope: squad activities are visible to the whole
+    // squad and only the squad (never "all friends"); friends activities use the
+    // audience kind (all_friends / N people).
+    const audience =
+      r.scope === 'squad'
+        ? {
+            kind: 'squad',
+            summary: r.squadId
+                ? `${squadNameById.get(r.squadId) ?? 'Squad'} members`
+                : 'Squad members',
+          }
+        : {
+            kind: r.audienceKind,
+            summary: r.audienceKind === 'all_friends'
+                ? 'all friends'
+                : `${audienceCount.get(r.id) ?? 0} ${
+                    (audienceCount.get(r.id) ?? 0) === 1 ? 'person' : 'people'
+                  }`,
+          }
 
     return {
       id: r.id,
@@ -105,7 +126,7 @@ export async function serializeActivities(
       activity_type: type ? { id: type.id, label: type.label } : null,
       scope: r.scope,
       squad_id: r.squadId,
-      audience: { kind: r.audienceKind, summary: audienceSummary },
+      audience,
       allow_suggestions: r.allowSuggestions,
       time_options: opts.filter((o) => o.kind === 'time').map(serializeOption),
       location_options: opts.filter((o) => o.kind === 'location').map(serializeOption),
