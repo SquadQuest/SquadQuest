@@ -7,6 +7,7 @@ import friendsRoutes from './friends.ts'
 import ideaRoutes from './ideas.ts'
 import timelineRoutes from './timeline.ts'
 import topicRoutes from './topics.ts'
+import squadRoutes from './squads.ts'
 
 // The /v1 contract surface. All client-facing endpoints register under here so
 // the URL major version is the coarse contract boundary (see
@@ -19,6 +20,7 @@ const v1Routes: FastifyPluginAsync = async (fastify) => {
   await fastify.register(ideaRoutes)
   await fastify.register(timelineRoutes)
   await fastify.register(topicRoutes)
+  await fastify.register(squadRoutes)
 }
 
 export default v1Routes
