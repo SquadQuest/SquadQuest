@@ -3,21 +3,53 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/activity.dart';
+import '../../providers/active_context.dart';
 import '../../providers/auth_controller.dart';
 import '../../providers/providers.dart';
+import '../../repositories/timeline_repository.dart';
 
-/// The My Friends timeline (specs/screens/friends-timeline.md). Minimal-functional
-/// for this stage: a list of idea/activity tiles; the polished card UI comes later.
+/// The active timeline — My Friends or a Squad, per the context selector
+/// (specs/behaviors/context-selector.md). The title, feed, and compose destination
+/// all derive from `activeContextProvider` (one source of truth). Minimal-functional;
+/// polished cards come later.
 class TimelineScreen extends ConsumerWidget {
   const TimelineScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final timeline = ref.watch(friendsTimelineProvider);
+    final ctx = ref.watch(activeContextProvider);
+    final AsyncValue<TimelinePage> timeline = switch (ctx) {
+      FriendsContext() => ref.watch(friendsTimelineProvider),
+      SquadContext(:final id) => ref.watch(squadTimelineProvider(id)),
+    };
+    final title = switch (ctx) {
+      FriendsContext() => 'My Friends',
+      SquadContext(:final name) => name,
+    };
+    final emptyText = switch (ctx) {
+      FriendsContext() =>
+        'No ideas yet.\nWhen a friend shares an idea, it shows up here.',
+      SquadContext() => 'No ideas in this squad yet.\nTap + to share one.',
+    };
+
+    void refresh() => switch (ctx) {
+      FriendsContext() => ref.invalidate(friendsTimelineProvider),
+      SquadContext(:final id) => ref.invalidate(squadTimelineProvider(id)),
+    };
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Friends'),
+        title: InkWell(
+          key: const Key('contextSelectorButton'),
+          onTap: () => _showContextSelector(context, ref),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(child: Text(title, overflow: TextOverflow.ellipsis)),
+              const Icon(Icons.arrow_drop_down),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
             key: const Key('logoutButton'),
@@ -34,7 +66,12 @@ class TimelineScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
-        onRefresh: () async => ref.refresh(friendsTimelineProvider.future),
+        onRefresh: () => switch (ctx) {
+          FriendsContext() => ref.refresh(friendsTimelineProvider.future),
+          SquadContext(:final id) => ref.refresh(
+            squadTimelineProvider(id).future,
+          ),
+        },
         child: timeline.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => ListView(
@@ -42,14 +79,14 @@ class TimelineScreen extends ConsumerWidget {
               const SizedBox(height: 120),
               Center(
                 child: Text(
-                  'Couldn\'t load your timeline.\n$e',
+                  'Couldn\'t load this timeline.\n$e',
                   textAlign: TextAlign.center,
                 ),
               ),
               const SizedBox(height: 12),
               Center(
                 child: FilledButton(
-                  onPressed: () => ref.invalidate(friendsTimelineProvider),
+                  onPressed: refresh,
                   child: const Text('Retry'),
                 ),
               ),
@@ -58,16 +95,13 @@ class TimelineScreen extends ConsumerWidget {
           data: (page) {
             if (page.items.isEmpty) {
               return ListView(
-                children: const [
-                  SizedBox(height: 160),
+                children: [
+                  const SizedBox(height: 160),
                   Center(
-                    key: Key('timelineEmpty'),
+                    key: const Key('timelineEmpty'),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
-                        'No ideas yet.\nWhen a friend shares an idea, it shows up here.',
-                        textAlign: TextAlign.center,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(emptyText, textAlign: TextAlign.center),
                     ),
                   ),
                 ],
@@ -82,6 +116,71 @@ class TimelineScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+    );
+  }
+
+  void _showContextSelector(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => Consumer(
+        builder: (_, ref, _) {
+          final squads = ref.watch(squadsProvider);
+          return SafeArea(
+            child: ListView(
+              key: const Key('contextSelectorSheet'),
+              shrinkWrap: true,
+              children: [
+                const ListTile(
+                  dense: true,
+                  title: Text(
+                    'SWITCH CONTEXT',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                ListTile(
+                  key: const Key('ctx_friends'),
+                  leading: const Icon(Icons.group),
+                  title: const Text('My Friends'),
+                  onTap: () {
+                    ref.read(activeContextProvider.notifier).toFriends();
+                    Navigator.pop(sheetContext);
+                  },
+                ),
+                const Divider(height: 1),
+                ...squads.maybeWhen(
+                  data: (list) => list.map(
+                    (s) => ListTile(
+                      key: Key('ctx_squad_${s.id}'),
+                      leading: const Icon(Icons.shield_outlined),
+                      title: Text(s.name),
+                      subtitle: Text('${s.memberCount} members · ${s.role}'),
+                      onTap: () {
+                        ref
+                            .read(activeContextProvider.notifier)
+                            .toSquad(s.id, s.name);
+                        Navigator.pop(sheetContext);
+                      },
+                    ),
+                  ),
+                  orElse: () => [
+                    const ListTile(title: Text('Loading squads…')),
+                  ],
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  key: const Key('ctx_new_squad'),
+                  leading: const Icon(Icons.add),
+                  title: const Text('New squad'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    context.push('/squads/new');
+                  },
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

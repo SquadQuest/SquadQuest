@@ -18,6 +18,7 @@ class FakeActivityRepository implements ActivityRepository {
     bool allowSuggestions = false,
     List<String> timeOptions = const [],
     List<String> locationOptions = const [],
+    String? squadId,
   }) async => result;
 
   @override

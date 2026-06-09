@@ -5,11 +5,14 @@ import '../models/activity.dart';
 /// returns the updated [Activity] (the API re-serializes it), so callers can refresh
 /// without a separate read. Friends/all_friends audience only this stage.
 abstract class ActivityRepository {
+  /// Create an idea. Friends scope (default) → all_friends audience; squad scope →
+  /// pass [squadId] (visible to that squad's members).
   Future<Activity> createIdea({
     required String activityTypeId,
     bool allowSuggestions,
     List<String> timeOptions,
     List<String> locationOptions,
+    String? squadId,
   });
 
   Future<Activity> setResponse(String activityId, String value);
@@ -38,11 +41,14 @@ class ApiActivityRepository implements ActivityRepository {
     bool allowSuggestions = false,
     List<String> timeOptions = const [],
     List<String> locationOptions = const [],
+    String? squadId,
   }) async {
     final res = await apiClient.post(
       '/v1/ideas',
       body: {
         'activity_type_id': activityTypeId,
+        if (squadId != null) 'scope': 'squad',
+        'squad_id': ?squadId,
         'audience': {'kind': 'all_friends'},
         'allow_suggestions': allowSuggestions,
         if (timeOptions.isNotEmpty) 'time_options': timeOptions,

@@ -9,6 +9,7 @@ class TimelinePage {
 
 abstract class TimelineRepository {
   Future<TimelinePage> friends({int limit, String? before});
+  Future<TimelinePage> squad(String squadId, {int limit, String? before});
 }
 
 class ApiTimelineRepository implements TimelineRepository {
@@ -16,12 +17,7 @@ class ApiTimelineRepository implements TimelineRepository {
 
   final ApiClient apiClient;
 
-  @override
-  Future<TimelinePage> friends({int limit = 50, String? before}) async {
-    final res = await apiClient.get(
-      '/v1/timeline/friends',
-      query: {'limit': limit, 'before': ?before},
-    );
+  TimelinePage _page(Map<String, dynamic> res) {
     final items = ((res['items'] as List<dynamic>?) ?? const [])
         .map((e) => Activity.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -30,4 +26,24 @@ class ApiTimelineRepository implements TimelineRepository {
       nextCursor: res['next_cursor'] as String?,
     );
   }
+
+  @override
+  Future<TimelinePage> friends({int limit = 50, String? before}) async => _page(
+    await apiClient.get(
+      '/v1/timeline/friends',
+      query: {'limit': limit, 'before': ?before},
+    ),
+  );
+
+  @override
+  Future<TimelinePage> squad(
+    String squadId, {
+    int limit = 50,
+    String? before,
+  }) async => _page(
+    await apiClient.get(
+      '/v1/squads/$squadId/timeline',
+      query: {'limit': limit, 'before': ?before},
+    ),
+  );
 }

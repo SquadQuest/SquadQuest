@@ -38,7 +38,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     });
     try {
       final updated = await action();
+      // Refresh whichever timeline this item lives on (friends or any squad).
       ref.invalidate(friendsTimelineProvider);
+      ref.invalidate(squadTimelineProvider);
       if (mounted) setState(() => _activity = updated);
     } on ApiException catch (e) {
       setState(() => _error = e.message);
