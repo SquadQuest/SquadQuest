@@ -5,6 +5,7 @@ class Activity {
   const Activity({
     required this.id,
     required this.state,
+    this.captainId,
     this.captainName,
     this.activityTypeLabel,
     this.audienceSummary,
@@ -20,6 +21,7 @@ class Activity {
 
   final String id;
   final String state; // 'idea' | 'confirmed'
+  final String? captainId;
   final String? captainName;
   final String? activityTypeLabel;
   final String? audienceSummary;
@@ -47,6 +49,7 @@ class Activity {
     return Activity(
       id: json['id'] as String,
       state: json['state'] as String? ?? 'idea',
+      captainId: captain?['id'] as String?,
       captainName: captain?['first_name'] as String?,
       activityTypeLabel: type?['label'] as String?,
       audienceSummary: audience?['summary'] as String?,
