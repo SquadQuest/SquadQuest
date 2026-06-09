@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [v2-backend-stage1-auth]
 specs:
   - specs/api/ideas-activities.md
@@ -8,7 +8,7 @@ specs:
   - specs/behaviors/ideas-activities-lifecycle.md
   - specs/behaviors/response-system.md
 issues: []
-pr:
+pr: 409
 ---
 
 # Plan: v2 backend Stage 2 — ideas/activities + friends timeline
@@ -49,14 +49,14 @@ of `specs/data-model.md`, `behaviors/{ideas-activities-lifecycle,response-system
 
 ## Validation
 
-- [ ] migration applies; `bun run type-check` clean.
-- [ ] create idea (all_friends + people) → appears on `GET /v1/timeline/friends` for an
+- [x] migration applies; `bun run type-check` clean.
+- [x] create idea (all_friends + people) → appears on `GET /v1/timeline/friends` for an
       in-audience friend; hidden from a non-friend and an out-of-audience user.
-- [ ] response set/clear updates your_response + counts; option suggest gated by
+- [x] response set/clear updates your_response + counts; option suggest gated by
       allow_suggestions; vote toggle updates votes/you_voted.
-- [ ] confirm as captain → state=confirmed + confirmed_time/location; non-captain → 403
+- [x] confirm as captain → state=confirmed + confirmed_time/location; non-captain → 403
       not_captain.
-- [ ] cursor pagination walks history; `bun test` + `pr-test` server job green.
+- [x] cursor pagination walks history; `bun test` + `pr-test` server job green.
 
 ## Risks / unknowns
 
