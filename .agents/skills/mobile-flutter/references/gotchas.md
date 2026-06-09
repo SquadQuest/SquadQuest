@@ -58,6 +58,29 @@ The macOS app sandbox blocks outgoing HTTP by default. Add to both `macos/Runner
 
 This requires a signed build. Set the development team in Xcode: Runner target → Signing & Capabilities → Team → select for "All" configurations. This is a one-time Xcode setup that can't be done from the command line.
 
+**Unsigned local/CI builds (no team configured).** Without signing, the keychain rejects
+access and you'll see `PlatformException(… -34018 …)` (`errSecMissingEntitlement` — the
+data-protection keychain wants an `application-identifier` from signing) or `-25308`
+(`errSecInteractionNotAllowed`). Adding `keychain-access-groups` only makes it worse — that
+entitlement *itself* forces a signing certificate, so the build fails with *"has
+entitlements that require signing with a development certificate."* To run unsigned for
+local dev or CI:
+
+1. Use the **file-based keychain** instead of the data-protection one:
+
+   ```dart
+   const FlutterSecureStorage(
+     mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+   );
+   ```
+
+2. Drop `com.apple.security.app-sandbox` from **`DebugProfile.entitlements` only** (keep it
+   in `Release.entitlements`; a distributed build must be signed + sandboxed anyway), and do
+   **not** add `keychain-access-groups`.
+3. Make token storage **tolerate failures** — wrap secure-store reads/writes in try/catch and
+   keep the value in memory for the session, so a keychain hiccup never breaks auth. Signed
+   release builds then persist normally across relaunches.
+
 ## API Numeric Fields as Strings
 
 Some backends serialize decimal/numeric fields as strings in JSON (`"4.50"` not `4.5`). Dart's `as num?` cast will throw a `TypeError` on strings. Always use a helper that handles both:
