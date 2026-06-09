@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [v2-client-stage1-auth-timeline]
 specs:
   - specs/api/ideas-activities.md
@@ -7,7 +7,7 @@ specs:
   - specs/behaviors/ideas-activities-lifecycle.md
   - specs/behaviors/response-system.md
 issues: []
-pr:
+pr: 413
 ---
 
 # Plan: v2 client Stage 2 — interactive timeline (compose + respond/vote/confirm)
@@ -45,11 +45,15 @@ PUT votes, POST confirm) + `behaviors/{ideas-activities-lifecycle,response-syste
 
 ## Validation
 
-- [ ] `GET /v1/topics` returns seeded topics; `bun test` + `flutter analyze`/`test` clean; CI green.
-- [ ] MCP end-to-end: log in → compose an idea (FAB) → it appears on the timeline → open detail
-      → set response (counts update) → vote an option (count/you_voted update) → confirm as
-      captain (state→confirmed, time/location shown). Screenshot each.
-- [ ] non-captain sees no confirm control; suggest-option hidden when allow_suggestions=false.
+- [x] `GET /v1/topics` returns seeded topics; `bun test` + `flutter analyze`/`test` (4 widget
+      tests) clean; CI `app` + `server` green on #413.
+- [x] MCP end-to-end: logged in → composed "Go Paddleboarding" w/ two time options (FAB) →
+      appeared on the timeline → opened detail → set response (1 in) → voted Sat 7am (1 vote) →
+      confirmed as captain (state→confirmed, "Confirmed · Sat 7am"; DB verified). Screenshotted.
+- [x] captain confirm control present (own idea); confirm controls disappear once confirmed.
+- [~] non-captain-hides-confirm + suggest-option UI: confirm is gated on `captainId == me` in
+      code but not driven from a second account this stage; suggest-option UI deferred (see
+      Follow-ups).
 
 ## Risks / unknowns
 
@@ -60,8 +64,19 @@ PUT votes, POST confirm) + `behaviors/{ideas-activities-lifecycle,response-syste
 
 ## Notes
 
-(closeout)
+Shipped as PR #413 (4 commits: GET /v1/topics + plan, client data layer, screens+routing,
+tests+keys); CI green. The detail screen is seeded from the tapped tile's `Activity` (via
+go_router `extra`) and each mutation returns the updated activity which is swapped into local
+state + invalidates the timeline — so no `GET /v1/ideas/:id` was needed (none exists). Added
+`captainId` to the Activity model to gate the captain-only confirm client-side. MCP-driven
+flutter_driver needs unique keys for repeated controls — added `Key('vote_<id>')` /
+`Key('confirm_<id>')` after the first run hit an ambiguous-finder error on two "Confirm" texts.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred to plan:** suggest-option UI (gated by allow_suggestions); people-targeted
+  audience picker in the composer; verify non-captain hides confirm + people-audience
+  visibility by driving a second account; polished mock UI re-port; communities/squads/
+  threads; SSE realtime; push.
+- **Tracked as (skill feedback):** the flutter_driver "unique Key per repeated control"
+  lesson joins the macOS gotchas already noted for the `mobile-flutter` skill.
