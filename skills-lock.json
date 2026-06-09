@@ -53,7 +53,7 @@
       "source": "JarvusInnovations/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/mobile-flutter/SKILL.md",
-      "computedHash": "732d3f92a2c1183b4549dca2857776a95684a9f16983374958884376cde25b98"
+      "computedHash": "a09dc96c806c6281e08592fdc4c199c5ac26c9f7d1e62de6cf25fd11ac597269"
     },
     "specops": {
       "source": "JarvusInnovations/specops",
