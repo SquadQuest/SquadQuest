@@ -1,5 +1,5 @@
 ---
-status: planned
+status: cancelled
 depends: [specops-foundation]
 specs:
   - specs/architecture.md
@@ -16,6 +16,16 @@ pr:
 ---
 
 # Plan: Stand up the v2 backend + v1 migration
+
+> **Cancelled — superseded by staged plans.** This was the original "build the whole
+> backend" umbrella. It proved too big for one unit and was decomposed into incremental,
+> independently-shippable stages (below). Kept for history; do not implement directly. The
+> spec ownership now lives on the stage plans, not here.
+>
+> - `v2-backend-stage1-auth` — API foundation + auth + identity ✅ (#408)
+> - `v2-backend-stage2-activities` — ideas/activities + friends timeline (in progress)
+> - *future stages:* communities; squads + messages; SSE realtime; bulk v1→v2 pre-migration
+>   job; real SMS provider; storage/signed URLs.
 
 ## Scope
 
@@ -59,4 +69,10 @@ populated friends timeline.)
 
 ## Notes
 
+Cancelled and decomposed into staged plans (see the banner above) once it was clear the full
+backend wouldn't land as one PR. Each stage carries its own specs/validation; this file
+remains only as the roadmap breadcrumb.
+
 ## Follow-ups
+
+Tracked by the stage plans listed in the banner.
