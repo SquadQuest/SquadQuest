@@ -1,4 +1,4 @@
-import { inArray } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 
 import type { Database } from '../db/index.ts'
 import {
@@ -10,6 +10,7 @@ import {
   profile,
   topic,
   squad,
+  message,
 } from '../db/schema/index.ts'
 
 type ActivityRow = typeof activity.$inferSelect
@@ -47,6 +48,15 @@ export async function serializeActivities(
     ? await db.select().from(squad).where(inArray(squad.id, squadIds))
     : []
   const squadNameById = new Map(squads.map((s) => [s.id, s.name]))
+
+  // Thread reply counts per activity (batched).
+  const threadRows = await db
+    .select({ id: message.threadTargetId, n: sql<number>`count(*)::int` })
+    .from(message)
+    .where(and(eq(message.threadTargetType, 'activity'), inArray(message.threadTargetId, ids)))
+    .groupBy(message.threadTargetId)
+  const threadCountById = new Map<string, number>()
+  for (const t of threadRows) if (t.id) threadCountById.set(t.id, t.n)
 
   const captainById = new Map(captains.map((c) => [c.id, c]))
   const typeById = new Map(types.map((t) => [t.id, t]))
@@ -138,7 +148,7 @@ export async function serializeActivities(
         : null,
       your_response: yourResponse.get(r.id) ?? null,
       counts,
-      thread_count: 0, // threads/messages arrive in a later stage
+      thread_count: threadCountById.get(r.id) ?? 0,
       event_ref: null, // bring-friends/community link arrives in a later stage
       created_at: r.createdAt.toISOString(),
     }
