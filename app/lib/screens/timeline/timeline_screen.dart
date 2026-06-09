@@ -3,24 +3,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/activity.dart';
+import '../../models/feed_item.dart';
+import '../../models/message.dart';
 import '../../providers/active_context.dart';
 import '../../providers/auth_controller.dart';
 import '../../providers/providers.dart';
-import '../../repositories/timeline_repository.dart';
 
-/// The active timeline — My Friends or a Squad, per the context selector
-/// (specs/behaviors/context-selector.md). The title, feed, and compose destination
-/// all derive from `activeContextProvider` (one source of truth). Minimal-functional;
-/// polished cards come later.
+/// The active timeline — My Friends (ideas/activities only) or a Squad (the
+/// heterogeneous activities + messages feed), per the context selector
+/// (specs/behaviors/context-selector.md). One source of truth: `activeContextProvider`.
 class TimelineScreen extends ConsumerWidget {
   const TimelineScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ctx = ref.watch(activeContextProvider);
-    final AsyncValue<TimelinePage> timeline = switch (ctx) {
-      FriendsContext() => ref.watch(friendsTimelineProvider),
-      SquadContext(:final id) => ref.watch(squadTimelineProvider(id)),
+
+    // Unify both contexts to a list of FeedItem so rendering is single-path.
+    final AsyncValue<List<FeedItem>> feed = switch (ctx) {
+      FriendsContext() =>
+        ref
+            .watch(friendsTimelineProvider)
+            .whenData(
+              (p) => p.items.map<FeedItem>(ActivityFeedItem.new).toList(),
+            ),
+      SquadContext(:final id) =>
+        ref.watch(squadTimelineProvider(id)).whenData((p) => p.items),
     };
     final title = switch (ctx) {
       FriendsContext() => 'My Friends',
@@ -29,12 +37,8 @@ class TimelineScreen extends ConsumerWidget {
     final emptyText = switch (ctx) {
       FriendsContext() =>
         'No ideas yet.\nWhen a friend shares an idea, it shows up here.',
-      SquadContext() => 'No ideas in this squad yet.\nTap + to share one.',
-    };
-
-    void refresh() => switch (ctx) {
-      FriendsContext() => ref.invalidate(friendsTimelineProvider),
-      SquadContext(:final id) => ref.invalidate(squadTimelineProvider(id)),
+      SquadContext() =>
+        'Nothing here yet.\nShare an idea (+) or post a message below.',
     };
 
     return Scaffold(
@@ -65,57 +69,62 @@ class TimelineScreen extends ConsumerWidget {
         onPressed: () => context.push('/ideas/new'),
         child: const Icon(Icons.add),
       ),
-      body: RefreshIndicator(
-        onRefresh: () => switch (ctx) {
-          FriendsContext() => ref.refresh(friendsTimelineProvider.future),
-          SquadContext(:final id) => ref.refresh(
-            squadTimelineProvider(id).future,
-          ),
-        },
-        child: timeline.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ListView(
-            children: [
-              const SizedBox(height: 120),
-              Center(
-                child: Text(
-                  'Couldn\'t load this timeline.\n$e',
-                  textAlign: TextAlign.center,
+      body: Column(
+        children: [
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => switch (ctx) {
+                FriendsContext() => ref.refresh(friendsTimelineProvider.future),
+                SquadContext(:final id) => ref.refresh(
+                  squadTimelineProvider(id).future,
                 ),
-              ),
-              const SizedBox(height: 12),
-              Center(
-                child: FilledButton(
-                  onPressed: refresh,
-                  child: const Text('Retry'),
-                ),
-              ),
-            ],
-          ),
-          data: (page) {
-            if (page.items.isEmpty) {
-              return ListView(
-                children: [
-                  const SizedBox(height: 160),
-                  Center(
-                    key: const Key('timelineEmpty'),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(emptyText, textAlign: TextAlign.center),
+              },
+              child: feed.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => ListView(
+                  children: [
+                    const SizedBox(height: 120),
+                    Center(
+                      child: Text(
+                        'Couldn\'t load this timeline.\n$e',
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                ],
-              );
-            }
-            return ListView.separated(
-              key: const Key('timelineList'),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: page.items.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (_, i) => _ActivityTile(page.items[i]),
-            );
-          },
-        ),
+                  ],
+                ),
+                data: (items) {
+                  if (items.isEmpty) {
+                    return ListView(
+                      children: [
+                        const SizedBox(height: 160),
+                        Center(
+                          key: const Key('timelineEmpty'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(emptyText, textAlign: TextAlign.center),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return ListView.separated(
+                    key: const Key('timelineList'),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: items.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (_, i) => switch (items[i]) {
+                      ActivityFeedItem(:final activity) => _ActivityTile(
+                        activity,
+                      ),
+                      MessageFeedItem(:final message) => _MessageTile(message),
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+          if (ctx is SquadContext) _SquadComposer(squadId: ctx.id),
+        ],
       ),
     );
   }
@@ -209,6 +218,104 @@ class _ActivityTile extends StatelessWidget {
       trailing: a.isConfirmed
           ? const Icon(Icons.event_available)
           : Text('${a.inCount} in'),
+    );
+  }
+}
+
+class _MessageTile extends StatelessWidget {
+  const _MessageTile(this.message);
+  final Message message;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = message;
+    return ListTile(
+      key: Key('message_${m.id}'),
+      onTap: () => context.push('/thread/message/${m.id}', extra: m),
+      leading: CircleAvatar(
+        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+        child: Text((m.senderName ?? '?').characters.first),
+      ),
+      title: Text(m.senderName ?? 'Someone'),
+      subtitle: Text(m.body ?? ''),
+      trailing: m.threadCount > 0
+          ? Text('${m.threadCount} ${m.threadCount == 1 ? 'reply' : 'replies'}')
+          : null,
+    );
+  }
+}
+
+/// Bottom input to post a free-text message to the active squad.
+class _SquadComposer extends ConsumerStatefulWidget {
+  const _SquadComposer({required this.squadId});
+  final String squadId;
+
+  @override
+  ConsumerState<_SquadComposer> createState() => _SquadComposerState();
+}
+
+class _SquadComposerState extends ConsumerState<_SquadComposer> {
+  final _controller = TextEditingController();
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final body = _controller.text.trim();
+    if (body.isEmpty || _busy) return;
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(messageRepositoryProvider)
+          .postSquadMessage(widget.squadId, body);
+      _controller.clear();
+      ref.invalidate(squadTimelineProvider(widget.squadId));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn\'t send. Try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 4, 8, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                key: const Key('squadMessageField'),
+                controller: _controller,
+                minLines: 1,
+                maxLines: 4,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _send(),
+                decoration: const InputDecoration(
+                  hintText: 'Message your squad…',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ),
+            IconButton(
+              key: const Key('squadMessageSend'),
+              icon: const Icon(Icons.send),
+              onPressed: _busy ? null : _send,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

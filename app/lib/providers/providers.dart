@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/api_client.dart';
 import '../config.dart';
 import '../models/friend.dart';
+import '../models/message.dart';
 import '../models/squad.dart';
 import '../models/topic.dart';
 import '../repositories/activity_repository.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/friend_repository.dart';
+import '../repositories/message_repository.dart';
 import '../repositories/profile_repository.dart';
 import '../repositories/squad_repository.dart';
 import '../repositories/timeline_repository.dart';
@@ -61,15 +63,27 @@ final friendRepositoryProvider = Provider<FriendRepository>(
   (ref) => ApiFriendRepository(apiClient: ref.watch(apiClientProvider)),
 );
 
+final messageRepositoryProvider = Provider<MessageRepository>(
+  (ref) => ApiMessageRepository(apiClient: ref.watch(apiClientProvider)),
+);
+
 /// The My Friends timeline (specs/screens/friends-timeline.md).
 final friendsTimelineProvider = FutureProvider<TimelinePage>(
   (ref) => ref.watch(timelineRepositoryProvider).friends(),
 );
 
-/// A squad's timeline (specs/screens/squads.md), keyed by squad id.
-final squadTimelineProvider = FutureProvider.family<TimelinePage, String>(
-  (ref, squadId) => ref.watch(timelineRepositoryProvider).squad(squadId),
+/// A squad's heterogeneous timeline (activities + messages), keyed by squad id.
+final squadTimelineProvider = FutureProvider.family<SquadFeedPage, String>(
+  (ref, squadId) => ref.watch(timelineRepositoryProvider).squadFeed(squadId),
 );
+
+/// A thread's messages, keyed by `targetType:targetId`.
+final threadProvider = FutureProvider.family<List<Message>, String>((ref, key) {
+  final i = key.indexOf(':');
+  return ref
+      .watch(messageRepositoryProvider)
+      .thread(key.substring(0, i), key.substring(i + 1));
+});
 
 /// The user's squads (for the context selector).
 final squadsProvider = FutureProvider<List<Squad>>(
