@@ -55,14 +55,14 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
             locationOptions: _split(_location.text),
             squadId: switch (ctx) {
               SquadContext(:final id) => id,
-              FriendsContext() => null,
+              _ => null,
             },
           );
       switch (ctx) {
-        case FriendsContext():
-          ref.invalidate(friendsTimelineProvider);
         case SquadContext(:final id):
           ref.invalidate(squadTimelineProvider(id));
+        case _:
+          ref.invalidate(friendsTimelineProvider);
       }
       if (mounted) context.pop();
     } on ApiException catch (e) {
@@ -80,8 +80,8 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
     final ctx = ref.watch(activeContextProvider);
     // Audience clarity at the moment of action (context-selector principle).
     final destination = switch (ctx) {
-      FriendsContext() => 'Visible to all your friends',
       SquadContext(:final name) => 'Visible to $name members',
+      _ => 'Visible to all your friends',
     };
 
     return Scaffold(

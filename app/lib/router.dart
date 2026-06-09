@@ -7,6 +7,7 @@ import 'models/message.dart';
 import 'providers/auth_controller.dart';
 import 'screens/activity/activity_detail_screen.dart';
 import 'screens/compose/compose_idea_screen.dart';
+import 'screens/communities/discover_screen.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/squads/create_squad_screen.dart';
 import 'screens/thread/thread_screen.dart';
@@ -38,6 +39,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/squads/new',
         builder: (_, _) => const CreateSquadScreen(),
+      ),
+      GoRoute(
+        path: '/communities',
+        builder: (_, _) => const DiscoverCommunitiesScreen(),
       ),
       GoRoute(
         path: '/activity/:id',
