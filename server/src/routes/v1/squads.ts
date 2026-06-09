@@ -2,8 +2,10 @@ import type { FastifyPluginAsync } from 'fastify'
 
 import { SquadService } from '../../domain/squad/service.ts'
 import { ActivityService } from '../../domain/activity/service.ts'
+import { MessageService } from '../../domain/message/service.ts'
 import { serializeSquadSummary, serializeSquadDetail } from '../../contracts/squad.ts'
 import { serializeActivities } from '../../contracts/activity.ts'
+import { serializeMessages, serializeMessage } from '../../contracts/message.ts'
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 100
@@ -26,6 +28,7 @@ function decodeCursor(raw: string): { createdAt: Date; id: string } | undefined 
 const squadRoutes: FastifyPluginAsync = async (fastify) => {
   const squads = new SquadService(fastify.db)
   const activities = new ActivityService(fastify.db)
+  const messages = new MessageService(fastify.db)
 
   fastify.post<{ Body: { name: string; member_ids?: string[] } }>(
     '/squads',
@@ -105,13 +108,56 @@ const squadRoutes: FastifyPluginAsync = async (fastify) => {
 
       const limit = Math.min(request.query.limit ?? DEFAULT_LIMIT, MAX_LIMIT)
       const before = request.query.before ? decodeCursor(request.query.before) : undefined
-      const rows = await activities.squadTimeline(squadId, limit + 1, before)
-      const page = rows.slice(0, limit)
+
+      // Heterogeneous feed: squad-scoped activities + top-level squad messages,
+      // each type-tagged and interleaved by created_at (specs/screens/squads.md).
+      const [actRows, msgRows] = await Promise.all([
+        activities.squadTimeline(squadId, limit + 1, before),
+        messages.squadMessages(squadId, limit + 1, before),
+      ])
+      const [actItems, msgItems] = await Promise.all([
+        serializeActivities(fastify.db, viewer, actRows),
+        serializeMessages(fastify.db, msgRows),
+      ])
+      const merged = [
+        ...actItems.map((a) => ({ type: 'activity' as const, ...a })),
+        ...msgItems.map((m) => ({ type: 'message' as const, ...m })),
+      ].sort((a, b) =>
+        a.created_at === b.created_at
+          ? (a.id < b.id ? 1 : -1)
+          : (a.created_at < b.created_at ? 1 : -1),
+      )
+      const page = merged.slice(0, limit)
       const last = page.at(-1)
       const nextCursor =
-        rows.length > limit && last ? encodeCursor(last.createdAt, last.id) : null
-      const items = await serializeActivities(fastify.db, viewer, page)
-      return { items, next_cursor: nextCursor }
+        merged.length > limit && last
+          ? encodeCursor(new Date(last.created_at), last.id)
+          : null
+      return { items: page, next_cursor: nextCursor }
+    },
+  )
+
+  // Post a top-level message to a squad timeline (member-gated).
+  fastify.post<{ Params: { id: string }; Body: { body: string } }>(
+    '/squads/:id/messages',
+    {
+      preHandler: fastify.authenticate,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['body'],
+          properties: { body: { type: 'string', minLength: 1 } },
+        },
+      },
+    },
+    async (request, reply) => {
+      const row = await messages.postSquadMessage(
+        request.profileId!,
+        request.params.id,
+        request.body.body,
+      )
+      reply.code(201)
+      return serializeMessage(fastify.db, row)
     },
   )
 }
