@@ -47,7 +47,8 @@ export default fp(async (fastify) => {
         },
         upgrade: { min_build: floor, store_url: 'https://squadquest.app' },
       }
-      reply.code(426).send(body)
+      // Return the reply to halt the request lifecycle (don't run the route).
+      return reply.code(426).send(body)
     }
   })
 })
