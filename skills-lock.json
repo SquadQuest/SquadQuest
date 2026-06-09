@@ -49,6 +49,12 @@
       "skillPath": "skills/flutter-setup-declarative-routing/SKILL.md",
       "computedHash": "2341440c8bce0f176663695eaa71f9f7d7c967772a1dcd0d833c9778504b227e"
     },
+    "mobile-flutter": {
+      "source": "JarvusInnovations/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/mobile-flutter/SKILL.md",
+      "computedHash": "732d3f92a2c1183b4549dca2857776a95684a9f16983374958884376cde25b98"
+    },
     "specops": {
       "source": "JarvusInnovations/specops",
       "sourceType": "github",
