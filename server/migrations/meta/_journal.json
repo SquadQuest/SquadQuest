@@ -15,6 +15,13 @@
       "when": 1780972500889,
       "tag": "0001_glorious_selene",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781025288002,
+      "tag": "0002_greedy_odin",
+      "breakpoints": true
     }
   ]
 }

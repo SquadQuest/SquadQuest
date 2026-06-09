@@ -9,6 +9,7 @@ import {
   response,
   friendship,
   topic,
+  squadMembership,
 } from '../../db/schema/index.ts'
 import { ApiError, errors } from '../../contracts/errors.ts'
 
@@ -45,10 +46,27 @@ export class ActivityService {
     return edges.map((e) => (e.requester === profileId ? e.requestee : e.requester))
   }
 
-  // Can `viewer` see this activity? viewer is captain, or captain is an accepted
-  // friend AND (audience all_friends OR viewer is a named recipient).
+  async isSquadMember(squadId: string, profileId: string): Promise<boolean> {
+    const [m] = await this.db
+      .select()
+      .from(squadMembership)
+      .where(
+        and(
+          eq(squadMembership.squadId, squadId),
+          eq(squadMembership.profileId, profileId),
+        ),
+      )
+    return Boolean(m)
+  }
+
+  // Can `viewer` see this activity?
+  // - squad scope: viewer is a member of the squad.
+  // - friends scope: viewer is captain, or captain is an accepted friend AND
+  //   (audience all_friends OR viewer is a named recipient).
   async canView(viewerId: string, act: ActivityRow): Promise<boolean> {
-    if (act.scope !== 'friends') return false // squad scope not handled this stage
+    if (act.scope === 'squad') {
+      return act.squadId ? this.isSquadMember(act.squadId, viewerId) : false
+    }
     if (act.captainId === viewerId) return true
     const friends = await this.acceptedFriendIds(viewerId)
     if (!friends.includes(act.captainId)) return false
@@ -74,15 +92,24 @@ export class ActivityService {
     return act
   }
 
-  // Create an idea (always starts in `idea` state). Friends-scoped only this stage.
+  // Create an idea (always starts in `idea` state). Supports friends scope
+  // (all_friends / people audience) and squad scope (visible to squad members).
   async createIdea(captainId: string, input: CreateIdeaInput): Promise<string> {
-    if (input.scope && input.scope !== 'friends') {
-      throw errors.badRequest('unsupported_scope', 'Only friends-scoped ideas are supported')
+    const scope = input.scope ?? 'friends'
+    if (scope !== 'friends' && scope !== 'squad') {
+      throw errors.badRequest('unsupported_scope', 'Unsupported scope')
     }
     if (input.communityEventId) {
       throw errors.badRequest('unsupported', 'Community events are not available yet')
     }
-    if (input.audience.kind === 'people' && !input.audience.personIds?.length) {
+    if (scope === 'squad') {
+      if (!input.squadId) {
+        throw errors.badRequest('squad_required', 'squad scope requires squad_id')
+      }
+      if (!(await this.isSquadMember(input.squadId, captainId))) {
+        throw errors.forbidden('not_a_member', 'You are not a member of this squad')
+      }
+    } else if (input.audience.kind === 'people' && !input.audience.personIds?.length) {
       throw errors.badRequest('audience_required', 'people audience requires person_ids')
     }
 
@@ -92,6 +119,7 @@ export class ActivityService {
       .where(eq(topic.id, input.activityTypeId))
     if (!type) throw errors.badRequest('activity_type_invalid', 'Unknown activity type')
 
+    const isSquad = scope === 'squad'
     return this.db.transaction(async (tx) => {
       const [created] = await tx
         .insert(activity)
@@ -99,8 +127,11 @@ export class ActivityService {
           captainId,
           activityTypeId: input.activityTypeId,
           state: 'idea',
-          scope: 'friends',
-          audienceKind: input.audience.kind,
+          scope,
+          squadId: isSquad ? input.squadId : null,
+          // audience_kind is unused for squad scope (all members see it); store the
+          // default so the NOT NULL column is satisfied.
+          audienceKind: isSquad ? 'all_friends' : input.audience.kind,
           allowSuggestions: input.allowSuggestions ?? false,
         })
         .returning({ id: activity.id })
@@ -119,7 +150,7 @@ export class ActivityService {
           .values(options.map((o) => ({ activityId, createdBy: captainId, ...o })))
       }
 
-      if (input.audience.kind === 'people') {
+      if (!isSquad && input.audience.kind === 'people') {
         const ids = [...new Set(input.audience.personIds!)]
         await tx
           .insert(activityAudience)
@@ -252,6 +283,32 @@ export class ActivityService {
           eq(activity.scope, 'friends'),
           inArray(activity.captainId, friendIds),
           visible,
+          ...(cursor ? [cursor] : []),
+        ),
+      )
+      .orderBy(sql`${activity.createdAt} desc, ${activity.id} desc`)
+      .limit(limit)
+  }
+
+  // A squad timeline: squad-scoped activities for one squad, newest first,
+  // cursor-paginated. Membership must be checked by the caller (route).
+  // (Free-text squad messages are interleaved here in a later stage.)
+  async squadTimeline(
+    squadId: string,
+    limit: number,
+    before?: { createdAt: Date; id: string },
+  ): Promise<ActivityRow[]> {
+    const cursor = before
+      ? sql`(${activity.createdAt}, ${activity.id}) < (${before.createdAt.toISOString()}, ${before.id})`
+      : undefined
+
+    return this.db
+      .select()
+      .from(activity)
+      .where(
+        and(
+          eq(activity.scope, 'squad'),
+          eq(activity.squadId, squadId),
           ...(cursor ? [cursor] : []),
         ),
       )
