@@ -36,6 +36,21 @@ jobs:
 
   server:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: squadquest
+          POSTGRES_PASSWORD: squadquest
+          POSTGRES_DB: squadquest_v2
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U squadquest -d squadquest_v2"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://squadquest:squadquest@localhost:5432/squadquest_v2
+      JWT_SECRET: ci-secret-min-32-chars-aaaaaaaaaaaaaaaa
     defaults:
       run:
         working-directory: server
@@ -48,3 +63,5 @@ jobs:
 
       - run: bun install --frozen-lockfile
       - run: bun run type-check
+      - run: bun run db:migrate
+      - run: bun test
