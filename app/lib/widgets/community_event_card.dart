@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../models/activity.dart';
 import '../models/community.dart';
+import '../providers/active_context.dart';
 import '../providers/providers.dart';
 
 /// A born-confirmed community event card with the dual-attendance display and the
@@ -100,6 +103,31 @@ class _CommunityEventCardState extends ConsumerState<CommunityEventCard> {
                       : (sel) => _rsvp(going: true, public: sel),
                 ),
               ],
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: Key('bring_friends_${e.id}'),
+                icon: const Icon(Icons.group_add, size: 18),
+                label: const Text('Bring friends'),
+                // Switch to My Friends + open the composer pre-filled with this event
+                // (bring-friends bridge): posts a friends-scoped idea, never the public event.
+                onPressed: () {
+                  ref.read(activeContextProvider.notifier).toFriends();
+                  context.push(
+                    '/ideas/new',
+                    extra: EventRef(
+                      id: e.id,
+                      title: e.title,
+                      time: e.time,
+                      location: e.location,
+                      communityName: e.communityName,
+                      communityIcon: e.communityIcon,
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),

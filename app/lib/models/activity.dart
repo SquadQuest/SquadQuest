@@ -17,6 +17,7 @@ class Activity {
     this.interestedCount = 0,
     this.timeOptions = const [],
     this.locationOptions = const [],
+    this.eventRef,
   });
 
   final String id;
@@ -33,6 +34,7 @@ class Activity {
   final int interestedCount;
   final List<ActivityOption> timeOptions;
   final List<ActivityOption> locationOptions;
+  final EventRef? eventRef; // the community event a brought-along idea embeds
 
   bool get isConfirmed => state == 'confirmed';
 
@@ -61,6 +63,9 @@ class Activity {
       interestedCount: (counts['interested'] as num?)?.toInt() ?? 0,
       timeOptions: opts('time_options'),
       locationOptions: opts('location_options'),
+      eventRef: json['event_ref'] == null
+          ? null
+          : EventRef.fromJson(json['event_ref'] as Map<String, dynamic>),
     );
   }
 }
@@ -84,4 +89,36 @@ class ActivityOption {
     votes: (json['votes'] as num?)?.toInt() ?? 0,
     youVoted: json['you_voted'] as bool? ?? false,
   );
+}
+
+/// Read-only reference to the community event a brought-along idea embeds
+/// (specs/behaviors/bring-friends-bridge.md).
+class EventRef {
+  const EventRef({
+    required this.id,
+    required this.title,
+    this.time,
+    this.location,
+    this.communityName,
+    this.communityIcon,
+  });
+
+  final String id;
+  final String title;
+  final String? time;
+  final String? location;
+  final String? communityName;
+  final String? communityIcon;
+
+  factory EventRef.fromJson(Map<String, dynamic> json) {
+    final c = json['community'] as Map<String, dynamic>?;
+    return EventRef(
+      id: json['id'] as String,
+      title: json['title'] as String? ?? '',
+      time: json['time'] as String?,
+      location: json['location'] as String?,
+      communityName: c?['name'] as String?,
+      communityIcon: c?['icon'] as String?,
+    );
+  }
 }
