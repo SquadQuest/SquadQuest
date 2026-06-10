@@ -9,6 +9,8 @@ import {
   topic,
   profile,
   message,
+  activity,
+  response,
 } from '../../db/schema/index.ts'
 import { ApiError } from '../../contracts/errors.ts'
 
@@ -133,6 +135,21 @@ export class CommunityService {
         .groupBy(message.threadTargetId),
     ])
 
+    // Bring-friends attendance coupling: a friend who responded "I'm in" to a
+    // brought-along idea linked to this event is genuinely attending → counted in
+    // the anonymous headcount, but NEVER added to the public face-pile.
+    const broughtRows = await this.db
+      .select({ eventId: activity.communityEventId, profileId: response.profileId })
+      .from(response)
+      .innerJoin(activity, eq(activity.id, response.activityId))
+      .where(and(inArray(activity.communityEventId, ids), eq(response.value, 'in')))
+    const broughtByEvent = new Map<string, Set<string>>()
+    for (const r of broughtRows) {
+      if (!r.eventId) continue
+      ;(broughtByEvent.get(r.eventId) ?? broughtByEvent.set(r.eventId, new Set()).get(r.eventId)!)
+        .add(r.profileId)
+    }
+
     // public face-pile profiles
     const publicProfileIds = [...new Set(rsvps.filter((r) => r.public).map((r) => r.profileId))]
     const publicProfiles = publicProfileIds.length
@@ -146,10 +163,13 @@ export class CommunityService {
     return evs.map((e) => {
       const evRsvps = rsvps.filter((r) => r.eventId === e.id)
       const mine = evRsvps.find((r) => r.profileId === viewerId)
+      // distinct attendees: direct going RSVPs ∪ brought-along "in" responders
+      const attendees = new Set<string>(broughtByEvent.get(e.id) ?? [])
+      for (const r of evRsvps) if (r.going) attendees.add(r.profileId)
       return {
         event: e,
         activityTypeLabel: e.activityTypeId ? (typeById.get(e.activityTypeId) ?? null) : null,
-        goingCount: evRsvps.filter((r) => r.going).length,
+        goingCount: attendees.size,
         publicGoing: evRsvps
           .filter((r) => r.public)
           .map((r) => profileById.get(r.profileId))

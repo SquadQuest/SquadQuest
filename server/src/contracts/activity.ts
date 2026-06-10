@@ -11,6 +11,8 @@ import {
   topic,
   squad,
   message,
+  communityEvent,
+  community,
 } from '../db/schema/index.ts'
 
 type ActivityRow = typeof activity.$inferSelect
@@ -57,6 +59,35 @@ export async function serializeActivities(
     .groupBy(message.threadTargetId)
   const threadCountById = new Map<string, number>()
   for (const t of threadRows) if (t.id) threadCountById.set(t.id, t.n)
+
+  // event_ref: the community event a brought-along idea embeds (read-only context).
+  const eventIds = [
+    ...new Set(rows.map((r) => r.communityEventId).filter((x): x is string => !!x)),
+  ]
+  const events = eventIds.length
+    ? await db.select().from(communityEvent).where(inArray(communityEvent.id, eventIds))
+    : []
+  const eventCommunityIds = [...new Set(events.map((e) => e.communityId))]
+  const eventCommunities = eventCommunityIds.length
+    ? await db.select().from(community).where(inArray(community.id, eventCommunityIds))
+    : []
+  const communityById = new Map(eventCommunities.map((c) => [c.id, c]))
+  const eventRefById = new Map(
+    events.map((e) => {
+      const c = communityById.get(e.communityId)
+      return [
+        e.id,
+        {
+          id: e.id,
+          title: e.title,
+          time: e.time,
+          recurrence: e.recurrence,
+          location: e.location,
+          community: c ? { id: c.id, name: c.name, icon: c.icon } : null,
+        },
+      ]
+    }),
+  )
 
   const captainById = new Map(captains.map((c) => [c.id, c]))
   const typeById = new Map(types.map((t) => [t.id, t]))
@@ -149,7 +180,7 @@ export async function serializeActivities(
       your_response: yourResponse.get(r.id) ?? null,
       counts,
       thread_count: threadCountById.get(r.id) ?? 0,
-      event_ref: null, // bring-friends/community link arrives in a later stage
+      event_ref: r.communityEventId ? (eventRefById.get(r.communityEventId) ?? null) : null,
       created_at: r.createdAt.toISOString(),
     }
   })
