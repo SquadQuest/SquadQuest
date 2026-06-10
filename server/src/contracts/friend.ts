@@ -14,3 +14,17 @@ export function serializeFriend(row: ProfileRow) {
     on_v2: row.claimedAt !== null,
   }
 }
+
+// A pending connection request. `profile` is the *other* party (the sender for an
+// incoming request, the target for an outgoing one). See specs/api/friends.md.
+export function serializeFriendRequest(view: {
+  id: string
+  profile: ProfileRow
+  createdAt: Date
+}) {
+  return {
+    id: view.id,
+    profile: serializeFriend(view.profile),
+    created_at: view.createdAt.toISOString(),
+  }
+}
