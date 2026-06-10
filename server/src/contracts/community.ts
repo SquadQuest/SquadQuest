@@ -10,6 +10,7 @@ export function serializeCommunity(s: CommunitySummary) {
     color: s.community.color,
     follower_count: s.followerCount,
     you_follow: s.youFollow,
+    your_role: s.yourRole === 'leader' ? 'leader' : null,
   }
 }
 
