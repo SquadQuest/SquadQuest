@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Start the v2 backend dev server (bun --watch) with an auto-configured DATABASE_URL.
+#
+# Usage: bin/dev
+#
+# Env overrides: DATABASE_URL, PORT (default 4000), SQ_DATABASE, SQ_PG_PORT.
+# The Flutter app is run separately: cd app && flutter run
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+if [ -z "${DATABASE_URL:-}" ]; then
+  ensure_postgres
+  DATABASE_URL="$(sq_database_url)"
+fi
+
+echo "Backend:      http://localhost:${PORT:-4000}" >&2
+echo "DATABASE_URL: ${DATABASE_URL}" >&2
+
+cd "$(sq_server_dir)"
+exec env DATABASE_URL="$DATABASE_URL" PORT="${PORT:-4000}" bun run dev

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Ensure postgres is running, create this context's database, install deps, migrate.
+#
+# Usage: bin/setup
+#
+# Env overrides: SQ_DATABASE (db name), SQ_PG_PORT (host port, default 5532).
+# Machine-parseable env vars print to stdout (KEY=VALUE); status goes to stderr.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+root="$(sq_root)"
+
+# 1. Tool versions (bun, flutter, …)
+echo "Installing tool versions (asdf)..." >&2
+(cd "$root" && asdf install) >&2 || echo "asdf install skipped/failed — continuing" >&2
+
+# 2. Shared postgres container
+ensure_postgres
+
+# 3. This context's database
+db="$(sq_db_name)"
+sq_ensure_db "$db"
+
+# 4. Server dependencies
+if [ ! -d "$(sq_server_dir)/node_modules" ]; then
+  echo "Installing server dependencies..." >&2
+  (cd "$(sq_server_dir)" && bun install --frozen-lockfile) >&2
+fi
+
+# 5. Migrate
+url="$(sq_database_url)"
+sq_migrate "$url"
+
+# 6. Emit env for orchestrators
+echo "DATABASE_URL=${url}"
+echo "SQ_DATABASE=${db}"
+echo "PORT=${PORT:-4000}"

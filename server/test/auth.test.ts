@@ -1,11 +1,9 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test'
 import Fastify, { type FastifyInstance } from 'fastify'
 
-// Test env defaults (CI provides a Postgres service; locally use docker-compose
-// on 5532). Set before importing the app so @fastify/env picks them up.
-process.env.DATABASE_URL ??=
-  'postgres://squadquest:squadquest@localhost:5532/squadquest_v2'
-process.env.JWT_SECRET ??= 'test-secret-min-32-chars-xxxxxxxxxxxxx'
+// Base test env (DATABASE_URL, JWT_SECRET) comes from test/setup.ts (bun preload).
+// This suite raises the client-version floor to exercise the 426 path; set before
+// importing the app so @fastify/env picks it up.
 process.env.MIN_SUPPORTED_BUILD = '500'
 
 const { app } = await import('../src/app.ts')

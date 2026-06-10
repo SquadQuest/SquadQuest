@@ -1,0 +1,5 @@
+# Test config. The preload runs once before any test file: it points tests at a
+# dedicated test database (squadquest_test) — never the dev DB — and migrates it.
+# See test/setup.ts + plans/v2-dev-bin-scripts.md.
+[test]
+preload = ["./test/setup.ts"]

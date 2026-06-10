@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Run the server test suite against the dedicated test database (squadquest_test),
+# never the dev database. Ensures the DB exists + is migrated, then runs bun test.
+#
+# Usage:
+#   bin/test                 # whole suite
+#   bin/test friends         # forwards args to `bun test` (path/filter)
+#
+# Env overrides: SQ_PG_PORT.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+ensure_postgres
+
+# Force the test database regardless of worktree.
+export SQ_DATABASE="squadquest_test"
+db="$(sq_db_name)"
+url="$(sq_database_url)"
+
+sq_ensure_db "$db"
+sq_migrate "$url"
+
+cd "$(sq_server_dir)"
+exec env DATABASE_URL="$url" bun test "$@"
