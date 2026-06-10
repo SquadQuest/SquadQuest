@@ -22,6 +22,7 @@ export interface CommunitySummary {
   community: CommunityRow
   followerCount: number
   youFollow: boolean
+  yourRole: 'leader' | 'follower' | null
 }
 
 export interface EventView {
@@ -57,16 +58,80 @@ export class CommunityService {
       .where(inArray(communityMembership.communityId, ids))
 
     const followerCount = new Map<string, number>()
-    const youFollow = new Set<string>()
+    const yourRole = new Map<string, 'leader' | 'follower'>()
     for (const m of memberships) {
       followerCount.set(m.communityId, (followerCount.get(m.communityId) ?? 0) + 1)
-      if (m.profileId === viewerId) youFollow.add(m.communityId)
+      if (m.profileId === viewerId) yourRole.set(m.communityId, m.role)
     }
     return rows.map((c) => ({
       community: c,
       followerCount: followerCount.get(c.id) ?? 0,
-      youFollow: youFollow.has(c.id),
+      youFollow: yourRole.has(c.id),
+      yourRole: yourRole.get(c.id) ?? null,
     }))
+  }
+
+  // A single community as the viewer sees it (follower count + their role).
+  private async summary(viewerId: string, communityId: string): Promise<CommunitySummary> {
+    const [c] = await this.db.select().from(community).where(eq(community.id, communityId))
+    if (!c) throw new ApiError(404, 'not_found', 'Community not found')
+    const members = await this.db
+      .select()
+      .from(communityMembership)
+      .where(eq(communityMembership.communityId, communityId))
+    const mine = members.find((m) => m.profileId === viewerId)
+    return {
+      community: c,
+      followerCount: members.length,
+      youFollow: !!mine,
+      yourRole: mine?.role ?? null,
+    }
+  }
+
+  async isLeader(communityId: string, profileId: string): Promise<boolean> {
+    const [m] = await this.db
+      .select()
+      .from(communityMembership)
+      .where(
+        and(
+          eq(communityMembership.communityId, communityId),
+          eq(communityMembership.profileId, profileId),
+        ),
+      )
+    return m?.role === 'leader'
+  }
+
+  // Create a community; the creator becomes its first leader (and a follower).
+  async create(
+    creatorId: string,
+    input: { name: string; tagline?: string; icon?: string; color?: string },
+  ): Promise<CommunitySummary> {
+    const [c] = await this.db
+      .insert(community)
+      .values({
+        name: input.name,
+        tagline: input.tagline ?? null,
+        icon: input.icon ?? null,
+        color: input.color ?? null,
+      })
+      .returning()
+    await this.db
+      .insert(communityMembership)
+      .values({ communityId: c!.id, profileId: creatorId, role: 'leader' })
+    return this.summary(creatorId, c!.id)
+  }
+
+  // Edit a community. Leader-only.
+  async update(
+    viewerId: string,
+    communityId: string,
+    patch: { name?: string; tagline?: string | null; icon?: string | null; color?: string | null },
+  ): Promise<CommunitySummary> {
+    await this.assertLeader(communityId, viewerId)
+    if (Object.keys(patch).length > 0) {
+      await this.db.update(community).set(patch).where(eq(community.id, communityId))
+    }
+    return this.summary(viewerId, communityId)
   }
 
   async myCommunities(viewerId: string): Promise<CommunitySummary[]> {
@@ -93,7 +158,8 @@ export class CommunityService {
         .insert(communityMembership)
         .values({ communityId, profileId: viewerId, role: 'follower' })
         .onConflictDoNothing()
-    } else {
+    } else if (!(await this.isLeader(communityId, viewerId))) {
+      // Unfollowing never strips leadership — a leader stays a member.
       await this.db
         .delete(communityMembership)
         .where(
@@ -103,11 +169,96 @@ export class CommunityService {
           ),
         )
     }
-    const [{ count }] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
+    const members = await this.db
+      .select()
       .from(communityMembership)
       .where(eq(communityMembership.communityId, communityId))
-    return { youFollow: follow, followerCount: count }
+    const youFollow = members.some((m) => m.profileId === viewerId)
+    return { youFollow, followerCount: members.length }
+  }
+
+  private async assertLeader(communityId: string, profileId: string): Promise<void> {
+    if (!(await this.isLeader(communityId, profileId))) {
+      throw new ApiError(403, 'forbidden', 'Only a leader can do that')
+    }
+  }
+
+  // Author a born-confirmed event on the community. Leader-only.
+  async createEvent(
+    viewerId: string,
+    communityId: string,
+    input: {
+      title: string
+      activityTypeId?: string | null
+      time?: string | null
+      recurrence?: string | null
+      location?: string | null
+    },
+  ): Promise<EventView> {
+    await this.assertLeader(communityId, viewerId)
+    const [ev] = await this.db
+      .insert(communityEvent)
+      .values({
+        communityId,
+        title: input.title,
+        activityTypeId: input.activityTypeId ?? null,
+        time: input.time ?? null,
+        recurrence: input.recurrence ?? null,
+        location: input.location ?? null,
+      })
+      .returning()
+    return this.eventView(viewerId, ev!.id)
+  }
+
+  // Edit an event. Leader-only (of the owning community).
+  async updateEvent(
+    viewerId: string,
+    eventId: string,
+    patch: {
+      title?: string
+      activityTypeId?: string | null
+      time?: string | null
+      recurrence?: string | null
+      location?: string | null
+    },
+  ): Promise<EventView> {
+    const [ev] = await this.db
+      .select()
+      .from(communityEvent)
+      .where(eq(communityEvent.id, eventId))
+    if (!ev) throw new ApiError(404, 'not_found', 'Event not found')
+    await this.assertLeader(ev.communityId, viewerId)
+    const set = Object.fromEntries(
+      Object.entries(patch).filter(([, v]) => v !== undefined),
+    )
+    if (Object.keys(set).length > 0) {
+      await this.db.update(communityEvent).set(set).where(eq(communityEvent.id, eventId))
+    }
+    return this.eventView(viewerId, eventId)
+  }
+
+  // Cancel an event (cascades its RSVPs). Leader-only.
+  async deleteEvent(viewerId: string, eventId: string): Promise<void> {
+    const [ev] = await this.db
+      .select()
+      .from(communityEvent)
+      .where(eq(communityEvent.id, eventId))
+    if (!ev) throw new ApiError(404, 'not_found', 'Event not found')
+    await this.assertLeader(ev.communityId, viewerId)
+    await this.db.delete(communityEvent).where(eq(communityEvent.id, eventId))
+  }
+
+  // A single event as the viewer sees it.
+  private async eventView(viewerId: string, eventId: string): Promise<EventView> {
+    const [ev] = await this.db
+      .select()
+      .from(communityEvent)
+      .where(eq(communityEvent.id, eventId))
+    if (!ev) throw new ApiError(404, 'not_found', 'Event not found')
+    const [view] = (await this.events(viewerId, ev.communityId)).filter(
+      (v) => v.event.id === eventId,
+    )
+    return view!
   }
 
   async events(viewerId: string, communityId: string): Promise<EventView[]> {
