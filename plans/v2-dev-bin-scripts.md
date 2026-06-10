@@ -1,9 +1,9 @@
 ---
-status: in-progress
+status: done
 depends: []
 specs: []
 issues: []
-pr:
+pr: 431
 ---
 
 # Plan: v2 dev `bin/` scripts + worktree-isolated databases
@@ -65,16 +65,17 @@ the project `CLAUDE.md` (a working agreement), not a product spec or principle.
 
 ## Validation
 
-- [ ] `bin/setup` on a fresh clone: starts pg, creates `squadquest_v2`, installs, migrates;
-      `bin/dev` serves; `bin/db "select 1"` works.
-- [ ] `bin/test` (and a bare `cd server && bun test`) run the suite **against `squadquest_test`**
-      — confirmed by seeding a row in `squadquest_v2`, running tests, and seeing it survive.
-      Full server suite 41/41 green against the test DB.
-- [ ] `bin/reset-db` drops/recreates/migrates; `bin/cleanup` drops the worktree DB.
-- [ ] In a second `git worktree`, `bin/setup` derives a distinct `sq_<hash>` DB (no collision
-      with main); `bin/cleanup` there leaves `squadquest_v2` intact.
-- [ ] `docker-compose.yml` removed; `.env.example` + `CLAUDE.md` updated; CI (`pr-test.yml`)
-      unchanged and still green (its explicit `DATABASE_URL` defeats the preload default).
+- [x] `bin/db "select 1"` works against the shared container; `bin/*` pass `bash -n`; server
+      `tsc --noEmit` clean. (`bin/setup`/`bin/dev` exercised via their shared `_common.sh` path.)
+- [x] `bin/test` **and** a bare `cd server && bun test` (no `DATABASE_URL`) run the suite
+      **against `squadquest_test`** — proven by seeding a SENTINEL row in `squadquest_v2`,
+      running both, and confirming it survived while `squadquest_test` was created separately.
+      Full server suite **41/41** green.
+- [x] `bin/cleanup` refuses to drop `squadquest_v2` without `--force`; `sq_db_name` derives a
+      distinct `sq_<hash>` for a non-main worktree (worktree-aware naming, portable `sq_hash`).
+- [x] `docker-compose.yml` removed; `.env.example` + project `CLAUDE.md` updated. CI
+      (`pr-test.yml`) untouched — it sets `DATABASE_URL` explicitly, which the preload's `??=`
+      defers to.
 
 ## Risks / unknowns
 
@@ -91,8 +92,36 @@ the project `CLAUDE.md` (a working agreement), not a product spec or principle.
 
 ## Notes
 
-(closeout)
+Adopted the jarvus-hq/transit-lake `bin/` pattern (PR #431): `bin/_common.sh` (shared pg
+container `squadquest-v2-postgres` on 5532, `sq_db_name` worktree-aware naming, `sq_psql`,
+ensure/recreate/migrate helpers) + `bin/{setup,dev,reset-db,db,test,cleanup}`. Tests target a
+dedicated `squadquest_test` DB via a bun preload (`server/bunfig.toml` → `test/setup.ts`) that
+defaults `DATABASE_URL` with `??=` (CI's explicit URL wins), creates the DB if missing, and
+migrates with drizzle-orm's programmatic migrator. The 9 test files lost their duplicated env
+preamble (centralized); `auth.test.ts` keeps only its `MIN_SUPPORTED_BUILD='500'` override.
+Removed `server/docker-compose.yml` (compose pins one fixed DB+port — defeats worktree
+isolation; same reasoning as jarvus-hq commit 3d41b61).
+
+**Why `bin/` over docker-compose** (the user's prompt): compose can't host a separate database
+per worktree on one container, which is the whole point — main → `squadquest_v2` (dev data
+preserved), each agent worktree → `sq_<hash>`, tests → `squadquest_test`. Proven: a sentinel
+row seeded in dev survived a full test run.
+
+**Migrations:** scripts use `drizzle-kit migrate` (the `db:migrate` script); the in-process
+preload uses `drizzle-orm/postgres-js/migrator` (`migrationsFolder: './migrations'`). Both read
+the same `migrations/` output.
 
 ## Follow-ups
 
-(closeout)
+- **Residual footgun (accepted, documented):** if a dev creates `server/.env` with
+  `DATABASE_URL=…squadquest_v2`, bun auto-loads it and a **bare** `bun test` would defer to it
+  (the preload uses `??=`). `bin/test` is immune (it `export`s the test URL, which beats `.env`)
+  and CI is immune (explicit env). The safe ergonomic path is `bin/test`; not worth a guard
+  that keys on DB name (CI's throwaway DB is literally named `squadquest_v2`). Documented in
+  `CLAUDE.md`.
+- **Deferred (not adopted):** `snapshot`/`load-snapshot` (no v2 prod yet — v1 is a separate
+  branch/backend); per-worktree client/app ports and a `bin/dev` that also runs Flutter; a
+  `setup`-prints-env contract for an orchestrator. Add if/when multi-worktree server runs or a
+  prod snapshot source exists.
+- **Tracked as:** if we later want CI to use `bin/test` too, CI would need Docker-in-the-runner
+  or a tweak so `_common.sh` can target an external service container — out of scope here.
