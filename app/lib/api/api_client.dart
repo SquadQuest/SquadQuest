@@ -52,6 +52,9 @@ class ApiClient {
   Future<Map<String, dynamic>> put(String path, {Object? body}) =>
       _send(() => _dio.put(path, data: body));
 
+  Future<Map<String, dynamic>> patch(String path, {Object? body}) =>
+      _send(() => _dio.patch(path, data: body));
+
   Future<Map<String, dynamic>> delete(String path, {Object? body}) =>
       _send(() => _dio.delete(path, data: body));
 

@@ -22,4 +22,46 @@ class Friend {
     photo: json['photo'] as String?,
     onV2: json['on_v2'] as bool? ?? false,
   );
+
+  String get displayName =>
+      [firstName, lastName].whereType<String>().join(' ').trim();
+}
+
+/// A pending connection request (specs/api/friends.md). `profile` is the *other*
+/// party — the sender for an incoming request, the target for an outgoing one.
+class FriendRequest {
+  const FriendRequest({
+    required this.id,
+    required this.profile,
+    this.createdAt,
+  });
+
+  final String id;
+  final Friend profile;
+  final DateTime? createdAt;
+
+  factory FriendRequest.fromJson(Map<String, dynamic> json) => FriendRequest(
+    id: json['id'] as String,
+    profile: Friend.fromJson(json['profile'] as Map<String, dynamic>),
+    createdAt: json['created_at'] == null
+        ? null
+        : DateTime.tryParse(json['created_at'] as String),
+  );
+}
+
+/// The caller's pending requests, split by direction.
+class FriendRequests {
+  const FriendRequests({this.incoming = const [], this.outgoing = const []});
+
+  final List<FriendRequest> incoming;
+  final List<FriendRequest> outgoing;
+
+  factory FriendRequests.fromJson(Map<String, dynamic> json) => FriendRequests(
+    incoming: ((json['incoming'] as List<dynamic>?) ?? const [])
+        .map((e) => FriendRequest.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    outgoing: ((json['outgoing'] as List<dynamic>?) ?? const [])
+        .map((e) => FriendRequest.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }

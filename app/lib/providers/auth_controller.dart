@@ -74,6 +74,24 @@ class AuthController extends Notifier<AuthState> {
     state = SignedIn(result.profile);
   }
 
+  /// The signed-in profile, or null when not signed in.
+  Profile? get currentProfile => switch (state) {
+    SignedIn(:final profile) => profile,
+    _ => null,
+  };
+
+  /// Set/update the signed-in user's profile (onboarding name-setup + edits).
+  /// Swapping the profile drives the onboarding redirect (null first_name → /welcome).
+  Future<void> updateProfile({
+    required String firstName,
+    String? lastName,
+  }) async {
+    final updated = await ref
+        .read(profileRepositoryProvider)
+        .updateProfile(firstName: firstName, lastName: lastName);
+    state = SignedIn(updated);
+  }
+
   /// Return to the phone-entry step.
   void cancelOtp() => state = const SignedOut();
 
