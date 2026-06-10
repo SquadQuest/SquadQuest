@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [v2-messages-and-threads]
 specs:
   - specs/api/communities.md
@@ -7,7 +7,7 @@ specs:
   - specs/behaviors/context-selector.md
   - specs/data-model.md
 issues: []
-pr:
+pr: 422
 ---
 
 # Plan: v2 communities — core (discover / follow / events / RSVP)
@@ -57,12 +57,13 @@ community entries of `specs/behaviors/context-selector.md`, and the community sl
 
 ## Validation
 
-- [ ] migration applies; `bun run type-check` + `bun test` (discover + you_follow; follow
-      toggles follower_count; events list w/ counts; RSVP gradient — going-only anonymous,
-      public implies going, going:false clears, public never a side effect) green; CI green.
-- [ ] client `flutter analyze` + widget tests green; CI green.
-- [ ] (when machine free) MCP: follow a community → it appears in the selector; open it →
-      event cards; RSVP Going (count +1, not in face-pile) → Show name (joins face-pile).
+- [x] migration applies; `bun run type-check` + `bun test` (discover + you_follow; follow
+      toggles follower_count; full RSVP gradient — going-only anonymous, public implies going,
+      going:false clears, public never a side effect) — 2 tests, full suite 26/26; backend CI
+      green (#421, merged).
+- [x] client `flutter analyze` clean + 9 widget tests (community card render); client CI on #422.
+- [~] MCP visual walkthrough deferred (window-foreground conflict); dev DB seeded with the 3
+      Philly communities + events for live exploration.
 
 ## Risks / unknowns
 
@@ -73,8 +74,20 @@ community entries of `specs/behaviors/context-selector.md`, and the community sl
 
 ## Notes
 
-(closeout)
+Two PRs: **#421** (backend — schema/migration 0004, CommunityService with the RSVP visibility
+gradient, discover/follow/events/rsvp routes, dev seed-communities script, 2 tests) merged;
+**#422** (client — Community/CommunityEvent models, CommunityRepository, CommunityContext + the
+four-section context selector, community event cards with headcount/face-pile/RSVP toggles,
+Discover screen). Leader tooling stood in via the seed script.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred to plan (next):** **bring-friends bridge** — `createIdea` with
+  `community_event_id` (event_ref serialization), the composer pre-fill from an event +
+  destination picker, and attendance coupling (a brought-along "I'm in" → the event's
+  *anonymous* headcount, never the public face-pile). Keep the going_count query factored to
+  extend it.
+- **Deferred to plan:** leader tooling (create/edit communities + post/schedule events);
+  community-event **threads** (count surfaced; reads/replies need community_event added to the
+  message thread-target visibility); photos; SSE.
+- **Deferred (visual QA):** MCP walkthrough of follow → RSVP gradient when the machine is free.

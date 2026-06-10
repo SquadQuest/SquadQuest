@@ -2,12 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_client.dart';
 import '../config.dart';
+import '../models/community.dart';
 import '../models/friend.dart';
 import '../models/message.dart';
 import '../models/squad.dart';
 import '../models/topic.dart';
 import '../repositories/activity_repository.dart';
 import '../repositories/auth_repository.dart';
+import '../repositories/community_repository.dart';
 import '../repositories/friend_repository.dart';
 import '../repositories/message_repository.dart';
 import '../repositories/profile_repository.dart';
@@ -67,6 +69,10 @@ final messageRepositoryProvider = Provider<MessageRepository>(
   (ref) => ApiMessageRepository(apiClient: ref.watch(apiClientProvider)),
 );
 
+final communityRepositoryProvider = Provider<CommunityRepository>(
+  (ref) => ApiCommunityRepository(apiClient: ref.watch(apiClientProvider)),
+);
+
 /// The My Friends timeline (specs/screens/friends-timeline.md).
 final friendsTimelineProvider = FutureProvider<TimelinePage>(
   (ref) => ref.watch(timelineRepositoryProvider).friends(),
@@ -99,3 +105,19 @@ final topicsProvider = FutureProvider<List<Topic>>(
 final friendsProvider = FutureProvider<List<Friend>>(
   (ref) => ref.watch(friendRepositoryProvider).list(),
 );
+
+/// Communities to discover (all, with you_follow), optional search query.
+final communitiesProvider = FutureProvider.family<List<Community>, String>((
+  ref,
+  search,
+) {
+  return ref
+      .watch(communityRepositoryProvider)
+      .discover(search: search.isEmpty ? null : search);
+});
+
+/// A community's events, keyed by community id.
+final communityEventsProvider =
+    FutureProvider.family<List<CommunityEvent>, String>((ref, communityId) {
+      return ref.watch(communityRepositoryProvider).events(communityId);
+    });

@@ -17,6 +17,12 @@ class SquadContext extends ActiveContext {
   final String name;
 }
 
+class CommunityContext extends ActiveContext {
+  const CommunityContext(this.id, this.name);
+  final String id;
+  final String name;
+}
+
 final activeContextProvider =
     NotifierProvider<ActiveContextController, ActiveContext>(
       ActiveContextController.new,
@@ -28,4 +34,6 @@ class ActiveContextController extends Notifier<ActiveContext> {
 
   void toFriends() => state = const FriendsContext();
   void toSquad(String id, String name) => state = SquadContext(id, name);
+  void toCommunity(String id, String name) =>
+      state = CommunityContext(id, name);
 }
