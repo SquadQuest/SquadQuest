@@ -24,6 +24,9 @@ Title bar shows the community icon + name, tappable to switch context.
   The gap between them is intentional and reassuring.
 - The input area is **replaced by a read-only follower banner** ("Following · only leaders
   post events here") — followers don't post to the community timeline.
+- **For a leader** (`your_role:"leader"`), the follower banner is replaced by a **"Post event"**
+  affordance, and the title bar exposes an **edit-community** action. Leader-authored event
+  cards carry **edit/delete** affordances. A non-leader never sees these.
 
 ## Actions
 
@@ -34,8 +37,15 @@ Title bar shows the community icon + name, tappable to switch context.
 - **Bring friends:** opens the idea composer pre-filled with the event (switches to My
   Friends), posting a friends-scoped idea referencing it. See
   [bring-friends-bridge](../behaviors/bring-friends-bridge.md).
-- **Follow / unfollow** the community.
+- **Follow / unfollow** the community. (A leader stays a member — unfollow never strips
+  leadership.)
 - **Open an event** → thread (chat + RSVP in header). [thread-drawer](../behaviors/thread-drawer.md).
+- **Leader — create a community:** from Discover, a "New community" entry opens a create form
+  (`POST /v1/communities`); on success the new community becomes the active context, with the
+  caller as leader. `screens/discover-communities` hosts the entry.
+- **Leader — post / edit / delete events** and **edit the community** (`POST`/`PATCH`/`DELETE`
+  per [`api/communities.md`](../api/communities.md)). These affordances appear only when
+  `your_role:"leader"`.
 
 ## Navigation
 
