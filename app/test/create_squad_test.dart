@@ -11,6 +11,12 @@ class FakeFriendRepository implements FriendRepository {
   final List<Friend> _friends;
   @override
   Future<List<Friend>> list() async => _friends;
+  @override
+  Future<FriendRequests> requests() async => const FriendRequests();
+  @override
+  Future<String> sendRequest(String phone) async => 'requested';
+  @override
+  Future<void> respond(String requestId, {required bool accept}) async {}
 }
 
 void main() {

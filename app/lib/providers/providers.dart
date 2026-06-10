@@ -101,9 +101,14 @@ final topicsProvider = FutureProvider<List<Topic>>(
   (ref) => ref.watch(topicRepositoryProvider).list(),
 );
 
-/// The user's accepted friends (for squad member selection).
+/// The user's accepted friends (for squad member selection + the Friends screen).
 final friendsProvider = FutureProvider<List<Friend>>(
   (ref) => ref.watch(friendRepositoryProvider).list(),
+);
+
+/// Pending connection requests (incoming + outgoing) for the Friends screen.
+final friendRequestsProvider = FutureProvider<FriendRequests>(
+  (ref) => ref.watch(friendRepositoryProvider).requests(),
 );
 
 /// Communities to discover (all, with you_follow), optional search query.

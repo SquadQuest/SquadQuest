@@ -42,6 +42,12 @@ class TimelineScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            key: const Key('peopleButton'),
+            icon: const Icon(Icons.people_outline),
+            tooltip: 'People',
+            onPressed: () => context.push('/friends'),
+          ),
+          IconButton(
             key: const Key('logoutButton'),
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
