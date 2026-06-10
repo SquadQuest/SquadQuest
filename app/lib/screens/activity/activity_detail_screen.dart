@@ -82,6 +82,30 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                       ? 'Confirmed · ${[a.confirmedTime, a.confirmedLocation].whereType<String>().join(' · ')}'
                       : 'Idea · ${a.audienceSummary ?? ''}',
                 ),
+                if (a.eventRef != null) ...[
+                  const SizedBox(height: 8),
+                  Card(
+                    key: const Key('eventRefChip'),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    child: ListTile(
+                      dense: true,
+                      leading: Text(
+                        a.eventRef!.communityIcon ?? '📣',
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      title: Text(a.eventRef!.title),
+                      subtitle: Text(
+                        [
+                          a.eventRef!.communityName,
+                          a.eventRef!.time,
+                          a.eventRef!.location,
+                        ].whereType<String>().join(' · '),
+                      ),
+                    ),
+                  ),
+                ],
                 const Divider(height: 32),
 
                 // Your response

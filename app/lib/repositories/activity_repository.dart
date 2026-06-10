@@ -13,6 +13,7 @@ abstract class ActivityRepository {
     List<String> timeOptions,
     List<String> locationOptions,
     String? squadId,
+    String? communityEventId,
   });
 
   Future<Activity> setResponse(String activityId, String value);
@@ -42,6 +43,7 @@ class ApiActivityRepository implements ActivityRepository {
     List<String> timeOptions = const [],
     List<String> locationOptions = const [],
     String? squadId,
+    String? communityEventId,
   }) async {
     final res = await apiClient.post(
       '/v1/ideas',
@@ -49,6 +51,7 @@ class ApiActivityRepository implements ActivityRepository {
         'activity_type_id': activityTypeId,
         if (squadId != null) 'scope': 'squad',
         'squad_id': ?squadId,
+        'community_event_id': ?communityEventId,
         'audience': {'kind': 'all_friends'},
         'allow_suggestions': allowSuggestions,
         if (timeOptions.isNotEmpty) 'time_options': timeOptions,

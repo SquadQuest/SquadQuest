@@ -328,9 +328,13 @@ class _ActivityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final a = activity;
-    final subtitle = a.isConfirmed
+    final base = a.isConfirmed
         ? [a.confirmedTime, a.confirmedLocation].whereType<String>().join(' · ')
         : 'Idea · ${a.audienceSummary ?? ''}';
+    // Brought-along ideas show the embedded community event.
+    final subtitle = a.eventRef != null
+        ? '$base · ${a.eventRef!.communityIcon ?? '📣'} ${a.eventRef!.communityName ?? 'Community'}'
+        : base;
     return ListTile(
       onTap: () => context.push('/activity/${a.id}', extra: a),
       leading: CircleAvatar(

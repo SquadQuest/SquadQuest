@@ -3,15 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../api/api_exception.dart';
+import '../../models/activity.dart';
 import '../../models/topic.dart';
 import '../../providers/active_context.dart';
 import '../../providers/providers.dart';
 
-/// Compose a new idea (specs/api/ideas-activities.md). Friends/all_friends audience
-/// this stage: pick an activity type, optionally allow suggestions and seed a couple
-/// of time/location options, then POST /v1/ideas.
+/// Compose a new idea (specs/api/ideas-activities.md). When [broughtEvent] is set
+/// (the bring-friends bridge), the idea embeds that community event as read-only
+/// context and is posted friends-scoped.
 class ComposeIdeaScreen extends ConsumerStatefulWidget {
-  const ComposeIdeaScreen({super.key});
+  const ComposeIdeaScreen({super.key, this.broughtEvent});
+
+  final EventRef? broughtEvent;
 
   @override
   ConsumerState<ComposeIdeaScreen> createState() => _ComposeIdeaScreenState();
@@ -57,6 +60,7 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
               SquadContext(:final id) => id,
               _ => null,
             },
+            communityEventId: widget.broughtEvent?.id,
           );
       switch (ctx) {
         case SquadContext(:final id):
@@ -84,13 +88,34 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
       _ => 'Visible to all your friends',
     };
 
+    final event = widget.broughtEvent;
     return Scaffold(
-      appBar: AppBar(title: const Text('New idea')),
+      appBar: AppBar(title: Text(event == null ? 'New idea' : 'Bring friends')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (event != null)
+              Card(
+                key: const Key('broughtEventChip'),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: ListTile(
+                  leading: Text(
+                    event.communityIcon ?? '📣',
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                  title: Text(event.title),
+                  subtitle: Text(
+                    [
+                      event.communityName,
+                      event.time,
+                      event.location,
+                    ].whereType<String>().join(' · '),
+                  ),
+                ),
+              ),
+            if (event != null) const SizedBox(height: 12),
             Container(
               key: const Key('composeDestination'),
               padding: const EdgeInsets.all(12),

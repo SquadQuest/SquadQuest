@@ -35,7 +35,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (_, _) => const _Splash()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/', builder: (_, _) => const TimelineScreen()),
-      GoRoute(path: '/ideas/new', builder: (_, _) => const ComposeIdeaScreen()),
+      GoRoute(
+        path: '/ideas/new',
+        builder: (_, state) =>
+            ComposeIdeaScreen(broughtEvent: state.extra as EventRef?),
+      ),
       GoRoute(
         path: '/squads/new',
         builder: (_, _) => const CreateSquadScreen(),
