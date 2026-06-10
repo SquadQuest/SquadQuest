@@ -10,6 +10,7 @@ import {
   friendship,
   topic,
   squadMembership,
+  communityEvent,
 } from '../../db/schema/index.ts'
 import { ApiError, errors } from '../../contracts/errors.ts'
 
@@ -99,8 +100,14 @@ export class ActivityService {
     if (scope !== 'friends' && scope !== 'squad') {
       throw errors.badRequest('unsupported_scope', 'Unsupported scope')
     }
+    // Bring-friends bridge: a friends/squad idea may embed a community event as
+    // read-only context (event_ref). The public event stays community-owned.
     if (input.communityEventId) {
-      throw errors.badRequest('unsupported', 'Community events are not available yet')
+      const [ev] = await this.db
+        .select()
+        .from(communityEvent)
+        .where(eq(communityEvent.id, input.communityEventId))
+      if (!ev) throw errors.badRequest('event_invalid', 'Unknown community event')
     }
     if (scope === 'squad') {
       if (!input.squadId) {
@@ -133,6 +140,7 @@ export class ActivityService {
           // default so the NOT NULL column is satisfied.
           audienceKind: isSquad ? 'all_friends' : input.audience.kind,
           allowSuggestions: input.allowSuggestions ?? false,
+          communityEventId: input.communityEventId ?? null,
         })
         .returning({ id: activity.id })
       const activityId = created!.id
