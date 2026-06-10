@@ -23,6 +23,12 @@ class _DiscoverState extends ConsumerState<DiscoverCommunitiesScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Discover communities')),
+      floatingActionButton: FloatingActionButton.extended(
+        key: const Key('newCommunityFab'),
+        onPressed: () => context.push('/communities/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('New community'),
+      ),
       body: Column(
         children: [
           Padding(

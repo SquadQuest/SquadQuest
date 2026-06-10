@@ -126,3 +126,14 @@ final communityEventsProvider =
     FutureProvider.family<List<CommunityEvent>, String>((ref, communityId) {
       return ref.watch(communityRepositoryProvider).events(communityId);
     });
+
+/// The active community as the caller sees it (for `your_role` / leader controls),
+/// looked up from the discover list. Null until loaded or if not present.
+final activeCommunityProvider = Provider.family<Community?, String>((ref, id) {
+  final list = ref.watch(communitiesProvider('')).value;
+  if (list == null) return null;
+  for (final c in list) {
+    if (c.id == id) return c;
+  }
+  return null;
+});

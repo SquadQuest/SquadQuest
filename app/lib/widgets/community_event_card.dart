@@ -16,10 +16,12 @@ class CommunityEventCard extends ConsumerStatefulWidget {
     super.key,
     required this.communityId,
     required this.event,
+    this.isLeader = false,
   });
 
   final String communityId;
   final CommunityEvent event;
+  final bool isLeader;
 
   @override
   ConsumerState<CommunityEventCard> createState() => _CommunityEventCardState();
@@ -46,6 +48,38 @@ class _CommunityEventCardState extends ConsumerState<CommunityEventCard> {
     }
   }
 
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel this event?'),
+        content: Text(widget.event.title),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep'),
+          ),
+          FilledButton(
+            key: const Key('confirmDeleteEvent'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Cancel event'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(communityRepositoryProvider).deleteEvent(widget.event.id);
+      ref.invalidate(communityEventsProvider(widget.communityId));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn\'t cancel the event.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final e = widget.event;
@@ -61,10 +95,42 @@ class _CommunityEventCardState extends ConsumerState<CommunityEventCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '${e.communityIcon ?? '📣'}  ${e.communityName ?? 'Community'}'
-              '${e.recurrence != null ? ' · ${e.recurrence}' : ''}',
-              style: Theme.of(context).textTheme.labelMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${e.communityIcon ?? '📣'}  ${e.communityName ?? 'Community'}'
+                    '${e.recurrence != null ? ' · ${e.recurrence}' : ''}',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+                if (widget.isLeader)
+                  SizedBox(
+                    height: 28,
+                    child: PopupMenuButton<String>(
+                      key: Key('event_menu_${e.id}'),
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(Icons.more_vert, size: 20),
+                      onSelected: (v) {
+                        if (v == 'edit') {
+                          context.push(
+                            '/communities/${widget.communityId}/events/new',
+                            extra: e,
+                          );
+                        } else if (v == 'delete') {
+                          _delete();
+                        }
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'edit', child: Text('Edit')),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Text('Cancel event'),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 6),
             Text(e.title, style: Theme.of(context).textTheme.titleMedium),

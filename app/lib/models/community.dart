@@ -8,6 +8,7 @@ class Community {
     this.color,
     this.followerCount = 0,
     this.youFollow = false,
+    this.yourRole,
   });
 
   final String id;
@@ -18,6 +19,11 @@ class Community {
   final int followerCount;
   final bool youFollow;
 
+  /// `'leader'` when the caller may post/edit this community's events, else null.
+  final String? yourRole;
+
+  bool get isLeader => yourRole == 'leader';
+
   factory Community.fromJson(Map<String, dynamic> json) => Community(
     id: json['id'] as String,
     name: json['name'] as String? ?? '',
@@ -26,6 +32,7 @@ class Community {
     color: json['color'] as String?,
     followerCount: (json['follower_count'] as num?)?.toInt() ?? 0,
     youFollow: json['you_follow'] as bool? ?? false,
+    yourRole: json['your_role'] as String?,
   );
 }
 
