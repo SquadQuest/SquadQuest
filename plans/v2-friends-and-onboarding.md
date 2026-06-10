@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [v2-communities-core]
 specs:
   - specs/api/profile.md
@@ -7,7 +7,7 @@ specs:
   - specs/behaviors/friend-connections.md
   - specs/screens/welcome-wizard.md
 issues: []
-pr:
+pr: 426
 ---
 
 # Plan: v2 friend connections + onboarding
@@ -51,10 +51,12 @@ and the profile-setup step of `specs/screens/welcome-wizard.md`.
 
 ## Validation
 
-- [ ] `bun run type-check` + `bun test` (PATCH sets name; send-by-phone creates shell +
-      requested; reciprocal request auto-accepts; accept connects → appears in GET /friends;
-      decline leaves no edge; non-requestee 404; self-request 400) green; CI.
-- [ ] client `flutter analyze` + widget tests green; CI.
+- [x] `bun run type-check` + `bun test` (PATCH sets name + rejects blank; send-by-phone creates
+      shell + requested; reciprocal request auto-accepts as one edge; accept connects → appears
+      in GET /friends; decline leaves no edge + re-requestable; non-requestee 404; self-request
+      400) green — suite **36/36**; CI green on #425.
+- [x] client `flutter analyze` + widget tests green — **16** tests (welcome ×2, friends ×4 +
+      updated fakes); CI green on #426.
 - [ ] (machine free) MCP: new login → profile-setup sets name; send request by phone →
       pending; accept from the other account → both connected, timeline visible.
 
@@ -68,8 +70,29 @@ and the profile-setup step of `specs/screens/welcome-wizard.md`.
 
 ## Notes
 
-(closeout)
+Two PRs: **#425** (backend — `PATCH /v1/me`; `FriendService` with requestByPhone shell-creation
+- one-edge-per-pair idempotent/auto-accept, listRequests, requestee-only respond; request
+serializer; no migration) and **#426** (client — `/welcome` onboarding gate off the signed-in
+profile, `/friends` People screen with accepted graph + incoming accept/decline + outgoing
+pending + add-by-phone, `patch()` verb, FriendRepository/ProfileRepository extensions). Both
+CI-green and merged. The friend graph is now self-serve (was seed/migration-only) and new users
+set a name before any surface shows "Someone".
+
+Decisions worth noting: a **declined** edge is re-opened (not blocked) when either party
+re-sends — `requestByPhone` flips it back to `requested` with the sender as requester, keeping
+one edge per pair. The onboarding gate keys purely on null/empty `first_name`; there's no skip
+(a name is required to proceed this stage).
+
+The third validation item (live MCP walkthrough + screenshots) is pending a free machine —
+tracked below, not blocking the merge since both automated gates are green.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred (UX/styling):** the 3-page welcome PageView intro copy; profile **photo** upload
+  (needs storage); editing your name later from a settings/profile screen (PATCH already
+  supports it — just no client entry point yet).
+- **Deferred to plan / future channels:** **QR / contact-based** friend connection (phone is the
+  only channel now); **blocking** (decline ≠ block today — promote `friend-connections.md`'s
+  Local principle if blocking arrives).
+- **Verification owed:** live MCP walkthrough (new login → profile-setup → request-by-phone →
+  accept from the other account → both connected) + screenshots, when the machine is free.
