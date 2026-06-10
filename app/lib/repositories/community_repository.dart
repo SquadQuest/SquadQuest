@@ -10,6 +10,46 @@ abstract class CommunityRepository {
     required bool going,
     required bool public,
   });
+
+  // ── Leader tooling (specs/api/communities.md) ─────────────────────────────
+
+  /// Create a community; the caller becomes its first leader.
+  Future<Community> create({
+    required String name,
+    String? tagline,
+    String? icon,
+    String? color,
+  });
+
+  /// Edit a community (leader-only). Only non-null fields are sent.
+  Future<Community> update(
+    String communityId, {
+    String? name,
+    String? tagline,
+    String? icon,
+    String? color,
+  });
+
+  /// Post an event to a community (leader-only).
+  Future<CommunityEvent> createEvent(
+    String communityId, {
+    required String title,
+    String? time,
+    String? recurrence,
+    String? location,
+  });
+
+  /// Edit an event (leader-only). Only non-null fields are sent.
+  Future<CommunityEvent> updateEvent(
+    String eventId, {
+    String? title,
+    String? time,
+    String? recurrence,
+    String? location,
+  });
+
+  /// Cancel an event (leader-only).
+  Future<void> deleteEvent(String eventId);
 }
 
 class ApiCommunityRepository implements CommunityRepository {
@@ -62,5 +102,84 @@ class ApiCommunityRepository implements CommunityRepository {
       body: {'going': going, 'public': public},
     );
     return CommunityEvent.fromJson(res);
+  }
+
+  @override
+  Future<Community> create({
+    required String name,
+    String? tagline,
+    String? icon,
+    String? color,
+  }) async {
+    final res = await apiClient.post(
+      '/v1/communities',
+      body: {'name': name, 'tagline': ?tagline, 'icon': ?icon, 'color': ?color},
+    );
+    return Community.fromJson(res);
+  }
+
+  @override
+  Future<Community> update(
+    String communityId, {
+    String? name,
+    String? tagline,
+    String? icon,
+    String? color,
+  }) async {
+    final res = await apiClient.patch(
+      '/v1/communities/$communityId',
+      body: {
+        'name': ?name,
+        'tagline': ?tagline,
+        'icon': ?icon,
+        'color': ?color,
+      },
+    );
+    return Community.fromJson(res);
+  }
+
+  @override
+  Future<CommunityEvent> createEvent(
+    String communityId, {
+    required String title,
+    String? time,
+    String? recurrence,
+    String? location,
+  }) async {
+    final res = await apiClient.post(
+      '/v1/communities/$communityId/events',
+      body: {
+        'title': title,
+        'time': ?time,
+        'recurrence': ?recurrence,
+        'location': ?location,
+      },
+    );
+    return CommunityEvent.fromJson(res);
+  }
+
+  @override
+  Future<CommunityEvent> updateEvent(
+    String eventId, {
+    String? title,
+    String? time,
+    String? recurrence,
+    String? location,
+  }) async {
+    final res = await apiClient.patch(
+      '/v1/community-events/$eventId',
+      body: {
+        'title': ?title,
+        'time': ?time,
+        'recurrence': ?recurrence,
+        'location': ?location,
+      },
+    );
+    return CommunityEvent.fromJson(res);
+  }
+
+  @override
+  Future<void> deleteEvent(String eventId) async {
+    await apiClient.delete('/v1/community-events/$eventId');
   }
 }

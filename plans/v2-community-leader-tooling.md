@@ -1,11 +1,11 @@
 ---
-status: in-progress
+status: done
 depends: [v2-communities-core]
 specs:
   - specs/api/communities.md
   - specs/screens/communities.md
 issues: []
-pr:
+pr: 429
 ---
 
 # Plan: v2 community leader tooling
@@ -55,10 +55,12 @@ invite; activity-type picker on events (optional field, deferred); photo/icon up
 
 ## Validation
 
-- [ ] `bun run type-check` + `bun test` (create makes leader + your_role; non-leader 403 on
-      patch/post-event/patch-event/delete; edits persist; delete cascades RSVPs) green; CI.
-- [ ] client `flutter analyze` + widget tests (create-community form posts; leader sees Post
-      event, follower sees banner; post-event form) green; CI.
+- [x] `bun run type-check` + `bun test` (create makes leader + your_role surfaces; non-leader
+      403 on patch/post-event/patch-event/delete; edits persist; delete cascades RSVPs;
+      leader-unfollow no-op) green — suite **41/41**; CI green on #428.
+- [x] client `flutter analyze` + widget tests (create-community form posts + blank rejected;
+      post-event form posts; event card leader-menu only for a leader) green — suite **20**;
+      CI green on #429.
 - [ ] (machine free) MCP: create a community → become leader → post an event → it appears on
       the timeline; a second account sees it as a plain follower (no leader controls).
 
@@ -73,8 +75,30 @@ invite; activity-type picker on events (optional field, deferred); photo/icon up
 
 ## Notes
 
-(closeout)
+Two PRs: **#428** (backend — `POST`/`PATCH /v1/communities`, `POST /v1/communities/:id/events`,
+`PATCH`/`DELETE /v1/community-events/:id`, all leader-gated; `isLeader`/`assertLeader`;
+`your_role` on the community item; unfollow never strips leadership) and **#429** (client —
+"New community" FAB + create/edit form; leader-gated Post-event affordance, app-bar edit-
+community, per-card edit/cancel menu; `Community.yourRole`/`isLeader`, repo create/update +
+event create/update/delete, `activeCommunityProvider`). Both CI-green and merged. Communities
+are now **self-serve** — the `seed-communities.ts` stand-in is no longer the only way to get
+communities/events (kept for convenient demo data).
+
+Decisions worth noting: **leadership is a `community_membership` with `role:"leader"`** (no
+separate table) — it implies following, and **unfollow never strips it** (guarded in
+`toggleFollow`). `your_role` is surfaced as `"leader" | null` (a plain follower is just
+`you_follow:true`). Event `time`/`recurrence`/`location` stay free-text display strings (no
+date picker yet). The activity-type picker on events was deferred (optional field).
+
+The third validation item (live MCP walkthrough) is pending a free machine — tracked below.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred (UX/styling):** event date/time picker (currently free-text); activity-type
+  picker on events; community **color** picker + icon/photo upload (needs storage); a richer
+  community-detail/leader-dashboard screen.
+- **Deferred to plan / future:** community **delete** (follower fan-out); **leadership
+  transfer / co-leader invite** (multi-leader); per-event **threads** surfaced from the card.
+- **Verification owed:** live MCP walkthrough (create community → leader → post event →
+  appears on timeline; second account sees a plain follower view) + screenshots, when the
+  machine is free.

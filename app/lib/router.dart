@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'models/activity.dart';
+import 'models/community.dart';
 import 'models/message.dart';
 import 'providers/auth_controller.dart';
 import 'screens/activity/activity_detail_screen.dart';
 import 'screens/compose/compose_idea_screen.dart';
+import 'screens/communities/create_community_screen.dart';
+import 'screens/communities/create_event_screen.dart';
 import 'screens/communities/discover_screen.dart';
 import 'screens/friends/friends_screen.dart';
 import 'screens/login/login_screen.dart';
@@ -55,6 +58,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/communities',
         builder: (_, _) => const DiscoverCommunitiesScreen(),
+      ),
+      GoRoute(
+        path: '/communities/new',
+        builder: (_, state) =>
+            CreateCommunityScreen(existing: state.extra as Community?),
+      ),
+      GoRoute(
+        path: '/communities/:id/events/new',
+        builder: (_, state) => CreateEventScreen(
+          communityId: state.pathParameters['id']!,
+          existing: state.extra as CommunityEvent?,
+        ),
       ),
       GoRoute(
         path: '/activity/:id',

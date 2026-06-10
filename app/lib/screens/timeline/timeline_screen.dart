@@ -26,6 +26,11 @@ class TimelineScreen extends ConsumerWidget {
       SquadContext(:final name) => name,
       CommunityContext(:final name) => name,
     };
+    // The active community (for leader controls), if any.
+    final activeCommunity = ctx is CommunityContext
+        ? ref.watch(activeCommunityProvider(ctx.id))
+        : null;
+    final isLeader = activeCommunity?.isLeader ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -41,6 +46,14 @@ class TimelineScreen extends ConsumerWidget {
           ),
         ),
         actions: [
+          if (isLeader && activeCommunity != null)
+            IconButton(
+              key: const Key('editCommunityButton'),
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit community',
+              onPressed: () =>
+                  context.push('/communities/new', extra: activeCommunity),
+            ),
           IconButton(
             key: const Key('peopleButton'),
             icon: const Icon(Icons.people_outline),
@@ -65,7 +78,10 @@ class TimelineScreen extends ConsumerWidget {
               child: const Icon(Icons.add),
             ),
       body: switch (ctx) {
-        CommunityContext(:final id) => _CommunityBody(communityId: id),
+        CommunityContext(:final id) => _CommunityBody(
+          communityId: id,
+          isLeader: isLeader,
+        ),
         _ => _FeedBody(ctx: ctx),
       },
     );
@@ -262,10 +278,12 @@ class _FeedBody extends ConsumerWidget {
   }
 }
 
-/// Community: leader-broadcast event cards + a read-only follower banner.
+/// Community: leader-broadcast event cards. Followers see a read-only banner;
+/// leaders see a Post-event affordance + per-card edit/delete.
 class _CommunityBody extends ConsumerWidget {
-  const _CommunityBody({required this.communityId});
+  const _CommunityBody({required this.communityId, this.isLeader = false});
   final String communityId;
+  final bool isLeader;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -307,21 +325,37 @@ class _CommunityBody extends ConsumerWidget {
                           CommunityEventCard(
                             communityId: communityId,
                             event: e,
+                            isLeader: isLeader,
                           ),
                       ],
                     ),
             ),
           ),
         ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const Text(
-            'Following · only leaders post events here',
-            textAlign: TextAlign.center,
+        if (isLeader)
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+              child: FilledButton.icon(
+                key: const Key('postEventButton'),
+                onPressed: () =>
+                    context.push('/communities/$communityId/events/new'),
+                icon: const Icon(Icons.add),
+                label: const Text('Post event'),
+              ),
+            ),
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Text(
+              'Following · only leaders post events here',
+              textAlign: TextAlign.center,
+            ),
           ),
-        ),
       ],
     );
   }
