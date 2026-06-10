@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Drop this worktree's database. Does NOT stop the shared postgres container.
+# Refuses to drop the canonical main-worktree DB (squadquest_v2) unless forced.
+#
+# Usage:
+#   bin/cleanup            # drop this worktree's derived DB
+#   bin/cleanup --force    # allow dropping squadquest_v2 (rarely wanted)
+#
+# Env overrides: SQ_DATABASE, SQ_PG_PORT.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+db="$(sq_db_name)"
+
+if [ "$db" = "squadquest_v2" ] && [ "${1:-}" != "--force" ]; then
+  echo "Refusing to drop the canonical dev database 'squadquest_v2'." >&2
+  echo "Use 'bin/reset-db' to reset it, or 'bin/cleanup --force' to really drop it." >&2
+  exit 1
+fi
+
+sq_psql -d postgres -c "
+  SELECT pg_terminate_backend(pid)
+  FROM pg_stat_activity
+  WHERE datname = '${db}' AND pid <> pg_backend_pid()
+" >/dev/null 2>&1 || true
+
+sq_psql -d postgres -c "DROP DATABASE IF EXISTS ${db}" >/dev/null
+echo "Dropped database ${db}" >&2

@@ -13,7 +13,8 @@ public events reintroduced only inside opt-in Communities.
 | Path | What |
 |---|---|
 | `app/` | v2 Flutter client (android/ios/macos/web). Run: `cd app && flutter run` |
-| `server/` | v2 backend — Fastify + TypeScript on Bun. Run: `cd server && bun run dev` |
+| `server/` | v2 backend — Fastify + TypeScript on Bun. Run: `bin/dev` (or `cd server && bun run dev`) |
+| `bin/` | dev lifecycle scripts — shared Postgres container, per-worktree databases |
 | `specs/` | source of truth (principles, architecture, data-model, api/, screens/, behaviors/) |
 | `plans/` | work-in-flight DAG |
 | `tf/` | frontend hosting infra (OpenTofu) |
@@ -30,6 +31,29 @@ public events reintroduced only inside opt-in Communities.
   versioned `/v1` API, never the schema (see `specs/api/conventions.md`). Realtime is SSE +
   Postgres `LISTEN/NOTIFY`, treated as an enhancement (never load-bearing).
 - Auth/storage/realtime are owned in-house; phone-OTP → JWT.
+
+### Local dev (`bin/` scripts)
+
+A single shared Postgres container (`squadquest-v2-postgres`, host port 5532) hosts a
+**separate database per context**, so nothing clobbers anything:
+
+- **Main worktree** → `squadquest_v2` (your canonical dev data).
+- **Each agent worktree** → `sq_<hash>` (isolated; many worktrees run at once).
+- **The test runner** → `squadquest_test` — so `bun test` **never** touches your dev data.
+
+| Script | Does |
+|---|---|
+| `bin/setup` | ensure container + this context's DB + `bun install` + migrate |
+| `bin/dev` | run the backend with an auto-derived `DATABASE_URL` |
+| `bin/test` | run the server suite against `squadquest_test` (ensures + migrates first) |
+| `bin/reset-db` | drop + recreate + migrate this context's DB |
+| `bin/db "SQL"` | run SQL (or open psql) against this context's DB |
+| `bin/cleanup` | drop this worktree's DB (refuses `squadquest_v2` without `--force`) |
+
+Tests are safe even without `bin/`: a bun preload (`server/bunfig.toml` → `test/setup.ts`)
+defaults `DATABASE_URL` to `squadquest_test` and migrates it. CI sets `DATABASE_URL`
+explicitly, so the preload defers to it (the `??=` lets CI win). There is **no
+`docker-compose.yml`** — `bin/` replaces it (compose can't do per-worktree DBs/ports).
 
 ## v1 → v2
 

@@ -1,10 +1,7 @@
 import { afterAll, beforeAll, beforeEach, expect, test } from 'bun:test'
 import Fastify, { type FastifyInstance } from 'fastify'
 
-process.env.DATABASE_URL ??=
-  'postgres://squadquest:squadquest@localhost:5532/squadquest_v2'
-process.env.JWT_SECRET ??= 'test-secret-min-32-chars-xxxxxxxxxxxxx'
-process.env.MIN_SUPPORTED_BUILD = '0'
+// Test env is configured by test/setup.ts (bun preload; see bunfig.toml).
 
 const { app } = await import('../src/app.ts')
 

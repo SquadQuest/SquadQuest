@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Drop and recreate this context's database, then migrate.
+#
+# Usage: bin/reset-db
+# Env overrides: SQ_DATABASE, SQ_PG_PORT.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+ensure_postgres
+db="$(sq_db_name)"
+sq_recreate_db "$db"
+sq_migrate "$(sq_database_url)"
+echo "Database ${db} reset complete" >&2
