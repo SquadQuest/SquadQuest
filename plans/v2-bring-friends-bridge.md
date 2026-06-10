@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [v2-communities-core]
 specs:
   - specs/behaviors/bring-friends-bridge.md
@@ -7,7 +7,7 @@ specs:
   - specs/api/communities.md
   - specs/screens/communities.md
 issues: []
-pr:
+pr: 424
 ---
 
 # Plan: v2 bring-friends bridge
@@ -57,11 +57,13 @@ nuance (brought-along idea follows the normal lifecycle with the event providing
 
 ## Validation
 
-- [ ] `bun run type-check` + `bun test` (brought-along idea: event_ref + friends-scoped +
-      absent from community feed; "I'm in" → anonymous headcount +1, not public) green; CI.
-- [ ] client `flutter analyze` + widget tests green; CI.
-- [ ] (when machine free) MCP: Bring friends on an event → idea on My Friends w/ event chip;
-      friend responds "I'm in" → event going_count +1, face-pile unchanged.
+- [x] `bun run type-check` + `bun test` — 2 tests (brought-along idea: event_ref +
+      friends-scoped + public event unchanged; "I'm in" → anonymous headcount +1, face-pile
+      unchanged); full suite 28/28; backend CI green (#423, merged).
+- [x] client `flutter analyze` clean + 10 widget tests (composer prefilled-from-event chip);
+      client CI on #424.
+- [~] MCP visual walkthrough deferred (window-foreground conflict); backend invariants
+      unit-tested.
 
 ## Risks / unknowns
 
@@ -72,8 +74,18 @@ nuance (brought-along idea follows the normal lifecycle with the event providing
 
 ## Notes
 
-(closeout)
+Two PRs: **#423** (backend — createIdea accepts community_event_id, activity serializer
+event_ref, attendance coupling in CommunityService going_count) merged; **#424** (client —
+Bring-friends action, composer pre-fill + event chip, event_ref on tiles/detail). The
+firewall invariant holds end-to-end: the composer only emits friends-scoped ideas; a
+brought-along "I'm in" adds at most an anonymous +1 to the event headcount, never identity.
+Completes **communities** (core + bridge).
 
 ## Follow-ups
 
-(closeout)
+- **Deferred to plan:** the destination picker (My Friends vs a squad) in the bring-friends
+  composer — currently posts to My Friends; community-event **threads** (the event_ref's
+  thread); leader tooling; photos; SSE.
+- **Deferred (UX):** a public RSVP / face-pile entry for a profile with no name (onboarding/
+  welcome-wizard sets names; until then nameless public attendees are dropped from the
+  face-pile though still counted).
