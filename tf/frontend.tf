@@ -69,7 +69,7 @@ resource "google_dns_record_set" "google_site_verification" {
   name         = "squadquest.app."
   type         = "TXT"
   ttl          = 300
-  rrdatas      = ["\"google-site-verification=3xuOWVqNHsjLNHz1Gumy9yAjb6kvfdKlI9WM_RwiWvI\""]
+  rrdatas      = ["\"google-site-verification=LpqfUAzbIdG1dc6hC-zK0jC-83MHKZpRZP5o1rZ1DHc\""]
 }
 
 # Dev environment
