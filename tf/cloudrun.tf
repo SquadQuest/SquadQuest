@@ -113,19 +113,27 @@ resource "google_cloud_run_v2_service_iam_member" "public" {
   member   = "allUsers"
 }
 
-# Custom domain (managed cert). DNS record added in frontend.tf's zone below.
-resource "google_cloud_run_domain_mapping" "backend" {
-  name     = var.api_domain
-  location = google_cloud_run_v2_service.backend.location
-
-  metadata {
-    namespace = "squadquest-d8665"
-  }
-
-  spec {
-    route_name = google_cloud_run_v2_service.backend.name
-  }
-}
+# Custom domain (managed cert) for api.squadquest.app.
+#
+# GATED on a ONE-TIME manual step: Cloud Run refuses to map the domain until
+# ownership of squadquest.app (or a parent) is verified for this account in
+# Google Webmaster Central — an interactive web flow that can't be done headlessly:
+#   https://www.google.com/webmasters/verification/verification?domain=squadquest.app
+# Verify ownership (largest scope: squadquest.app), then uncomment this resource
+# and `tofu apply`. The mapping will emit the rrdata for the api DNS record, which
+# then goes in the zone (frontend.tf). Until then the service is reachable at its
+# run.app URL (see the backend_service_url output).
+#
+# resource "google_cloud_run_domain_mapping" "backend" {
+#   name     = var.api_domain
+#   location = google_cloud_run_v2_service.backend.location
+#   metadata {
+#     namespace = "squadquest-d8665"
+#   }
+#   spec {
+#     route_name = google_cloud_run_v2_service.backend.name
+#   }
+# }
 
 output "backend_service_url" {
   value = google_cloud_run_v2_service.backend.uri
