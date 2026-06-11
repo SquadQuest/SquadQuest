@@ -11,8 +11,10 @@ All routes under `/v1/auth`. See [conventions](conventions.md) for envelope/vers
 Start phone verification.
 
 - **Request:** `{ "phone": "+15551234567" }` (E.164; server normalizes).
-- **Response:** `200 { "expires_in": 300 }`. Always 200 for a valid-format number (don't
-  reveal whether the number is known). Delivery via SMS provider (swappable).
+- **Response:** `200 { "expires_in": <seconds> }`. Always 200 for a valid-format number (don't
+  reveal whether the number is known). Delivery via a swappable SMS provider — **Twilio Verify**
+  in production (Twilio generates, sends, and later checks the code; the server never sees it),
+  a dev console provider locally. `expires_in` is advisory (the provider owns the real TTL).
 - **Errors:** `phone_invalid`, `rate_limited`.
 
 ## POST /v1/auth/otp/verify
@@ -20,6 +22,8 @@ Start phone verification.
 Exchange the code for tokens; claim the shell.
 
 - **Request:** `{ "phone": "+15551234567", "code": "123456" }`
+- The code is checked by the provider (Twilio Verify in prod; a self-managed `otp_code`
+  table for the dev console provider). On success the server proceeds to claim/create.
 - **Response:** `200`
 
   ```jsonc
