@@ -72,6 +72,38 @@ resource "google_cloud_run_v2_service" "backend" {
         }
       }
 
+      # Twilio Verify — presence of all three switches auth from the dev console
+      # provider to real SMS (see routes/v1/auth.ts).
+      env {
+        name = "TWILIO_ACCOUNT_SID"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.twilio_account_sid.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "TWILIO_AUTH_TOKEN"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.twilio_auth_token.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "TWILIO_VERIFY_SERVICE_SID"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.twilio_verify_sid.secret_id
+            version = "latest"
+          }
+        }
+      }
+
       startup_probe {
         http_get {
           path = "/v1/health"

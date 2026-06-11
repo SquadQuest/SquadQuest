@@ -22,6 +22,12 @@ const schema = {
     // Lowest client build allowed; requests below it get 426 (see
     // specs/api/conventions.md). 0 = no floor.
     MIN_SUPPORTED_BUILD: { type: 'number', default: 0 },
+    // Twilio Verify (SMS OTP). When all three are present the auth routes use
+    // Twilio; otherwise they fall back to the dev ConsoleOtpProvider. Optional so
+    // local dev / tests need no Twilio account.
+    TWILIO_ACCOUNT_SID: { type: 'string', default: '' },
+    TWILIO_AUTH_TOKEN: { type: 'string', default: '' },
+    TWILIO_VERIFY_SERVICE_SID: { type: 'string', default: '' },
   },
 }
 
@@ -35,6 +41,9 @@ declare module 'fastify' {
       DATABASE_URL: string
       JWT_SECRET: string
       MIN_SUPPORTED_BUILD: number
+      TWILIO_ACCOUNT_SID: string
+      TWILIO_AUTH_TOKEN: string
+      TWILIO_VERIFY_SERVICE_SID: string
     }
   }
 }
