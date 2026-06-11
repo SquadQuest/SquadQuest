@@ -28,6 +28,9 @@ const schema = {
     TWILIO_ACCOUNT_SID: { type: 'string', default: '' },
     TWILIO_AUTH_TOKEN: { type: 'string', default: '' },
     TWILIO_VERIFY_SERVICE_SID: { type: 'string', default: '' },
+    // GCS bucket for user media (signed-URL uploads, public-key reads). Empty
+    // disables the uploads endpoint (local dev without GCS creds).
+    MEDIA_BUCKET: { type: 'string', default: '' },
   },
 }
 
@@ -44,6 +47,7 @@ declare module 'fastify' {
       TWILIO_ACCOUNT_SID: string
       TWILIO_AUTH_TOKEN: string
       TWILIO_VERIFY_SERVICE_SID: string
+      MEDIA_BUCKET: string
     }
   }
 }

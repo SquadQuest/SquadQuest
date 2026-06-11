@@ -19,7 +19,9 @@ beforeEach(async () => {
   await server.sql`truncate otp_code, refresh_token, profile cascade`
 })
 
-const auth = { 'x-squadquest-client': 'web/1.0.0+1' }
+// Build kept high: a sibling suite (auth.test.ts) sets MIN_SUPPORTED_BUILD=500
+// process-wide, and these files share one bun-test process.
+const auth = { 'x-squadquest-client': 'web/9.9.9+999' }
 
 test('console OTP: request then verify with the logged code logs in', async () => {
   // request → row created in otp_code

@@ -19,7 +19,7 @@ const meRoutes: FastifyPluginAsync = async (fastify) => {
 
   // PATCH /v1/me — update own profile (onboarding profile-setup + later edits).
   // Only provided fields change; first_name must be non-empty when present.
-  fastify.patch<{ Body: { first_name?: string; last_name?: string } }>(
+  fastify.patch<{ Body: { first_name?: string; last_name?: string; photo?: string } }>(
     '/me',
     {
       preHandler: fastify.authenticate,
@@ -29,13 +29,14 @@ const meRoutes: FastifyPluginAsync = async (fastify) => {
           properties: {
             first_name: { type: 'string' },
             last_name: { type: 'string' },
+            photo: { type: 'string' },
           },
         },
       },
     },
     async (request) => {
-      const { first_name, last_name } = request.body
-      const updates: { firstName?: string; lastName?: string | null } = {}
+      const { first_name, last_name, photo } = request.body
+      const updates: { firstName?: string; lastName?: string | null; photo?: string | null } = {}
 
       if (first_name !== undefined) {
         if (first_name.trim() === '') {
@@ -45,6 +46,9 @@ const meRoutes: FastifyPluginAsync = async (fastify) => {
       }
       if (last_name !== undefined) {
         updates.lastName = last_name.trim() === '' ? null : last_name.trim()
+      }
+      if (photo !== undefined) {
+        updates.photo = photo.trim() === '' ? null : photo.trim()
       }
 
       const [row] = await fastify.db

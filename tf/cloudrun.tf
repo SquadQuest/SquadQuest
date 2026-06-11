@@ -104,6 +104,12 @@ resource "google_cloud_run_v2_service" "backend" {
         }
       }
 
+      # Media bucket for signed-URL uploads (not a secret — a plain bucket name).
+      env {
+        name  = "MEDIA_BUCKET"
+        value = google_storage_bucket.media.name
+      }
+
       startup_probe {
         http_get {
           path = "/v1/health"
