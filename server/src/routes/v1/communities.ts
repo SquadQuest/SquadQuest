@@ -22,7 +22,7 @@ const communityRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Create a community — the caller becomes its first leader.
   fastify.post<{
-    Body: { name: string; tagline?: string; icon?: string; color?: string }
+    Body: { name: string; tagline?: string; icon?: string; color?: string; photo?: string }
   }>(
     '/communities',
     {
@@ -36,6 +36,7 @@ const communityRoutes: FastifyPluginAsync = async (fastify) => {
             tagline: { type: 'string' },
             icon: { type: 'string' },
             color: { type: 'string' },
+            photo: { type: 'string' },
           },
         },
       },
@@ -50,7 +51,7 @@ const communityRoutes: FastifyPluginAsync = async (fastify) => {
   // Edit a community — leader-only.
   fastify.patch<{
     Params: { id: string }
-    Body: { name?: string; tagline?: string; icon?: string; color?: string }
+    Body: { name?: string; tagline?: string; icon?: string; color?: string; photo?: string }
   }>(
     '/communities/:id',
     {
@@ -63,6 +64,7 @@ const communityRoutes: FastifyPluginAsync = async (fastify) => {
             tagline: { type: 'string' },
             icon: { type: 'string' },
             color: { type: 'string' },
+            photo: { type: 'string' },
           },
         },
       },

@@ -2,11 +2,19 @@ import { and, eq, inArray, sql } from 'drizzle-orm'
 
 import type { Database } from '../../db/index.ts'
 import { message, activity } from '../../db/schema/index.ts'
+import type { MessageAttachment } from '../../db/schema/message.ts'
 import { ApiError, errors } from '../../contracts/errors.ts'
 import { ActivityService } from '../activity/service.ts'
 import { SquadService } from '../squad/service.ts'
 
 type MessageRow = typeof message.$inferSelect
+
+// A message must carry text, image(s), or both — never be empty.
+function assertHasContent(body: string, attachments: MessageAttachment[]): void {
+  if (!body.trim() && attachments.length === 0) {
+    throw errors.badRequest('empty_message', 'A message needs text or an attachment')
+  }
+}
 
 // Thread targets supported this stage (community_event arrives with communities).
 export type ThreadTargetType = 'activity' | 'message'
@@ -22,14 +30,19 @@ export class MessageService {
   }
 
   // Post a top-level message to a squad timeline (member-gated).
-  async postSquadMessage(senderId: string, squadId: string, body: string): Promise<MessageRow> {
-    if (!body.trim()) throw errors.badRequest('empty_message', 'Message body is required')
+  async postSquadMessage(
+    senderId: string,
+    squadId: string,
+    body: string,
+    attachments: MessageAttachment[] = [],
+  ): Promise<MessageRow> {
+    assertHasContent(body, attachments)
     if (!(await this.squads.isMember(squadId, senderId))) {
       throw new ApiError(404, 'not_found', 'Squad not found')
     }
     const [row] = await this.db
       .insert(message)
-      .values({ senderId, squadId, body: body.trim() })
+      .values({ senderId, squadId, body: body.trim() || null, attachments })
       .returning()
     return row!
   }
@@ -87,12 +100,19 @@ export class MessageService {
     targetType: ThreadTargetType,
     targetId: string,
     body: string,
+    attachments: MessageAttachment[] = [],
   ): Promise<MessageRow> {
-    if (!body.trim()) throw errors.badRequest('empty_message', 'Message body is required')
+    assertHasContent(body, attachments)
     await this.assertCanSeeTarget(senderId, targetType, targetId)
     const [row] = await this.db
       .insert(message)
-      .values({ senderId, threadTargetType: targetType, threadTargetId: targetId, body: body.trim() })
+      .values({
+        senderId,
+        threadTargetType: targetType,
+        threadTargetId: targetId,
+        body: body.trim() || null,
+        attachments,
+      })
       .returning()
     return row!
   }

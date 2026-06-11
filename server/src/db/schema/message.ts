@@ -1,7 +1,11 @@
-import { pgTable, pgEnum, uuid, text, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, pgEnum, uuid, text, timestamp, jsonb } from 'drizzle-orm/pg-core'
 
 import { profile } from './identity.ts'
 import { squad } from './squad.ts'
+
+// An image attachment on a message: the storage key + its public URL
+// (specs/api/uploads.md). Stored as a jsonb array on the message.
+export type MessageAttachment = { key: string; url: string }
 
 // Polymorphic thread root kinds (specs/data-model.md). community_event arrives with
 // the communities stage.
@@ -19,7 +23,9 @@ export const message = pgTable('message', {
   senderId: uuid('sender_id')
     .notNull()
     .references(() => profile.id, { onDelete: 'cascade' }),
-  body: text('body'), // nullable ⇒ photo-only (once attachments land)
+  body: text('body'), // nullable ⇒ photo-only (body or attachments must be present)
+  // image attachments (object-store keys + public URLs); defaults to empty.
+  attachments: jsonb('attachments').$type<MessageAttachment[]>().notNull().default([]),
   // top-level squad message:
   squadId: uuid('squad_id').references(() => squad.id, { onDelete: 'cascade' }),
   // thread reply (polymorphic root):

@@ -7,7 +7,7 @@ import { MessageService } from '../domain/message/service.ts'
 type MessageRow = typeof message.$inferSelect
 
 // Batched message serializer (specs/api/messages.md). thread_count = replies when
-// this message is itself a thread root. attachments are [] until storage lands.
+// this message is itself a thread root.
 export async function serializeMessages(db: Database, rows: MessageRow[]) {
   if (rows.length === 0) return []
   const senderIds = [...new Set(rows.map((r) => r.senderId))]
@@ -25,7 +25,7 @@ export async function serializeMessages(db: Database, rows: MessageRow[]) {
       id: r.id,
       sender: s ? { id: s.id, first_name: s.firstName, photo: s.photo } : null,
       body: r.body,
-      attachments: [] as { key: string; url: string }[],
+      attachments: r.attachments,
       thread_count: counts.get(r.id) ?? 0,
       created_at: r.createdAt.toISOString(),
     }
