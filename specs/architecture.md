@@ -16,6 +16,22 @@ is preserved from v1 so v2 ships as an app-store update. The v1 app and the orig
 `lib/v2` mock are archived on the protected `v1` branch; v2 screens are re-ported from there
 as they're built against the real backend + specs.
 
+**Build channels (flavors).** The Android build carries a `channel` flavor dimension so a
+sideloaded test build is a distinct app from the store build:
+
+- **`prod`** (default) — `applicationId app.squadquest`, label "SquadQuest". The real store
+  identity; preserves the v1 bundle id per the update path above.
+- **`dev`** — `app.squadquest.dev`, label "SquadQuest Dev". Installs *alongside* v1/prod on the
+  same device (a same-id/different-signing-key APK is a hard Android install block, which a
+  debug-signed `app.squadquest` build would hit). Used for the milestone APKs published to the
+  media bucket for on-device testing.
+
+Both currently sign with the debug key; a release keystore is a later step. Flavors are
+**Android-only** for now — iOS schemes/xcconfig flavors are a deferred follow-up, so
+`flutter build ipa --flavor …` isn't wired yet. The API base URL and client header are
+per-build `--dart-define`s (`API_BASE_URL`, `CLIENT_HEADER`), independent of flavor — a dev
+APK points at prod `https://api.squadquest.app` unless told otherwise.
+
 ## Backend: custom Fastify/Bun + Postgres (not Supabase)
 
 v2 runs on a **purpose-built backend we own**, not Supabase:
