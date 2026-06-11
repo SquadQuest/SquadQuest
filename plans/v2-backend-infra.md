@@ -1,10 +1,10 @@
 ---
-status: in-progress
+status: done
 depends: []
 specs:
   - specs/architecture.md
 issues: []
-pr:
+pr: 435
 ---
 
 # Plan: v2 backend infrastructure (deploy the API online via tf/)
@@ -100,10 +100,13 @@ Phased, low-risk first (this session does Phase 0–1; later phases gated on rev
 - [x] Cloud Run service healthy (startup+liveness on `/v1/health`); migrations applied to
       Cloud SQL on startup ("migrate: up to date"); `/v1/health` 200 + a real DB write
       (`POST /v1/auth/otp/request` → 200) over TLS at the run.app URL. [Phase 3]
-- [ ] `api.squadquest.app` over TLS — **gated** on one-time Google domain-ownership
-      verification (interactive); mapping tf is written + commented pending that step.
-- [ ] CI deploy: merge to `develop` builds+pushes the image and rolls out Cloud Run green.
-      (Still in scope — not yet wired.)
+- [x] `api.squadquest.app` over TLS → **200** (managed cert provisioned). Required
+      `gcloud domains verify squadquest.app` so the domain appears in
+      `gcloud domains list-user-verified` (Cloud Run's authz source — distinct from
+      Search Console). Mapping + `api` CNAME (→ ghs.googlehosted.com) in tf.
+- [x] CI deploy: `v2-publish.yml` `v2-backend` job builds+pushes the image (SHA-tagged) and
+      `gcloud run deploy`s on push to develop; v2-github-action SA granted the deploy roles;
+      tf `ignore_changes` on the image so CI + tf don't fight. (Verified on first merge.)
 - [x] v1 stays up throughout (its Firebase/CI infra untouched by the import).
 
 ## Risks / unknowns
@@ -126,8 +129,37 @@ Phased, low-risk first (this session does Phase 0–1; later phases gated on rev
 
 ## Notes
 
-(closeout)
+Shipped across **PRs #433 (Phase 0), #434 (Phase 1–3 + domain), #435 (CI auto-deploy)**.
+The v2 backend is live at **<https://api.squadquest.app>** (managed TLS), Cloud Run
+`squadquest-backend` (us-central1, min_instances=1) → private-IP Cloud SQL `squadquest-v2`
+(POSTGRES_17), secrets in Secret Manager, image in Artifact Registry. Mirrors the jarvus-hq
+stack. tf uses **remote state** (`gs://squadquest-tfstate`, versioned).
+
+Key things learned / decided:
+
+- **Migrate-on-startup**, not drizzle-kit: the image runs `src/migrate.ts` (drizzle-orm's
+  programmatic migrator — a *prod* dep) inside the VPC against the private DB. drizzle-kit is a
+  devDep and `--production` drops it.
+- **Build linux/amd64** — Cloud Run is amd64; dev Macs are arm64. (CI runners are amd64, so the
+  workflow uses a plain `docker build`.)
+- **Domain authz**: Cloud Run checks `gcloud domains list-user-verified`, a *different* surface
+  from Search Console. A Search-Console Domain property alone didn't satisfy it; `gcloud domains
+  verify squadquest.app` did. A *stale failed* mapping object also caches its conditions — had to
+  DELETE it so a fresh create re-checked authz.
+- **CI vs tf ownership**: CI deploys the image (`gcloud run deploy --image`); tf owns the rest of
+  the service. `lifecycle.ignore_changes` on the image + client annotations keeps them from
+  fighting.
+- **v1 drift adopted by import** (firebase APIs + the v1 CI SA), never recreated; v1 untouched.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred to plan / `v2-sms-otp`:** production SMS OTP via Twilio Verify. The three secret
+  *containers* (`twilio-account-sid`, `twilio-auth-token`, `twilio-verify-sid`) exist and are
+  **populated** (set by hand); still need a `TwilioVerifyOtpProvider` + verify-route change
+  (Twilio owns code gen/check) wired into Cloud Run env. Server still ships `ConsoleOtpProvider`.
+- **Deferred (ops, when needed):** `bin/snapshot`/`load-snapshot` for prod data (no need yet);
+  raising Cloud Run request timeout + validating SSE behavior when the realtime stage lands;
+  rehosting v1 Supabase-stored `profile.photo` assets (belongs to the storage stage).
+- **Tracked as:** `deletion_protection=true` on Cloud SQL — destroying the prod DB is a
+  deliberate two-step (flip the flag in tf, apply, then destroy). Documented in cloudsql.tf.
+- **None** outstanding for the infra itself — backend is live and CI-deployed.

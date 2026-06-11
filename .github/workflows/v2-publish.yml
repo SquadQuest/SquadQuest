@@ -53,3 +53,39 @@ jobs:
       # so always-revalidate is cheap.
       - name: 'Set no-cache on all objects'
         run: gcloud storage objects update "gs://v2.squadquest.app/**" --cache-control="no-cache"
+
+  # Build the server image and roll the Cloud Run service. Runs in parallel with
+  # the web publish above; both authenticate via the same WIF provider (gated to
+  # develop). The container migrates-on-startup against Cloud SQL (private IP), so
+  # no separate migrate step is needed here.
+  v2-backend:
+    runs-on: ubuntu-latest
+    env:
+      REGION: us-central1
+      AR_HOST: us-central1-docker.pkg.dev
+      IMAGE_REPO: us-central1-docker.pkg.dev/squadquest-d8665/squadquest-backend/api
+      SERVICE: squadquest-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: 'v2-github-action@squadquest-d8665.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/902139539375/locations/global/workloadIdentityPools/github/providers/v2-github-actions'
+
+      - uses: 'google-github-actions/setup-gcloud@v3'
+
+      - name: 'Configure Docker for Artifact Registry'
+        run: gcloud auth configure-docker "$AR_HOST" --quiet
+
+      # GitHub runners are amd64, so a plain build matches Cloud Run (no buildx needed).
+      - name: 'Build and push image'
+        working-directory: server
+        run: |
+          IMAGE="${IMAGE_REPO}:${GITHUB_SHA}"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: 'Deploy to Cloud Run'
+        run: gcloud run deploy "$SERVICE" --image="$IMAGE" --region="$REGION" --quiet

@@ -97,6 +97,18 @@ resource "google_cloud_run_v2_service" "backend" {
     percent = 100
   }
 
+  # CI (v2-publish.yml) deploys new images via `gcloud run deploy --image`, so the
+  # running image is owned by the deploy pipeline, not tf. tf still owns the rest
+  # of the service config (secrets, VPC, scaling, probes); ignore image + the
+  # client-name annotation gcloud stamps so `tofu plan` stays clean between deploys.
+  lifecycle {
+    ignore_changes = [
+      template[0].containers[0].image,
+      client,
+      client_version,
+    ]
+  }
+
   depends_on = [
     google_secret_manager_secret_version.database_url,
     google_secret_manager_secret_version.jwt_secret,
