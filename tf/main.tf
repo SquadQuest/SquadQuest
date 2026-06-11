@@ -5,6 +5,13 @@ terraform {
       version = "7.23.0"
     }
   }
+
+  # Remote state — shared infra must not live on one laptop. Bucket is created
+  # out-of-band (it can't live in the state it backs) and has versioning enabled.
+  backend "gcs" {
+    bucket = "squadquest-tfstate"
+    prefix = "terraform/state"
+  }
 }
 
 provider "google" {
