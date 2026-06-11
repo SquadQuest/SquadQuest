@@ -9,8 +9,9 @@ export const community = pgTable('community', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
   tagline: text('tagline'),
-  icon: text('icon'),
+  icon: text('icon'), // emoji glyph
   color: text('color'),
+  photo: text('photo'), // public media URL (cover image); see specs/api/uploads.md
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 

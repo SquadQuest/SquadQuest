@@ -10,7 +10,9 @@ Authenticated.
 
 List/discover communities. `?search=`, cursor-paginated.
 
-- **Item:** `{ "id", "name", "tagline", "icon", "color", "follower_count", "you_follow": bool, "your_role": "leader" | null }`.
+- **Item:** `{ "id", "name", "tagline", "icon", "color", "photo", "follower_count", "you_follow": bool, "your_role": "leader" | null }`.
+  `icon` is an emoji glyph; `photo` is a public media URL (cover image, nullable) — see
+  [`api/uploads.md`](uploads.md).
 - `your_role:"leader"` means the caller may post/edit this community's events (drives the
   client's leader controls). It implies `you_follow:true`. A plain follower has `your_role:null`.
 
@@ -64,14 +66,14 @@ a `community_membership` with `role:"leader"` (it also counts as following).
 
 Create a community; the caller becomes its `leader` (and a follower).
 
-- **Request:** `{ "name": "…", "tagline"?, "icon"?, "color"? }` — `name` non-empty.
+- **Request:** `{ "name": "…", "tagline"?, "icon"?, "color"?, "photo"? }` — `name` non-empty.
 - **Response:** `201 <community item>` with `you_follow:true`, `your_role:"leader"`.
 
 ### PATCH /v1/communities/:id
 
 Edit a community. **Leader-only** (non-leader → `403 forbidden`).
 
-- **Request:** `{ "name"?, "tagline"?, "icon"?, "color"? }` — only provided fields change;
+- **Request:** `{ "name"?, "tagline"?, "icon"?, "color"?, "photo"? }` — only provided fields change;
   `name` non-empty when present.
 - **Response:** `200 <community item>`.
 

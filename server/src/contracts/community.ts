@@ -8,6 +8,7 @@ export function serializeCommunity(s: CommunitySummary) {
     tagline: s.community.tagline,
     icon: s.community.icon,
     color: s.community.color,
+    photo: s.community.photo,
     follower_count: s.followerCount,
     you_follow: s.youFollow,
     your_role: s.yourRole === 'leader' ? 'leader' : null,

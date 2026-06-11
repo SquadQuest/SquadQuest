@@ -104,7 +104,7 @@ export class CommunityService {
   // Create a community; the creator becomes its first leader (and a follower).
   async create(
     creatorId: string,
-    input: { name: string; tagline?: string; icon?: string; color?: string },
+    input: { name: string; tagline?: string; icon?: string; color?: string; photo?: string },
   ): Promise<CommunitySummary> {
     const [c] = await this.db
       .insert(community)
@@ -113,6 +113,7 @@ export class CommunityService {
         tagline: input.tagline ?? null,
         icon: input.icon ?? null,
         color: input.color ?? null,
+        photo: input.photo ?? null,
       })
       .returning()
     await this.db
@@ -125,7 +126,13 @@ export class CommunityService {
   async update(
     viewerId: string,
     communityId: string,
-    patch: { name?: string; tagline?: string | null; icon?: string | null; color?: string | null },
+    patch: {
+      name?: string
+      tagline?: string | null
+      icon?: string | null
+      color?: string | null
+      photo?: string | null
+    },
   ): Promise<CommunitySummary> {
     await this.assertLeader(communityId, viewerId)
     if (Object.keys(patch).length > 0) {

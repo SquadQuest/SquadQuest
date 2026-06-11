@@ -7,6 +7,14 @@ import { errors } from '../../contracts/errors.ts'
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 100
 
+// Shape of one image attachment in a message body (key + public URL from
+// POST /v1/uploads). Shared by the squad-message and thread-reply routes.
+export const ATTACHMENT_SCHEMA = {
+  type: 'object',
+  required: ['key', 'url'],
+  properties: { key: { type: 'string' }, url: { type: 'string' } },
+} as const
+
 function encodeCursor(createdAt: Date, id: string): string {
   return Buffer.from(`${createdAt.toISOString()}|${id}`).toString('base64url')
 }
@@ -68,15 +76,20 @@ const messageRoutes: FastifyPluginAsync = async (fastify) => {
     },
   )
 
-  fastify.post<{ Params: { targetType: string; targetId: string }; Body: { body: string } }>(
+  fastify.post<{
+    Params: { targetType: string; targetId: string }
+    Body: { body?: string; attachments?: { key: string; url: string }[] }
+  }>(
     '/threads/:targetType/:targetId/messages',
     {
       preHandler: fastify.authenticate,
       schema: {
         body: {
           type: 'object',
-          required: ['body'],
-          properties: { body: { type: 'string', minLength: 1 } },
+          properties: {
+            body: { type: 'string' },
+            attachments: { type: 'array', items: ATTACHMENT_SCHEMA },
+          },
         },
       },
     },
@@ -86,7 +99,8 @@ const messageRoutes: FastifyPluginAsync = async (fastify) => {
         request.profileId!,
         targetType,
         request.params.targetId,
-        request.body.body,
+        request.body.body ?? '',
+        request.body.attachments ?? [],
       )
       reply.code(201)
       return serializeMessage(fastify.db, row)

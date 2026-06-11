@@ -6,6 +6,7 @@ import { MessageService } from '../../domain/message/service.ts'
 import { serializeSquadSummary, serializeSquadDetail } from '../../contracts/squad.ts'
 import { serializeActivities } from '../../contracts/activity.ts'
 import { serializeMessages, serializeMessage } from '../../contracts/message.ts'
+import { ATTACHMENT_SCHEMA } from './messages.ts'
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 100
@@ -138,15 +139,20 @@ const squadRoutes: FastifyPluginAsync = async (fastify) => {
   )
 
   // Post a top-level message to a squad timeline (member-gated).
-  fastify.post<{ Params: { id: string }; Body: { body: string } }>(
+  fastify.post<{
+    Params: { id: string }
+    Body: { body?: string; attachments?: { key: string; url: string }[] }
+  }>(
     '/squads/:id/messages',
     {
       preHandler: fastify.authenticate,
       schema: {
         body: {
           type: 'object',
-          required: ['body'],
-          properties: { body: { type: 'string', minLength: 1 } },
+          properties: {
+            body: { type: 'string' },
+            attachments: { type: 'array', items: ATTACHMENT_SCHEMA },
+          },
         },
       },
     },
@@ -154,7 +160,8 @@ const squadRoutes: FastifyPluginAsync = async (fastify) => {
       const row = await messages.postSquadMessage(
         request.profileId!,
         request.params.id,
-        request.body.body,
+        request.body.body ?? '',
+        request.body.attachments ?? [],
       )
       reply.code(201)
       return serializeMessage(fastify.db, row)
