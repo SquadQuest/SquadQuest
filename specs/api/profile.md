@@ -12,12 +12,12 @@ The caller's profile.
 
 Update the caller's own profile (the onboarding profile-setup + later profile edits).
 
-- **Request:** `{ "first_name"?: "string", "last_name"?: "string" }` — only provided fields
-  change. `first_name` must be non-empty when present.
+- **Request:** `{ "first_name"?: "string", "last_name"?: "string", "photo"?: "string" }` — only
+  provided fields change. `first_name` must be non-empty when present. `photo` is a public media
+  URL from [`api/uploads.md`](uploads.md); an empty string clears it.
 - **Response:** `200 <profile>`.
 - **`needs_onboarding`:** a freshly-claimed/created profile has `first_name = null`. Clients
   treat a null `first_name` as "needs onboarding" and route to the welcome/profile-setup step.
-  Photo upload is deferred to storage.
 
 ## Notes
 
