@@ -68,6 +68,7 @@ own PR.
 
 Mirror jarvus-hq's `tf/` file layout (it's the reference implementation): split the current
 monolithic `tf/main.tf` into `main.tf` (providers + **gcs backend** + `google_project_service`
+
 - `variables`), `vpc.tf`, `cloudsql.tf`, `secrets.tf`, `artifact-registry.tf`, `cloudrun.tf`,
 `iam.tf` (deploy-SA roles + WIF), keeping the existing frontend resources (DNS/buckets/LB) in
 a `frontend.tf`. Reuse the existing `github` Workload Identity pool and `v2-github-action` SA
@@ -90,16 +91,20 @@ Phased, low-risk first (this session does Phase 0–1; later phases gated on rev
 
 ## Validation
 
-- [ ] `tofu init` against the GCS backend; state migrated off local; `tofu plan` clean (no
-      unexpected creates/destroys — v1 drift imported, not recreated).
-- [ ] APIs enabled via tf; `tofu plan`/`apply` idempotent on re-run.
-- [ ] Cloud SQL reachable from Cloud Run over private IP; `DATABASE_URL`/`JWT_SECRET` resolve
-      from Secret Manager at runtime.
-- [ ] `server/Dockerfile` builds; image runs locally against a DB and serves `/v1/health`.
-- [ ] Cloud Run service healthy (startup+liveness on `/v1/health`); `api.squadquest.app` serves
-      `/v1/health` over TLS; migrations applied to Cloud SQL.
+- [x] `tofu init` against the GCS backend; state migrated off local; `tofu plan` clean (v1
+      drift imported, not recreated — "No changes" after import). [Phase 0, PR #433]
+- [x] APIs enabled via tf; `tofu plan`/`apply` idempotent on re-run. [Phase 0]
+- [x] Cloud SQL reachable from Cloud Run over private IP (`10.114.0.3`); `DATABASE_URL`/
+      `JWT_SECRET` resolve from Secret Manager at runtime. [Phase 1]
+- [x] `server/Dockerfile` builds (linux/amd64) + pushed to Artifact Registry. [Phase 2]
+- [x] Cloud Run service healthy (startup+liveness on `/v1/health`); migrations applied to
+      Cloud SQL on startup ("migrate: up to date"); `/v1/health` 200 + a real DB write
+      (`POST /v1/auth/otp/request` → 200) over TLS at the run.app URL. [Phase 3]
+- [ ] `api.squadquest.app` over TLS — **gated** on one-time Google domain-ownership
+      verification (interactive); mapping tf is written + commented pending that step.
 - [ ] CI deploy: merge to `develop` builds+pushes the image and rolls out Cloud Run green.
-- [ ] v1 stays up throughout (its Firebase/CI infra untouched by the import).
+      (Still in scope — not yet wired.)
+- [x] v1 stays up throughout (its Firebase/CI infra untouched by the import).
 
 ## Risks / unknowns
 
