@@ -32,7 +32,7 @@ fi
 url="$(sq_database_url)"
 sq_migrate "$url"
 
-# 6. Emit env for orchestrators
+# 6. Emit env for orchestrators (PORT is this context's free backend port)
 echo "DATABASE_URL=${url}"
 echo "SQ_DATABASE=${db}"
-echo "PORT=${PORT:-4000}"
+echo "PORT=$(sq_pick_port)"

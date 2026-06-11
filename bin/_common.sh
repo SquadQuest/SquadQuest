@@ -25,6 +25,61 @@ sq_pg_port() {
   echo "${SQ_PG_PORT:-5532}"
 }
 
+# Is a TCP port already being listened on? Uses lsof on macOS, ss on Linux —
+# `ss` does NOT exist on macOS and fails *silently*, which would make every port
+# look free and let concurrent worktrees collide on the same port. If neither
+# tool is present we assume "in use" so we skip the port rather than double-bind.
+port_in_use() {
+  if command -v lsof &>/dev/null; then
+    lsof -iTCP:"$1" -sTCP:LISTEN -P -n &>/dev/null
+  elif command -v ss &>/dev/null; then
+    ss -tlnp 2>/dev/null | grep -q ":$1 "
+  else
+    return 0
+  fi
+}
+
+# First free port in [start, end]. Always scans from the default so the main
+# worktree's port is reused when free (rather than skipped).
+find_available_port() {
+  local start="${1:-4001}" end="${2:-4099}" port
+  for port in $(seq "$start" "$end"); do
+    if ! port_in_use "$port"; then
+      echo "$port"
+      return
+    fi
+  done
+  echo "ERROR: no available backend port in range ${start}-${end}" >&2
+  return 1
+}
+
+# The backend port for this context:
+#   PORT set        → that port (orchestrator/explicit wins)
+#   port 4000 free  → 4000 (the canonical default; reused whenever available)
+#   otherwise       → first free port in 4001-4099 (concurrent worktrees)
+# Scanning always starts at 4000 so we never skip it just because we're in a
+# worktree — collisions are detected by actual listen-state, not worktree identity.
+sq_pick_port() {
+  if [ -n "${PORT:-}" ]; then
+    echo "$PORT"
+    return
+  fi
+  if ! port_in_use 4000; then
+    echo "4000"
+    return
+  fi
+  find_available_port 4001 4099
+}
+
+# Portable 8-char hex hash of a string (md5sum on Linux/coreutils, md5 on BSD/macOS).
+sq_hash() {
+  if command -v md5sum &>/dev/null; then
+    echo -n "$1" | md5sum | head -c 8
+  else
+    echo -n "$1" | md5 -q | head -c 8
+  fi
+}
+
 # Portable 8-char hex hash of a string (md5sum on Linux/coreutils, md5 on BSD/macOS).
 sq_hash() {
   if command -v md5sum &>/dev/null; then

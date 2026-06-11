@@ -35,16 +35,20 @@ public events reintroduced only inside opt-in Communities.
 ### Local dev (`bin/` scripts)
 
 A single shared Postgres container (`squadquest-v2-postgres`, host port 5532) hosts a
-**separate database per context**, so nothing clobbers anything:
+**separate database per context**, and `bin/dev` picks a **free backend port per context**, so
+many worktrees run concurrently without clobbering each other:
 
-- **Main worktree** → `squadquest_v2` (your canonical dev data).
-- **Each agent worktree** → `sq_<hash>` (isolated; many worktrees run at once).
+- **Main worktree** → `squadquest_v2` (your canonical dev data), backend on `4000`.
+- **Each agent worktree** → `sq_<hash>` (isolated), backend on the next free port (`4001-4099`).
 - **The test runner** → `squadquest_test` — so `bun test` **never** touches your dev data.
+
+`bin/dev`/`bin/setup` print the chosen `PORT`; point the Flutter app at it with
+`--dart-define=API_BASE_URL=http://localhost:<PORT>`. Override with `PORT=…`.
 
 | Script | Does |
 |---|---|
-| `bin/setup` | ensure container + this context's DB + `bun install` + migrate |
-| `bin/dev` | run the backend with an auto-derived `DATABASE_URL` |
+| `bin/setup` | ensure container + this context's DB + `bun install` + migrate; prints `PORT` |
+| `bin/dev` | run the backend on an auto-picked free port with an auto-derived `DATABASE_URL` |
 | `bin/test` | run the server suite against `squadquest_test` (ensures + migrates first) |
 | `bin/reset-db` | drop + recreate + migrate this context's DB |
 | `bin/db "SQL"` | run SQL (or open psql) against this context's DB |
