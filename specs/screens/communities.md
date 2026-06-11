@@ -10,7 +10,7 @@ Title bar shows the community icon + name, tappable to switch context.
 
 ## Data Requirements
 
-- `GET /v1/communities/:id/timeline` (or `/events`) — serialized `community_event` objects
+- `GET /v1/communities/:id/events` — serialized `community_event` objects
   (see [`api/communities.md`](../api/communities.md)), each with `going_count`,
   `public_going` (face-pile), `your_rsvp`, `recurrence`, `thread_count`.
 

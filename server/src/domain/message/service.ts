@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm'
 
 import type { Database } from '../../db/index.ts'
-import { message, activity } from '../../db/schema/index.ts'
+import { message, activity, communityEvent } from '../../db/schema/index.ts'
 import type { MessageAttachment } from '../../db/schema/message.ts'
 import { ApiError, errors } from '../../contracts/errors.ts'
 import { ActivityService } from '../activity/service.ts'
@@ -16,8 +16,8 @@ function assertHasContent(body: string, attachments: MessageAttachment[]): void 
   }
 }
 
-// Thread targets supported this stage (community_event arrives with communities).
-export type ThreadTargetType = 'activity' | 'message'
+// Polymorphic thread root kinds (specs/api/messages.md, data-model.md).
+export type ThreadTargetType = 'activity' | 'community_event' | 'message'
 
 export class MessageService {
   constructor(private readonly db: Database) {}
@@ -59,6 +59,16 @@ export class MessageService {
       if (!act || !(await this.activities.canView(viewerId, act))) {
         throw new ApiError(404, 'not_found', 'Thread not found')
       }
+      return
+    }
+    if (targetType === 'community_event') {
+      // Communities are open: any authenticated user who can see the event (i.e. it
+      // exists) can see its thread. No follow gate — mirrors the open events/discover read.
+      const [ev] = await this.db
+        .select()
+        .from(communityEvent)
+        .where(eq(communityEvent.id, targetId))
+      if (!ev) throw new ApiError(404, 'not_found', 'Thread not found')
       return
     }
     // message target: a thread hung off a squad message → squad members can see it.

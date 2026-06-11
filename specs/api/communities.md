@@ -8,7 +8,9 @@ Authenticated.
 
 ## GET /v1/communities
 
-List/discover communities. `?search=`, cursor-paginated.
+List/discover communities. `?search=` (case-insensitive name match). Returns all matches as a
+flat `{ "items": [...] }` — no cursor yet; real pagination is deferred until community count
+warrants it.
 
 - **Item:** `{ "id", "name", "tagline", "icon", "color", "photo", "follower_count", "you_follow": bool, "your_role": "leader" | null }`.
   `icon` is an emoji glyph; `photo` is a public media URL (cover image, nullable) — see
@@ -24,7 +26,7 @@ Toggle following (open/frictionless — no approval).
 
 ## GET /v1/communities/:id/events
 
-The community's events (also surfaced via `GET /v1/communities/:id/timeline`).
+The community's events.
 
 - **Serialized community_event:**
 
