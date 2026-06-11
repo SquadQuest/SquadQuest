@@ -83,12 +83,13 @@ class AuthController extends Notifier<AuthState> {
   /// Set/update the signed-in user's profile (onboarding name-setup + edits).
   /// Swapping the profile drives the onboarding redirect (null first_name → /welcome).
   Future<void> updateProfile({
-    required String firstName,
+    String? firstName,
     String? lastName,
+    String? photo,
   }) async {
     final updated = await ref
         .read(profileRepositoryProvider)
-        .updateProfile(firstName: firstName, lastName: lastName);
+        .updateProfile(firstName: firstName, lastName: lastName, photo: photo);
     state = SignedIn(updated);
   }
 

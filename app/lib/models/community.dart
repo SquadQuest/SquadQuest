@@ -6,6 +6,7 @@ class Community {
     this.tagline,
     this.icon,
     this.color,
+    this.photo,
     this.followerCount = 0,
     this.youFollow = false,
     this.yourRole,
@@ -16,6 +17,7 @@ class Community {
   final String? tagline;
   final String? icon;
   final String? color;
+  final String? photo;
   final int followerCount;
   final bool youFollow;
 
@@ -30,6 +32,7 @@ class Community {
     tagline: json['tagline'] as String?,
     icon: json['icon'] as String?,
     color: json['color'] as String?,
+    photo: json['photo'] as String?,
     followerCount: (json['follower_count'] as num?)?.toInt() ?? 0,
     youFollow: json['you_follow'] as bool? ?? false,
     yourRole: json['your_role'] as String?,

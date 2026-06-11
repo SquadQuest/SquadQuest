@@ -17,6 +17,7 @@ import '../repositories/squad_repository.dart';
 import '../repositories/timeline_repository.dart';
 import '../repositories/token_store.dart';
 import '../repositories/topic_repository.dart';
+import '../repositories/upload_repository.dart';
 import 'auth_controller.dart';
 
 /// Dependency-injection providers. Repositories expose abstract types so tests
@@ -39,6 +40,10 @@ final authRepositoryProvider = Provider<AuthRepository>(
     apiClient: ref.watch(apiClientProvider),
     tokens: ref.watch(tokenStoreProvider),
   ),
+);
+
+final uploadRepositoryProvider = Provider<UploadRepository>(
+  (ref) => ApiUploadRepository(apiClient: ref.watch(apiClientProvider)),
 );
 
 final profileRepositoryProvider = Provider<ProfileRepository>(

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/community.dart';
 import '../../providers/active_context.dart';
 import '../../providers/providers.dart';
+import '../../widgets/photo_picker.dart';
 
 /// Create or edit a community (leader tooling — specs/screens/communities.md).
 /// Create: the caller becomes leader and the new community becomes the active
@@ -25,6 +26,7 @@ class _CreateCommunityScreenState extends ConsumerState<CreateCommunityScreen> {
   late final TextEditingController _icon;
   bool _busy = false;
   String? _error;
+  String? _photoUrl;
 
   bool get _isEdit => widget.existing != null;
 
@@ -35,6 +37,7 @@ class _CreateCommunityScreenState extends ConsumerState<CreateCommunityScreen> {
     _name = TextEditingController(text: e?.name ?? '');
     _tagline = TextEditingController(text: e?.tagline ?? '');
     _icon = TextEditingController(text: e?.icon ?? '');
+    _photoUrl = e?.photo;
   }
 
   @override
@@ -65,6 +68,7 @@ class _CreateCommunityScreenState extends ConsumerState<CreateCommunityScreen> {
           name: name,
           tagline: tagline.isEmpty ? null : tagline,
           icon: icon.isEmpty ? null : icon,
+          photo: _photoUrl,
         );
         ref.invalidate(communitiesProvider);
         if (mounted) context.pop();
@@ -73,6 +77,7 @@ class _CreateCommunityScreenState extends ConsumerState<CreateCommunityScreen> {
           name: name,
           tagline: tagline.isEmpty ? null : tagline,
           icon: icon.isEmpty ? null : icon,
+          photo: _photoUrl,
         );
         ref.invalidate(communitiesProvider);
         if (mounted) {
@@ -103,6 +108,15 @@ class _CreateCommunityScreenState extends ConsumerState<CreateCommunityScreen> {
             key: const Key('communityForm'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Center(
+                child: PhotoPicker(
+                  kind: 'community',
+                  currentUrl: _photoUrl,
+                  fallbackIcon: Icons.image_outlined,
+                  onUploaded: (url) => setState(() => _photoUrl = url),
+                ),
+              ),
+              const SizedBox(height: 16),
               TextField(
                 key: const Key('communityNameField'),
                 controller: _name,
