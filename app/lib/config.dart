@@ -12,5 +12,12 @@ const apiBaseUrl = String.fromEnvironment(
 );
 
 /// Sent as X-SquadQuest-Client on every request (telemetry + upgrade floor).
-/// TODO: derive from package_info_plus once release versioning is wired up.
-const clientHeader = 'macos/0.1.0+1';
+/// Passed via --dart-define per build target so it reports the right platform,
+/// e.g. --dart-define=CLIENT_HEADER=android/1.0.0+1. Defaults to the macOS dev
+/// value so `flutter run -d macos` needs no flag.
+/// TODO: derive build automatically from package_info_plus once release
+/// versioning is wired up.
+const clientHeader = String.fromEnvironment(
+  'CLIENT_HEADER',
+  defaultValue: 'macos/0.1.0+1',
+);

@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The app talks to the /v1 API over HTTPS in every build mode (not just
+         debug/profile), so INTERNET belongs in the main manifest. flutter create
+         only adds it to the debug/profile manifests. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="squadquest"
         android:name="${applicationName}"
