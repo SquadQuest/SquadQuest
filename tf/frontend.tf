@@ -72,6 +72,16 @@ resource "google_dns_record_set" "google_site_verification" {
   rrdatas      = ["\"google-site-verification=LpqfUAzbIdG1dc6hC-zK0jC-83MHKZpRZP5o1rZ1DHc\""]
 }
 
+# api.squadquest.app -> the Cloud Run domain mapping (google_cloud_run_domain_mapping.backend).
+# CNAME target emitted by the mapping's status.resourceRecords.
+resource "google_dns_record_set" "api" {
+  managed_zone = google_dns_managed_zone.squadquest.name
+  name         = "api.squadquest.app."
+  type         = "CNAME"
+  ttl          = 300
+  rrdatas      = ["ghs.googlehosted.com."]
+}
+
 # Dev environment
 resource "google_dns_record_set" "dev" {
   managed_zone = google_dns_managed_zone.squadquest.name
