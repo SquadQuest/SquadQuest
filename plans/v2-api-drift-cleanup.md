@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 depends: []
 specs:
   - specs/api/messages.md
@@ -7,7 +7,7 @@ specs:
   - specs/api/conventions.md
   - specs/screens/communities.md
 issues: []
-pr:
+pr: 443
 ---
 
 # Plan: v2 API drift cleanup
@@ -61,11 +61,11 @@ spec-to-match-code.
 
 ## Validation
 
-- [ ] community_event threads: `GET`/`POST /v1/threads/community_event/:id/messages` work, gated
+- [x] community_event threads: `GET`/`POST /v1/threads/community_event/:id/messages` work, gated
       to who can see the event; `thread_count` on event cards becomes reachable. Tests.
-- [ ] specs updated for pagination wording, client-header wording, timeline alias — no remaining
+- [x] specs updated for pagination wording, client-header wording, timeline alias — no remaining
       drift on these (re-run `/audit-spec-drift`).
-- [ ] `bun test` + type-check; CI.
+- [x] `bun test` (51 pass) + `type-check` (clean); CI.
 
 ## Risks / unknowns
 
@@ -75,8 +75,27 @@ spec-to-match-code.
 
 ## Notes
 
-(closeout)
+All four audit findings resolved in one PR (#443), two commits:
+
+- **Item 1 (code-to-match-spec):** `community_event` is now a live thread target. The visibility
+  gate reuses the open-community read model — any authenticated viewer who can see the event
+  (i.e. it exists) can read/reply; no follower gate, mirroring `events`/`discover` which never
+  gate on membership. Implemented by querying `communityEvent` directly in
+  `MessageService.assertCanSeeTarget` rather than coupling to `CommunityService`. New test in
+  `messages.test.ts` covers reply→read→`thread_count` reachable→bad-target 404.
+- **Items 2–4 (spec-to-match-code):** chose the cheaper honest fix (spec update) for all three,
+  as the plan anticipated. Pagination → "flat `{items}`, no cursor yet"; `/timeline` alias struck
+  from both `communities.md` and `screens/communities.md`; client-header reworded from "required"
+  to "sent by every client, absence tolerated (Stage-1), tightening deferred."
 
 ## Follow-ups
 
-(closeout)
+- **Deferred (tracked in spec prose, no plan needed):** real community-list pagination — revisit
+  when community count warrants it (noted in `communities.md`).
+- **Deferred (tracked in `conventions.md` + `client-version.ts` comment):** hard-require the
+  client-build header (reject absent/unparseable with `400`) once every shipped build is known to
+  send it. Latent companion footgun from the prior session still stands: `MIN_SUPPORTED_BUILD` is
+  set process-wide by `auth.test.ts` and leaks across the shared bun-test process — proper fix is
+  per-suite env reset; not addressed here.
+- **None** for the `errors.forbidden` signature nit and OTP `expires_in` docs — explicitly out of
+  scope, not worth tracking.
