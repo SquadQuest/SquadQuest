@@ -29,12 +29,21 @@ afterAll(async () => {
   await server.close()
 })
 beforeEach(async () => {
-  await server.sql`truncate message, squad, squad_membership, activity, friendship, profile, topic cascade`
+  await server.sql`truncate message, squad, squad_membership, activity, friendship, community, community_event, profile, topic cascade`
   const [t] = await server.sql<{ id: string }[]>`
     insert into topic (noun, verb, label) values ('Bike Ride','Go on a','Go on a Bike Ride')
     returning id`
   topicId = t.id
 })
+
+async function seedCommunityEvent(): Promise<string> {
+  const [c] = await server.sql<{ id: string }[]>`
+    insert into community (name, tagline) values ('Wednesday Rides','ride bikes') returning id`
+  const [e] = await server.sql<{ id: string }[]>`
+    insert into community_event (community_id, title, time) values (${c.id}, 'Cherry Blossoms Ride', 'Wed 6:30pm')
+    returning id`
+  return e.id
+}
 
 function createSquad(auth: object, name: string, memberIds: string[] = []) {
   return server.inject({ method: 'POST', url: '/v1/squads', headers: auth, payload: { name, member_ids: memberIds } })
@@ -174,4 +183,47 @@ test('squad-message thread: members reply/read, non-members 404; free text never
       expect(item.scope ?? 'friends').toBe('friends')
     }
   }
+})
+
+test('community_event thread: any user can reply/read (open community); thread_count surfaces; bad target 404s', async () => {
+  const leader = await makeUser('+12150002030')
+  const anyone = await makeUser('+12150002031')
+  const eventId = await seedCommunityEvent()
+
+  // anyone authenticated (communities are open) can reply
+  const reply = await server.inject({
+    method: 'POST',
+    url: `/v1/threads/community_event/${eventId}/messages`,
+    headers: anyone.auth,
+    payload: { body: 'see you there!' },
+  })
+  expect(reply.statusCode).toBe(201)
+
+  // and read it back
+  const thread = await server.inject({
+    method: 'GET',
+    url: `/v1/threads/community_event/${eventId}/messages`,
+    headers: leader.auth,
+  })
+  expect(thread.json().items).toHaveLength(1)
+  expect(thread.json().items[0].body).toBe('see you there!')
+
+  // thread_count is now reachable on the event card
+  const [{ communityId }] = await server.sql<{ communityId: string }[]>`
+    select community_id as "communityId" from community_event where id = ${eventId}`
+  const events = await server.inject({
+    method: 'GET',
+    url: `/v1/communities/${communityId}/events`,
+    headers: leader.auth,
+  })
+  const ev = events.json().items.find((e: { id: string }) => e.id === eventId)
+  expect(ev.thread_count).toBe(1)
+
+  // a thread on a nonexistent event 404s
+  const missing = await server.inject({
+    method: 'GET',
+    url: '/v1/threads/community_event/00000000-0000-0000-0000-000000000000/messages',
+    headers: leader.auth,
+  })
+  expect(missing.statusCode).toBe(404)
 })

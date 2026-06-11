@@ -28,9 +28,9 @@ function decodeCursor(raw: string): { createdAt: Date; id: string } | undefined 
   }
 }
 
-// targetType ∈ {activity, message} this stage (community_event arrives with communities).
+// targetType ∈ {activity, community_event, message} (specs/api/messages.md).
 function parseTargetType(raw: string): ThreadTargetType {
-  if (raw === 'activity' || raw === 'message') return raw
+  if (raw === 'activity' || raw === 'community_event' || raw === 'message') return raw
   throw errors.badRequest('invalid_target', 'Unsupported thread target')
 }
 
