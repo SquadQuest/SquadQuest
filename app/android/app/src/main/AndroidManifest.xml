@@ -4,7 +4,7 @@
          only adds it to the debug/profile manifests. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="squadquest"
+        android:label="${appLabel}"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
