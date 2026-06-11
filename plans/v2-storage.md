@@ -1,21 +1,27 @@
 ---
-status: in-progress
+status: done
 depends: [v2-backend-infra]
 specs:
   - specs/api/conventions.md
+  - specs/api/uploads.md
   - specs/architecture.md
 issues: []
-pr:
+pr: 437
 ---
 
-# Plan: v2 storage (photo/media via GCS, signed-URL upload)
+# Plan: v2 storage foundation + profile photos (GCS, signed-URL upload)
+
+> Originally scoped for full media (profile + community + message attachments). Split at
+> implementation: this plan delivers the **reusable upload pipeline + profile photos**; the
+> two migration-bearing surfaces (community photos, message attachments) moved to
+> [`v2-storage-media`](v2-storage-media.md).
 
 ## Scope
 
 Object storage for user-supplied images, per `conventions.md` §Storage: client requests an
 upload target from the API, **PUTs bytes directly** to GCS (the API never proxies bytes), then
 references the returned key; **reads are public-with-unguessable-key** URLs in serialized
-resources. Full scope: **profile photos, community photos, and message attachments**.
+resources. **Delivered here:** the shared upload pipeline + **profile photos**.
 
 **In:**
 
@@ -66,13 +72,16 @@ read URL: `https://storage.googleapis.com/<bucket>/<key>`. Validate content type
 
 ## Validation
 
-- [ ] `bun test` + type-check: `POST /v1/uploads` returns key/upload_url/public_url; content-type
-      allow-list enforced; StorageService builds correct public URLs.
-- [ ] tf: bucket public-read + SA `signBlob` self-grant applied; `tofu plan` clean.
-- [ ] profile: PATCH photo round-trips; serialized profile shows the public URL.
-- [ ] community photo + message attachments: migrations applied; create/post with an upload key
-      serializes the public URL; client uploads in each surface.
-- [ ] CI green; deploy; (live) upload a real image via the signed URL and load it back publicly.
+- [x] `bun test` + type-check: `POST /v1/uploads` requires auth, enforces kind +
+      content-type allow-list, 503s without a bucket; `PATCH /v1/me` photo round-trips.
+      Suite 47/47; `@google-cloud/storage` imports cleanly under Bun.
+- [x] tf: public-read bucket + CORS + runtime-SA objectAdmin + `signBlob`-on-self applied;
+      `MEDIA_BUCKET` wired into Cloud Run; `tofu plan` clean.
+- [x] profile: `PATCH /v1/me { photo }` round-trips; serialized profile shows the URL.
+- [→] community photo + message attachments — **moved to [`v2-storage-media`](v2-storage-media.md)**
+      (each needs a migration; deferred at the split).
+- [ ] CI green; deploy; (live, manual) upload a real image via the signed URL on Cloud Run and
+      load it back publicly — confirms keyless signBlob works in prod (ADC differs from local).
 
 ## Risks / unknowns
 
@@ -91,8 +100,30 @@ read URL: `https://storage.googleapis.com/<bucket>/<key>`. Validate content type
 
 ## Notes
 
-(closeout)
+PR #437. Delivered the **reusable upload pipeline** (the foundation all media surfaces reuse)
+- **profile photos** as its first consumer. Public-read bucket `squadquest-v2-media` with
+unguessable uuid keys; `StorageService` mints V4 signed PUT URLs via `@google-cloud/storage`,
+which falls back to IAM `signBlob` on Cloud Run (keyless — granted `serviceAccountTokenCreator`
+on the runtime SA *to itself*). `POST /v1/uploads` is auth'd and 503s when `MEDIA_BUCKET` is
+unset (local dev / tests need no GCS). Env + bucket wired into the live service via tf.
+
+**Split decision:** community photos + message attachments each need a schema migration + route
+- serializer + client work, so rather than balloon this plan they moved to `v2-storage-media`
+(an unstarted plan). The pipeline is built and proven on profiles; those surfaces are now thin
+consumers of it.
+
+Latent test-infra note surfaced (not fixed here): `auth.test.ts` sets `MIN_SUPPORTED_BUILD=500`
+process-wide and it leaks across the shared bun-test process — new auth-touching tests must use
+a high client build. Worth a proper fix (per-suite env reset) someday.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred to plan [`v2-storage-media`](v2-storage-media.md)** — community photos
+  (`community.photo` migration) + message attachments (attachments migration); both thin
+  consumers of `POST /v1/uploads`. (That plan absorbs this deferral in its Approach/Validation.)
+- **Verification owed (manual):** one live signed-URL upload on Cloud Run, to confirm keyless
+  `signBlob` works in prod (local ADC ≠ Cloud Run SA). In Validation above.
+- **Tracked as:** profile-photo *client* UI (picker → upload → PATCH) — server is ready; the
+  Flutter side rides whenever we next touch the profile/welcome surface.
+- **Deferred:** rehosting v1 Supabase-stored avatars (a v1-migration concern); image
+  resize/EXIF-strip/thumbnails.
