@@ -77,8 +77,8 @@ interested, next_time}`). **Absence is the passive dismiss** — there is no "de
 
 ### community
 
-An open, followable group whose leaders broadcast events. `id`, `name`, `tagline`, `icon`,
-`color`, `follower_count` (derived).
+An open, followable group whose leaders broadcast events. `id`, `name`, `tagline`, `icon`
+(emoji), `color`, `photo` (public media URL, cover image), `follower_count` (derived).
 
 ### community_membership
 

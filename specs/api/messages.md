@@ -48,9 +48,6 @@ Reply in a thread.
 Photos are uploaded via [`POST /v1/uploads`](uploads.md) (kind `message`); pass the returned
 `{ key, url }` objects in `attachments`. See [conventions: Storage](conventions.md#storage-photos).
 
-- **Request:** `{ "content_type": "image/jpeg", "byte_size": 123456 }`
-- **Response:** `200 { "key": "…", "upload_url": "https://…", "headers": { … } }`.
-
 ## Notes
 
 - New message/thread events fan out over `GET /v1/stream` (`message.created`).
