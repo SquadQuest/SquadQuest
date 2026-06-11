@@ -3,8 +3,11 @@
 #
 # Usage: bin/dev
 #
-# Env overrides: DATABASE_URL, PORT (default 4000), SQ_DATABASE, SQ_PG_PORT.
+# Env overrides: DATABASE_URL, PORT, SQ_DATABASE, SQ_PG_PORT.
+# Port defaults to 4000 if free, else the next free port in 4001-4099 — so a
+# second worktree's backend doesn't collide with the first. Override with PORT.
 # The Flutter app is run separately: cd app && flutter run
+#   (point it at this backend with --dart-define=API_BASE_URL=http://localhost:<PORT>)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/_common.sh"
@@ -14,8 +17,10 @@ if [ -z "${DATABASE_URL:-}" ]; then
   DATABASE_URL="$(sq_database_url)"
 fi
 
-echo "Backend:      http://localhost:${PORT:-4000}" >&2
+PORT="$(sq_pick_port)"
+
+echo "Backend:      http://localhost:${PORT}" >&2
 echo "DATABASE_URL: ${DATABASE_URL}" >&2
 
 cd "$(sq_server_dir)"
-exec env DATABASE_URL="$DATABASE_URL" PORT="${PORT:-4000}" bun run dev
+exec env DATABASE_URL="$DATABASE_URL" PORT="$PORT" bun run dev
