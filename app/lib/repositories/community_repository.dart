@@ -19,6 +19,7 @@ abstract class CommunityRepository {
     String? tagline,
     String? icon,
     String? color,
+    String? photo,
   });
 
   /// Edit a community (leader-only). Only non-null fields are sent.
@@ -28,6 +29,7 @@ abstract class CommunityRepository {
     String? tagline,
     String? icon,
     String? color,
+    String? photo,
   });
 
   /// Post an event to a community (leader-only).
@@ -110,10 +112,17 @@ class ApiCommunityRepository implements CommunityRepository {
     String? tagline,
     String? icon,
     String? color,
+    String? photo,
   }) async {
     final res = await apiClient.post(
       '/v1/communities',
-      body: {'name': name, 'tagline': ?tagline, 'icon': ?icon, 'color': ?color},
+      body: {
+        'name': name,
+        'tagline': ?tagline,
+        'icon': ?icon,
+        'color': ?color,
+        'photo': ?photo,
+      },
     );
     return Community.fromJson(res);
   }
@@ -125,6 +134,7 @@ class ApiCommunityRepository implements CommunityRepository {
     String? tagline,
     String? icon,
     String? color,
+    String? photo,
   }) async {
     final res = await apiClient.patch(
       '/v1/communities/$communityId',
@@ -133,6 +143,7 @@ class ApiCommunityRepository implements CommunityRepository {
         'tagline': ?tagline,
         'icon': ?icon,
         'color': ?color,
+        'photo': ?photo,
       },
     );
     return Community.fromJson(res);

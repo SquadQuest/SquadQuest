@@ -35,6 +35,7 @@ class FakeCommunityRepository implements CommunityRepository {
     String? tagline,
     String? icon,
     String? color,
+    String? photo,
   }) async {
     createdName = name;
     return Community(id: 'c-new', name: name, yourRole: 'leader');
@@ -47,6 +48,7 @@ class FakeCommunityRepository implements CommunityRepository {
     String? tagline,
     String? icon,
     String? color,
+    String? photo,
   }) async => Community(id: communityId, name: name ?? '');
 
   @override

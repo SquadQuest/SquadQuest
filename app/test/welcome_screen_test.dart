@@ -15,7 +15,11 @@ class FakeProfileRepository implements ProfileRepository {
   Future<Profile> me() async => const Profile(id: 'me');
 
   @override
-  Future<Profile> updateProfile({String? firstName, String? lastName}) async {
+  Future<Profile> updateProfile({
+    String? firstName,
+    String? lastName,
+    String? photo,
+  }) async {
     lastFirstName = firstName;
     lastLastName = lastName;
     return Profile(id: 'me', firstName: firstName, lastName: lastName);

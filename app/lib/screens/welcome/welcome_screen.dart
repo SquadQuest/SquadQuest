@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_controller.dart';
+import '../../widgets/photo_picker.dart';
 
 /// Onboarding profile-setup: a freshly-claimed/created user (null first_name)
 /// sets their name before reaching the app. Saving swaps the signed-in profile,
@@ -19,6 +20,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final _lastName = TextEditingController();
   bool _busy = false;
   String? _error;
+  String? _photoUrl; // public URL once uploaded
 
   @override
   void dispose() {
@@ -44,6 +46,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           .updateProfile(
             firstName: first,
             lastName: last.isEmpty ? null : last,
+            photo: _photoUrl,
           );
       // The router redirect takes over once the profile has a name.
     } catch (_) {
@@ -82,6 +85,19 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
+                  Center(
+                    child: PhotoPicker(
+                      kind: 'profile',
+                      onUploaded: (url) => setState(() => _photoUrl = url),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Add a photo (optional)',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
                   TextField(
                     key: const Key('firstNameField'),
                     controller: _firstName,
