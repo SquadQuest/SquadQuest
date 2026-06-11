@@ -62,6 +62,16 @@ resource "google_dns_record_set" "github_pages_challenge_org" {
   rrdatas      = ["\"ca45149711193709b4658fe140f9d5\""]
 }
 
+# Google Search Console / Webmaster Central domain-ownership verification —
+# unblocks the Cloud Run domain mapping for api.squadquest.app (see cloudrun.tf).
+resource "google_dns_record_set" "google_site_verification" {
+  managed_zone = google_dns_managed_zone.squadquest.name
+  name         = "squadquest.app."
+  type         = "TXT"
+  ttl          = 300
+  rrdatas      = ["\"google-site-verification=3xuOWVqNHsjLNHz1Gumy9yAjb6kvfdKlI9WM_RwiWvI\""]
+}
+
 # Dev environment
 resource "google_dns_record_set" "dev" {
   managed_zone = google_dns_managed_zone.squadquest.name
