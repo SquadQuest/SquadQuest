@@ -40,7 +40,7 @@ Within a major version:
   route edge map current schema → stable wire shapes. Business logic speaks one current
   domain model; version logic lives only in edge adapters (`server/src/contracts/`).
 
-### Client build header (required on every request)
+### Client build header (sent on every request)
 
 ```
 X-SquadQuest-Client: <platform>/<version>+<build>      e.g. ios/1.4.2+312
@@ -50,6 +50,12 @@ Used for: (1) telemetry on the live build distribution; (2) the upgrade floor; (
 per-build **response** shaping when a read shape must change (fork the serializer, not the
 handler). The client never asks for "version N of X" — it calls the URLs baked into its
 build; the header is how the *server* learns who's calling.
+
+Every SquadQuest client sends it. The server currently **tolerates its absence** (a request
+with no header is parsed as "unknown build" and allowed through) — a Stage-1 simplification.
+A missing header therefore can't trip the upgrade floor; only a *present* build below the
+floor does. Hard-requiring the header (reject unparseable/absent with `400`) is a later-stage
+tightening, deferred until every shipped build is known to send it.
 
 ### Upgrade floor
 
