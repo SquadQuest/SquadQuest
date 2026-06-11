@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/google"
       version = "7.23.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 
   # Remote state — shared infra must not live on one laptop. Bucket is created
