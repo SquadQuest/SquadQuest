@@ -15,4 +15,6 @@ ENV PORT=8080
 ENV HOST=0.0.0.0
 EXPOSE 8080
 
-CMD ["bun", "run", "src/index.ts"]
+# Migrate-then-serve: apply pending migrations (programmatic migrator, inside the
+# VPC so it reaches Cloud SQL's private IP) before the server accepts traffic.
+CMD ["sh", "-c", "bun run src/migrate.ts && bun run src/index.ts"]
