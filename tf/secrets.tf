@@ -38,7 +38,37 @@ resource "google_secret_manager_secret_version" "jwt_secret" {
   secret_data = random_password.jwt_secret.result
 }
 
+# --- Twilio Verify (SMS OTP) -------------------------------------------------
+# Reuses the v1 SquadQuest Verify service. These are CONTAINERS only — values
+# come from outside GCP (the Twilio Console) and are set by hand so they never
+# pass through tf/git/chat:
+#   printf 'ACxxxx…' | gcloud secrets versions add twilio-account-sid --project=squadquest-d8665 --data-file=-
+#   printf '<token>' | gcloud secrets versions add twilio-auth-token  --project=squadquest-d8665 --data-file=-
+#   printf 'VAxxxx…' | gcloud secrets versions add twilio-verify-sid  --project=squadquest-d8665 --data-file=-
+# Wiring into Cloud Run + a TwilioVerifyOtpProvider is the v2-sms-otp work.
+resource "google_secret_manager_secret" "twilio_account_sid" {
+  secret_id = "twilio-account-sid"
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "twilio_auth_token" {
+  secret_id = "twilio-auth-token"
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret" "twilio_verify_sid" {
+  secret_id = "twilio-verify-sid"
+  replication {
+    auto {}
+  }
+}
+
 # --- Access: the default compute SA (Cloud Run's runtime identity) -----------
+# Project-level binding — covers database-url, jwt-secret, and the twilio-* secrets.
 resource "google_project_iam_member" "cloudrun_secret_accessor" {
   project = "squadquest-d8665"
   role    = "roles/secretmanager.secretAccessor"
