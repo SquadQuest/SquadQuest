@@ -80,8 +80,9 @@ read URL: `https://storage.googleapis.com/<bucket>/<key>`. Validate content type
 - [x] profile: `PATCH /v1/me { photo }` round-trips; serialized profile shows the URL.
 - [→] community photo + message attachments — **moved to [`v2-storage-media`](v2-storage-media.md)**
       (each needs a migration; deferred at the split).
-- [ ] CI green; deploy; (live, manual) upload a real image via the signed URL on Cloud Run and
-      load it back publicly — confirms keyless signBlob works in prod (ADC differs from local).
+- [x] CI green; deployed; **live round-trip verified in prod**: `POST /v1/uploads` minted a V4
+      signed URL (keyless signBlob on Cloud Run ✓), `PUT` → 200, public `GET` → 200 byte-identical.
+      Test object cleaned up.
 
 ## Risks / unknowns
 
@@ -101,6 +102,7 @@ read URL: `https://storage.googleapis.com/<bucket>/<key>`. Validate content type
 ## Notes
 
 PR #437. Delivered the **reusable upload pipeline** (the foundation all media surfaces reuse)
+
 - **profile photos** as its first consumer. Public-read bucket `squadquest-v2-media` with
 unguessable uuid keys; `StorageService` mints V4 signed PUT URLs via `@google-cloud/storage`,
 which falls back to IAM `signBlob` on Cloud Run (keyless — granted `serviceAccountTokenCreator`
@@ -108,6 +110,7 @@ on the runtime SA *to itself*). `POST /v1/uploads` is auth'd and 503s when `MEDI
 unset (local dev / tests need no GCS). Env + bucket wired into the live service via tf.
 
 **Split decision:** community photos + message attachments each need a schema migration + route
+
 - serializer + client work, so rather than balloon this plan they moved to `v2-storage-media`
 (an unstarted plan). The pipeline is built and proven on profiles; those surfaces are now thin
 consumers of it.
