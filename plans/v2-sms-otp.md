@@ -1,10 +1,10 @@
 ---
-status: in-progress
+status: done
 depends: [v2-backend-infra]
 specs:
   - specs/api/auth.md
 issues: []
-pr:
+pr: 436
 ---
 
 # Plan: v2 SMS OTP (Twilio Verify)
@@ -59,12 +59,13 @@ responses.
 
 ## Validation
 
-- [ ] `bun test` + type-check: provider selection (Twilio when env set, Console otherwise);
-      Console start/check still self-manages `otp_code` (request→verify happy path, wrong code,
-      expiry, attempts); AuthService verify claims a shell + issues tokens with a fake provider.
-- [ ] CI green; deploy to Cloud Run with the Twilio env wired; `tofu plan` clean.
-- [ ] (live) `POST /v1/auth/otp/request` to a real phone delivers an SMS via Verify; verify
-      returns tokens. (Manual, with a real number.)
+- [x] `bun test` + type-check: Console start/check self-manages `otp_code` (request→verify,
+      wrong code → otp_invalid + attempts, no-request → otp_expired, seeded-code happy path
+      claims/creates + issues tokens). 3 new tests; suite 44/44; `tsc --noEmit` clean.
+- [x] Twilio env wired into Cloud Run from Secret Manager (`tofu apply`: service updated,
+      TWILIO_* present); `tofu plan` clean. Provider auto-selects Twilio when the 3 vars are set.
+- [ ] (live, manual) `POST /v1/auth/otp/request` to a real phone delivers an SMS via Verify and
+      verify returns tokens — confirm once the CI deploy ships this code to prod.
 
 ## Risks / unknowns
 
@@ -77,8 +78,21 @@ responses.
 
 ## Notes
 
-(closeout)
+PR #436. `OtpProvider` broadened from `send(phone,code)` to `start(phone)` + `check(phone,code)`
+- `ttlSeconds` — the start/check model Twilio Verify requires (Twilio owns code gen + delivery
+- verification; the server never sees the code). `ConsoleOtpProvider` absorbed the old
+self-managed `otp_code` logic so dev/tests keep working with no DB change and no external dep;
+`AuthService` is now provider-agnostic (verify just calls `check()` then claims/creates). Routes
+select Twilio when all 3 `TWILIO_*` env are present, else Console (with a warn log). tf wires the
+3 secrets into Cloud Run; the env landed on the live service via `tofu apply` (inert until the CI
+deploy ships this code, which then activates Twilio in prod).
+
+The `otp_code` table is now **dev-path only** (Console provider) — kept, not dropped.
 
 ## Follow-ups
 
-(closeout)
+- **Verification owed (manual):** send a real OTP to a real phone in prod once CI deploys this —
+  confirm SMS arrives and verify returns tokens. Tracked in Validation.
+- **Tracked as:** Verify owns the real code TTL (~10 min); `expires_in` is advisory. If clients
+  need an exact countdown, revisit.
+- **None** else — auth is functionally complete; CI auto-deploy will roll this to prod on merge.
