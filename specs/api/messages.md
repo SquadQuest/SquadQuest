@@ -23,8 +23,10 @@ same primitive — see [`data-model.md`](../data-model.md) `message`). Thread ru
 
 Post a top-level message to a squad timeline. Requires membership.
 
-- **Request:** `{ "body": "string?", "attachment_keys": ["…"]? }` (at least one of body or
-  attachments). → `201 <message>`.
+- **Request:** `{ "body": "string?", "attachments": [{ "key", "url" }]? }` (at least one of
+  body or attachments — a photo-only message is valid; a truly empty one is `empty_message`).
+  → `201 <message>`. `attachments` come from [`api/uploads.md`](uploads.md) (the `{key, public_url}`
+  it returned).
 
 ## GET /v1/threads/:targetType/:targetId/messages
 
@@ -39,12 +41,12 @@ Read a thread. `targetType ∈ { activity, community_event, message }`, cursor-p
 
 Reply in a thread.
 
-- **Request:** `{ "body": "string?", "attachment_keys": ["…"]? }` → `201 <message>`.
+- **Request:** `{ "body": "string?", "attachments": [{ "key", "url" }]? }` → `201 <message>`.
 
-## POST /v1/uploads
+## Uploads
 
-Get a signed URL to upload a photo (then reference the returned `key` in
-`attachment_keys`). See [conventions: Storage](conventions.md#storage-photos).
+Photos are uploaded via [`POST /v1/uploads`](uploads.md) (kind `message`); pass the returned
+`{ key, url }` objects in `attachments`. See [conventions: Storage](conventions.md#storage-photos).
 
 - **Request:** `{ "content_type": "image/jpeg", "byte_size": 123456 }`
 - **Response:** `200 { "key": "…", "upload_url": "https://…", "headers": { … } }`.
