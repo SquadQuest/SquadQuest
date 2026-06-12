@@ -31,6 +31,11 @@ const schema = {
     // GCS bucket for user media (signed-URL uploads, public-key reads). Empty
     // disables the uploads endpoint (local dev without GCS creds).
     MEDIA_BUCKET: { type: 'string', default: '' },
+    // Comma-separated browser origins allowed via CORS (scheme://host[:port]),
+    // e.g. "https://v2.squadquest.app". Empty blocks all browser origins (the
+    // safe default). Native clients send no Origin and are never CORS-gated.
+    // See specs/api/conventions.md (CORS) + behaviors/ci-cd.md.
+    ALLOWED_ORIGINS: { type: 'string', default: '' },
   },
 }
 
@@ -48,6 +53,7 @@ declare module 'fastify' {
       TWILIO_AUTH_TOKEN: string
       TWILIO_VERIFY_SERVICE_SID: string
       MEDIA_BUCKET: string
+      ALLOWED_ORIGINS: string
     }
   }
 }

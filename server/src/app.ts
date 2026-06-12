@@ -9,6 +9,30 @@ import authPlugin from './plugins/auth.ts'
 import { ApiError, sendError } from './contracts/errors.ts'
 import v1Routes from './routes/v1/index.ts'
 
+// Pure CORS origin decision (extracted so it's unit-testable without booting the
+// app or mutating process-wide NODE_ENV). Returns whether a given request Origin
+// is allowed. A missing origin ⇒ non-browser request ⇒ allowed.
+// See specs/api/conventions.md (CORS) + behaviors/ci-cd.md.
+export function isOriginAllowed(
+  origin: string | undefined,
+  allowedOrigins: Set<string>,
+  allowLocalhost: boolean,
+): boolean {
+  if (!origin) return true
+  if (allowedOrigins.has(origin)) return true
+  if (allowLocalhost && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return true
+  return false
+}
+
+export function parseAllowedOrigins(raw: string): Set<string> {
+  return new Set(
+    raw
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean),
+  )
+}
+
 export const app: FastifyPluginAsync = async (fastify) => {
   // Environment config must load first (validates + decorates fastify.config).
   await fastify.register(envPlugin)
@@ -22,9 +46,18 @@ export const app: FastifyPluginAsync = async (fastify) => {
   await fastify.register(clientVersionPlugin)
   await fastify.register(authPlugin)
 
+  // CORS allow-list (browser clients only — native apps send no Origin and are
+  // never gated). Allowed origins come from ALLOWED_ORIGINS (comma-separated
+  // scheme://host[:port]); in non-production we also allow any localhost origin
+  // for dev convenience. An off-list browser origin gets no CORS headers.
+  // See specs/api/conventions.md (CORS) + behaviors/ci-cd.md.
+  const allowedOrigins = parseAllowedOrigins(fastify.config.ALLOWED_ORIGINS)
+  const allowLocalhost = fastify.config.NODE_ENV !== 'production'
   await fastify.register(cors, {
-    origin: fastify.config.NODE_ENV === 'production' ? false : true,
     credentials: true,
+    // Off-list browser origins get no CORS headers echoed (browser blocks). Not an error.
+    origin: (origin, cb) =>
+      cb(null, isOriginAllowed(origin ?? undefined, allowedOrigins, allowLocalhost)),
   })
 
   // Map thrown ApiErrors to the standard error envelope; everything else is a
