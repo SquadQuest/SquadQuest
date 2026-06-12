@@ -36,6 +36,8 @@ returns to wherever the user came from (normally the timeline).
   A photo-only change (name untouched) is valid. On success the updated profile replaces auth
   state; surfaces showing the avatar/name reflect it. On failure, show a retryable error and
   keep edits.
+- **Want to do** — a link into the user's personal wants backlog
+  ([`screens/wants.md`](wants.md)).
 - **Ignored** — a low-prominence link into the recovery surface for ignored incoming items
   ([`screens/ignored.md`](ignored.md)).
 - **Sign out** — clears the session and returns to the login screen.
@@ -43,7 +45,8 @@ returns to wherever the user came from (normally the timeline).
 ## Navigation
 
 - **In:** My Friends timeline app bar → tap avatar.
-- **Out:** back → timeline; **Ignored** → `/ignored`; **Sign out** → login.
+- **Out:** back → timeline; **Want to do** → `/wants`; **Ignored** → `/ignored`; **Sign out** →
+  login.
 
 ## Principles
 
