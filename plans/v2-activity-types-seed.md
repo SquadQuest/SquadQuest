@@ -1,10 +1,10 @@
 ---
-status: in-progress
+status: done
 depends: []
 specs:
   - specs/data-model.md
 issues: []
-pr:
+pr: 462
 ---
 
 # Plan: v2 seed curated official activity types (unblock)
@@ -41,14 +41,23 @@ this unblock); semantic search / related-topics (prototype-only, later).
 
 ## Validation
 
-- [ ] `topic.kind` column exists; seed migration inserts the curated official set; re-running is a
-      no-op. `GET /v1/topics` returns them. `bun test` + type-check; CI.
-- [ ] (post-merge) composing an idea / creating a want offers the seeded types — the blocker clears.
+- [x] `topic.kind` column exists (migration 0008); seed migration 0009 inserts 23 curated official
+      topics; re-run is a no-op (WHERE NOT EXISTS on label). `topics-seed.test.ts` asserts 23
+      official rows + idempotency. `bun test` 63 pass; type-check clean.
+- [x] verified end-to-end: `bin/reset-db` → a fresh DB migrates to exactly 23 official topics, so
+      composing an idea / creating a want now has types (blocker cleared). Prod gets them via
+      migrate-on-startup on deploy.
 
 ## Notes
 
-(closeout)
+PR #462. The seed is a **hand-written data migration** (0009), not drizzle-generated — so its
+journal entry was added manually. Idempotent via `WHERE NOT EXISTS` on label (no unique constraint
+needed). Verbs absent in the ctufts prototype were given natural readings ("Go Rock Climbing",
+"Grab Coffee", etc.); labels are intentionally low-stakes — they'll be refined by the taxonomy
+work + the v1-DB scan.
 
 ## Follow-ups
 
-(closeout)
+- **Tracked — `v2-activity-types-taxonomy`:** the full official/community model (create-on-the-fly,
+  categories, review/merge), which also folds in the v1 topics-DB export (needs Chris to export the
+  live Supabase topics). The labels/verbs seeded here are provisional until then.
