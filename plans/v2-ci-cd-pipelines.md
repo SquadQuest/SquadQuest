@@ -1,11 +1,11 @@
 ---
-status: planned
+status: in-progress
 depends: [v2-backend-infra, v2-storage-media, v2-app-android-dev-flavor]
 specs:
   - specs/behaviors/ci-cd.md
   - specs/api/conventions.md
 issues: []
-pr:
+pr: 448
 ---
 
 # Plan: v2 CI/CD pipelines (CORS + dev APK on develop + branch web previews)
@@ -71,17 +71,18 @@ Touches `.github/workflows/` (publish + new preview workflow), `server/src/{app,
 
 ## Validation
 
-- [ ] CORS: after deploy, a browser request from `https://v2.squadquest.app` to the API succeeds
-      (preflight + actual); an off-list origin is blocked; a no-Origin (curl/native) request is
-      unaffected. Server tests cover the resolver.
-- [ ] Web actually works end-to-end at `https://v2.squadquest.app` (login → timeline) — the
-      observable proof the CORS fix landed.
-- [ ] develop push publishes a fresh `squadquest-dev-b<N>.apk` to the media bucket; the link
-      installs and points at prod.
-- [ ] A push to a feature branch publishes `v2.squadquest.app/<branch>/` and it loads (assets
-      resolve under the subpath via base-href); the API is reachable from it (same origin).
-- [ ] A push to `v1` triggers **no** v2 deploy (workflow filter + WIF condition both exclude it).
-- [ ] `tofu plan` clean; `bun test`; CI green.
+- [x] CORS: server resolver covered by `cors.test.ts` (allow-list, no-Origin, localhost gating,
+      empty-default). `ALLOWED_ORIGINS` applied to Cloud Run via tofu. **Post-merge:** preflight
+      from `https://v2.squadquest.app` echoes `Access-Control-Allow-Origin`; off-list blocked.
+- [ ] **(post-merge)** Web works end-to-end at `https://v2.squadquest.app` (login → timeline) —
+      observable proof the CORS fix deployed.
+- [ ] **(post-merge)** develop push publishes a fresh `squadquest-dev-b<N>.apk` (+ `-latest`) to
+      the media bucket; the link installs and points at prod.
+- [ ] **(post-merge)** A feature-branch push publishes `v2.squadquest.app/<branch>/` and it loads
+      (assets resolve under the subpath via base-href); API reachable from it (same origin).
+- [ ] **(post-merge)** A push to `v1` triggers no v2 deploy (workflow filter + WIF both exclude).
+- [x] `tofu plan` clean (CORS env: 1 change; WIF condition: 1 change — both reviewed full/untargeted);
+      `bun test` 56 pass; `type-check` clean; both workflow YAMLs valid.
 
 ## Risks / unknowns
 
@@ -96,7 +97,24 @@ Touches `.github/workflows/` (publish + new preview workflow), `server/src/{app,
 
 ## Notes
 
-(closeout)
+Built on branch `feat/ci-cd-cors` → PR #448, in two commits:
+
+- **CORS** (`bc72791`): `ALLOWED_ORIGINS` env + pure `isOriginAllowed`/`parseAllowedOrigins`
+  resolver (unit-tested without booting the app / mutating `NODE_ENV` — sidesteps the known
+  process-wide env-leak footgun). tf env **already applied** to Cloud Run (old image ignores it
+  harmlessly; the merge deploys the code that reads it).
+- **APK + previews + WIF** (`8347aaa`): `v2-apk` job (idiomatic `flutter build apk --flavor dev`
+  — the gradlew workaround was only the local no-TTY harness, not CI); `v2-preview.yml`
+  (branches-ignore develop/v1, sanitized segment + base-href); WIF v2 provider relaxed to
+  `ref != refs/heads/v1`.
+
+Status is **in-progress, not done** — the four post-merge validation items can only be confirmed
+after merge + deploy. Flip to done at closeout once verified in prod.
+
+**Sequencing for merge:** the WIF tofu change is **not yet applied** (security-sensitive; left for
+explicit review). It must be `tofu apply`'d for branch previews to authenticate — but it's
+independent of the CORS deploy. Order doesn't matter for CORS; previews simply won't auth until
+the WIF apply lands.
 
 ## Follow-ups
 
