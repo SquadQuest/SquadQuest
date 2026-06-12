@@ -61,6 +61,10 @@ export const topic = pgTable('topic', {
   verb: text('verb').notNull(),
   label: text('label').notNull(),
   kind: topicKind('kind').notNull().default('official'),
+  // Coarse grouping (Sports, Outdoors, Games, Food & Drink, Arts, Music, Social,
+  // Civic). Nullable for now; a richer category model (browse, multi-category)
+  // belongs to the activity-types taxonomy plan. See specs/data-model.md.
+  category: text('category'),
 })
 
 // Per-user interest subscriptions.
