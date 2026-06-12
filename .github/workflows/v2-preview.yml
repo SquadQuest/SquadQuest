@@ -29,6 +29,14 @@ jobs:
         id: seg
         run: |
           seg=$(printf '%s' "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
+          # Reserve segments owned by other publish paths so a branch can't clobber
+          # them: downloads/ holds the APKs (v2-publish.yml), and the bucket root is
+          # the prod web build. See specs/behaviors/ci-cd.md.
+          case "$seg" in
+            downloads|develop|"")
+              echo "::error::Refusing to publish a preview to reserved path '/$seg/'."
+              exit 1 ;;
+          esac
           echo "segment=$seg" >> "$GITHUB_OUTPUT"
           echo "Preview path: /$seg/"
 

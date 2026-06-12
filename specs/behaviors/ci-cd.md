@@ -12,7 +12,7 @@ Federation (no long-lived keys):
 |---|---|---|
 | push to `develop` | **prod web** build | `gs://v2.squadquest.app/` (root) → `https://v2.squadquest.app` |
 | push to `develop` | **backend image** | Artifact Registry → Cloud Run `squadquest-backend` (migrate-on-startup) |
-| push to `develop` | **dev APK** | `gs://squadquest-v2-media/apk/squadquest-dev-b<N>.apk` |
+| push to `develop` | **dev APK** | `gs://v2.squadquest.app/downloads/squadquest-dev-b<N>.apk` (+ `-latest`) → `https://v2.squadquest.app/downloads/…` |
 | push to **any branch except `v1`** | **branch web preview** | `gs://v2.squadquest.app/<branch>/` → `https://v2.squadquest.app/<branch>/` |
 
 `develop` is itself "any branch except v1", so a develop push publishes both the root prod web
@@ -35,12 +35,16 @@ preview of develop as incidental, not a separate product surface.
   monotonic and traceable back to a run. The APK is the **`dev` flavor** (`app.squadquest.dev`,
   "SquadQuest Dev") pointed at prod (`--dart-define=API_BASE_URL=https://api.squadquest.app`,
   `CLIENT_HEADER=android/<version>+<run_number>`) so it installs alongside v1 (see
-  [`architecture.md`](../architecture.md) build channels). A stable
-  `squadquest-dev-latest.apk` copy may also be published for a permanent "newest dev build" link.
+  [`architecture.md`](../architecture.md) build channels). APKs are published to the **v2 frontend
+  bucket** under `downloads/` (same bucket as the web build — the CI SA already has write there,
+  and it's public + LB-fronted, so the link is `https://v2.squadquest.app/downloads/…`). A stable
+  `squadquest-dev-latest.apk` (uploaded `no-cache`) gives a permanent "newest dev build" link.
 - **Branch name → path segment** is sanitized: lowercased, any character outside `[a-z0-9._-]`
   (notably `/` in `feat/x`) replaced with `-`, yielding e.g. `feat/profile-screen` →
   `feat-profile-screen/`. The same sanitized segment is the web `--base-href=/<segment>/` so
-  asset URLs resolve under the subpath.
+  asset URLs resolve under the subpath. **Reserved segments** (`downloads`, `develop`, and the
+  empty string) are refused by the preview workflow so a branch can't overwrite the APK downloads
+  or collide with the root prod build.
 - Web builds use `--pwa-strategy=none` (no service worker — it otherwise serves a stale build
   until a second reload) and are uploaded with `Cache-Control: no-cache` so deploys show up
   immediately (CDN is off; traffic is tiny).
@@ -71,8 +75,9 @@ every path to the v2 bucket.
   'SquadQuest/SquadQuest'` **except** `refs/heads/v1` (v1 is the protected production branch and
   must never deploy through the v2 pipeline).
 - This is the one security-sensitive change: it widens which refs can mint a deploy token for the
-  v2 deploy service account. The SA's permissions are unchanged (write to the v2 + media buckets,
-  deploy Cloud Run); only *which branches* can assume it widens. The `v1` exclusion is the guard.
+  v2 deploy service account. The SA's permissions are unchanged (write to the v2 frontend bucket —
+  which holds web builds *and* APK downloads — and deploy Cloud Run); only *which branches* can
+  assume it widens. The `v1` exclusion is the guard.
 - The branch-preview workflow itself must also exclude `v1` (`branches-ignore: [v1]`) and skip the
   backend/Cloud Run + root web deploy (those stay `develop`-only) — defense in depth alongside the
   WIF condition.
@@ -103,7 +108,8 @@ every path to the v2 bucket.
 ## Notes
 
 - Existing state this builds on: `v2-publish.yml` already does prod web + backend on `develop` via
-  WIF. APKs already live under `squadquest-v2-media/apk/`.
+  WIF. APKs are published under `v2.squadquest.app/downloads/` (moved off the media bucket so user
+  media and build artifacts don't share a bucket).
 - **Build command:** on CI, use the idiomatic `flutter build apk --release --flavor dev` with
   `--dart-define`s — it handles flavor + defines cleanly on a hosted runner. (The
   `./gradlew :app:assembleDevRelease` workaround with base64 dart-defines is only needed in the

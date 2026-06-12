@@ -35,15 +35,6 @@ resource "google_storage_bucket_iam_member" "media_runtime_admin" {
   member = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
 }
 
-# The CI deploy SA publishes built APKs to apk/ (v2-publish.yml v2-apk job).
-# It already has objectAdmin on the frontend buckets; the media bucket needs its
-# own grant. See specs/behaviors/ci-cd.md.
-resource "google_storage_bucket_iam_member" "media_ci_apk_writer" {
-  bucket = google_storage_bucket.media.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${google_service_account.v2_github.email}"
-}
-
 # Keyless V4 signing: the runtime SA must be able to sign blobs AS ITSELF
 # (@google-cloud/storage falls back to the IAM signBlob API when no private key
 # is present, which is the case on Cloud Run with ADC).
