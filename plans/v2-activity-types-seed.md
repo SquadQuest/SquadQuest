@@ -58,6 +58,10 @@ work + the v1-DB scan.
 
 ## Follow-ups
 
+- **Done in a follow-up commit (same PR #462 lineage):** the v1 topics export arrived
+  (`plans/references/v1-topics-export.csv`, 99 rows) and was mined to **expand the seed to 53
+  categorized official topics** + add a `category` column (Music + Civic surfaced from the v1
+  dot-prefixes). Junk dropped, genre-spam collapsed, deduped against the base 23.
 - **Tracked — `v2-activity-types-taxonomy`:** the full official/community model (create-on-the-fly,
-  categories, review/merge), which also folds in the v1 topics-DB export (needs Chris to export the
-  live Supabase topics). The labels/verbs seeded here are provisional until then.
+  review/merge, browse-by-category). The v1 CSV is retained as its community-type backlog + merge
+  fixtures. Seeded labels/verbs/categories remain provisional until that work.
