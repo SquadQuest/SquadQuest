@@ -10,6 +10,23 @@ inherits these conventions. The client binds **only** to this contract, never th
 - JSON over HTTPS. UTF-8. Request/response bodies are JSON unless noted (uploads use signed
   URLs — see Storage).
 
+### CORS (browser clients)
+
+Native clients (Android/iOS/macOS) are not browsers and are unaffected by CORS; this section
+governs only the **web** build.
+
+- The API serves an **explicit allow-list** of browser origins, configured via the
+  `ALLOWED_ORIGINS` env (comma-separated `scheme://host[:port]`). A request whose `Origin` is on
+  the list gets that origin echoed back with `credentials` allowed; an off-list browser origin
+  gets no CORS headers (blocked).
+- The launch allow-list is the production web host **`https://v2.squadquest.app`** plus local dev
+  (`http://localhost:*`). Because an origin is `scheme://host:port` — **path is not part of the
+  origin** — every branch preview served under a path of that host
+  (`v2.squadquest.app/<branch>/`, see [`behaviors/ci-cd.md`](../behaviors/ci-cd.md)) shares the
+  one allow-listed origin and needs no additional CORS entry.
+- An empty/unset `ALLOWED_ORIGINS` blocks all browser origins (safe default). Non-browser
+  requests (no `Origin`) are never CORS-gated.
+
 ## Versioning
 
 Three tiers, each with a distinct job:
