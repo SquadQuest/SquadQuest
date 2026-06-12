@@ -1,0 +1,67 @@
+name: 'V2: Branch preview'
+
+# Publish a web build of any feature branch to v2.squadquest.app/<branch>/ so it's
+# previewable without merging. develop publishes the root (v2-publish.yml) and v1 is
+# the protected production branch — both excluded here. See specs/behaviors/ci-cd.md.
+on:
+  push:
+    branches-ignore:
+      - develop
+      - v1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Sanitize the branch name into a path segment: lowercase, anything outside
+      # [a-z0-9._-] (notably the "/" in feat/x) → "-". e.g. feat/Profile → feat-profile.
+      - name: Derive preview path segment
+        id: seg
+        run: |
+          seg=$(printf '%s' "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
+          echo "segment=$seg" >> "$GITHUB_OUTPUT"
+          echo "Preview path: /$seg/"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+
+      # --base-href=/<segment>/ so asset URLs resolve under the subpath.
+      # --pwa-strategy=none for the same reason as the root build (no stale SW).
+      - name: Build web
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter build web --pwa-strategy=none --base-href=/${{ steps.seg.outputs.segment }}/
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: 'v2-github-action@squadquest-d8665.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/902139539375/locations/global/workloadIdentityPools/github/providers/v2-github-actions'
+
+      - uses: 'google-github-actions/setup-gcloud@v3'
+
+      - uses: 'google-github-actions/upload-cloud-storage@v2'
+        with:
+          path: 'app/build/web'
+          destination: 'v2.squadquest.app/${{ steps.seg.outputs.segment }}'
+          parent: false
+
+      # Always-revalidate so a re-push shows immediately (CDN off, traffic tiny).
+      - name: 'Set no-cache on preview objects'
+        run: gcloud storage objects update "gs://v2.squadquest.app/${{ steps.seg.outputs.segment }}/**" --cache-control="no-cache"
+
+      - name: 'Preview URL'
+        run: echo "Published → https://v2.squadquest.app/${{ steps.seg.outputs.segment }}/"
