@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Install SquadQuest Dev</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1.25rem;
+    }
+    main { width: 100%; max-width: 30rem; }
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    img.icon { width: 96px; height: 96px; border-radius: 22px; }
+    h1 { font-size: 1.4rem; margin: 1rem 0 0.25rem; }
+    .sub { color: #86868b; margin: 0 0 1.5rem; font-size: 0.95rem; }
+    a.install {
+      display: block;
+      background: #007aff;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.05rem;
+      padding: 0.9rem 1rem;
+      border-radius: 12px;
+    }
+    a.install:active { opacity: 0.8; }
+    a.android {
+      display: block;
+      margin-top: 0.75rem;
+      color: #007aff;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .note {
+      background: #f0f0f2;
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      margin-top: 1.5rem;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    .note h2 { font-size: 0.95rem; margin: 0 0 0.5rem; }
+    .note ol { margin: 0; padding-left: 1.2rem; }
+    .note li { margin-bottom: 0.4rem; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #000; color: #f5f5f7; }
+      .card { background: #1c1c1e; }
+      .note { background: #2c2c2e; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <img class="icon" src="../icons/Icon-512.png" alt="App icon">
+      <h1>SquadQuest Dev</h1>
+      <p class="sub">Version __BUILD_VERSION__ · dev build, points at the live API</p>
+      <a class="install" href="itms-services://?action=download-manifest&amp;url=https://v2.squadquest.app/downloads/manifest.plist">
+        Install on this iPhone
+      </a>
+      <a class="android" href="https://v2.squadquest.app/downloads/squadquest-dev-latest.apk">
+        Android? Download the APK instead
+      </a>
+    </div>
+
+    <div class="note">
+      <h2>Before you tap Install (iPhone)</h2>
+      <ol>
+        <li>Open this page in <strong>regular Safari on the iPhone itself</strong>. Links opened from Slack, Mail, or other apps often open in an <strong>in-app or Private Browsing tab, where Install silently does nothing</strong> &mdash; if so, paste this page&rsquo;s URL into Safari directly. (The link also does nothing on a Mac.)</li>
+        <li>Your device must be <strong>registered in the provisioning profile</strong>. If install fails with &ldquo;unable to install,&rdquo; your UDID hasn&rsquo;t been added yet &mdash; ask Chris to register it.</li>
+      </ol>
+
+      <h2>After it installs</h2>
+      <ol>
+        <li>The icon appears on your home screen. First launch may say <strong>Developer Mode</strong> is required.</li>
+        <li>Enable it: <strong>Settings &rsaquo; Privacy &amp; Security</strong>, scroll to the bottom to <strong>Developer Mode</strong>, turn it <strong>On</strong>. The phone restarts and asks you to confirm after reboot.</li>
+        <li>Now open the app.</li>
+      </ol>
+    </div>
+  </main>
+</body>
+</html>

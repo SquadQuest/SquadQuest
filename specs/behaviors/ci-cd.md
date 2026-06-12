@@ -13,6 +13,7 @@ Federation (no long-lived keys):
 | push to `develop` | **prod web** build | `gs://v2.squadquest.app/` (root) → `https://v2.squadquest.app` |
 | push to `develop` | **backend image** | Artifact Registry → Cloud Run `squadquest-backend` (migrate-on-startup) |
 | push to `develop` | **dev APK** | `gs://v2.squadquest.app/downloads/squadquest-dev-b<N>.apk` (+ `-latest`) → `https://v2.squadquest.app/downloads/…` |
+| push to `develop` (when `IOS_PUBLISH_ENABLED`) | **dev IPA + OTA install page** | `…/downloads/squadquest-dev-b<N>.ipa` (+ `-latest`), `manifest.plist`, `index.html` → install at `https://v2.squadquest.app/downloads/` |
 | push to **any branch except `v1`** | **branch web preview** | `gs://v2.squadquest.app/<branch>/` → `https://v2.squadquest.app/<branch>/` |
 
 `develop` is itself "any branch except v1", so a develop push publishes both the root prod web
@@ -39,6 +40,31 @@ preview of develop as incidental, not a separate product surface.
   bucket** under `downloads/` (same bucket as the web build — the CI SA already has write there,
   and it's public + LB-fronted, so the link is `https://v2.squadquest.app/downloads/…`). A stable
   `squadquest-dev-latest.apk` (uploaded `no-cache`) gives a permanent "newest dev build" link.
+
+### iOS OTA (ad-hoc) publishing
+
+A dev iOS build is distributed **over-the-air** (no App Store / TestFlight) for registered
+devices, mirroring the APK link:
+
+- **Identity:** `app.squadquest.dev`, display name "SquadQuest Dev" — matches the Android dev
+  flavor. iOS has no committed Flutter flavor (Android-only at this stage), so the CI job
+  retargets the Runner at build time (rewrite `PRODUCT_BUNDLE_IDENTIFIER` → `app.squadquest.dev`,
+  `CFBundleDisplayName` → "SquadQuest Dev"). A proper iOS xcconfig flavor is a later cleanup.
+- **Signing:** **ad-hoc**, manual signing via `ios/ExportOptions-dev.plist` (team id substituted
+  from a secret; provisioning profile **"SquadQuest Dev Ad Hoc"** covering `app.squadquest.dev`).
+  Installs only on devices whose UDID is in that profile — adding a tester means adding their UDID
+  and regenerating the profile.
+- **OTA mechanism:** an `itms-services://?action=download-manifest&url=…/manifest.plist` link on
+  the install page (`ios/ota/index.html`). The manifest's `software-package` URL **must be a
+  direct, redirect-free HTTPS download** — so the signed IPA is **co-hosted** next to the manifest
+  under `downloads/` (the `v2.squadquest.app` LB serves direct HTTPS, satisfying this). Both the
+  manifest and page are uploaded `no-cache` and have `__BUILD_VERSION__` stamped by CI.
+- **Gating:** the `v2-ipa` job runs only when the repo variable `IOS_PUBLISH_ENABLED == 'true'`,
+  so the paid macOS runner is skipped until Apple signing is configured. Required repo **secrets**:
+  `APPLE_CERTIFICATE_BASE64`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_PROVISIONING_PROFILE_BASE64`,
+  `APPLE_TEAM_ID`. **Setup prerequisite (manual, before enabling):** register `app.squadquest.dev`
+  as an App ID, create the ad-hoc distribution provisioning profile named "SquadQuest Dev Ad Hoc"
+  with the target devices' UDIDs, and load the four secrets + set the variable.
 - **Branch name → path segment** is sanitized: lowercased, any character outside `[a-z0-9._-]`
   (notably `/` in `feat/x`) replaced with `-`, yielding e.g. `feat/profile-screen` →
   `feat-profile-screen/`. The same sanitized segment is the web `--base-href=/<segment>/` so
