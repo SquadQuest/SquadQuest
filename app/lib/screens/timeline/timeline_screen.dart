@@ -9,6 +9,7 @@ import '../../providers/active_context.dart';
 import '../../providers/auth_controller.dart';
 import '../../providers/providers.dart';
 import '../../widgets/community_event_card.dart';
+import '../../widgets/message_attachments.dart';
 
 /// The active timeline, per the context selector (specs/behaviors/context-selector.md):
 /// My Friends (ideas/activities), a Squad (heterogeneous activities + messages), or a
@@ -431,7 +432,14 @@ class _MessageTile extends StatelessWidget {
         child: Text((m.senderName ?? '?').characters.first),
       ),
       title: Text(m.senderName ?? 'Someone'),
-      subtitle: Text(m.body ?? ''),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (m.body != null && m.body!.isNotEmpty) Text(m.body!),
+          MessageAttachmentThumbs(attachments: m.attachments),
+        ],
+      ),
+      isThreeLine: m.attachments.isNotEmpty,
       trailing: m.threadCount > 0
           ? Text('${m.threadCount} ${m.threadCount == 1 ? 'reply' : 'replies'}')
           : null,
@@ -448,6 +456,7 @@ class _SquadComposer extends ConsumerStatefulWidget {
 
 class _SquadComposerState extends ConsumerState<_SquadComposer> {
   final _controller = TextEditingController();
+  List<MessageAttachment> _attachments = const [];
   bool _busy = false;
 
   @override
@@ -458,13 +467,15 @@ class _SquadComposerState extends ConsumerState<_SquadComposer> {
 
   Future<void> _send() async {
     final body = _controller.text.trim();
-    if (body.isEmpty || _busy) return;
+    // A message needs text or at least one attachment (photo-only is valid).
+    if ((body.isEmpty && _attachments.isEmpty) || _busy) return;
     setState(() => _busy = true);
     try {
       await ref
           .read(messageRepositoryProvider)
-          .postSquadMessage(widget.squadId, body);
+          .postSquadMessage(widget.squadId, body, attachments: _attachments);
       _controller.clear();
+      setState(() => _attachments = const []);
       ref.invalidate(squadTimelineProvider(widget.squadId));
     } catch (_) {
       if (mounted) {
@@ -479,31 +490,45 @@ class _SquadComposerState extends ConsumerState<_SquadComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final canSend =
+        !_busy &&
+        (_controller.text.trim().isNotEmpty || _attachments.isNotEmpty);
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 4, 8, 8),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: TextField(
-                key: const Key('squadMessageField'),
-                controller: _controller,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _send(),
-                decoration: const InputDecoration(
-                  hintText: 'Message your squad…',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
-              ),
+            MessageAttachmentField(
+              attachments: _attachments,
+              enabled: !_busy,
+              onChanged: (a) => setState(() => _attachments = a),
             ),
-            IconButton(
-              key: const Key('squadMessageSend'),
-              icon: const Icon(Icons.send),
-              onPressed: _busy ? null : _send,
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('squadMessageField'),
+                    controller: _controller,
+                    minLines: 1,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.send,
+                    onChanged: (_) => setState(() {}),
+                    onSubmitted: (_) => _send(),
+                    decoration: const InputDecoration(
+                      hintText: 'Message your squad…',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  key: const Key('squadMessageSend'),
+                  icon: const Icon(Icons.send),
+                  onPressed: canSend ? _send : null,
+                ),
+              ],
             ),
           ],
         ),

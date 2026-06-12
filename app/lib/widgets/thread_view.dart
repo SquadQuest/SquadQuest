@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/message.dart';
 import '../providers/providers.dart';
+import 'message_attachments.dart';
 
 /// A thread conversation (specs/behaviors/thread-drawer.md, sans the slide-in chrome
 /// and realtime): the replies for a target plus a reply input. Renders as a non-scrolling
@@ -23,6 +24,7 @@ class ThreadView extends ConsumerStatefulWidget {
 
 class _ThreadViewState extends ConsumerState<ThreadView> {
   final _controller = TextEditingController();
+  List<MessageAttachment> _attachments = const [];
   bool _busy = false;
 
   String get _key => '${widget.targetType}:${widget.targetId}';
@@ -35,13 +37,19 @@ class _ThreadViewState extends ConsumerState<ThreadView> {
 
   Future<void> _send() async {
     final body = _controller.text.trim();
-    if (body.isEmpty || _busy) return;
+    if ((body.isEmpty && _attachments.isEmpty) || _busy) return;
     setState(() => _busy = true);
     try {
       await ref
           .read(messageRepositoryProvider)
-          .reply(widget.targetType, widget.targetId, body);
+          .reply(
+            widget.targetType,
+            widget.targetId,
+            body,
+            attachments: _attachments,
+          );
       _controller.clear();
+      setState(() => _attachments = const []);
       ref.invalidate(threadProvider(_key));
       // thread_count changed → refresh the timelines that show it.
       ref.invalidate(friendsTimelineProvider);
@@ -85,6 +93,11 @@ class _ThreadViewState extends ConsumerState<ThreadView> {
                 ),
         ),
         const SizedBox(height: 8),
+        MessageAttachmentField(
+          attachments: _attachments,
+          enabled: !_busy,
+          onChanged: (a) => setState(() => _attachments = a),
+        ),
         Row(
           children: [
             Expanded(
@@ -94,6 +107,7 @@ class _ThreadViewState extends ConsumerState<ThreadView> {
                 minLines: 1,
                 maxLines: 4,
                 textInputAction: TextInputAction.send,
+                onChanged: (_) => setState(() {}),
                 onSubmitted: (_) => _send(),
                 decoration: const InputDecoration(
                   hintText: 'Reply…',
@@ -105,7 +119,11 @@ class _ThreadViewState extends ConsumerState<ThreadView> {
             IconButton(
               key: const Key('threadReplySend'),
               icon: const Icon(Icons.send),
-              onPressed: _busy ? null : _send,
+              onPressed:
+                  (_busy ||
+                      (_controller.text.trim().isEmpty && _attachments.isEmpty))
+                  ? null
+                  : _send,
             ),
           ],
         ),
@@ -129,7 +147,9 @@ class _MessageRow extends StatelessWidget {
             message.senderName ?? 'Someone',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
-          Text(message.body ?? ''),
+          if (message.body != null && message.body!.isNotEmpty)
+            Text(message.body!),
+          MessageAttachmentThumbs(attachments: message.attachments),
         ],
       ),
     );

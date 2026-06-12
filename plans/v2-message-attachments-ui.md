@@ -1,9 +1,9 @@
 ---
-status: planned
+status: done
 depends: [v2-storage-media]
 specs: []
 issues: []
-pr:
+pr: 463
 ---
 
 # Plan: v2 message-attachments client UI
@@ -44,19 +44,26 @@ to the existing contract.
 
 ## Validation
 
-- [ ] client: attach an image to a squad message + a thread reply; both post with attachments;
-      thumbnails render on the tile; photo-only (no text) works. `flutter analyze` + widget tests.
-
-## Risks / unknowns
-
-- The squad composer is inline + stateless-ish; adding pending-attachment state is the main
-  surgery. Thread reply input is separate — do both or sequence them.
-- Confirm the client `Message` model carries `attachments` (server returns them now).
+- [x] client: attach affordance on the squad composer + thread reply (shared `MessageAttachmentField`);
+      both post with attachments; photo-only (no text) works (Send enables on text OR attachment);
+      thumbnails render on message tiles + reply rows (`MessageAttachmentThumbs`, tap → full-screen).
+      `flutter analyze` clean; suite 33 pass.
+- [ ] **(on-device, post-merge)** attach a photo to a squad message + a thread reply; confirm upload
+      + thumbnail render end-to-end (the read-path render isn't unit-tested — see Notes).
 
 ## Notes
 
-(closeout)
+PR #463. Built one reusable `MessageAttachmentField` (pick→upload kind `message`→pending-thumbnail
+strip with remove) shared by the inline squad composer and the thread reply input, plus a
+`MessageAttachmentThumbs` read-path widget. `Message` model + `MessageRepository` gained
+`attachments`; both post paths allow photo-only.
+
+**Test gap (intentional):** rendering a *populated* attachment thumbnail isn't asserted in a widget
+test — `NetworkImage` returns HTTP 400 in the Flutter test binding (no real network), which fails
+the test even though the widget builds. Same constraint hit + accepted in the profile-photo work;
+the read path is covered via MCP / on-device instead. Compose/post is unit-tested.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred (out per the plan):** multi-image galleries beyond a simple wrapped row; video /
+  non-image; crop/edit. None needed for the core surface.
