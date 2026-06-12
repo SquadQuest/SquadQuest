@@ -163,8 +163,10 @@ reusing the normal idea-create path; the want is never flipped in place.
 A friend the owner has tagged onto a want, with that friend's soft response. (`want`, `profile`,
 `response ∈ {in, interested, next_time} | null`). Reuses the activity **response vocabulary** (see
 [`behaviors/response-system.md`](behaviors/response-system.md)): `null` = invited-not-yet-responded;
-there is **no decline** — ignoring is the passive dismiss, never surfaced to the owner as a "no".
-The owner sees only positive signal (who's `in` / `interested`). Inviting a friend is what makes a
+there is **no decline**. The invitee may **ignore** the invite (`ignored_at` set) — it leaves their
+Invited list for the shared Ignored surface, is recoverable, and is **never surfaced to the owner**
+(see [dismissal is silent and reversible](principles.md#dismissal-is-silent-and-reversible)). The
+owner sees only positive signal (who's `in` / `interested`). Inviting a friend is what makes a
 want shared (and visible) to that friend; an invite never grants the friend edit rights, only the
 ability to see it and respond. Unique on (`want`, `profile`).
 

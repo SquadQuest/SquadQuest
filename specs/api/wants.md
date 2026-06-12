@@ -93,11 +93,13 @@ the activity response vocabulary; there is no decline (to dismiss, simply don't 
 
 Clear your response (back to invited-not-responded). → `200 <want>`.
 
-### DELETE /v1/wants/:id/invited (hide from my list)
+### POST /v1/wants/:id/ignore (and /unignore)
 
-An invitee **hides** a want from their own `GET /v1/wants/invited` list (inbox hygiene). This is
-**not** a decline and is **never** surfaced to the owner — it only affects the caller's view. →
-`204`.
+An invitee **ignores** a want invite — it leaves their `GET /v1/wants/invited` list for the shared
+**Ignored** surface ([`GET /v1/ignored`](friends.md#get-v1ignored), [`screens/ignored.md`](../screens/ignored.md)),
+and `unignore` restores it. This is the [dismissal is silent and reversible](../principles.md#dismissal-is-silent-and-reversible)
+principle: it is **not** a decline, is **never** surfaced to the owner, and is recoverable. →
+`200` (ignore/unignore each return the updated state).
 
 ## POST /v1/wants/:id/promote
 
@@ -128,5 +130,7 @@ reusing [`POST /v1/ideas`](ideas-activities.md) semantics. **Owner only.**
   a want reaches another person only by an explicit invite to an **accepted friend**; nothing is
   public, and an un-invited want is owner-only.
 - [Lower the stakes of participation](../principles.md#lower-the-stakes-of-participation) —
-  invite responses are the same three soft values as activities with **no decline**; ignoring is a
-  silent dismiss, and the owner is never shown a "no".
+  invite responses are the same three soft values as activities with **no decline**.
+- [Dismissal is silent and reversible](../principles.md#dismissal-is-silent-and-reversible) —
+  ignoring a want invite is invisible to the owner and recoverable from the Ignored surface; the
+  owner only ever sees positive responses, never a "no".

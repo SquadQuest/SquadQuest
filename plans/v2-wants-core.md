@@ -6,8 +6,9 @@ specs:
   - specs/api/wants.md
   - specs/screens/wants.md
   - specs/api/profile.md
+  - specs/principles.md
 issues: []
-pr:
+pr: 457
 ---
 
 # Plan: v2 wants — core (shared pre-activity → promote to idea)
@@ -40,8 +41,9 @@ the owner — see `behaviors/response-system.md`).
 - `want` entity: required `topic`, optional `title`/`location`/`notes`, `owner`,
   `kind: one_shot | ongoing`, `archived_at`, created/updated.
 - `want_invite` (`want`, `profile`, `response | null`) — invite accepted friends; invitee responds.
-- CRUD for your own wants; **invite/uninvite** friends; **respond** to invites; a **hide-from-my-
-  invited-list** dismiss (never surfaced to the owner).
+- CRUD for your own wants; **invite/uninvite** friends; **respond** to invites; **ignore** an
+  invite (leaves the Invited list for the shared Ignored surface, recoverable, never surfaced to
+  the owner — see the dismissal principle).
 - Two list surfaces: **Yours** (with invitee responses) and **Invited** (with your response).
 - **Promote = spawn (owner):** one tap opens the existing composer **pre-filled** — topic locked;
   **audience pre-filled to the want's invitees (editable)**; title/location seed option hints →
@@ -81,7 +83,7 @@ collaborative shared-edit lists.
 ## Validation
 
 - [ ] backend: CRUD scoped to owner; invite only accepted friends; an invitee reads the want + can
-      respond (no decline) + hide-from-their-list (never shown to owner); promote spawns a real idea
+      respond (no decline) + ignore (recoverable via Ignored, never shown to owner); promote spawns a real idea
       via the existing path with `from_want` set + audience defaulted to invitees; `one_shot`
       archives, `ongoing` persists. `bun test` + type-check; CI.
 - [ ] client: Yours + Invited lists; add/edit + invite friends + kind; respond to an invite; promote

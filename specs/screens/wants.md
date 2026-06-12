@@ -34,9 +34,9 @@ with, before there's a date (the `want` + `want_invite` entities — see
   (one_shot default), and optionally **invite accepted friends**. → `POST /v1/wants`.
 - **Invite / remove** friends on your want → `POST` / `DELETE /v1/wants/:id/invites…`. Only accepted
   friends are invitable. Inviting is what shares the want.
-- **Respond** to a want you're invited to — **I'm in / Interested / Next time** (no decline; ignore
-  to passively dismiss; or **hide** it from your invited list). → `PUT` / `DELETE
-  /v1/wants/:id/response`, `DELETE /v1/wants/:id/invited`.
+- **Respond** to a want you're invited to — **I'm in / Interested / Next time** (no decline). Or
+  **Ignore** it: it leaves your Invited list for the [Ignored](ignored.md) surface, recoverable,
+  never shown to the owner. → `PUT` / `DELETE /v1/wants/:id/response`, `POST /v1/wants/:id/ignore`.
 - **Edit / delete** your own want → `PATCH` / `DELETE /v1/wants/:id`.
 - **Promote** (headline action, owner only): one tap opens the existing **idea composer pre-filled**
   — topic locked in; **audience pre-filled to the want's invitees** (editable); title/location seed
@@ -57,8 +57,10 @@ with, before there's a date (the `want` + `want_invite` entities — see
   a want reaches a friend only via an explicit invite; an un-invited want is yours alone. Nothing
   public.
 - [Lower the stakes of participation](../principles.md#lower-the-stakes-of-participation) —
-  responding to a want invite is the same three soft options with a silent dismiss; no one is shown
-  a "no".
+  responding to a want invite is the same three soft options; no one is shown a "no".
+- [Dismissal is silent and reversible](../principles.md#dismissal-is-silent-and-reversible) —
+  Ignore removes an invite from your view (recoverable via [Ignored](ignored.md)) and is invisible
+  to the owner.
 
 ## Notes
 
