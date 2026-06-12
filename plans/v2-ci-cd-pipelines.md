@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [v2-backend-infra, v2-storage-media, v2-app-android-dev-flavor]
 specs:
   - specs/behaviors/ci-cd.md
@@ -74,13 +74,15 @@ Touches `.github/workflows/` (publish + new preview workflow), `server/src/{app,
 - [x] CORS: server resolver covered by `cors.test.ts` (allow-list, no-Origin, localhost gating,
       empty-default). `ALLOWED_ORIGINS` applied to Cloud Run via tofu. **Post-merge:** preflight
       from `https://v2.squadquest.app` echoes `Access-Control-Allow-Origin`; off-list blocked.
-- [ ] **(post-merge)** Web works end-to-end at `https://v2.squadquest.app` (login → timeline) —
-      observable proof the CORS fix deployed.
-- [ ] **(post-merge)** develop push publishes a fresh `squadquest-dev-b<N>.apk` (+ `-latest`) to
-      the media bucket; the link installs and points at prod.
-- [ ] **(post-merge)** A feature-branch push publishes `v2.squadquest.app/<branch>/` and it loads
-      (assets resolve under the subpath via base-href); API reachable from it (same origin).
-- [ ] **(post-merge)** A push to `v1` triggers no v2 deploy (workflow filter + WIF both exclude).
+- [x] **(verified prod)** `main.dart.js` at `https://v2.squadquest.app` contains only
+      `https://api.squadquest.app` (zero localhost) — the deployed web build points at prod (fixed
+      in #449; see Follow-ups). CORS preflight returns `204` echoing the origin.
+- [x] **(verified prod)** develop publish produced `squadquest-dev-b55.apk` + `squadquest-dev-latest.apk`
+      (`HTTP/2 200`, ~53.7 MB) in the media bucket (after the IAM grant in #449).
+- [x] **(verified prod)** feature-branch push published `v2.squadquest.app/feat-ci-cd-cors/` —
+      `200`, correct `<base href="/feat-ci-cd-cors/">` (assets resolve, no white screen).
+- [x] **(guarded)** `v1` excluded at all three points: WIF `ref != refs/heads/v1`, publish runs
+      only `on develop`, preview `branches-ignore: [develop, v1]`.
 - [x] `tofu plan` clean (CORS env: 1 change; WIF condition: 1 change — both reviewed full/untargeted);
       `bun test` 56 pass; `type-check` clean; both workflow YAMLs valid.
 
@@ -108,14 +110,29 @@ Built on branch `feat/ci-cd-cors` → PR #448, in two commits:
   (branches-ignore develop/v1, sanitized segment + base-href); WIF v2 provider relaxed to
   `ref != refs/heads/v1`.
 
-Status is **in-progress, not done** — the four post-merge validation items can only be confirmed
-after merge + deploy. Flip to done at closeout once verified in prod.
+WIF tofu change applied during closeout (reviewed full untargeted plan first). The first develop
+publish after #448 then surfaced **two bugs the dry design had hidden** — both fixed in **PR #449**:
 
-**Sequencing for merge:** the WIF tofu change is **not yet applied** (security-sensitive; left for
-explicit review). It must be `tofu apply`'d for branch previews to authenticate — but it's
-independent of the CORS deploy. Order doesn't matter for CORS; previews simply won't auth until
-the WIF apply lands.
+1. **Web baked `localhost:4000`.** The `Build web` step never passed `--dart-define=API_BASE_URL`,
+   so the deployed site used the client's compile-time default. This — not CORS — was the actual
+   login break the user observed; CORS was a real but secondary latent bug. Fixed by adding the
+   define to both web builds; the spec now mandates it (with the footgun called out).
+2. **APK upload `GcsApiError`.** `v2-github-action` had no write on `squadquest-v2-media` (only the
+   frontend buckets). My earlier *manual* `gcloud cp` worked only because it ran as owner —
+   masking the gap; CI-as-the-real-SA exposed it. Fixed with an `objectAdmin` grant in `tf/storage.tf`.
+
+Both lessons: a dry-run/manual verification done as a privileged identity can hide IAM gaps and
+build-config omissions that only the real CI identity + real build path reveal. The spec
+(`behaviors/ci-cd.md`) now encodes both so they can't silently regress.
+
+PRs: #448 (CORS + APK job + previews + WIF), #449 (web-prod-URL + media-bucket IAM fixes).
 
 ## Follow-ups
 
-(closeout)
+- **Deferred (documented in `behaviors/ci-cd.md`):** stale branch previews are not auto-pruned on
+  branch delete — bucket grows unbounded with merged/abandoned branches. A cleanup-on-delete
+  workflow is the eventual fix; not blocking.
+- **Tracked elsewhere — `v2-test-env-isolation` (not yet stubbed):** the `MIN_SUPPORTED_BUILD`
+  process-wide env leak in the bun test suite still stands; the CORS resolver sidesteps it by being
+  a pure function, but the underlying footgun remains. (Flagged repeatedly; still wants a stub.)
+- **None** for iOS preview/APK publishing — out of scope (Android-only flavors this stage).
