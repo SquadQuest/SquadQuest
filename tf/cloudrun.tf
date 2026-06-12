@@ -110,6 +110,14 @@ resource "google_cloud_run_v2_service" "backend" {
         value = google_storage_bucket.media.name
       }
 
+      # CORS allow-list for browser clients. The v2 web app (prod + all path-based
+      # branch previews) shares this one origin; native clients aren't CORS-gated.
+      # See specs/api/conventions.md + behaviors/ci-cd.md.
+      env {
+        name  = "ALLOWED_ORIGINS"
+        value = "https://v2.squadquest.app"
+      }
+
       startup_probe {
         http_get {
           path = "/v1/health"

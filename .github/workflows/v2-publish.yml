@@ -89,3 +89,55 @@ jobs:
 
       - name: 'Deploy to Cloud Run'
         run: gcloud run deploy "$SERVICE" --image="$IMAGE" --region="$REGION" --quiet
+
+  # Build the `dev`-flavor Android APK pointed at prod and publish it to the media
+  # bucket as squadquest-dev-b<run_number>.apk (+ a stable -latest copy). The dev
+  # flavor (app.squadquest.dev) installs alongside v1 on a device. See
+  # specs/behaviors/ci-cd.md + architecture.md (build channels). Runs in parallel
+  # with the web + backend jobs; same WIF auth (gated to develop).
+  v2-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # AGP 9 / Gradle 9.1 need JDK 17+. GitHub runners ship a JDK, but pin it
+      # explicitly so the build doesn't drift with the runner image.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+
+      # build number = the run number (monotonic, traceable back to this run).
+      - name: Build dev APK (→ prod API)
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter build apk --release --flavor dev \
+            --dart-define=API_BASE_URL=https://api.squadquest.app \
+            --dart-define=CLIENT_HEADER=android/1.0.0+${{ github.run_number }}
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: 'v2-github-action@squadquest-d8665.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/902139539375/locations/global/workloadIdentityPools/github/providers/v2-github-actions'
+
+      - uses: 'google-github-actions/setup-gcloud@v3'
+
+      # Publish a build-numbered artifact + overwrite the stable "latest" link.
+      # public-read bucket + APK mime type so the link installs in one tap.
+      - name: Publish APK to media bucket
+        run: |
+          SRC=app/build/app/outputs/flutter-apk/app-dev-release.apk
+          MIME=application/vnd.android.package-archive
+          gcloud storage cp "$SRC" \
+            "gs://squadquest-v2-media/apk/squadquest-dev-b${{ github.run_number }}.apk" \
+            --content-type="$MIME"
+          gcloud storage cp "$SRC" \
+            "gs://squadquest-v2-media/apk/squadquest-dev-latest.apk" \
+            --content-type="$MIME" --cache-control="no-cache"

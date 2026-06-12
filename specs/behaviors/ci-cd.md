@@ -97,7 +97,11 @@ every path to the v2 bucket.
 ## Notes
 
 - Existing state this builds on: `v2-publish.yml` already does prod web + backend on `develop` via
-  WIF; the dev APK build recipe is `gradlew :app:assembleDevRelease` with base64 dart-defines (the
-  `flutter build apk` wrapper hangs headless). APKs already live under `squadquest-v2-media/apk/`.
+  WIF. APKs already live under `squadquest-v2-media/apk/`.
+- **Build command:** on CI, use the idiomatic `flutter build apk --release --flavor dev` with
+  `--dart-define`s — it handles flavor + defines cleanly on a hosted runner. (The
+  `./gradlew :app:assembleDevRelease` workaround with base64 dart-defines is only needed in the
+  local agent harness, where the `flutter build apk` wrapper hangs on a detached/no-TTY process —
+  not a CI concern.)
 - CORS is currently `origin: false` in production (web is blocked today) — the allow-list change
   is a live bug fix, not just preview enablement.

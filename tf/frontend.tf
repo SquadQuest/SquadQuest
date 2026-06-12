@@ -220,7 +220,13 @@ resource "google_iam_workload_identity_pool_provider" "v2" {
     "attribute.actor"            = "assertion.actor"
   }
 
-  attribute_condition = "assertion.repository == 'SquadQuest/SquadQuest' && assertion.ref=='refs/heads/develop'"
+  # Any branch in this repo EXCEPT v1 may mint a deploy token: develop runs the
+  # full publish; other branches publish a web preview (specs/behaviors/ci-cd.md).
+  # v1 is the protected production branch and must never deploy through the v2
+  # pipeline — excluded here AND at the preview workflow's branch filter (defense
+  # in depth). The SA's permissions are unchanged; this only widens which refs may
+  # assume it.
+  attribute_condition = "assertion.repository == 'SquadQuest/SquadQuest' && assertion.ref != 'refs/heads/v1'"
 
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
