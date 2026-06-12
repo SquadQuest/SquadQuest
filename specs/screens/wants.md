@@ -1,8 +1,8 @@
 # Screen: Wants ("Want to do")
 
-The signed-in user's personal backlog of activities they want to do (the `want` entity — see
-[`data-model.md`](../data-model.md), [`api/wants.md`](../api/wants.md)). Authenticated; this slice
-shows **only your own** wants.
+The user's loose, shared pre-activities — things they want to do and the friends they'd do them
+with, before there's a date (the `want` + `want_invite` entities — see
+[`data-model.md`](../data-model.md), [`api/wants.md`](../api/wants.md)). Authenticated.
 
 ## Route
 
@@ -10,30 +10,39 @@ shows **only your own** wants.
 
 ## Data Requirements
 
-- The caller's own wants via `GET /v1/wants` (active by default). Each item: topic label, optional
-  title/location/notes, `visibility`, `kind`, `archived_at`.
+- **Yours:** `GET /v1/wants` — wants the caller owns (with their `invitees` + each invitee's
+  response).
+- **Invited:** `GET /v1/wants/invited` — wants friends invited the caller to (with `your_response`).
 
 ## Display Rules
 
-- A list of the caller's **active** wants (newest first), each showing its topic label and, when
-  set, title + location. A small marker distinguishes `ongoing` (a standing aspiration) from
-  `one_shot`, and `shared` from `private`.
-- Empty state invites adding the first want ("Keep a list of things you want to do — add one tap to
-  turn it into a plan").
-- Archived wants are hidden by default (a promoted one-shot drops off the active list); an
-  optional toggle may reveal them (`?include_archived=true`).
+- Two groupings: **Yours** (wants you created) and **Invited** (wants friends added you to).
+- Each want shows its topic label and, when set, title + location. A small marker distinguishes
+  `ongoing` from `one_shot`.
+- **Yours:** show the invitee face-pile with their responses (who's `in` / `interested`). Never show
+  a "declined" — there is none; non-responders simply don't show a positive chip.
+- **Invited:** show who invited you + the three response controls (or your current response chip,
+  collapsed — same pattern as activity cards, see
+  [`behaviors/response-system.md`](../behaviors/response-system.md)).
+- Empty state invites adding the first want ("Got a 'we should do that sometime' with a friend?
+  Capture it here and make it happen").
+- Archived wants hidden by default (a promoted one-shot drops off).
 
 ## Actions
 
-- **Add** a want: pick a **topic** (required, the noun-verb taxonomy), optional title/location/
-  notes, choose **visibility** (private default) and **kind** (one_shot default). → `POST /v1/wants`.
-- **Edit / delete** a want (own only) → `PATCH` / `DELETE /v1/wants/:id`.
-- **Promote** (the headline action): one tap opens the existing **idea composer pre-filled** from
-  the want (topic locked in; title/location seed the option hints), letting the user publish to any
-  channel they can already post to (My Friends, a squad, the bring-friends bridge). On publish the
-  activity is created with `from_want` set; a `one_shot` want archives, an `ongoing` want stays.
-  Promote reuses the existing idea composer / [`POST /v1/ideas`](../api/wants.md#post-v1wantsidpromote)
-  — it does **not** add a parallel compose flow.
+- **Add** a want: pick a **topic** (required), optional title/location/notes, choose **kind**
+  (one_shot default), and optionally **invite accepted friends**. → `POST /v1/wants`.
+- **Invite / remove** friends on your want → `POST` / `DELETE /v1/wants/:id/invites…`. Only accepted
+  friends are invitable. Inviting is what shares the want.
+- **Respond** to a want you're invited to — **I'm in / Interested / Next time** (no decline; ignore
+  to passively dismiss; or **hide** it from your invited list). → `PUT` / `DELETE
+  /v1/wants/:id/response`, `DELETE /v1/wants/:id/invited`.
+- **Edit / delete** your own want → `PATCH` / `DELETE /v1/wants/:id`.
+- **Promote** (headline action, owner only): one tap opens the existing **idea composer pre-filled**
+  — topic locked in; **audience pre-filled to the want's invitees** (editable); title/location seed
+  the option hints. Publish to any channel you can already post to. The activity is created with
+  `from_want` set; a `one_shot` archives, an `ongoing` stays. Promote reuses the composer — **no**
+  parallel compose flow.
 
 ## Navigation
 
@@ -45,10 +54,13 @@ shows **only your own** wants.
 **Inherited:**
 
 - [Private-first](../principles.md#private-first-public-never-touches-the-friends-surface) —
-  a want's `shared` visibility is "a friend may browse my backlog," never public; private wants are
-  owner-only. (Friend-browsing itself is a later stage; this screen shows only your own.)
+  a want reaches a friend only via an explicit invite; an un-invited want is yours alone. Nothing
+  public.
+- [Lower the stakes of participation](../principles.md#lower-the-stakes-of-participation) —
+  responding to a want invite is the same three soft options with a silent dismiss; no one is shown
+  a "no".
 
 ## Notes
 
 - A want is **upstream** of an idea (a latent intent), distinct from a *draft* (an idea you started
-  composing). This screen is the backlog, not a drafts folder.
+  composing). This screen is the shared backlog, not a drafts folder.

@@ -130,30 +130,43 @@ Text + photo posts. Covers both **squad top-level messages** and **thread replie
 
 ### want
 
-A personal **backlog of activities a user wants to do** — generic ("go wakeboarding") to specific
-("check out Wonderland Garden in Fishtown"). See [`api/wants.md`](api/wants.md) and
-[`screens/wants.md`](screens/wants.md).
+A **loose, shared pre-activity**: an intent to do something + the friends you'd do it with,
+captured *before* there's a time or place. The product's founding use case — running into a friend
+and saying "I keep my paddleboard in my car, you keep your kayak — let's go to FDR lake soon!" —
+is a want: friend each other, create the want, invite them, and when it's mutual, one tap promotes
+it to a real dated plan. See [`api/wants.md`](api/wants.md) and [`screens/wants.md`](screens/wants.md).
 
 - `id`, `owner` → profile, `activity_type` → topic (**required** — every want is "ready to go",
   carrying the same noun-verb taxonomy as an activity, so promotion is one tap)
 - `title` (optional free text), `location` (optional display string), `notes` (optional)
-- `visibility ∈ {private, shared}` — `private` is owner-only; `shared` *may* be browsed by accepted
-  friends (the friend-read surface + overlap matching are later stages; until then all reads are
-  owner-only). `shared` ≠ public — see
-  [private-first](principles.md#private-first-public-never-touches-the-friends-surface).
 - `kind ∈ {one_shot, ongoing}` — a `one_shot` is a single thing to do (archives once promoted); an
   `ongoing` is a standing aspiration that **spawns activities repeatedly** and never archives on
   promote.
 - `archived_at` (null = active; set when a `one_shot` is promoted)
 - `created_at`, `updated_at`
 
+**Privacy is derived, not declared.** There is no `visibility` flag: a want with **no invitees is
+private** to the owner; inviting a friend shares it with **exactly** that friend. Impossible to
+misconfigure — "keep it private" just means "don't add anyone." See
+[private-first](principles.md#private-first-public-never-touches-the-friends-surface).
+
 **Why its own entity, not an `activity` state.** A one-shot want is *nearly* an unpublished
-activity — but an **`ongoing`** want is the deciding case: an `activity` is event-shaped and
-*confirms to a time + place*, whereas an ongoing want never confirms and instead **spawns
-activities again and again**. An activity can't be a factory of itself, so wants sit one layer
-above. **Promote = spawn:** a new `activity` is created (with `from_want` set), reusing the normal
-idea-create path; the want is never flipped in place. The `visibility` axis is **orthogonal to
-`activity.scope`** — it answers "can a friend browse my backlog," not "who do I broadcast this to."
+activity — but two things put it one layer above: (1) an **`ongoing`** want never confirms to a
+time + place; it **spawns activities again and again**, and an activity can't be a factory of
+itself; (2) a want's invitees are *people I'd like to do this with someday*, distinct from an
+activity's audience (*who I'm posting this dated plan to now*). **Promote = spawn:** a new
+`activity` is created (with `from_want` set; the want's invitees pre-fill the new idea's audience),
+reusing the normal idea-create path; the want is never flipped in place.
+
+### want_invite
+
+A friend the owner has tagged onto a want, with that friend's soft response. (`want`, `profile`,
+`response ∈ {in, interested, next_time} | null`). Reuses the activity **response vocabulary** (see
+[`behaviors/response-system.md`](behaviors/response-system.md)): `null` = invited-not-yet-responded;
+there is **no decline** — ignoring is the passive dismiss, never surfaced to the owner as a "no".
+The owner sees only positive signal (who's `in` / `interested`). Inviting a friend is what makes a
+want shared (and visible) to that friend; an invite never grants the friend edit rights, only the
+ability to see it and respond. Unique on (`want`, `profile`).
 
 ---
 
