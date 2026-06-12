@@ -19,8 +19,10 @@ beforeEach(async () => {
   await server.sql`truncate otp_code, refresh_token, profile cascade`
 })
 
-// Build kept high: a sibling suite (auth.test.ts) sets MIN_SUPPORTED_BUILD=500
-// process-wide, and these files share one bun-test process.
+// Explicit high build so this suite never depends on another's env: auth.test.ts
+// raises MIN_SUPPORTED_BUILD during its lifecycle (now restored in its afterAll),
+// but files share one bun-test process with no guaranteed ordering, so a suite
+// that cares about the floor sets its own client build rather than assume the default.
 const auth = { 'x-squadquest-client': 'web/9.9.9+999' }
 
 test('console OTP: request then verify with the logged code logs in', async () => {

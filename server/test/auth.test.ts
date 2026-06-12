@@ -2,16 +2,20 @@ import { afterAll, beforeAll, expect, test } from 'bun:test'
 import Fastify, { type FastifyInstance } from 'fastify'
 
 // Base test env (DATABASE_URL, JWT_SECRET) comes from test/setup.ts (bun preload).
-// This suite raises the client-version floor to exercise the 426 path; set before
-// importing the app so @fastify/env picks it up.
-process.env.MIN_SUPPORTED_BUILD = '500'
-
 const { app } = await import('../src/app.ts')
 
 const logs: Array<Record<string, unknown>> = []
 let server: FastifyInstance
 
+// This suite raises the client-version floor to exercise the 426 path. @fastify/env
+// reads process.env at registration (in beforeAll), so set it just before register
+// and RESTORE it in afterAll — bun runs all test files in one process, so a
+// top-level mutation would leak the floor into every other suite (it has, twice).
+let priorFloor: string | undefined
+
 beforeAll(async () => {
+  priorFloor = process.env.MIN_SUPPORTED_BUILD
+  process.env.MIN_SUPPORTED_BUILD = '500'
   server = Fastify({
     logger: {
       level: 'info',
@@ -33,6 +37,9 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await server.close()
+  // Restore the floor so it can't bleed into other suites in the shared process.
+  if (priorFloor === undefined) delete process.env.MIN_SUPPORTED_BUILD
+  else process.env.MIN_SUPPORTED_BUILD = priorFloor
 })
 
 function lastOtp(): string {
