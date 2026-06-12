@@ -50,12 +50,17 @@ export const friendship = pgTable(
   (t) => [unique('friendship_pair').on(t.requester, t.requestee)],
 )
 
+// official = curated, takes preference everywhere; community = user-created
+// (arrives with the activity-types taxonomy plan). See specs/data-model.md.
+export const topicKind = pgEnum('topic_kind', ['official', 'community'])
+
 // The interest taxonomy (noun-verb, e.g. "Go Hiking").
 export const topic = pgTable('topic', {
   id: uuid('id').primaryKey().defaultRandom(),
   noun: text('noun').notNull(),
   verb: text('verb').notNull(),
   label: text('label').notNull(),
+  kind: topicKind('kind').notNull().default('official'),
 })
 
 // Per-user interest subscriptions.
