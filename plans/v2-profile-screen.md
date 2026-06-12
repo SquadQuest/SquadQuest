@@ -1,12 +1,12 @@
 ---
-status: planned
+status: done
 depends: [v2-storage-media]
 specs:
   - specs/screens/profile.md
   - specs/api/profile.md
   - specs/api/uploads.md
 issues: []
-pr:
+pr: 456
 ---
 
 # Plan: v2 profile screen (view/edit name + photo, sign out)
@@ -56,14 +56,16 @@ app bar).
 
 ## Validation
 
-- [ ] `/profile` renders current name + photo + read-only phone; reachable from the timeline
-      avatar.
-- [ ] Changing the photo and saving persists (`PATCH /v1/me`), avatar updates app-wide; a
-      photo-only save (name untouched) works; Save guard keeps first name non-empty.
-- [ ] Sign out works from the profile screen; the timeline no longer carries a standalone logout
-      button.
-- [ ] `flutter analyze` + widget tests clean; CI `app` job.
-- [ ] (on-device) build `squadquest-dev-b{N}.apk`, set a photo from the phone, confirm it sticks.
+- [x] `/profile` renders current name + photo + read-only phone; reachable from the timeline
+      avatar (tappable photo/person-glyph button replacing the logout IconButton).
+- [x] Save guard verified: disabled until a change + non-empty first name; edit→`PATCH /v1/me`;
+      photo-only save supported (`updateProfile` sends only changed fields). Widget tests cover
+      render + guard + edit-patches.
+- [x] Sign out moved into the profile screen; the timeline no longer carries a standalone logout
+      button (no test referenced `logoutButton`).
+- [x] `flutter analyze` clean; full `flutter test` 25 pass (+3 new). CI `app` job.
+- [ ] **(post-merge, on-device)** open the auto-built dev APK/IPA, set a photo from the phone,
+      confirm it persists — exercises the real upload + PATCH end-to-end.
 
 ## Risks / unknowns
 
@@ -74,8 +76,21 @@ app bar).
 
 ## Notes
 
-(closeout)
+PR #456. Built as planned — pure client wiring, no API change. The screen reads the current
+profile from `authControllerProvider.currentProfile` (the router already gates `/profile` behind
+`SignedIn`, so it's always populated in `initState`), reuses `PhotoPicker(currentUrl:)`, and Saves
+via the existing `updateProfile` (sends only changed fields → photo-only save works). Sign-out
+relocated from the timeline app bar into the profile screen; the app bar now shows a tappable
+avatar (photo or person glyph) → `/profile`.
+
+Test note: the profile screen needs a `SignedIn` auth state, which starts as `AuthLoading` until
+`_restore()` runs. The widget test seeds a fake `TokenStore` (preset token, no-op `load`) + fake
+repo and mounts the screen behind a small gate that waits for `SignedIn` — mirroring the real
+router so `initState` sees a profile.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred (noted in `specs/screens/profile.md`):** clearing a photo (empty-string `photo`) — the
+  API supports it but there's no UI affordance yet. Low priority.
+- **None** otherwise — notification-preference editing and other-user profiles remain out of scope
+  for this screen.
