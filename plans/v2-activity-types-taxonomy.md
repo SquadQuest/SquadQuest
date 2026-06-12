@@ -29,8 +29,14 @@ community types into each other and/or **into official types** (e.g. "bball" + "
 - **`origin/ctufts/topic-exploration`** v7 prototype — 23 topics × 6 categories with verbs +
   semantic-similarity + related-topic maps (a starting structure for categories + search/merge).
 - **The v1 topics database** — a large, messy, organically-grown real corpus. "The way I built them
-  sucked and people went wild, but it IS a good data source." **Needs a Chris export** (live
-  Supabase, not in-repo) — drives both the curated official set *and* the merge/dedupe heuristics.
+  sucked and people went wild, but it IS a good data source." **Export received** (99 topics,
+  `topics_rows.csv`) and already mined for the official seed expansion (→ 53 categorized official
+  topics; see `v2-activity-types-seed`). It surfaced the **Music** + **Civic** categories and a
+  realistic picture of duplicate/genre-spam/junk — i.e. the exact merge-and-dedupe problem this
+  plan's review process must solve. Still useful here as: (a) the **community-type backlog**
+  (legit-but-niche v1 names — full.moon, drone performance, samba, brass band, formula1-watch — as
+  candidate *community* types, not official), and (b) **fixtures for the merge heuristics**
+  (dot-prefix → category mapping; near-dupes like camp/camping, dancing/dance.party).
 
 ## Anticipated spec surface (specs-first at pickup)
 

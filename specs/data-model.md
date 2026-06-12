@@ -39,14 +39,17 @@ Unique on (requester, requestee).
 ### topic + topic_subscription
 
 The interest taxonomy (noun-verb, e.g. "Go Hiking", "Play Basketball") and per-user
-subscriptions. `topic`: id, noun, verb, display label, `kind ∈ {official, community}`.
-`topic_subscription`: (topic, profile). Used to surface ideas to friends who share an interest.
+subscriptions. `topic`: id, noun, verb, display label, `kind ∈ {official, community}`,
+`category` (nullable). `topic_subscription`: (topic, profile). Used to surface ideas to friends
+who share an interest.
 
-- **`kind`** — `official` types are curated and **take preference everywhere**; a starter set is
-  seeded (see `plans/v2-activity-types-seed.md`). `community` types are user-created and arrive
-  with the full taxonomy (create-on-the-fly + review/merge) — see
-  `plans/v2-activity-types-taxonomy.md`. Categories, `created_by`, and merge tombstones land with
-  that plan.
+- **`kind`** — `official` types are curated and **take preference everywhere**; a starter set of
+  ~53 across 8 categories is seeded (see `plans/v2-activity-types-seed.md`). `community` types are
+  user-created and arrive with the full taxonomy (create-on-the-fly + review/merge) — see
+  `plans/v2-activity-types-taxonomy.md`.
+- **`category`** — coarse grouping (Sports, Outdoors, Games, Food & Drink, Arts, Music, Social,
+  Civic) for browse/filtering. A richer model (multi-category, browse surface, `created_by`, merge
+  tombstones) lands with the taxonomy plan.
 
 ---
 
