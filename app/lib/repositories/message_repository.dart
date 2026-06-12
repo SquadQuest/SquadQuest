@@ -1,11 +1,22 @@
 import '../api/api_client.dart';
 import '../models/message.dart';
 
-/// Free-text messages: squad posts + thread replies (specs/api/messages.md).
+/// Free-text + photo messages: squad posts + thread replies (specs/api/messages.md).
+/// Attachments come from POST /v1/uploads (kind `message`); a message needs body or
+/// at least one attachment.
 abstract class MessageRepository {
-  Future<Message> postSquadMessage(String squadId, String body);
+  Future<Message> postSquadMessage(
+    String squadId,
+    String body, {
+    List<MessageAttachment> attachments,
+  });
   Future<List<Message>> thread(String targetType, String targetId);
-  Future<Message> reply(String targetType, String targetId, String body);
+  Future<Message> reply(
+    String targetType,
+    String targetId,
+    String body, {
+    List<MessageAttachment> attachments,
+  });
 }
 
 class ApiMessageRepository implements MessageRepository {
@@ -13,11 +24,24 @@ class ApiMessageRepository implements MessageRepository {
 
   final ApiClient apiClient;
 
+  Map<String, dynamic> _body(
+    String body,
+    List<MessageAttachment> attachments,
+  ) => {
+    if (body.isNotEmpty) 'body': body,
+    if (attachments.isNotEmpty)
+      'attachments': attachments.map((a) => a.toJson()).toList(),
+  };
+
   @override
-  Future<Message> postSquadMessage(String squadId, String body) async {
+  Future<Message> postSquadMessage(
+    String squadId,
+    String body, {
+    List<MessageAttachment> attachments = const [],
+  }) async {
     final res = await apiClient.post(
       '/v1/squads/$squadId/messages',
-      body: {'body': body},
+      body: _body(body, attachments),
     );
     return Message.fromJson(res);
   }
@@ -33,10 +57,15 @@ class ApiMessageRepository implements MessageRepository {
   }
 
   @override
-  Future<Message> reply(String targetType, String targetId, String body) async {
+  Future<Message> reply(
+    String targetType,
+    String targetId,
+    String body, {
+    List<MessageAttachment> attachments = const [],
+  }) async {
     final res = await apiClient.post(
       '/v1/threads/$targetType/$targetId/messages',
-      body: {'body': body},
+      body: _body(body, attachments),
     );
     return Message.fromJson(res);
   }
