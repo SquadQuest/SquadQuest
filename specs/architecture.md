@@ -22,15 +22,21 @@ sideloaded test build is a distinct app from the store build:
 - **`prod`** (default) — `applicationId app.squadquest`, label "SquadQuest". The real store
   identity; preserves the v1 bundle id per the update path above.
 - **`dev`** — `app.squadquest.dev`, label "SquadQuest Dev". Installs *alongside* v1/prod on the
-  same device (a same-id/different-signing-key APK is a hard Android install block, which a
-  debug-signed `app.squadquest` build would hit). Used for the milestone APKs published to the
-  media bucket for on-device testing.
+  same device (a same-id/different-signing-key build is a hard install block, which a debug-signed
+  `app.squadquest` build would hit). Used for the milestone builds published to
+  `v2.squadquest.app/downloads/` for on-device testing (see [`behaviors/ci-cd.md`](behaviors/ci-cd.md)).
 
-Both currently sign with the debug key; a release keystore is a later step. Flavors are
-**Android-only** for now — iOS schemes/xcconfig flavors are a deferred follow-up, so
-`flutter build ipa --flavor …` isn't wired yet. The API base URL and client header are
-per-build `--dart-define`s (`API_BASE_URL`, `CLIENT_HEADER`), independent of flavor — a dev
-APK points at prod `https://api.squadquest.app` unless told otherwise.
+Both platforms carry the `dev` flavor:
+
+- **Android** — a Gradle `channel` product flavor (`app/android/app/build.gradle.kts`).
+- **iOS** — an Xcode `dev` scheme + `Release-dev`/`Debug-dev`/`Profile-dev` build configs setting
+  the dev bundle id + display name, so `flutter build ipa --flavor dev` works. Generated
+  reproducibly by the idempotent `app/ios/tool/add_dev_flavor.rb` and committed to the project.
+
+Android dev APKs sign with the debug key; the iOS dev build is ad-hoc-signed (a release keystore /
+App Store signing are later steps). The API base URL and client header are per-build
+`--dart-define`s (`API_BASE_URL`, `CLIENT_HEADER`), independent of flavor — a dev build points at
+prod `https://api.squadquest.app` unless told otherwise.
 
 ## Backend: custom Fastify/Bun + Postgres (not Supabase)
 

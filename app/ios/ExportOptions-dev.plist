@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Export options for the SquadQuest Dev ad-hoc IPA (specs/behaviors/ci-cd.md).
+  teamID is substituted by CI from the APPLE_TEAM_ID secret (__APPLE_TEAM_ID__).
+  The provisioning profile must be named exactly "SquadQuest Dev Ad Hoc" in the
+  Apple Developer portal and cover app.squadquest.dev.
+-->
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>ad-hoc</string>
+  <key>teamID</key>
+  <string>__APPLE_TEAM_ID__</string>
+  <key>signingStyle</key>
+  <string>manual</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>app.squadquest.dev</key>
+    <string>SquadQuest Dev Ad Hoc</string>
+  </dict>
+</dict>
+</plist>

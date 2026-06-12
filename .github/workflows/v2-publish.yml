@@ -146,3 +146,96 @@ jobs:
           gcloud storage cp "$SRC" \
             "gs://v2.squadquest.app/downloads/squadquest-dev-latest.apk" \
             --content-type="$MIME" --cache-control="no-cache"
+
+  # Build the SquadQuest Dev iOS IPA (ad-hoc) + publish an OTA install page to the
+  # v2 bucket alongside the APK. Gated on the IOS_PUBLISH_ENABLED repo variable so
+  # the (paid) macOS runner is skipped until Apple signing is set up — flip the
+  # variable on once the app.squadquest.dev provisioning profile + secrets exist.
+  # Requires repo secrets: APPLE_CERTIFICATE_BASE64, APPLE_CERTIFICATE_PASSWORD,
+  # APPLE_PROVISIONING_PROFILE_BASE64 (profile "SquadQuest Dev Ad Hoc" covering
+  # app.squadquest.dev), APPLE_TEAM_ID. See specs/behaviors/ci-cd.md.
+  v2-ipa:
+    if: vars.IOS_PUBLISH_ENABLED == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+
+      - name: Install Apple certificate and provisioning profile
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 12)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          echo "$CERTIFICATE_BASE64" | base64 -d > "$CERTIFICATE_PATH"
+          security import "$CERTIFICATE_PATH" -P "$CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+
+          # Provisioning profile must be filed under its own UUID for Xcode to find it.
+          PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision
+          echo "$PROVISION_PROFILE_BASE64" | base64 -d > "$PROFILE_PATH"
+          PROFILE_UUID=$(security cms -D -i "$PROFILE_PATH" | grep -A1 UUID | grep string | sed 's/.*<string>//;s/<\/string>.*//')
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$PROFILE_UUID".mobileprovision
+
+      - name: Build signed IPA (→ prod API)
+        working-directory: app
+        run: |
+          flutter pub get
+          # Substitute the team id into the export options (kept out of the repo).
+          sed -i '' "s/__APPLE_TEAM_ID__/${{ secrets.APPLE_TEAM_ID }}/g" ios/ExportOptions-dev.plist
+          # --flavor dev resolves to the Xcode `dev` scheme (Release-dev config →
+          # app.squadquest.dev / "SquadQuest Dev"); see ios/tool/add_dev_flavor.rb.
+          flutter build ipa --release --flavor dev \
+            --build-name=1.0.0 --build-number=${{ github.run_number }} \
+            --dart-define=API_BASE_URL=https://api.squadquest.app \
+            --dart-define=CLIENT_HEADER=ios/1.0.0+${{ github.run_number }} \
+            --export-options-plist=ios/ExportOptions-dev.plist
+          mv build/ios/ipa/*.ipa build/ios/ipa/squadquest-dev.ipa
+
+      - name: Stamp OTA manifest + install page
+        working-directory: app
+        run: |
+          VERSION="1.0.0 (b${{ github.run_number }})"
+          sed -i '' "s/__BUILD_VERSION__/${VERSION}/g" ios/ota/manifest.plist ios/ota/index.html
+
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          service_account: 'v2-github-action@squadquest-d8665.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/902139539375/locations/global/workloadIdentityPools/github/providers/v2-github-actions'
+
+      - uses: 'google-github-actions/setup-gcloud@v3'
+
+      # Co-host the IPA next to the manifest so the OTA software-package URL is a
+      # direct HTTPS download (OTA install breaks on redirects). manifest.plist +
+      # the install page land under downloads/ too; all no-cache so a new build
+      # shows immediately. Install page: https://v2.squadquest.app/downloads/
+      - name: Publish IPA + OTA install page
+        working-directory: app
+        run: |
+          DL="gs://v2.squadquest.app/downloads"
+          gcloud storage cp build/ios/ipa/squadquest-dev.ipa \
+            "$DL/squadquest-dev-b${{ github.run_number }}.ipa" \
+            --content-type="application/octet-stream"
+          gcloud storage cp build/ios/ipa/squadquest-dev.ipa \
+            "$DL/squadquest-dev-latest.ipa" \
+            --content-type="application/octet-stream" --cache-control="no-cache"
+          gcloud storage cp ios/ota/manifest.plist "$DL/manifest.plist" \
+            --content-type="text/xml" --cache-control="no-cache"
+          gcloud storage cp ios/ota/index.html "$DL/index.html" \
+            --content-type="text/html" --cache-control="no-cache"
