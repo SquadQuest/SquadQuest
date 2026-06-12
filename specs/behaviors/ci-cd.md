@@ -44,6 +44,12 @@ preview of develop as incidental, not a separate product surface.
 - Web builds use `--pwa-strategy=none` (no service worker — it otherwise serves a stale build
   until a second reload) and are uploaded with `Cache-Control: no-cache` so deploys show up
   immediately (CDN is off; traffic is tiny).
+- **Web builds MUST pass `--dart-define=API_BASE_URL=https://api.squadquest.app`** (and a
+  `web/<version>+<run_number>` `CLIENT_HEADER`). The client's compile-time default is
+  `http://localhost:4000` (see `app/lib/config.dart`), so a web build *without* this define ships
+  pointing at localhost and every API call from the deployed site fails — this bit prod once.
+  Both the root publish and the branch-preview build carry these defines. (The API origin is the
+  same for prod web and every path-based preview, so the CORS allow-list is unaffected.)
 
 ### Web preview origin & CORS
 

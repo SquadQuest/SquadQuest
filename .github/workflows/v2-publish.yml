@@ -33,7 +33,9 @@ jobs:
         working-directory: app
         run: |
           flutter pub get
-          flutter build web --pwa-strategy=none
+          flutter build web --pwa-strategy=none \
+            --dart-define=API_BASE_URL=https://api.squadquest.app \
+            --dart-define=CLIENT_HEADER=web/1.0.0+${{ github.run_number }}
 
       - uses: 'google-github-actions/auth@v2'
         with:
