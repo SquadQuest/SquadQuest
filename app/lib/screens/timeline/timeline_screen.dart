@@ -60,12 +60,14 @@ class TimelineScreen extends ConsumerWidget {
             tooltip: 'People',
             onPressed: () => context.push('/friends'),
           ),
-          IconButton(
-            key: const Key('logoutButton'),
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+          // Tap your avatar → profile (view/edit name+photo, sign out).
+          _ProfileAvatarButton(
+            photo: ref
+                .watch(authControllerProvider.notifier)
+                .currentProfile
+                ?.photo,
           ),
+          const SizedBox(width: 8),
         ],
       ),
       // Communities are leaders-broadcast: followers don't compose here.
@@ -176,6 +178,29 @@ class TimelineScreen extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// App-bar avatar that opens the profile screen. Shows the user's photo, or a
+/// person glyph when none is set (so the entry point is always visible).
+class _ProfileAvatarButton extends StatelessWidget {
+  const _ProfileAvatarButton({this.photo});
+
+  final String? photo;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = photo != null && photo!.isNotEmpty;
+    return IconButton(
+      key: const Key('profileButton'),
+      tooltip: 'Profile',
+      onPressed: () => context.push('/profile'),
+      icon: CircleAvatar(
+        radius: 14,
+        foregroundImage: hasPhoto ? NetworkImage(photo!) : null,
+        child: hasPhoto ? null : const Icon(Icons.person, size: 18),
       ),
     );
   }
