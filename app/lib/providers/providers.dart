@@ -18,6 +18,8 @@ import '../repositories/timeline_repository.dart';
 import '../repositories/token_store.dart';
 import '../repositories/topic_repository.dart';
 import '../repositories/upload_repository.dart';
+import '../repositories/want_repository.dart';
+import '../models/want.dart';
 import 'auth_controller.dart';
 
 /// Dependency-injection providers. Repositories expose abstract types so tests
@@ -78,6 +80,10 @@ final communityRepositoryProvider = Provider<CommunityRepository>(
   (ref) => ApiCommunityRepository(apiClient: ref.watch(apiClientProvider)),
 );
 
+final wantRepositoryProvider = Provider<WantRepository>(
+  (ref) => ApiWantRepository(apiClient: ref.watch(apiClientProvider)),
+);
+
 /// The My Friends timeline (specs/screens/friends-timeline.md).
 final friendsTimelineProvider = FutureProvider<TimelinePage>(
   (ref) => ref.watch(timelineRepositoryProvider).friends(),
@@ -104,6 +110,16 @@ final squadsProvider = FutureProvider<List<Squad>>(
 /// Activity types for the compose-idea form (specs/api/ideas-activities.md).
 final topicsProvider = FutureProvider<List<Topic>>(
   (ref) => ref.watch(topicRepositoryProvider).list(),
+);
+
+/// The caller's own wants (specs/screens/wants.md).
+final ownWantsProvider = FutureProvider<List<Want>>(
+  (ref) => ref.watch(wantRepositoryProvider).listOwn(),
+);
+
+/// Wants the caller has been invited to.
+final invitedWantsProvider = FutureProvider<List<Want>>(
+  (ref) => ref.watch(wantRepositoryProvider).listInvited(),
 );
 
 /// The user's accepted friends (for squad member selection + the Friends screen).
