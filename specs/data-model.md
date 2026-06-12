@@ -39,8 +39,14 @@ Unique on (requester, requestee).
 ### topic + topic_subscription
 
 The interest taxonomy (noun-verb, e.g. "Go Hiking", "Play Basketball") and per-user
-subscriptions. `topic`: id, noun, verb, display label. `topic_subscription`: (topic,
-profile). Used to surface ideas to friends who share an interest.
+subscriptions. `topic`: id, noun, verb, display label, `kind ∈ {official, community}`.
+`topic_subscription`: (topic, profile). Used to surface ideas to friends who share an interest.
+
+- **`kind`** — `official` types are curated and **take preference everywhere**; a starter set is
+  seeded (see `plans/v2-activity-types-seed.md`). `community` types are user-created and arrive
+  with the full taxonomy (create-on-the-fly + review/merge) — see
+  `plans/v2-activity-types-taxonomy.md`. Categories, `created_by`, and merge tombstones land with
+  that plan.
 
 ---
 
