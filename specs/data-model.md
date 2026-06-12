@@ -27,9 +27,14 @@ yet logged in). One per phone.
 ### friendship
 
 The double-opt-in graph. `requester` → `profile`, `requestee` → `profile`, `status ∈
-{requested, accepted, declined}`. A pair is "friends" when `accepted`. The friends-network
-(direct friends, and friends-of-friends for discovery) is derived from this. Unique on
-(requester, requestee).
+{requested, accepted}`, plus `ignored_at` (null = visible to the requestee; set = the requestee
+ignored it — it stays `requested` but leaves their incoming list for their Ignored list, and the
+sender still sees only a pending request). A pair is "friends" when `accepted`. There is **no
+`declined`** status — a visible decline would violate
+[dismissal is silent and reversible](principles.md#dismissal-is-silent-and-reversible); ignoring is
+the silent, recoverable replacement (see [`behaviors/friend-connections.md`](behaviors/friend-connections.md)).
+The friends-network (direct friends, and friends-of-friends for discovery) is derived from this.
+Unique on (requester, requestee).
 
 ### topic + topic_subscription
 

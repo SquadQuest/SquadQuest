@@ -31,3 +31,8 @@ Every idea/activity card and thread header (`screens/friends-timeline.md`,
 
 - [Lower the stakes](../principles.md#lower-the-stakes-of-participation) — three soft
   options and a no-friction passive dismiss; never force a visible "no".
+- [Dismissal is silent and reversible](../principles.md#dismissal-is-silent-and-reversible) —
+  "not responding is the dismiss" is the original instance of this app-wide rule: ignoring an
+  idea/activity is indistinguishable to the captain from never having seen it. (Idea/activity
+  responses aren't recoverable from the Ignored list — there's nothing to undo; the item is still
+  on the timeline.)
