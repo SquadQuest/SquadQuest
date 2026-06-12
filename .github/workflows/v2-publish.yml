@@ -131,15 +131,18 @@ jobs:
 
       - uses: 'google-github-actions/setup-gcloud@v3'
 
-      # Publish a build-numbered artifact + overwrite the stable "latest" link.
-      # public-read bucket + APK mime type so the link installs in one tap.
-      - name: Publish APK to media bucket
+      # Publish a build-numbered artifact + overwrite the stable "latest" link to
+      # the v2 frontend bucket under downloads/ (served via the LB at
+      # https://v2.squadquest.app/downloads/...). Same bucket as the web build;
+      # the CI SA already has write there. APK mime type so it installs in one tap;
+      # no-cache on -latest so a new build is picked up immediately.
+      - name: Publish APK
         run: |
           SRC=app/build/app/outputs/flutter-apk/app-dev-release.apk
           MIME=application/vnd.android.package-archive
           gcloud storage cp "$SRC" \
-            "gs://squadquest-v2-media/apk/squadquest-dev-b${{ github.run_number }}.apk" \
+            "gs://v2.squadquest.app/downloads/squadquest-dev-b${{ github.run_number }}.apk" \
             --content-type="$MIME"
           gcloud storage cp "$SRC" \
-            "gs://squadquest-v2-media/apk/squadquest-dev-latest.apk" \
+            "gs://v2.squadquest.app/downloads/squadquest-dev-latest.apk" \
             --content-type="$MIME" --cache-control="no-cache"
