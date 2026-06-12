@@ -47,9 +47,11 @@ A dev iOS build is distributed **over-the-air** (no App Store / TestFlight) for 
 devices, mirroring the APK link:
 
 - **Identity:** `app.squadquest.dev`, display name "SquadQuest Dev" — matches the Android dev
-  flavor. iOS has no committed Flutter flavor (Android-only at this stage), so the CI job
-  retargets the Runner at build time (rewrite `PRODUCT_BUNDLE_IDENTIFIER` → `app.squadquest.dev`,
-  `CFBundleDisplayName` → "SquadQuest Dev"). A proper iOS xcconfig flavor is a later cleanup.
+  flavor. iOS has a committed `dev` **Xcode flavor** (a `dev` scheme + `Release-dev`/`Debug-dev`/
+  `Profile-dev` build configs that set the dev bundle id + display name), so the CI job builds with
+  a clean `flutter build ipa --flavor dev`. The flavor is generated reproducibly by the idempotent
+  `app/ios/tool/add_dev_flavor.rb` and committed to the project; see
+  [`architecture.md`](../architecture.md) build channels.
 - **Signing:** **ad-hoc**, manual signing via `ios/ExportOptions-dev.plist` (team id substituted
   from a secret; provisioning profile **"SquadQuest Dev Ad Hoc"** covering `app.squadquest.dev`).
   Installs only on devices whose UDID is in that profile — adding a tester means adding their UDID

@@ -166,17 +166,6 @@ jobs:
           channel: stable
           cache: true
 
-      # iOS has no committed `dev` flavor (Android-only), so retarget the Runner to
-      # the dev identity at build time: bundle id app.squadquest.dev + display name
-      # "SquadQuest Dev". Only the app target's PRODUCT_BUNDLE_IDENTIFIER is rewritten
-      # (RunnerTests lines are app.squadquest.RunnerTests and don't match).
-      - name: Retarget Runner to the dev identity
-        working-directory: app
-        run: |
-          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = app.squadquest;/PRODUCT_BUNDLE_IDENTIFIER = app.squadquest.dev;/g' \
-            ios/Runner.xcodeproj/project.pbxproj
-          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName SquadQuest Dev" ios/Runner/Info.plist
-
       - name: Install Apple certificate and provisioning profile
         env:
           CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
@@ -210,7 +199,9 @@ jobs:
           flutter pub get
           # Substitute the team id into the export options (kept out of the repo).
           sed -i '' "s/__APPLE_TEAM_ID__/${{ secrets.APPLE_TEAM_ID }}/g" ios/ExportOptions-dev.plist
-          flutter build ipa --release \
+          # --flavor dev resolves to the Xcode `dev` scheme (Release-dev config →
+          # app.squadquest.dev / "SquadQuest Dev"); see ios/tool/add_dev_flavor.rb.
+          flutter build ipa --release --flavor dev \
             --build-name=1.0.0 --build-number=${{ github.run_number }} \
             --dart-define=API_BASE_URL=https://api.squadquest.app \
             --dart-define=CLIENT_HEADER=ios/1.0.0+${{ github.run_number }} \
