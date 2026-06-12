@@ -45,6 +45,10 @@ export const activity = pgTable('activity', {
   confirmedTimeOptionId: uuid('confirmed_time_option_id'),
   confirmedLocationOptionId: uuid('confirmed_location_option_id'),
   communityEventId: uuid('community_event_id'),
+  // Set when this activity was spawned by promoting a want (back-link; plain uuid,
+  // no FK — avoids a circular activity↔want constraint, integrity enforced in the
+  // domain layer). See specs/data-model.md + api/wants.md.
+  fromWantId: uuid('from_want_id'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
