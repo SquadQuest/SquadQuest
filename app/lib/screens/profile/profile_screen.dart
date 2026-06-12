@@ -182,6 +182,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => context.push('/wants'),
                   ),
+                  ListTile(
+                    key: const Key('ignoredLink'),
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.visibility_off_outlined),
+                    title: const Text('Ignored'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/ignored'),
+                  ),
                   const SizedBox(height: 8),
                   TextButton.icon(
                     key: const Key('signOutButton'),

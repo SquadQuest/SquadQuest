@@ -19,8 +19,8 @@ class FakeFriendRepository implements FriendRepository {
   List<FriendRequest> outgoing;
 
   String? sentPhone;
-  String? respondedId;
-  bool? respondedAccept;
+  String? acceptedId;
+  String? ignoredId;
 
   @override
   Future<List<Friend>> list() async => friends;
@@ -36,10 +36,20 @@ class FakeFriendRepository implements FriendRepository {
   }
 
   @override
-  Future<void> respond(String requestId, {required bool accept}) async {
-    respondedId = requestId;
-    respondedAccept = accept;
+  Future<void> accept(String requestId) async {
+    acceptedId = requestId;
   }
+
+  @override
+  Future<void> ignore(String requestId) async {
+    ignoredId = requestId;
+  }
+
+  @override
+  Future<void> unignore(String requestId) async {}
+
+  @override
+  Future<List<IgnoredItem>> ignored() async => const [];
 }
 
 Widget _app(FakeFriendRepository fake) => ProviderScope(
@@ -76,9 +86,7 @@ void main() {
     expect(find.text('Jordan'), findsOneWidget);
   });
 
-  testWidgets('accepting an incoming request calls respond(accept:true)', (
-    tester,
-  ) async {
+  testWidgets('accepting an incoming request calls accept()', (tester) async {
     final fake = FakeFriendRepository(
       incoming: const [
         FriendRequest(
@@ -91,12 +99,29 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('accept_r1')));
-    // Don't pumpAndSettle: the tile shows a transient spinner while responding.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(fake.respondedId, 'r1');
-    expect(fake.respondedAccept, true);
+    expect(fake.acceptedId, 'r1');
+  });
+
+  testWidgets('ignoring an incoming request calls ignore()', (tester) async {
+    final fake = FakeFriendRepository(
+      incoming: const [
+        FriendRequest(
+          id: 'r1',
+          profile: Friend(id: 'p1', firstName: 'Sam'),
+        ),
+      ],
+    );
+    await tester.pumpWidget(_app(fake));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('ignore_r1')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(fake.ignoredId, 'r1');
   });
 
   testWidgets('add-by-phone sends a request with the entered number', (

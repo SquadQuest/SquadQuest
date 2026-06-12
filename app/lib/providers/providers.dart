@@ -122,6 +122,11 @@ final invitedWantsProvider = FutureProvider<List<Want>>(
   (ref) => ref.watch(wantRepositoryProvider).listInvited(),
 );
 
+/// The caller's ignored incoming items (specs/screens/ignored.md).
+final ignoredItemsProvider = FutureProvider<List<IgnoredItem>>(
+  (ref) => ref.watch(friendRepositoryProvider).ignored(),
+);
+
 /// The user's accepted friends (for squad member selection + the Friends screen).
 final friendsProvider = FutureProvider<List<Friend>>(
   (ref) => ref.watch(friendRepositoryProvider).list(),

@@ -16,7 +16,13 @@ class FakeFriendRepository implements FriendRepository {
   @override
   Future<String> sendRequest(String phone) async => 'requested';
   @override
-  Future<void> respond(String requestId, {required bool accept}) async {}
+  Future<void> accept(String requestId) async {}
+  @override
+  Future<void> ignore(String requestId) async {}
+  @override
+  Future<void> unignore(String requestId) async {}
+  @override
+  Future<List<IgnoredItem>> ignored() async => const [];
 }
 
 void main() {

@@ -12,8 +12,16 @@ abstract class FriendRepository {
   /// `'requested'` or `'accepted'` (reciprocal/idempotent). See specs/api/friends.md.
   Future<String> sendRequest(String phone);
 
-  /// Accept/decline an incoming request (requestee only).
-  Future<void> respond(String requestId, {required bool accept});
+  /// Accept an incoming request (requestee only). There is no decline — see [ignore].
+  Future<void> accept(String requestId);
+
+  /// Ignore / un-ignore an incoming request. Silent (the sender still sees pending)
+  /// and recoverable from the Ignored surface. See the dismissal-is-silent principle.
+  Future<void> ignore(String requestId);
+  Future<void> unignore(String requestId);
+
+  /// The caller's ignored incoming items (friend requests + want invites), by type.
+  Future<List<IgnoredItem>> ignored();
 }
 
 class ApiFriendRepository implements FriendRepository {
@@ -43,10 +51,26 @@ class ApiFriendRepository implements FriendRepository {
   }
 
   @override
-  Future<void> respond(String requestId, {required bool accept}) async {
+  Future<void> accept(String requestId) async {
     await apiClient.put(
       '/v1/friends/requests/$requestId',
-      body: {'accept': accept},
+      body: {'accept': true},
     );
+  }
+
+  @override
+  Future<void> ignore(String requestId) async =>
+      apiClient.post('/v1/friends/requests/$requestId/ignore');
+
+  @override
+  Future<void> unignore(String requestId) async =>
+      apiClient.post('/v1/friends/requests/$requestId/unignore');
+
+  @override
+  Future<List<IgnoredItem>> ignored() async {
+    final res = await apiClient.get('/v1/ignored');
+    return ((res['items'] as List<dynamic>?) ?? const [])
+        .map((e) => IgnoredItem.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

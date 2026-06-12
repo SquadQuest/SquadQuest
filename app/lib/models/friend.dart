@@ -65,3 +65,38 @@ class FriendRequests {
         .toList(),
   );
 }
+
+/// An item the caller has ignored, from `GET /v1/ignored` (specs/screens/ignored.md).
+/// `type` is `friend_request` or `want_invite`; the other party is in [profile]
+/// (the sender of a request, or a want's owner). [title] is set for want invites.
+class IgnoredItem {
+  const IgnoredItem({
+    required this.id,
+    required this.type,
+    required this.profile,
+    this.title,
+    this.subtitle,
+  });
+
+  final String id;
+  final String type; // 'friend_request' | 'want_invite'
+  final Friend? profile;
+  final String? title;
+  final String? subtitle;
+
+  bool get isFriendRequest => type == 'friend_request';
+
+  factory IgnoredItem.fromJson(Map<String, dynamic> json) {
+    final type = json['type'] as String? ?? '';
+    // friend_request carries `profile`; want_invite carries `owner` + activity_type.
+    final p = (json['profile'] ?? json['owner']) as Map<String, dynamic>?;
+    final activityType = json['activity_type'] as Map<String, dynamic>?;
+    return IgnoredItem(
+      id: json['id'] as String,
+      type: type,
+      profile: p == null ? null : Friend.fromJson(p),
+      title: json['title'] as String? ?? activityType?['label'] as String?,
+      subtitle: activityType?['label'] as String?,
+    );
+  }
+}
