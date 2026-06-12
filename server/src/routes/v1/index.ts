@@ -12,6 +12,7 @@ import messageRoutes from './messages.ts'
 import communityRoutes from './communities.ts'
 import uploadRoutes from './uploads.ts'
 import wantRoutes from './wants.ts'
+import streamRoutes from './stream.ts'
 
 // The /v1 contract surface. All client-facing endpoints register under here so
 // the URL major version is the coarse contract boundary (see
@@ -29,6 +30,7 @@ const v1Routes: FastifyPluginAsync = async (fastify) => {
   await fastify.register(communityRoutes)
   await fastify.register(uploadRoutes)
   await fastify.register(wantRoutes)
+  await fastify.register(streamRoutes)
 }
 
 export default v1Routes

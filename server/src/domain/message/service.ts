@@ -80,6 +80,21 @@ export class MessageService {
     }
   }
 
+  // Boolean form of the thread visibility gate (for realtime fan-out, which decides
+  // per-subscriber rather than throwing). Same rules as assertCanSeeTarget.
+  async canSeeThread(
+    viewerId: string,
+    targetType: ThreadTargetType,
+    targetId: string,
+  ): Promise<boolean> {
+    try {
+      await this.assertCanSeeTarget(viewerId, targetType, targetId)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   async threadMessages(
     viewerId: string,
     targetType: ThreadTargetType,

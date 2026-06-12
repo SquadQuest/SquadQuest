@@ -6,6 +6,7 @@ import envPlugin from './plugins/env.ts'
 import dbPlugin from './db/index.ts'
 import clientVersionPlugin from './plugins/client-version.ts'
 import authPlugin from './plugins/auth.ts'
+import realtimePlugin from './realtime/index.ts'
 import { ApiError, sendError } from './contracts/errors.ts'
 import v1Routes from './routes/v1/index.ts'
 
@@ -45,6 +46,10 @@ export const app: FastifyPluginAsync = async (fastify) => {
   // specs/api/conventions.md).
   await fastify.register(clientVersionPlugin)
   await fastify.register(authPlugin)
+
+  // Realtime fan-out (SSE + LISTEN/NOTIFY) — decorates fastify.realtime. After db
+  // (uses fastify.sql.notify) + auth (stream route verifies tokens).
+  await fastify.register(realtimePlugin)
 
   // CORS allow-list (browser clients only — native apps send no Origin and are
   // never gated). Allowed origins come from ALLOWED_ORIGINS (comma-separated

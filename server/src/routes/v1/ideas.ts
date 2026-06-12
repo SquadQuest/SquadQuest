@@ -42,6 +42,13 @@ const ideaRoutes: FastifyPluginAsync = async (fastify) => {
         locationOptions: b.location_options,
         communityEventId: b.community_event_id,
       })
+      // Realtime nudge (enhancement; never blocks the write).
+      void fastify.realtime.publish({
+        type: 'activity.created',
+        id,
+        scope: b.scope ?? 'friends',
+        squad_id: b.squad_id,
+      })
       reply.code(201)
       return respond(request.profileId!, id)
     },
