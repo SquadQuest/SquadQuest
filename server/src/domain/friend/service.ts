@@ -1,4 +1,4 @@
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq, isNotNull, or } from 'drizzle-orm'
 
 import type { Database } from '../../db/index.ts'
 import { profile, friendship } from '../../db/schema/index.ts'
@@ -48,23 +48,17 @@ export class FriendService {
 
     if (edge) {
       if (edge.status === 'accepted') return 'accepted'
-      if (edge.status === 'requested') {
-        if (edge.requester === targetId) {
-          // They already requested me → my "send" is an accept.
-          await this.db
-            .update(friendship)
-            .set({ status: 'accepted' })
-            .where(eq(friendship.id, edge.id))
-          return 'accepted'
-        }
-        return 'requested' // I already requested them — idempotent.
+      // status === 'requested' (the only other value).
+      if (edge.requester === targetId) {
+        // They already requested me → my "send" is an accept. (If I'd ignored
+        // their request, accepting supersedes the ignore.)
+        await this.db
+          .update(friendship)
+          .set({ status: 'accepted', ignoredAt: null })
+          .where(eq(friendship.id, edge.id))
+        return 'accepted'
       }
-      // declined → re-open as a fresh request from me (decline is not a block).
-      await this.db
-        .update(friendship)
-        .set({ requester: me, requestee: targetId, status: 'requested' })
-        .where(eq(friendship.id, edge.id))
-      return 'requested'
+      return 'requested' // I already requested them — idempotent.
     }
 
     await this.db
@@ -103,19 +97,47 @@ export class FriendService {
       const other = byId.get(otherId)
       if (!other) continue
       const view = { id: e.id, profile: other, createdAt: e.createdAt }
-      if (e.requestee === me) incoming.push(view)
-      else outgoing.push(view)
+      if (e.requestee === me) {
+        // Ignored incoming requests leave this list for the Ignored surface; the
+        // sender's outgoing view is unaffected by whether the recipient ignored.
+        if (e.ignoredAt === null) incoming.push(view)
+      } else {
+        outgoing.push(view)
+      }
     }
     return { incoming, outgoing }
   }
 
-  // Accept/decline an incoming request. Requestee-only; a non-requestee (or a
-  // missing / already-resolved edge) is indistinguishable from not-found → 404.
-  async respond(
-    me: string,
-    requestId: string,
-    accept: boolean,
-  ): Promise<'accepted' | 'declined'> {
+  // Incoming requests the caller has ignored (for the Ignored recovery surface).
+  async listIgnoredRequests(me: string): Promise<FriendRequestView[]> {
+    const edges = await this.db
+      .select()
+      .from(friendship)
+      .where(
+        and(
+          eq(friendship.status, 'requested'),
+          eq(friendship.requestee, me),
+          isNotNull(friendship.ignoredAt),
+        ),
+      )
+    if (edges.length === 0) return []
+    const senderIds = edges.map((e) => e.requester)
+    const senders = await this.db
+      .select()
+      .from(profile)
+      .where(or(...senderIds.map((id) => eq(profile.id, id))))
+    const byId = new Map(senders.map((p) => [p.id, p]))
+    return edges
+      .map((e) => {
+        const other = byId.get(e.requester)
+        return other ? { id: e.id, profile: other, createdAt: e.createdAt } : null
+      })
+      .filter((v): v is FriendRequestView => v !== null)
+  }
+
+  // Resolve an incoming `requested` edge owned by the caller (requestee). A
+  // non-requestee / missing / accepted edge is indistinguishable from 404.
+  private async incomingEdgeOr404(me: string, requestId: string) {
     const [edge] = await this.db
       .select()
       .from(friendship)
@@ -123,8 +145,26 @@ export class FriendService {
     if (!edge || edge.requestee !== me || edge.status !== 'requested') {
       throw new ApiError(404, 'not_found', 'Request not found')
     }
-    const status = accept ? 'accepted' : 'declined'
-    await this.db.update(friendship).set({ status }).where(eq(friendship.id, edge.id))
-    return status
+    return edge
+  }
+
+  // Accept an incoming request. Requestee-only. (There is no decline — see ignore.)
+  async accept(me: string, requestId: string): Promise<'accepted'> {
+    const edge = await this.incomingEdgeOr404(me, requestId)
+    await this.db
+      .update(friendship)
+      .set({ status: 'accepted', ignoredAt: null })
+      .where(eq(friendship.id, edge.id))
+    return 'accepted'
+  }
+
+  // Ignore / un-ignore an incoming request. Silent (the edge stays `requested`, so
+  // the sender still sees pending) and recoverable. Requestee-only.
+  async setIgnored(me: string, requestId: string, ignored: boolean): Promise<void> {
+    const edge = await this.incomingEdgeOr404(me, requestId)
+    await this.db
+      .update(friendship)
+      .set({ ignoredAt: ignored ? new Date() : null })
+      .where(eq(friendship.id, edge.id))
   }
 }

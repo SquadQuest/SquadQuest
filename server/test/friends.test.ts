@@ -148,7 +148,7 @@ test('re-sending an existing request is idempotent (still one requested edge)', 
   expect(count).toBe(1)
 })
 
-test('declining leaves no connection; the pair can re-request later', async () => {
+test('ignoring is silent + recoverable; sender still sees pending', async () => {
   const alice = await makeUser('+12150001040')
   const bob = await makeUser('+12150001041')
 
@@ -162,35 +162,67 @@ test('declining leaves no connection; the pair can re-request later', async () =
     await server.inject({ method: 'GET', url: '/v1/friends/requests', headers: bob.auth })
   ).json().incoming[0].id
 
-  const declined = await server.inject({
+  // Bob ignores → silent (edge stays requested), recoverable.
+  const ignored = await server.inject({
+    method: 'POST',
+    url: `/v1/friends/requests/${reqId}/ignore`,
+    headers: bob.auth,
+  })
+  expect(ignored.json()).toEqual({ status: 'requested', ignored: true })
+
+  // It left Bob's incoming list but is in his Ignored surface.
+  expect(
+    (await server.inject({ method: 'GET', url: '/v1/friends/requests', headers: bob.auth }))
+      .json().incoming,
+  ).toHaveLength(0)
+  const ign = await server.inject({ method: 'GET', url: '/v1/ignored', headers: bob.auth })
+  expect(ign.json().items).toHaveLength(1)
+  expect(ign.json().items[0].type).toBe('friend_request')
+
+  // Alice (the sender) is UNAFFECTED — still sees a pending outgoing request.
+  expect(
+    (await server.inject({ method: 'GET', url: '/v1/friends/requests', headers: alice.auth }))
+      .json().outgoing,
+  ).toHaveLength(1)
+
+  // Bob un-ignores → it returns to his incoming list.
+  await server.inject({
+    method: 'POST',
+    url: `/v1/friends/requests/${reqId}/unignore`,
+    headers: bob.auth,
+  })
+  const back = await server.inject({
+    method: 'GET',
+    url: '/v1/friends/requests',
+    headers: bob.auth,
+  })
+  expect(back.json().incoming).toHaveLength(1)
+
+  // Still exactly one edge throughout.
+  const [{ count }] = await server.sql<{ count: number }[]>`
+    select count(*)::int as count from friendship`
+  expect(count).toBe(1)
+})
+
+test('there is no decline: PUT {accept:false} is rejected', async () => {
+  const alice = await makeUser('+12150001050')
+  const bob = await makeUser('+12150001051')
+  await server.inject({
+    method: 'POST',
+    url: '/v1/friends/requests',
+    headers: alice.auth,
+    payload: { phone: '+12150001051' },
+  })
+  const reqId = (
+    await server.inject({ method: 'GET', url: '/v1/friends/requests', headers: bob.auth })
+  ).json().incoming[0].id
+  const res = await server.inject({
     method: 'PUT',
     url: `/v1/friends/requests/${reqId}`,
     headers: bob.auth,
     payload: { accept: false },
   })
-  expect(declined.json()).toEqual({ status: 'declined' })
-
-  // No connection, nothing pending.
-  expect(
-    (await server.inject({ method: 'GET', url: '/v1/friends', headers: alice.auth })).json()
-      .items,
-  ).toHaveLength(0)
-  expect(
-    (await server.inject({ method: 'GET', url: '/v1/friends/requests', headers: alice.auth }))
-      .json().outgoing,
-  ).toHaveLength(0)
-
-  // Re-request reopens it (decline is not a block) — still one edge.
-  const reopened = await server.inject({
-    method: 'POST',
-    url: '/v1/friends/requests',
-    headers: alice.auth,
-    payload: { phone: '+12150001041' },
-  })
-  expect(reopened.json()).toEqual({ status: 'requested' })
-  const [{ count }] = await server.sql<{ count: number }[]>`
-    select count(*)::int as count from friendship`
-  expect(count).toBe(1)
+  expect(res.statusCode).toBe(400) // schema enum [true] rejects false
 })
 
 test('only the requestee may respond; others get 404', async () => {
