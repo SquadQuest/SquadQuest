@@ -60,6 +60,8 @@ tables. See [`behaviors/ideas-activities-lifecycle.md`](behaviors/ideas-activiti
 - `confirmed_time_option` / `confirmed_location_option` → option (null until confirmed)
 - `community_event` → community_event (null unless this is a **brought-along** plan; see
   [`behaviors/bring-friends-bridge.md`](behaviors/bring-friends-bridge.md))
+- `from_want` → want (null unless this activity was **spawned by promoting a want**; back-link
+  only — see `want` below)
 - `created_at`, `confirmed_at`
 
 ### time_option / location_option
@@ -125,6 +127,33 @@ Text + photo posts. Covers both **squad top-level messages** and **thread replie
     [`behaviors/thread-drawer.md`](behaviors/thread-drawer.md).
 - The **My Friends** timeline contains only ideas/activities — never free-text messages
   (those live in squads and threads). See [private-first](principles.md#private-first-public-never-touches-the-friends-surface).
+
+### want
+
+A personal **backlog of activities a user wants to do** — generic ("go wakeboarding") to specific
+("check out Wonderland Garden in Fishtown"). See [`api/wants.md`](api/wants.md) and
+[`screens/wants.md`](screens/wants.md).
+
+- `id`, `owner` → profile, `activity_type` → topic (**required** — every want is "ready to go",
+  carrying the same noun-verb taxonomy as an activity, so promotion is one tap)
+- `title` (optional free text), `location` (optional display string), `notes` (optional)
+- `visibility ∈ {private, shared}` — `private` is owner-only; `shared` *may* be browsed by accepted
+  friends (the friend-read surface + overlap matching are later stages; until then all reads are
+  owner-only). `shared` ≠ public — see
+  [private-first](principles.md#private-first-public-never-touches-the-friends-surface).
+- `kind ∈ {one_shot, ongoing}` — a `one_shot` is a single thing to do (archives once promoted); an
+  `ongoing` is a standing aspiration that **spawns activities repeatedly** and never archives on
+  promote.
+- `archived_at` (null = active; set when a `one_shot` is promoted)
+- `created_at`, `updated_at`
+
+**Why its own entity, not an `activity` state.** A one-shot want is *nearly* an unpublished
+activity — but an **`ongoing`** want is the deciding case: an `activity` is event-shaped and
+*confirms to a time + place*, whereas an ongoing want never confirms and instead **spawns
+activities again and again**. An activity can't be a factory of itself, so wants sit one layer
+above. **Promote = spawn:** a new `activity` is created (with `from_want` set), reusing the normal
+idea-create path; the want is never flipped in place. The `visibility` axis is **orthogonal to
+`activity.scope`** — it answers "can a friend browse my backlog," not "who do I broadcast this to."
 
 ---
 
