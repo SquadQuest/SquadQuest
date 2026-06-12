@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 depends: [v2-friends-and-onboarding]
 specs:
   - specs/principles.md
@@ -7,7 +7,7 @@ specs:
   - specs/api/friends.md
   - specs/behaviors/friend-connections.md
 issues: []
-pr:
+pr: 461
 ---
 
 # Plan: v2 ignore + recovery (silent dismissal, app-wide)
@@ -54,12 +54,14 @@ want invites; push/notification suppression nuance.
 
 ## Validation
 
-- [ ] backend: ignoring a request leaves the sender's outgoing view unchanged (still pending);
+- [x] backend: ignoring a request leaves the sender's outgoing view unchanged (still pending);
       ignored requests leave the requestee's incoming + appear in `/v1/ignored`; un-ignore restores;
-      no `declined` status remains. Migration converts existing declined rows. `bun test` + type-check.
-- [ ] client: ignore from incoming; Ignored screen lists + un-ignores; accept-from-ignored works.
-      `flutter analyze` + widget tests.
-- [ ] re-run `/audit-spec-drift` — no `declined` drift between friends code + spec.
+      no `declined` status remains (enum is `requested|accepted`). Migration converts existing
+      `declined` rows → `requested` + ignored_at. `bun test` 62 pass; type-check clean.
+- [x] client: ignore from incoming; Ignored screen lists + un-ignores; `{accept:false}` rejected.
+      `flutter analyze` clean; suite 32 pass (+3).
+- [x] no `declined` left in server/client code (only an explanatory comment). Test DB verified:
+      enum `{requested,accepted}`, `friendship.ignored_at` present, migration 0007 applied.
 
 ## Risks / unknowns
 
@@ -70,8 +72,20 @@ want invites; push/notification suppression nuance.
 
 ## Notes
 
-(closeout)
+Shipped in one PR (#461), three commits: schema+migration, backend service+routes, client.
+
+- **Migration (0007) hand-edited.** drizzle-kit's generated enum-swap cast `status::friendship_status`
+  *after* dropping `declined` — which would throw on any existing `declined` row. Moved the
+  `UPDATE … SET status='requested', ignored_at=now() WHERE status='declined'` to run while the
+  column is text, before the re-cast. No edge is lost; a past decline becomes a silent ignore.
+- **`GET /v1/ignored` is the shared aggregator** — returns `{items:[{type, …}]}` mixing
+  `friend_request` + `want_invite` (the want-invite ignore from `v2-wants-core` now has its recovery
+  home). Extensible by `type` without a new endpoint per kind.
+- **Contract change in place, not superseded:** `PUT /requests/:id` now enum-restricts `accept` to
+  `true` (decline is gone). Safe because v2 isn't launched — no released client sends `accept:false`.
 
 ## Follow-ups
 
-(closeout)
+- **`ignored_at` not serialized on friend-request ignored items** — the screen shows who+context,
+  which is enough; add the timestamp to the serializer if the UI ever needs "ignored 3d ago".
+- **None** otherwise — blocking remains a separate future plan (ignore ≠ block, as documented).

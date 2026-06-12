@@ -130,20 +130,34 @@ class _IncomingTile extends ConsumerStatefulWidget {
 class _IncomingTileState extends ConsumerState<_IncomingTile> {
   bool _busy = false;
 
-  Future<void> _respond(bool accept) async {
+  Future<void> _accept() async {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      await ref
-          .read(friendRepositoryProvider)
-          .respond(widget.request.id, accept: accept);
+      await ref.read(friendRepositoryProvider).accept(widget.request.id);
       ref.invalidate(friendRequestsProvider);
-      if (accept) ref.invalidate(friendsProvider);
+      ref.invalidate(friendsProvider);
     } catch (_) {
       if (mounted) {
         setState(() => _busy = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Couldn\'t respond. Try again.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _ignore() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(friendRepositoryProvider).ignore(widget.request.id);
+      ref.invalidate(friendRequestsProvider);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _busy = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn\'t ignore. Try again.')),
         );
       }
     }
@@ -171,16 +185,16 @@ class _IncomingTileState extends ConsumerState<_IncomingTile> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  key: Key('decline_${widget.request.id}'),
+                  key: Key('ignore_${widget.request.id}'),
                   icon: const Icon(Icons.close),
-                  tooltip: 'Decline',
-                  onPressed: () => _respond(false),
+                  tooltip: 'Ignore',
+                  onPressed: _ignore,
                 ),
                 IconButton(
                   key: Key('accept_${widget.request.id}'),
                   icon: const Icon(Icons.check),
                   tooltip: 'Accept',
-                  onPressed: () => _respond(true),
+                  onPressed: _accept,
                 ),
               ],
             ),

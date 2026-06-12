@@ -12,6 +12,7 @@ import 'screens/communities/create_community_screen.dart';
 import 'screens/communities/create_event_screen.dart';
 import 'screens/communities/discover_screen.dart';
 import 'screens/friends/friends_screen.dart';
+import 'screens/ignored/ignored_screen.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/squads/create_squad_screen.dart';
@@ -50,6 +51,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/friends', builder: (_, _) => const FriendsScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
       GoRoute(path: '/wants', builder: (_, _) => const WantsScreen()),
+      GoRoute(path: '/ignored', builder: (_, _) => const IgnoredScreen()),
       GoRoute(
         path: '/ideas/new',
         builder: (_, state) =>
