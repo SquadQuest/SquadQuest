@@ -1,9 +1,11 @@
 ---
-status: planned
+status: done
 depends: [v2-backend-infra]
-specs: []
+specs:
+  - specs/behaviors/realtime.md
+  - specs/api/conventions.md
 issues: []
-pr:
+pr: 465
 ---
 
 # Plan: v2 realtime (SSE + Postgres LISTEN/NOTIFY)
@@ -46,10 +48,16 @@ New `specs/behaviors/realtime.md` (the event set, delivery guarantees = best-eff
 
 ## Validation
 
-- [ ] server: NOTIFY on key writes; SSE delivers only visible events; suite + type-check.
-- [ ] client: a second session sees a new message/activity appear without manual refresh;
-      stream drop → app still works via pull-to-refresh.
-- [ ] (prod) SSE holds open on Cloud Run without premature timeout.
+- [x] server: NOTIFY on the key writes (activity.created on POST /ideas; message.created on squad
+      message + thread reply); SSE fan-out delivers only to subscribers who pass the same visibility
+      gate as REST. `realtime.test.ts`: gated delivery + unsubscribe + malformed-payload resilience.
+      `bun test` 66 pass; type-check clean.
+- [x] client: `RealtimeService` parses the SSE stream → invalidates the matching providers
+      (timelines/thread); connection self-gates on auth + reconnects with backoff; pull-to-refresh
+      remains the fallback. Parser unit-tested (split frames, heartbeats, junk). `flutter analyze`
+      clean; suite 34 pass.
+- [ ] **(prod, post-merge)** confirm SSE holds open on Cloud Run without premature timeout, and a
+      second signed-in session sees a new message/activity appear without manual refresh.
 
 ## Risks / unknowns
 
@@ -61,8 +69,25 @@ New `specs/behaviors/realtime.md` (the event set, delivery guarantees = best-eff
 
 ## Notes
 
-(closeout)
+PR #465. Spec written first (`behaviors/realtime.md` + a tightened conventions.md realtime section).
+
+Key implementation choices:
+
+- **Events are id-only nudges to refetch**, never authoritative state — so the REST visibility gates
+  stay the single source of truth and a missed event only causes staleness, never incorrectness.
+- **Visibility reuse, not reimplementation:** the fan-out's per-subscriber `canSee` calls
+  `ActivityService.canView` / `SquadService.isMember` / `MessageService.canSeeThread` (a new boolean
+  wrapper over the existing thread gate) — the load-bearing privacy rule.
+- **Dual auth on `/v1/stream`:** Bearer header (native) OR `?access_token=` (browser EventSource
+  can't set headers); a `verifyAccessToken` helper added to the auth plugin.
+- **Client uses streamed dio, not EventSource** — works uniformly on mobile + web and lets native
+  clients use the header path.
+- **publish() never blocks the write** — NOTIFY failures are logged and swallowed (enhancement).
 
 ## Follow-ups
 
-(closeout)
+- **(prod validation, above):** confirm long-lived SSE survives Cloud Run's request timeout — the
+  open question carried from `v2-backend-infra`. `min_instances=1` keeps a single LISTEN connection
+  sufficient; revisit fan-out (Redis) only if/when multi-instance.
+- **Deferred (out of scope):** more event types (`response.changed`, `vote.changed`, `rsvp.changed`)
+  — additive when wanted; presence/typing; offline replay (`Last-Event-ID`).

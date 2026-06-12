@@ -163,6 +163,11 @@ const squadRoutes: FastifyPluginAsync = async (fastify) => {
         request.body.body ?? '',
         request.body.attachments ?? [],
       )
+      void fastify.realtime.publish({
+        type: 'message.created',
+        id: row.id,
+        squad_id: request.params.id,
+      })
       reply.code(201)
       return serializeMessage(fastify.db, row)
     },

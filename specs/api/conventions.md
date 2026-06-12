@@ -147,8 +147,13 @@ GET /v1/<list>?limit=50&before=<cursor>
   …) scoped to what the user may see.
 - Writes are ordinary POSTs; the resulting change fans out over SSE via Postgres
   `LISTEN/NOTIFY`.
-- Event payloads follow the same additive rule (only gain fields).
-- **Every screen must render correctly from a plain fetch**; SSE only makes it feel live.
+- Event payloads follow the same additive rule (only gain fields) and carry **ids only** — a nudge
+  to refetch through REST, never authoritative state.
+- **Auth:** the access token is accepted as the `Authorization: Bearer …` header **or** a
+  `?access_token=` query param (browser `EventSource` can't set headers). A `: ping` heartbeat
+  keeps the connection alive. Delivery is **best-effort / at-most-once** (no offline replay).
+- **Every screen must render correctly from a plain fetch**; SSE only makes it feel live. Full
+  contract + the per-subscriber visibility gate: [`behaviors/realtime.md`](../behaviors/realtime.md).
   See [realtime is an enhancement](../principles.md#realtime-is-an-enhancement-not-a-dependency).
 
 ## Storage (photos)

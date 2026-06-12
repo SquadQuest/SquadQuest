@@ -19,6 +19,7 @@ import '../repositories/token_store.dart';
 import '../repositories/topic_repository.dart';
 import '../repositories/upload_repository.dart';
 import '../repositories/want_repository.dart';
+import '../repositories/realtime_service.dart';
 import '../models/want.dart';
 import 'auth_controller.dart';
 
@@ -83,6 +84,46 @@ final communityRepositoryProvider = Provider<CommunityRepository>(
 final wantRepositoryProvider = Provider<WantRepository>(
   (ref) => ApiWantRepository(apiClient: ref.watch(apiClientProvider)),
 );
+
+final realtimeServiceProvider = Provider<RealtimeService>((ref) {
+  final svc = RealtimeService(
+    baseUrl: apiBaseUrl,
+    tokenStore: ref.read(tokenStoreProvider),
+  );
+  ref.onDispose(svc.dispose);
+  return svc;
+});
+
+/// Connects the SSE stream while signed in and turns each event into a Riverpod
+/// cache invalidation (a nudge to refetch — never the source of truth). A dropped
+/// stream just means staler-until-refresh; pull-to-refresh stays the fallback.
+/// See specs/behaviors/realtime.md. Kept alive by a watch in the app shell.
+final realtimeConnectionProvider = Provider<void>((ref) {
+  final auth = ref.watch(authControllerProvider);
+  final svc = ref.watch(realtimeServiceProvider);
+  if (auth is! SignedIn) {
+    svc.stop();
+    return;
+  }
+  final sub = svc.events.listen((event) {
+    switch (event.type) {
+      case 'activity.created':
+        ref.invalidate(friendsTimelineProvider);
+        final sq = event.squadId;
+        if (sq != null) ref.invalidate(squadTimelineProvider(sq));
+      case 'message.created':
+        final sq = event.squadId;
+        if (sq != null) ref.invalidate(squadTimelineProvider(sq));
+        final tType = event.threadTargetType;
+        final tId = event.threadTargetId;
+        if (tType != null && tId != null) {
+          ref.invalidate(threadProvider('$tType:$tId'));
+        }
+    }
+  });
+  ref.onDispose(sub.cancel);
+  svc.start();
+});
 
 /// The My Friends timeline (specs/screens/friends-timeline.md).
 final friendsTimelineProvider = FutureProvider<TimelinePage>(

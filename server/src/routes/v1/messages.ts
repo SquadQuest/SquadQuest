@@ -102,6 +102,12 @@ const messageRoutes: FastifyPluginAsync = async (fastify) => {
         request.body.body ?? '',
         request.body.attachments ?? [],
       )
+      void fastify.realtime.publish({
+        type: 'message.created',
+        id: row.id,
+        thread_target_type: targetType,
+        thread_target_id: request.params.targetId,
+      })
       reply.code(201)
       return serializeMessage(fastify.db, row)
     },

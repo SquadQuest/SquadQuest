@@ -16,6 +16,10 @@ declare module 'fastify' {
     signAccessToken(profileId: string): string
     // preHandler that requires a valid bearer token; sets request.profileId.
     authenticate(request: FastifyRequest): Promise<void>
+    // Verify a raw access token → profile id, or null. For surfaces that can't use
+    // the preHandler (SSE accepts the token via ?access_token= since EventSource
+    // can't set headers). See specs/behaviors/realtime.md.
+    verifyAccessToken(token: string | undefined): string | null
   }
   interface FastifyRequest {
     profileId: string | null
@@ -42,6 +46,15 @@ export default fp(async (fastify) => {
   )
 
   fastify.decorateRequest('profileId', null)
+
+  fastify.decorate('verifyAccessToken', (token: string | undefined): string | null => {
+    if (!token) return null
+    try {
+      return (jwt.verify(token, secret) as AccessClaims).sub
+    } catch {
+      return null
+    }
+  })
 
   fastify.decorate('authenticate', async (request: FastifyRequest) => {
     const token = extractBearer(request)
