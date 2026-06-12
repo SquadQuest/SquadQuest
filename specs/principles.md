@@ -30,6 +30,30 @@ responding is the dismiss** — there is no explicit decline button.
 > social risk at the moment of participation is what kills them. Default to the
 > lower-pressure framing every time.
 
+## Dismissal is silent and reversible
+
+Anything one user sends another — a **friend request**, an event invite, a **want invite**, any
+future incoming item — the recipient can **ignore**: it leaves their screens, and the result is
+**indistinguishable to the sender from the recipient simply never having seen it**. There is no
+"declined" / "rejected" state shown to the sender, ever. The sender's view of what they sent does
+not change when the recipient ignores it (a pending request stays pending; an invite shows no
+"declined" marker).
+
+Ignoring is **reversible, never a black hole**: ignored items collect in an **Ignored** list
+(see [`screens/ignored.md`](screens/ignored.md)) the user can browse to un-ignore something. So
+"ignore" is safe to tap — it's *hide from me*, not *destroy*.
+
+Use **one consistent vocabulary** across the whole app: the verb is **Ignore**, the recovered-items
+surface is **Ignored**. Don't introduce synonyms ("dismiss", "decline", "reject", "hide") in UI
+copy or API field names for this action.
+
+> **Why.** This is [lower the stakes](#lower-the-stakes-of-participation) generalized from
+> responses to *every* incoming thing. A visible "no" — even a soft one — creates social friction
+> for both sides: the recipient feels rude declining, the sender feels rejected. Making dismissal
+> silent removes that friction entirely; making it reversible removes the fear of an irreversible
+> mistake. The existing "not responding is the dismiss" rule for idea/activity responses is one
+> instance of this principle; friend requests and want invites are others.
+
 ## Group text, not social feed
 
 Favor chat-like affordances — input at the bottom, scroll up for history, threads — over
