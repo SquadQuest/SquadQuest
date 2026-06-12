@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../providers/auth_controller.dart';
 import '../../widgets/photo_picker.dart';
@@ -170,6 +171,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Text('Save'),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  ListTile(
+                    key: const Key('wantsLink'),
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.checklist_outlined),
+                    title: const Text('Want to do'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/wants'),
                   ),
                   const SizedBox(height: 8),
                   TextButton.icon(

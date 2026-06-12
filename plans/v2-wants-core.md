@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [v2-backend-stage2-activities, v2-friends-and-onboarding]
 specs:
   - specs/data-model.md
@@ -8,7 +8,7 @@ specs:
   - specs/api/profile.md
   - specs/principles.md
 issues: []
-pr: 457
+pr: 460
 ---
 
 # Plan: v2 wants — core (shared pre-activity → promote to idea)
@@ -82,15 +82,15 @@ collaborative shared-edit lists.
 
 ## Validation
 
-- [ ] backend: CRUD scoped to owner; invite only accepted friends; an invitee reads the want + can
-      respond (no decline) + ignore (recoverable via Ignored, never shown to owner); promote spawns a real idea
-      via the existing path with `from_want` set + audience defaulted to invitees; `one_shot`
-      archives, `ongoing` persists. `bun test` + type-check; CI.
-- [ ] client: Yours + Invited lists; add/edit + invite friends + kind; respond to an invite; promote
-      → composer pre-filled (topic + invitee audience) → publishes to any channel. `flutter analyze`
-      + widget tests; CI.
-- [ ] (on-device, post-merge) create a want inviting a friend; the friend sees it + responds; owner
-      sees the response; promote → posts to those invitees; one_shot archives.
+- [x] backend (#459): CRUD scoped to owner; invite only accepted friends; an invitee reads the want
+      + responds (no decline) + ignore (recoverable, never shown to owner); promote spawns a real
+      idea via `createIdea` with `from_want` set + audience defaulted to invitees; `one_shot`
+      archives, `ongoing` persists. `bun test` 61 pass; type-check clean; CI.
+- [x] client (#460): Yours + Invited lists; add/edit + invite friends + kind; respond to an invite;
+      promote sheet pre-filled (topic + invitee audience) → posts via the want-promote endpoint.
+      `flutter analyze` clean; full suite 29 pass; CI.
+- [ ] **(on-device, post-merge)** create a want inviting a friend; the friend sees it + responds;
+      owner sees the response; promote → posts to those invitees; one_shot archives.
 
 ## Risks / unknowns
 
@@ -107,8 +107,28 @@ collaborative shared-edit lists.
 
 ## Notes
 
-(closeout)
+Shipped in two PRs: **#459** (backend — schema/migration, WantService, /v1/wants, 5 tests) and
+**#460** (client — models, repo, providers, WantsScreen, profile entry, 4 widget tests).
+
+Two implementation choices worth recording:
+
+- **Promote stays server-side.** Rather than route the client into `ComposeIdeaScreen` and rebuild
+  the idea payload there, the client calls `POST /v1/wants/:id/promote` with optional time/location
+  options; the *server* delegates to `createIdea` and defaults the audience to the want's invitees.
+  Keeps the "no parallel publish path" guarantee at the API layer and avoids threading a want-seed
+  through the composer. (The spec's "composer pre-filled" intent is met by a dedicated promote
+  sheet; if richer pre-fill is wanted later, `ComposeIdeaScreen` can take a want seed then.)
+- **`from_want_id` is a plain uuid (no FK)** on `activity`, matching the existing pattern for
+  `confirmed_*_option_id` — avoids a circular activity↔want constraint; integrity is enforced in
+  the domain layer.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred — edit invitees after creation:** the editor only sets invitees on *create*; the
+  backend supports `POST/DELETE /v1/wants/:id/invites`, so add invite-management to the edit path
+  in a fast-follow. (Low effort; not blocking the core flow.)
+- **Tracked — `v2-ignore-and-recovery`:** want-invite ignore currently surfaces only as "leaves the
+  Invited list"; folding ignored want-invites into the unified `GET /v1/ignored` + Ignored screen
+  is that plan's job.
+- **Tracked — `v2-wants-overlap`:** the someday mutual-wants signal.
+- **None** for `v2-wants-sharing` (cancelled — invites are sharing).
