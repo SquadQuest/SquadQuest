@@ -23,11 +23,9 @@ export const profile = pgTable('profile', {
     .defaultNow(),
 })
 
-export const friendshipStatus = pgEnum('friendship_status', [
-  'requested',
-  'accepted',
-  'declined',
-])
+// No `declined`: a dismissed request is ignored (silent + recoverable), never
+// declined. See principles.md#dismissal-is-silent-and-reversible.
+export const friendshipStatus = pgEnum('friendship_status', ['requested', 'accepted'])
 
 // The double-opt-in graph. A pair is "friends" when status = accepted.
 export const friendship = pgTable(
@@ -41,6 +39,10 @@ export const friendship = pgTable(
       .notNull()
       .references(() => profile.id, { onDelete: 'cascade' }),
     status: friendshipStatus('status').notNull().default('requested'),
+    // Set when the requestee ignored an incoming request: the edge stays
+    // `requested` (the sender still sees pending) but it leaves the requestee's
+    // incoming list for their Ignored surface. Silent + recoverable.
+    ignoredAt: timestamp('ignored_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
