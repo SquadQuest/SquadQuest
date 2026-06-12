@@ -3,7 +3,7 @@ status: in-progress
 depends: [v2-ci-cd-pipelines]
 specs:
   - specs/behaviors/ci-cd.md
-issues: []
+issues: [454]
 pr: 452
 ---
 
@@ -49,8 +49,8 @@ is co-hosted next to the manifest so the OTA `software-package` URL is a direct 
 ## Validation
 
 - [x] Workflow YAML valid; templates committed; spec documents the pipeline + setup prereqs.
-- [ ] **(blocked on user)** Apple setup: register `app.squadquest.dev`, create "SquadQuest Dev
-      Ad Hoc" profile with tester UDIDs, load 4 secrets, set `IOS_PUBLISH_ENABLED=true`.
+- [ ] **(blocked on user — issue #454)** Apple setup: register `app.squadquest.dev`, create
+      "SquadQuest Dev Ad Hoc" profile with tester UDIDs, load 4 secrets, set `IOS_PUBLISH_ENABLED=true`.
 - [ ] **(post-enable)** develop push builds + signs the IPA; `manifest.plist` + IPA + install page
       land under `downloads/`; OTA install works on a registered device from Safari.
 
