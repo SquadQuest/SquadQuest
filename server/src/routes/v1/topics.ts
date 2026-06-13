@@ -1,16 +1,45 @@
 import type { FastifyPluginAsync } from 'fastify'
-import { asc } from 'drizzle-orm'
 
-import { topic } from '../../db/schema/index.ts'
+import { TopicService } from '../../domain/topic/service.ts'
 import { serializeTopic } from '../../contracts/topic.ts'
 
-// GET /v1/topics — the activity types available when composing an idea.
-// See specs/api/ideas-activities.md.
+// Activity types: official-first list + search, and community create (dedicated;
+// on-the-fly lives on the ideas/wants routes). See specs/api/topics.md.
 const topicRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/topics', { preHandler: fastify.authenticate }, async () => {
-    const rows = await fastify.db.select().from(topic).orderBy(asc(topic.label))
-    return { items: rows.map(serializeTopic) }
-  })
+  const svc = new TopicService(fastify.db)
+
+  fastify.get<{ Querystring: { search?: string } }>(
+    '/topics',
+    { preHandler: fastify.authenticate },
+    async (request) => {
+      const rows = await svc.list(request.query.search)
+      return { items: rows.map(serializeTopic) }
+    },
+  )
+
+  // Create a community type. Normalized-match reuse → 200 with the existing topic;
+  // a genuinely new label → 201 with the created community topic.
+  fastify.post<{ Body: { label: string } }>(
+    '/topics',
+    {
+      preHandler: fastify.authenticate,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['label'],
+          properties: { label: { type: 'string' } },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { topic, created } = await svc.findOrCreate(
+        request.body.label,
+        request.profileId!,
+      )
+      reply.code(created ? 201 : 200)
+      return serializeTopic(topic)
+    },
+  )
 }
 
 export default topicRoutes

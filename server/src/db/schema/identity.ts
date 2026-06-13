@@ -65,6 +65,9 @@ export const topic = pgTable('topic', {
   // Civic). Nullable for now; a richer category model (browse, multi-category)
   // belongs to the activity-types taxonomy plan. See specs/data-model.md.
   category: text('category'),
+  // The profile who created a community type; null for official. Community types
+  // are user-created (on-the-fly or dedicated). See specs/api/topics.md.
+  createdBy: uuid('created_by').references(() => profile.id, { onDelete: 'set null' }),
 })
 
 // Per-user interest subscriptions.
