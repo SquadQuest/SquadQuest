@@ -1,0 +1,2 @@
+ALTER TABLE "topic" ADD COLUMN "created_by" uuid;--> statement-breakpoint
+ALTER TABLE "topic" ADD CONSTRAINT "topic_created_by_profile_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."profile"("id") ON DELETE set null ON UPDATE no action;
