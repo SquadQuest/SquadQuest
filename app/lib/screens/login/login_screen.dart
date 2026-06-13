@@ -42,6 +42,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  void _submitPhone() {
+    if (_busy) return;
+    _run(
+      () => ref
+          .read(authControllerProvider.notifier)
+          .requestOtp(_phone.text.trim()),
+    );
+  }
+
+  void _submitCode() {
+    if (_busy) return;
+    _run(
+      () => ref
+          .read(authControllerProvider.notifier)
+          .verifyOtp(_code.text.trim()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
@@ -70,6 +88,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _phone,
                     keyboardType: TextInputType.phone,
                     autofocus: true,
+                    textInputAction: TextInputAction.go,
+                    onSubmitted: (_) => _submitPhone(),
                     decoration: const InputDecoration(
                       labelText: 'Phone number',
                       hintText: '+1 215 555 0100',
@@ -79,13 +99,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 16),
                   FilledButton(
                     key: const Key('requestOtpButton'),
-                    onPressed: _busy
-                        ? null
-                        : () => _run(
-                            () => ref
-                                .read(authControllerProvider.notifier)
-                                .requestOtp(_phone.text.trim()),
-                          ),
+                    onPressed: _busy ? null : _submitPhone,
                     child: Text(_busy ? 'Sending…' : 'Send code'),
                   ),
                 ] else ...[
@@ -99,6 +113,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _code,
                     keyboardType: TextInputType.number,
                     autofocus: true,
+                    textInputAction: TextInputAction.go,
+                    onSubmitted: (_) => _submitCode(),
                     decoration: const InputDecoration(
                       labelText: 'Code',
                       hintText: '123456',
@@ -108,13 +124,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 16),
                   FilledButton(
                     key: const Key('verifyOtpButton'),
-                    onPressed: _busy
-                        ? null
-                        : () => _run(
-                            () => ref
-                                .read(authControllerProvider.notifier)
-                                .verifyOtp(_code.text.trim()),
-                          ),
+                    onPressed: _busy ? null : _submitCode,
                     child: Text(_busy ? 'Verifying…' : 'Verify'),
                   ),
                   TextButton(
