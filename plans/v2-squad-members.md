@@ -1,10 +1,10 @@
 ---
-status: in-progress
+status: done
 depends: []
 specs:
   - specs/screens/squads.md
 issues: []
-pr:
+pr: 473
 ---
 
 # Plan: v2 squad members — view roster + captain adds members
@@ -51,12 +51,12 @@ friend-gated by the existing backend rule (no inviting non-friends).
 
 ## Validation
 
-- [ ] `SquadDetailScreen` renders the roster from `GET /v1/squads/:id` with a captain badge.
-- [ ] Captain sees "Add members"; the picker excludes current members; tapping calls
+- [x] `SquadDetailScreen` renders the roster from `GET /v1/squads/:id` with a captain badge.
+- [x] Captain sees "Add members"; the picker excludes current members; tapping calls
       `addMember(squadId, profileId)` and the roster refreshes.
-- [ ] A non-captain member sees the roster read-only (no add affordance).
-- [ ] App-bar manage icon appears only for a squad context and routes to `/squads/:id`.
-- [ ] `flutter analyze` clean; `flutter test` green (incl. the new test).
+- [x] A non-captain member sees the roster read-only (no add affordance).
+- [x] App-bar manage icon appears only for a squad context and routes to `/squads/:id`.
+- [x] `flutter analyze` clean; `flutter test` green (39 tests, +2).
 
 ## Risks / unknowns
 
@@ -66,8 +66,15 @@ friend-gated by the existing backend rule (no inviting non-friends).
 
 ## Notes
 
-(closeout)
+Client-only: the backend (`POST /v1/squads/:id/members`, captain-only + friend-gated +
+idempotent) and the repo's `addMember`/`get` already existed, so this was purely the missing
+UI. The captain check reads the squad detail's `members[].role` against the signed-in
+`currentProfile` id (the detail fetch is authoritative, not the context). Entry point is the
+squad timeline's app-bar manage icon (user's call over the context selector). Add path reuses
+the create-squad friend-picker pattern, filtered to non-members. Shipped in #473.
 
 ## Follow-ups
 
-(closeout)
+- **Deferred to plan** — removing members / leaving a squad, rename, captain transfer /
+  multiple captains, per-member roles beyond captain/member. No plan filed yet; will spin one
+  when membership editing is prioritized.
