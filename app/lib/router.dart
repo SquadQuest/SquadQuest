@@ -16,6 +16,7 @@ import 'screens/ignored/ignored_screen.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/squads/create_squad_screen.dart';
+import 'screens/squads/squad_detail_screen.dart';
 import 'screens/wants/wants_screen.dart';
 import 'screens/thread/thread_screen.dart';
 import 'screens/timeline/timeline_screen.dart';
@@ -60,6 +61,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/squads/new',
         builder: (_, _) => const CreateSquadScreen(),
+      ),
+      GoRoute(
+        path: '/squads/:id',
+        builder: (_, state) =>
+            SquadDetailScreen(squadId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/communities',

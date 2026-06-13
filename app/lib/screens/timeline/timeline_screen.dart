@@ -22,6 +22,7 @@ class TimelineScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ctx = ref.watch(activeContextProvider);
     final isCommunity = ctx is CommunityContext;
+    final squadId = ctx is SquadContext ? ctx.id : null;
     final title = switch (ctx) {
       FriendsContext() => 'My Friends',
       SquadContext(:final name) => name,
@@ -54,6 +55,13 @@ class TimelineScreen extends ConsumerWidget {
               tooltip: 'Edit community',
               onPressed: () =>
                   context.push('/communities/new', extra: activeCommunity),
+            ),
+          if (squadId != null)
+            IconButton(
+              key: const Key('manageSquadButton'),
+              icon: const Icon(Icons.group_outlined),
+              tooltip: 'Squad members',
+              onPressed: () => context.push('/squads/$squadId'),
             ),
           IconButton(
             key: const Key('peopleButton'),
