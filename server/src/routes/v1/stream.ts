@@ -5,6 +5,7 @@ import { activity } from '../../db/schema/index.ts'
 import { ActivityService } from '../../domain/activity/service.ts'
 import { SquadService } from '../../domain/squad/service.ts'
 import { MessageService } from '../../domain/message/service.ts'
+import { isOriginAllowed, parseAllowedOrigins } from '../../app.ts'
 import type { RealtimeEvent } from '../../realtime/index.ts'
 
 const HEARTBEAT_MS = 25_000
@@ -14,6 +15,11 @@ const HEARTBEAT_MS = 25_000
 // refetch; a subscriber only receives an event it could see via REST. See
 // specs/behaviors/realtime.md.
 const streamRoutes: FastifyPluginAsync = async (fastify) => {
+  // This route hijacks the raw response (writeHead + reply.hijack), which bypasses
+  // @fastify/cors — so we must echo the CORS header here ourselves, reusing the same
+  // allow-list decision. Without this the web client (cross-origin) is blocked.
+  const allowedOrigins = parseAllowedOrigins(fastify.config.ALLOWED_ORIGINS)
+  const allowLocalhost = fastify.config.NODE_ENV !== 'production'
   const activities = new ActivityService(fastify.db)
   const squads = new SquadService(fastify.db)
 
@@ -60,12 +66,24 @@ const streamRoutes: FastifyPluginAsync = async (fastify) => {
         return
       }
 
+      // Echo the CORS origin (the hijacked raw response skips @fastify/cors).
+      const origin = request.headers.origin
+      const corsHeaders: Record<string, string> =
+        origin && isOriginAllowed(origin, allowedOrigins, allowLocalhost)
+          ? {
+              'Access-Control-Allow-Origin': origin,
+              'Access-Control-Allow-Credentials': 'true',
+              Vary: 'Origin',
+            }
+          : {}
+
       const res = reply.raw
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
         'X-Accel-Buffering': 'no',
+        ...corsHeaders,
       })
       res.write('retry: 3000\n\n') // client reconnect backoff hint
       res.write(': connected\n\n')
