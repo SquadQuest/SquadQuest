@@ -23,6 +23,13 @@ resource "google_cloud_run_v2_service" "backend" {
   location = "us-central1"
 
   template {
+    # Long-lived SSE (GET /v1/stream) is bounded by the request timeout. The 300s
+    # default forced a reconnect every 5 min (verified in prod); raise to the 60-min
+    # max so the heartbeat'd stream holds for an hour between reconnects. The client
+    # reconnects + refetches regardless (realtime is best-effort) — this just makes
+    # the cadence humane. See specs/behaviors/realtime.md + plans/v2-realtime-sse.md.
+    timeout = "3600s"
+
     vpc_access {
       connector = google_vpc_access_connector.backend.id
       egress    = "PRIVATE_RANGES_ONLY"

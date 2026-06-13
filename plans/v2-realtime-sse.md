@@ -56,8 +56,11 @@ New `specs/behaviors/realtime.md` (the event set, delivery guarantees = best-eff
       (timelines/thread); connection self-gates on auth + reconnects with backoff; pull-to-refresh
       remains the fallback. Parser unit-tested (split frames, heartbeats, junk). `flutter analyze`
       clean; suite 34 pass.
-- [ ] **(prod, post-merge)** confirm SSE holds open on Cloud Run without premature timeout, and a
-      second signed-in session sees a new message/activity appear without manual refresh.
+- [x] **(prod)** confirmed: SSE held cleanly with 25s heartbeats; the 300s Cloud Run request
+      timeout was the only limit (force-close at 302s). Raised `timeout` → 3600s (`tf/cloudrun.tf`,
+      PR #466) and re-verified a 375s hold with no error. The client reconnect+refetch covers the
+      hourly close. (Cross-session "see it live" left for on-device — the fan-out + invalidation are
+      unit-tested.)
 
 ## Risks / unknowns
 
