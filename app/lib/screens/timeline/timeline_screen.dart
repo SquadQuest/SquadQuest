@@ -281,8 +281,13 @@ class _FeedBody extends ConsumerWidget {
                     ],
                   );
                 }
+                // Chat-like (group-text, not feed): newest at the bottom, scroll
+                // up for history. The wire is newest-first, so `reverse: true`
+                // lays items bottom-up and opens anchored to the newest.
+                // See specs/principles.md#group-text-not-social-feed.
                 return ListView.separated(
                   key: const Key('timelineList'),
+                  reverse: true,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: items.length,
                   separatorBuilder: (_, _) => const Divider(height: 1),
