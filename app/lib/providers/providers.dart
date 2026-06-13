@@ -148,6 +148,12 @@ final squadsProvider = FutureProvider<List<Squad>>(
   (ref) => ref.watch(squadRepositoryProvider).list(),
 );
 
+/// A single squad's detail (roster + roles), keyed by squad id. Backs the
+/// squad-members screen (specs/screens/squads.md).
+final squadDetailProvider = FutureProvider.family<SquadDetail, String>(
+  (ref, squadId) => ref.watch(squadRepositoryProvider).get(squadId),
+);
+
 /// Activity types for the compose-idea form (specs/api/ideas-activities.md).
 final topicsProvider = FutureProvider<List<Topic>>(
   (ref) => ref.watch(topicRepositoryProvider).list(),
