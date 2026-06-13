@@ -40,16 +40,24 @@ Unique on (requester, requestee).
 
 The interest taxonomy (noun-verb, e.g. "Go Hiking", "Play Basketball") and per-user
 subscriptions. `topic`: id, noun, verb, display label, `kind ∈ {official, community}`,
-`category` (nullable). `topic_subscription`: (topic, profile). Used to surface ideas to friends
-who share an interest.
+`category` (nullable), `created_by` → profile (nullable). `topic_subscription`: (topic, profile).
+Used to surface ideas to friends who share an interest, and as the activity type on every
+idea/want/community-event.
 
-- **`kind`** — `official` types are curated and **take preference everywhere**; a starter set of
-  ~53 across 8 categories is seeded (see `plans/v2-activity-types-seed.md`). `community` types are
-  user-created and arrive with the full taxonomy (create-on-the-fly + review/merge) — see
-  `plans/v2-activity-types-taxonomy.md`.
+- **`kind`** — `official` types are curated and **take preference everywhere** (listed first,
+  canonical labels); a starter set of ~53 across 8 categories is seeded (see
+  `plans/v2-activity-types-seed.md`). `community` types are **user-created** (on the fly while
+  composing, or via a dedicated create) — see [`api/topics.md`](api/topics.md) and
+  `plans/v2-activity-types-community.md`.
+- **`created_by`** — the profile who created a `community` type; **null for official**.
 - **`category`** — coarse grouping (Sports, Outdoors, Games, Food & Drink, Arts, Music, Social,
-  Civic) for browse/filtering. A richer model (multi-category, browse surface, `created_by`, merge
-  tombstones) lands with the taxonomy plan.
+  Civic) for browse/filtering. Set on official types; null on community types until categorized.
+- **Normalized-label reuse (no near-dupes on create):** creating a type normalizes its label
+  (lowercase, trim, collapse internal whitespace, strip surrounding punctuation) and, if the
+  normalized form matches an existing topic's, **returns that topic** instead of inserting a
+  duplicate — so "hiking ", "Hiking", and "HIKING" all resolve to one. This is the only dedup at
+  create time; fuzzy/semantic merging + a `merged_into` tombstone are the **review/merge** stage
+  (`plans/v2-activity-types-merge.md`).
 
 ---
 
