@@ -60,6 +60,11 @@ export const app: FastifyPluginAsync = async (fastify) => {
   const allowLocalhost = fastify.config.NODE_ENV !== 'production'
   await fastify.register(cors, {
     credentials: true,
+    // @fastify/cors defaults `methods` to GET,HEAD,POST — so cross-origin
+    // PATCH/PUT/DELETE preflights fail. The API uses all of these (e.g.
+    // PATCH /v1/me, PUT /v1/ideas/:id/response, DELETE /v1/wants/:id), so list
+    // them explicitly. See specs/api/conventions.md (CORS).
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     // Off-list browser origins get no CORS headers echoed (browser blocks). Not an error.
     origin: (origin, cb) =>
       cb(null, isOriginAllowed(origin ?? undefined, allowedOrigins, allowLocalhost)),

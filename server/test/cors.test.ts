@@ -1,6 +1,9 @@
-import { expect, test } from 'bun:test'
+import { afterAll, beforeAll, expect, test } from 'bun:test'
+import Fastify, { type FastifyInstance } from 'fastify'
 
 import { isOriginAllowed, parseAllowedOrigins } from '../src/app.ts'
+
+const { app } = await import('../src/app.ts')
 
 // CORS allow-list resolver (specs/api/conventions.md, behaviors/ci-cd.md).
 // Pure-function tested so we don't mutate process-wide NODE_ENV/ALLOWED_ORIGINS.
@@ -42,4 +45,31 @@ test('empty allow-list blocks every browser origin (safe default)', () => {
   expect(isOriginAllowed('https://v2.squadquest.app', none, false)).toBe(false)
   // but still never blocks a no-Origin request
   expect(isOriginAllowed(undefined, none, false)).toBe(true)
+})
+
+// Integration: the preflight must allow mutating verbs. @fastify/cors defaults
+// `methods` to GET,HEAD,POST, which silently breaks cross-origin PATCH/PUT/DELETE
+// (e.g. PATCH /v1/me) on the web build. Lock that in. See conventions.md (CORS).
+test('preflight allows all mutating methods (PATCH/PUT/DELETE)', async () => {
+  const server: FastifyInstance = Fastify({ logger: false })
+  await server.register(app)
+  await server.ready()
+  try {
+    const res = await server.inject({
+      method: 'OPTIONS',
+      url: '/v1/me',
+      headers: {
+        // dev posture (NODE_ENV !== production) → localhost origin is allowed
+        origin: 'http://localhost:4000',
+        'access-control-request-method': 'PATCH',
+      },
+    })
+    const allowed = (res.headers['access-control-allow-methods'] ?? '') as string
+    for (const verb of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
+      expect(allowed).toContain(verb)
+    }
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:4000')
+  } finally {
+    await server.close()
+  }
 })

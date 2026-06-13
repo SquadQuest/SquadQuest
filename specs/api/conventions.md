@@ -26,6 +26,10 @@ governs only the **web** build.
   one allow-listed origin and needs no additional CORS entry.
 - An empty/unset `ALLOWED_ORIGINS` blocks all browser origins (safe default). Non-browser
   requests (no `Origin`) are never CORS-gated.
+- The preflight response must allow **every method the API uses** — `GET, HEAD, POST, PUT,
+  PATCH, DELETE, OPTIONS` — and `credentials`. A mutating verb missing from the allow-list
+  fails the browser preflight (e.g. `PATCH /v1/me`); native clients send no preflight, so a
+  gap here is invisible until exercised by the web build.
 
 ## Versioning
 
