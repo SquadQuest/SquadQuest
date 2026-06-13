@@ -6,6 +6,7 @@ import '../../models/friend.dart';
 import '../../models/topic.dart';
 import '../../models/want.dart';
 import '../../providers/providers.dart';
+import '../../widgets/topic_picker.dart';
 
 /// "Want to do" — the user's shared backlog (specs/screens/wants.md). Two groupings:
 /// Yours (with invitee responses) and Invited (with respond/ignore). Promote spawns a
@@ -223,7 +224,7 @@ class _WantEditorState extends ConsumerState<_WantEditor> {
   late final TextEditingController _title;
   late final TextEditingController _location;
   late final TextEditingController _notes;
-  String? _topicId;
+  TopicSelection? _topic;
   String _kind = 'one_shot';
   final Set<String> _invitees = {};
   bool _busy = false;
@@ -238,7 +239,11 @@ class _WantEditorState extends ConsumerState<_WantEditor> {
     _title = TextEditingController(text: w?.title ?? '');
     _location = TextEditingController(text: w?.location ?? '');
     _notes = TextEditingController(text: w?.notes ?? '');
-    _topicId = w?.activityTypeId;
+    if (w?.activityTypeId != null) {
+      _topic = TopicSelection.existing(
+        Topic(id: w!.activityTypeId!, label: w.activityTypeLabel ?? ''),
+      );
+    }
     _kind = w?.kind ?? 'one_shot';
   }
 
@@ -251,7 +256,7 @@ class _WantEditorState extends ConsumerState<_WantEditor> {
   }
 
   Future<void> _save() async {
-    if (_topicId == null) {
+    if (_topic == null || _topic!.isEmpty) {
       setState(() => _error = 'Pick an activity type');
       return;
     }
@@ -262,9 +267,10 @@ class _WantEditorState extends ConsumerState<_WantEditor> {
     try {
       final repo = ref.read(wantRepositoryProvider);
       if (_isEdit) {
+        // Edit only repoints to an existing topic (community create is for new wants).
         await repo.update(
           widget.existing!.id,
-          activityTypeId: _topicId,
+          activityTypeId: _topic!.topic?.id,
           title: _title.text.trim(),
           location: _location.text.trim(),
           notes: _notes.text.trim(),
@@ -272,7 +278,8 @@ class _WantEditorState extends ConsumerState<_WantEditor> {
         );
       } else {
         await repo.create(
-          activityTypeId: _topicId!,
+          activityTypeId: _topic!.topic?.id,
+          activityTypeLabel: _topic!.label,
           title: _title.text.trim().isEmpty ? null : _title.text.trim(),
           location: _location.text.trim().isEmpty
               ? null
@@ -295,7 +302,6 @@ class _WantEditorState extends ConsumerState<_WantEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final topics = ref.watch(topicsProvider);
     final friends = ref.watch(friendsProvider);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -309,22 +315,9 @@ class _WantEditorState extends ConsumerState<_WantEditor> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 16),
-          topics.when(
-            loading: () => const _Loading(),
-            error: (e, _) => _Err('$e'),
-            data: (list) => DropdownButtonFormField<String>(
-              key: const Key('wantTopicDropdown'),
-              initialValue: _topicId,
-              decoration: const InputDecoration(
-                labelText: 'Activity type',
-                border: OutlineInputBorder(),
-              ),
-              items: [
-                for (final Topic t in list)
-                  DropdownMenuItem(value: t.id, child: Text(t.label)),
-              ],
-              onChanged: (v) => setState(() => _topicId = v),
-            ),
+          TopicPicker(
+            selection: _topic,
+            onChanged: (s) => setState(() => _topic = s),
           ),
           const SizedBox(height: 12),
           TextField(

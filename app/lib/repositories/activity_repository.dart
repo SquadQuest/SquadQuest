@@ -6,9 +6,11 @@ import '../models/activity.dart';
 /// without a separate read. Friends/all_friends audience only this stage.
 abstract class ActivityRepository {
   /// Create an idea. Friends scope (default) → all_friends audience; squad scope →
-  /// pass [squadId] (visible to that squad's members).
+  /// pass [squadId]. Activity type: pass [activityTypeId] for an existing topic OR
+  /// [activityTypeLabel] to create-on-the-fly (server find-or-creates). Exactly one.
   Future<Activity> createIdea({
-    required String activityTypeId,
+    String? activityTypeId,
+    String? activityTypeLabel,
     bool allowSuggestions,
     List<String> timeOptions,
     List<String> locationOptions,
@@ -38,7 +40,8 @@ class ApiActivityRepository implements ActivityRepository {
 
   @override
   Future<Activity> createIdea({
-    required String activityTypeId,
+    String? activityTypeId,
+    String? activityTypeLabel,
     bool allowSuggestions = false,
     List<String> timeOptions = const [],
     List<String> locationOptions = const [],
@@ -48,7 +51,8 @@ class ApiActivityRepository implements ActivityRepository {
     final res = await apiClient.post(
       '/v1/ideas',
       body: {
-        'activity_type_id': activityTypeId,
+        'activity_type_id': ?activityTypeId,
+        'activity_type_label': ?activityTypeLabel,
         if (squadId != null) 'scope': 'squad',
         'squad_id': ?squadId,
         'community_event_id': ?communityEventId,

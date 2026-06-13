@@ -14,7 +14,8 @@ class FakeActivityRepository implements ActivityRepository {
 
   @override
   Future<Activity> createIdea({
-    required String activityTypeId,
+    String? activityTypeId,
+    String? activityTypeLabel,
     bool allowSuggestions = false,
     List<String> timeOptions = const [],
     List<String> locationOptions = const [],

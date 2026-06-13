@@ -11,7 +11,8 @@ abstract class WantRepository {
   Future<List<Want>> listInvited();
 
   Future<Want> create({
-    required String activityTypeId,
+    String? activityTypeId,
+    String? activityTypeLabel,
     String? title,
     String? location,
     String? notes,
@@ -71,7 +72,8 @@ class ApiWantRepository implements WantRepository {
 
   @override
   Future<Want> create({
-    required String activityTypeId,
+    String? activityTypeId,
+    String? activityTypeLabel,
     String? title,
     String? location,
     String? notes,
@@ -81,7 +83,8 @@ class ApiWantRepository implements WantRepository {
     final res = await apiClient.post(
       '/v1/wants',
       body: {
-        'activity_type_id': activityTypeId,
+        'activity_type_id': ?activityTypeId,
+        'activity_type_label': ?activityTypeLabel,
         'title': ?title,
         'location': ?location,
         'notes': ?notes,
