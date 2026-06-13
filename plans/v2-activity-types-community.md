@@ -1,11 +1,11 @@
 ---
-status: in-progress
+status: done
 depends: [v2-activity-types-seed]
 specs:
   - specs/data-model.md
   - specs/api/topics.md
 issues: []
-pr:
+pr: 469
 ---
 
 # Plan: v2 activity types — community create (slice 1 of the taxonomy)
@@ -60,12 +60,13 @@ label validation.
 
 ## Validation
 
-- [ ] backend: create a community topic (dedicated + on-the-fly); normalized dupe returns the
-      existing one (no new row); list is official-first + search filters; `created_by` set for
-      community, null for official. `bun test` + type-check; CI.
-- [ ] client: composer/want editor can pick an official type OR create a new one inline; list shows
-      official first. `flutter analyze` + widget tests; CI.
-- [ ] (on-device, post-merge) create "Disc Golf" on the fly, post an idea with it; re-typing
+- [x] backend (#468): create a community topic (dedicated + on-the-fly); normalized dupe returns
+      the existing one (no new row); list is official-first + `?search`; `created_by` set for
+      community, null for official. `bun test` 70 pass; type-check clean.
+- [x] client (#469): `TopicPicker` (searchable, official-first) lets the composer + want editor pick
+      an official type OR create a new one inline; on-the-fly posts via `activity_type_label`.
+      `flutter analyze` clean; suite 37 pass.
+- [ ] **(on-device, post-merge)** create "Disc Golf" on the fly, post an idea with it; re-typing
       "disc golf" reuses it.
 
 ## Risks / unknowns
@@ -80,8 +81,22 @@ label validation.
 
 ## Notes
 
-(closeout)
+Two PRs: **#468** (backend) + **#469** (client). The three risks all resolved as planned:
+
+- **Dedup** is normalized-match only (`normalizeLabel`: lowercase/trim/collapse-ws/strip-punct) →
+  reuse existing official-or-community topic, else insert. Fuzzy/semantic stays the merge slice.
+- **noun/verb for community types:** derived from the label (`noun = label, verb = ''`) — no
+  noun-verb form; create stays frictionless.
+- **On-the-fly contract:** routes resolve `activity_type_id` **or** `activity_type_label` via
+  `TopicService.resolveActivityType` *before* calling `createIdea`/want-create, so the domain
+  services stay id-only and existing id callers (bring-friends, wants-promote) are untouched.
+
+`TopicSelection` (existing topic | new label) is the client's picker contract; want **edit**
+repoints to existing topics only (community create is for new wants).
 
 ## Follow-ups
 
-(closeout)
+- **Tracked — `v2-activity-types-merge`:** admin review/merge of community dupes/junk into
+  official, `merged_into` tombstones, reference-repoint, a minimal admin authz tier.
+- **Tracked — `v2-activity-types-browse`:** browse-by-category UI + (maybe) multi-category model;
+  community types are created with `category = null` and get categorized there / via merge.

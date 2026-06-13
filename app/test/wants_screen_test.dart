@@ -35,7 +35,8 @@ class _FakeWantRepository implements WantRepository {
   // Unused in these tests:
   @override
   Future<Want> create({
-    required String activityTypeId,
+    String? activityTypeId,
+    String? activityTypeLabel,
     String? title,
     String? location,
     String? notes,

@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../api/api_exception.dart';
 import '../../models/activity.dart';
-import '../../models/topic.dart';
 import '../../providers/active_context.dart';
 import '../../providers/providers.dart';
+import '../../widgets/topic_picker.dart';
 
 /// Compose a new idea (specs/api/ideas-activities.md). When [broughtEvent] is set
 /// (the bring-friends bridge), the idea embeds that community event as read-only
@@ -21,7 +21,7 @@ class ComposeIdeaScreen extends ConsumerStatefulWidget {
 }
 
 class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
-  String? _topicId;
+  TopicSelection? _topic;
   bool _allowSuggestions = false;
   final _time = TextEditingController();
   final _location = TextEditingController();
@@ -39,7 +39,7 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
       raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
 
   Future<void> _submit() async {
-    if (_topicId == null) {
+    if (_topic == null || _topic!.isEmpty) {
       setState(() => _error = 'Pick an activity type');
       return;
     }
@@ -52,7 +52,8 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
       await ref
           .read(activityRepositoryProvider)
           .createIdea(
-            activityTypeId: _topicId!,
+            activityTypeId: _topic!.topic?.id,
+            activityTypeLabel: _topic!.label,
             allowSuggestions: _allowSuggestions,
             timeOptions: _split(_time.text),
             locationOptions: _split(_location.text),
@@ -80,7 +81,6 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final topics = ref.watch(topicsProvider);
     final ctx = ref.watch(activeContextProvider);
     // Audience clarity at the moment of action (context-selector principle).
     final destination = switch (ctx) {
@@ -132,27 +132,9 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
                 ],
               ),
             ),
-            topics.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-              error: (e, _) => Text('Couldn\'t load activity types.\n$e'),
-              data: (list) => DropdownButtonFormField<String>(
-                key: const Key('topicDropdown'),
-                initialValue: _topicId,
-                decoration: const InputDecoration(
-                  labelText: 'Activity type',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  for (final Topic t in list)
-                    DropdownMenuItem(value: t.id, child: Text(t.label)),
-                ],
-                onChanged: (v) => setState(() => _topicId = v),
-              ),
+            TopicPicker(
+              selection: _topic,
+              onChanged: (s) => setState(() => _topic = s),
             ),
             const SizedBox(height: 16),
             TextField(
