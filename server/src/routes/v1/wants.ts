@@ -3,12 +3,15 @@ import { eq } from 'drizzle-orm'
 
 import { activity } from '../../db/schema/index.ts'
 import { WantService } from '../../domain/want/service.ts'
+import { TopicService } from '../../domain/topic/service.ts'
 import { serializeWant, serializeWants } from '../../contracts/want.ts'
 import { serializeActivity } from '../../contracts/activity.ts'
 
 // Wants: a shared backlog of pre-activities (specs/api/wants.md). All authed.
+// activity_type_id OR activity_type_label (on-the-fly create); exactly one.
 interface CreateWantBody {
-  activity_type_id: string
+  activity_type_id?: string
+  activity_type_label?: string
   title?: string
   location?: string
   notes?: string
@@ -47,8 +50,12 @@ const wantRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: fastify.authenticate },
     async (request, reply) => {
       const b = request.body
+      const activityTypeId = await new TopicService(fastify.db).resolveActivityType(
+        { activityTypeId: b.activity_type_id, activityTypeLabel: b.activity_type_label },
+        request.profileId!,
+      )
       const view = await svc.create(request.profileId!, {
-        activityTypeId: b.activity_type_id,
+        activityTypeId,
         title: b.title,
         location: b.location,
         notes: b.notes,

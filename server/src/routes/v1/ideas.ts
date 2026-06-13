@@ -3,11 +3,14 @@ import { eq } from 'drizzle-orm'
 
 import { activity } from '../../db/schema/index.ts'
 import { ActivityService } from '../../domain/activity/service.ts'
+import { TopicService } from '../../domain/topic/service.ts'
 import { serializeActivity } from '../../contracts/activity.ts'
 
 // Wire (snake_case) body for POST /ideas — mapped to the domain's CreateIdeaInput.
+// activity_type_id OR activity_type_label (on-the-fly create); exactly one.
 interface CreateIdeaBody {
-  activity_type_id: string
+  activity_type_id?: string
+  activity_type_label?: string
   scope?: 'friends' | 'squad'
   squad_id?: string
   audience: { kind: 'all_friends' | 'people'; person_ids?: string[] }
@@ -32,8 +35,14 @@ const ideaRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: fastify.authenticate },
     async (request, reply) => {
       const b = request.body
+      // Resolve activity_type_id OR activity_type_label (on-the-fly create) → id.
+      const topics = new TopicService(fastify.db)
+      const activityTypeId = await topics.resolveActivityType(
+        { activityTypeId: b.activity_type_id, activityTypeLabel: b.activity_type_label },
+        request.profileId!,
+      )
       const id = await svc.createIdea(request.profileId!, {
-        activityTypeId: b.activity_type_id,
+        activityTypeId,
         scope: b.scope,
         squadId: b.squad_id,
         audience: { kind: b.audience.kind, personIds: b.audience.person_ids },
