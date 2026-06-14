@@ -35,9 +35,10 @@ void main() {
 
       // Verify privacy text
       expect(
-        find.text('SquadQuest is focused on privacy.\n\n'
-            'Only people who know your phone number already can send you a friend request,'
-            ' and only people you\'ve accepted friend requests from can see any of your personal details.'),
+        find.text(
+            'SquadQuest is focused on privacy. Only people who know your phone number already can send you a friend request,'
+            ' and only people you\'ve accepted friend requests with can see any of your personal details. As an open-source'
+            ' project built by people who use it rather than a startup business, SquadQuest will NEVER sell your data or market to you.'),
         findsOneWidget,
       );
     },
