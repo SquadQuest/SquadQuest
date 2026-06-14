@@ -11,6 +11,8 @@ import 'package:squadquest/screens/activity/activity_detail_screen.dart';
 class FakeActivityRepository implements ActivityRepository {
   FakeActivityRepository(this.result);
   Activity result;
+  String? addedKind;
+  String? addedLabel;
 
   @override
   Future<Activity> createIdea({
@@ -38,7 +40,12 @@ class FakeActivityRepository implements ActivityRepository {
     String activityId,
     String kind,
     String label,
-  ) async => result;
+  ) async {
+    addedKind = kind;
+    addedLabel = label;
+    return result;
+  }
+
   @override
   Future<Activity> confirm(
     String activityId, {
@@ -94,6 +101,43 @@ void main() {
     await tester.tap(find.byIcon(Icons.thumb_up_outlined));
     await tester.pumpAndSettle();
     expect(find.text('2 votes'), findsOneWidget);
+  });
+
+  testWidgets('suggest-an-option appears when allowed and calls addOption', (
+    tester,
+  ) async {
+    const seed = Activity(
+      id: 'a1',
+      state: 'idea',
+      captainName: 'Katie',
+      activityTypeLabel: 'Paddleboarding',
+      allowSuggestions: true,
+    );
+    final repo = FakeActivityRepository(seed);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [activityRepositoryProvider.overrideWithValue(repo)],
+        child: const MaterialApp(home: ActivityDetailScreen(activity: seed)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Both suggest affordances show even with no options yet.
+    expect(find.byKey(const Key('suggestTime')), findsOneWidget);
+    expect(find.byKey(const Key('suggestLocation')), findsOneWidget);
+
+    // Suggest a time → dialog → submit → addOption('time', label).
+    await tester.tap(find.byKey(const Key('suggestTime')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('suggestOptionField')),
+      'Sunday brunch',
+    );
+    await tester.tap(find.text('Suggest'));
+    await tester.pumpAndSettle();
+    expect(repo.addedKind, 'time');
+    expect(repo.addedLabel, 'Sunday brunch');
   });
 
   testWidgets('shows fallback when opened without an activity', (tester) async {

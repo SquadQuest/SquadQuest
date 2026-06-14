@@ -104,6 +104,8 @@ class _OwnWantTile extends ConsumerWidget {
             switch (v) {
               case 'promote':
                 await _openPromote(context, ref, want);
+              case 'invites':
+                await _openManageInvites(context, ref, want);
               case 'edit':
                 await _openEditor(context, ref, existing: want);
               case 'delete':
@@ -113,6 +115,7 @@ class _OwnWantTile extends ConsumerWidget {
           },
           itemBuilder: (_) => const [
             PopupMenuItem(value: 'promote', child: Text('Promote to plan')),
+            PopupMenuItem(value: 'invites', child: Text('Manage invites')),
             PopupMenuItem(value: 'edit', child: Text('Edit')),
             PopupMenuItem(value: 'delete', child: Text('Delete')),
           ],
@@ -210,6 +213,148 @@ Future<void> _openEditor(
       child: _WantEditor(existing: existing),
     ),
   );
+}
+
+Future<void> _openManageInvites(
+  BuildContext context,
+  WidgetRef ref,
+  Want want,
+) async {
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => _ManageInvitesSheet(want: want),
+  );
+}
+
+/// Add/remove invitees on an existing want (specs/api/wants.md — invite is what
+/// shares the want; only accepted friends are invitable). Each tap mutates one
+/// invite; the backend is friend-gated + idempotent.
+class _ManageInvitesSheet extends ConsumerStatefulWidget {
+  const _ManageInvitesSheet({required this.want});
+  final Want want;
+  @override
+  ConsumerState<_ManageInvitesSheet> createState() =>
+      _ManageInvitesSheetState();
+}
+
+class _ManageInvitesSheetState extends ConsumerState<_ManageInvitesSheet> {
+  // Local view of who's invited, seeded from the want and updated as we mutate
+  // (so the sheet reflects changes without a full refetch round-trip).
+  late final Set<String> _invited = {
+    for (final i in widget.want.invitees) i.profileId,
+  };
+  final _busy = <String>{};
+  String? _error;
+
+  Future<void> _toggle(Friend friend, bool invite) async {
+    setState(() {
+      _busy.add(friend.id);
+      _error = null;
+    });
+    try {
+      final repo = ref.read(wantRepositoryProvider);
+      if (invite) {
+        await repo.invite(widget.want.id, [friend.id]);
+        _invited.add(friend.id);
+      } else {
+        await repo.uninvite(widget.want.id, friend.id);
+        _invited.remove(friend.id);
+      }
+      ref.invalidate(ownWantsProvider);
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } catch (_) {
+      setState(() => _error = "Couldn't update. Please try again.");
+    } finally {
+      if (mounted) setState(() => _busy.remove(friend.id));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final friends = ref.watch(friendsProvider);
+    return SafeArea(
+      child: friends.when(
+        loading: () => const Padding(
+          padding: EdgeInsets.all(32),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, _) => Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            "Couldn't load friends.\n$e",
+            textAlign: TextAlign.center,
+          ),
+        ),
+        data: (list) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Manage invites',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Text(
+                  _error!,
+                  key: const Key('manageInvitesError'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            if (list.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(32),
+                child: Text(
+                  'No friends to invite yet.',
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else
+              Flexible(
+                child: ListView(
+                  key: const Key('manageInvitesList'),
+                  shrinkWrap: true,
+                  children: [
+                    for (final f in list)
+                      CheckboxListTile(
+                        key: Key('inviteToggle_${f.id}'),
+                        value: _invited.contains(f.id),
+                        title: Text(
+                          f.displayName.isEmpty ? 'Friend' : f.displayName,
+                        ),
+                        secondary: _busy.contains(f.id)
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : null,
+                        onChanged: _busy.contains(f.id)
+                            ? null
+                            : (sel) => _toggle(f, sel ?? false),
+                      ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _WantEditor extends ConsumerStatefulWidget {

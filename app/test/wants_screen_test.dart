@@ -2,10 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:squadquest/models/activity.dart';
+import 'package:squadquest/models/friend.dart';
 import 'package:squadquest/models/want.dart';
 import 'package:squadquest/providers/providers.dart';
+import 'package:squadquest/repositories/friend_repository.dart';
 import 'package:squadquest/repositories/want_repository.dart';
 import 'package:squadquest/screens/wants/wants_screen.dart';
+
+class _FakeFriendRepository implements FriendRepository {
+  _FakeFriendRepository(this._friends);
+  final List<Friend> _friends;
+  @override
+  Future<List<Friend>> list() async => _friends;
+  @override
+  Future<FriendRequests> requests() async => const FriendRequests();
+  @override
+  Future<String> sendRequest(String phone) async => 'requested';
+  @override
+  Future<void> accept(String requestId) async {}
+  @override
+  Future<void> ignore(String requestId) async {}
+  @override
+  Future<void> unignore(String requestId) async {}
+  @override
+  Future<List<IgnoredItem>> ignored() async => const [];
+}
 
 class _FakeWantRepository implements WantRepository {
   _FakeWantRepository({this.own = const [], this.invited = const []});
@@ -14,6 +35,8 @@ class _FakeWantRepository implements WantRepository {
   String? respondedId;
   String? respondedValue;
   String? ignoredId;
+  final invitedProfileIds = <String>[];
+  final uninvitedProfileIds = <String>[];
 
   @override
   Future<List<Want>> listOwn({bool includeArchived = false}) async => own;
@@ -55,11 +78,17 @@ class _FakeWantRepository implements WantRepository {
   @override
   Future<void> delete(String id) async {}
   @override
-  Future<Want> invite(String id, List<String> profileIds) async =>
-      throw UnimplementedError();
+  Future<Want> invite(String id, List<String> profileIds) async {
+    invitedProfileIds.addAll(profileIds);
+    return own.firstWhere((w) => w.id == id);
+  }
+
   @override
-  Future<Want> uninvite(String id, String profileId) async =>
-      throw UnimplementedError();
+  Future<Want> uninvite(String id, String profileId) async {
+    uninvitedProfileIds.add(profileId);
+    return own.firstWhere((w) => w.id == id);
+  }
+
   @override
   Future<Want> clearResponse(String id) async => throw UnimplementedError();
   @override
@@ -87,11 +116,17 @@ Future<_FakeWantRepository> _pump(
   WidgetTester tester, {
   List<Want> own = const [],
   List<Want> invited = const [],
+  List<Friend> friends = const [],
 }) async {
   final repo = _FakeWantRepository(own: own, invited: invited);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [wantRepositoryProvider.overrideWithValue(repo)],
+      overrides: [
+        wantRepositoryProvider.overrideWithValue(repo),
+        friendRepositoryProvider.overrideWithValue(
+          _FakeFriendRepository(friends),
+        ),
+      ],
       child: const MaterialApp(home: WantsScreen()),
     ),
   );
@@ -132,5 +167,43 @@ void main() {
       find.textContaining('Capture it here and make it happen'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('manage invites adds a new friend and removes an invitee', (
+    tester,
+  ) async {
+    final repo = await _pump(
+      tester,
+      own: [
+        _want(
+          'w1',
+          title: 'FDR lake',
+          invitees: const [WantInvitee(profileId: 'f1', name: 'Katie')],
+        ),
+      ],
+      friends: const [
+        Friend(id: 'f1', firstName: 'Katie'), // already invited
+        Friend(id: 'f2', firstName: 'Mike'), // not yet
+      ],
+    );
+
+    // Open the want menu → Manage invites.
+    await tester.tap(find.byKey(const Key('wantMenu_w1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Manage invites'));
+    await tester.pumpAndSettle();
+
+    // Current invitee is checked; the other friend isn't.
+    expect(find.byKey(const Key('manageInvitesList')), findsOneWidget);
+
+    // Invite Mike (toggle on) → invite() called with f2.
+    await tester.tap(find.byKey(const Key('inviteToggle_f2')));
+    await tester.pumpAndSettle();
+    expect(repo.invitedProfileIds, contains('f2'));
+
+    // Remove Katie (toggle off) → uninvite() called with f1.
+    await tester.tap(find.byKey(const Key('inviteToggle_f1')));
+    await tester.pumpAndSettle();
+    expect(repo.uninvitedProfileIds, contains('f1'));
   });
 }
