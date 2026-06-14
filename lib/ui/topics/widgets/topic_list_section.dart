@@ -20,7 +20,7 @@ class TopicListSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final filteredTopicMemberships = topicMemberships.where((topicMembership) {
       return searchQuery.isEmpty ||
-          topicMembership.topic.label.toLowerCase().contains(searchQuery);
+          topicMembership.topic.name.toLowerCase().contains(searchQuery);
     }).toList();
 
     return GroupedListView(
@@ -45,7 +45,7 @@ class TopicListSection extends StatelessWidget {
         ),
       ),
       itemBuilder: (context, topicMembership) {
-        final topicName = topicMembership.topic.label;
+        final topicName = topicMembership.topic.name;
         int? matchIndex;
 
         if (searchQuery.isNotEmpty) {
