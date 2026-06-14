@@ -1,15 +1,32 @@
-import { assert } from "../_shared/http.ts";
 import {
-  assertGet,
+  getRequiredJsonParameters,
   getRequiredQueryParameters,
   serve,
 } from "../_shared/http.ts";
 import { Event } from "../_shared/squadquest.ts";
 import scrapers from "./sources/index.ts";
+import flyerImage from "./sources/flyer-image.ts";
 
 serve(async (request: Request) => {
-  // process request
-  assertGet(request);
+  // POST: extract event details from a flyer image via an LLM vision model
+  if (request.method === "POST") {
+    const { image, mediaType, timezone } = await getRequiredJsonParameters(
+      request,
+      ["image", "mediaType", "timezone"],
+    );
+
+    const event = await flyerImage.extractFromImage(image, mediaType, timezone);
+
+    return new Response(
+      JSON.stringify(event),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      },
+    );
+  }
+
+  // GET: scrape event details from a URL
   const { url: rawUrl } = getRequiredQueryParameters(
     request,
     [

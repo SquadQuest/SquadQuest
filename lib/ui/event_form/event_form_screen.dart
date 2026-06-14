@@ -1,10 +1,15 @@
+import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:geobase/coordinates.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:squadquest/app_scaffold.dart';
 import 'package:squadquest/common.dart';
@@ -431,6 +436,85 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     }
   }
 
+  String _inferImageMediaType(String filename) {
+    switch (filename.toLowerCase().split('.').last) {
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/jpeg';
+    }
+  }
+
+  Future<void> _importEventFromImage() async {
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2000,
+    );
+
+    if (pickedFile == null) {
+      return;
+    }
+
+    setState(() {
+      loadMask = 'Extracting event from image...';
+      _editingInstance = const AsyncValue.loading();
+    });
+
+    try {
+      final bytes = await pickedFile.readAsBytes();
+      final timezone = await FlutterTimezone.getLocalTimezone();
+
+      final supabase = ref.read(supabaseClientProvider);
+      final response = await supabase.functions.invoke(
+        'scrape-event',
+        method: HttpMethod.post,
+        body: {
+          'image': base64Encode(bytes),
+          'mediaType':
+              pickedFile.mimeType ?? _inferImageMediaType(pickedFile.name),
+          'timezone': timezone,
+        },
+      );
+
+      final instance = Instance.fromMap(response.data);
+
+      setState(() {
+        _loadValuesFromInstance(instance);
+
+        // reuse the picked flyer as the event's banner photo
+        ref.read(_bannerPhotoProvider.notifier).state =
+            kIsWeb ? Uri.parse(pickedFile.path) : File(pickedFile.path).uri;
+
+        _editingInstance = const AsyncValue.data(null);
+        loadMask = null;
+      });
+    } catch (error) {
+      logger.e('Error extracting event from image', error: error);
+
+      setState(() {
+        _editingInstance = const AsyncValue.data(null);
+        loadMask = null;
+      });
+
+      if (!mounted) return;
+
+      final message = error is FunctionException
+          ? (error.details is String
+              ? error.details.replaceAll(RegExp(r'^[a-z\-]+: '), '')
+              : error.details?['message'])
+          : error;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Failed to extract event from image: ${message}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -476,6 +560,11 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         showLocationSharingSheet: false,
         actions: isNewEvent
             ? [
+                IconButton(
+                  icon: const Icon(Icons.image_search),
+                  tooltip: 'Extract Event from Image',
+                  onPressed: _importEventFromImage,
+                ),
                 IconButton(
                   icon: const Icon(Icons.content_paste),
                   tooltip: 'Import Event from Clipboard',
