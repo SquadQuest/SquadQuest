@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../api/api_exception.dart';
 import '../models/activity.dart';
 import '../models/community.dart';
 import '../models/message.dart';
-import '../providers/providers.dart';
 import 'community_event_card.dart';
 import 'message_attachments.dart';
+import 'response_controls.dart';
 import 'thread_view.dart';
 import 'thread_vote_bar.dart';
 
@@ -157,28 +156,6 @@ class _ActivityHeader extends ConsumerStatefulWidget {
 
 class _ActivityHeaderState extends ConsumerState<_ActivityHeader> {
   late Activity _a = widget.activity;
-  bool _busy = false;
-
-  Future<void> _setResponse(String? value) async {
-    setState(() => _busy = true);
-    try {
-      final repo = ref.read(activityRepositoryProvider);
-      final updated = value == null
-          ? await repo.clearResponse(_a.id)
-          : await repo.setResponse(_a.id, value);
-      ref.invalidate(friendsTimelineProvider);
-      ref.invalidate(squadTimelineProvider);
-      if (mounted) setState(() => _a = updated);
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -196,25 +173,12 @@ class _ActivityHeaderState extends ConsumerState<_ActivityHeader> {
         ),
         Text(stateLine, key: const Key('threadHeaderState')),
         const SizedBox(height: 8),
-        // Inline response controls.
-        Wrap(
-          spacing: 8,
-          children: [
-            for (final e in const {
-              'in': "I'm in",
-              'interested': 'Interested',
-              'next_time': 'Next time',
-            }.entries)
-              ChoiceChip(
-                key: Key('response_${e.key}'),
-                label: Text(e.value),
-                selected: a.yourResponse == e.key,
-                onSelected: _busy
-                    ? null
-                    : (sel) => _setResponse(sel ? e.key : null),
-              ),
-          ],
-        ),
+        // Inline + collapsing response controls (shared with the timeline tile).
+        if (!a.isConfirmed)
+          ResponseControls(
+            activity: a,
+            onChanged: (updated) => setState(() => _a = updated),
+          ),
         Text(
           '${a.inCount} in · ${a.interestedCount} interested',
           key: const Key('responseCounts'),
