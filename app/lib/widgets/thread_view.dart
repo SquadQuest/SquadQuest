@@ -93,6 +93,9 @@ class _ThreadViewState extends ConsumerState<ThreadView> {
                 )
               : Column(
                   key: const Key('threadMessages'),
+                  // Left-align rows (flat group-text, not bubbles); without this
+                  // the Column defaults to center and each row floats inward.
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   // endpoint returns newest-first; show chronological
                   children: msgs.reversed.map(_MessageRow.new).toList(),
                 ),
