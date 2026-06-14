@@ -6,6 +6,7 @@ import '../models/activity.dart';
 import '../models/community.dart';
 import '../providers/active_context.dart';
 import '../providers/providers.dart';
+import 'thread_drawer.dart';
 
 /// A born-confirmed community event card with the dual-attendance display and the
 /// RSVP visibility gradient (specs/screens/communities.md): an anonymous headcount,
@@ -17,11 +18,16 @@ class CommunityEventCard extends ConsumerStatefulWidget {
     required this.communityId,
     required this.event,
     this.isLeader = false,
+    this.inThread = false,
   });
 
   final String communityId;
   final CommunityEvent event;
   final bool isLeader;
+
+  /// When true the card is the thread drawer's header: it drops its own tap-to-open
+  /// (you're already in the thread) and renders flush (no Card margin/elevation).
+  final bool inThread;
 
   @override
   ConsumerState<CommunityEventCard> createState() => _CommunityEventCardState();
@@ -89,14 +95,25 @@ class _CommunityEventCardState extends ConsumerState<CommunityEventCard> {
               '${e.publicGoing.length > 2 ? ' +${e.publicGoing.length - 2}' : ''} publicly';
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      // Tapping the card opens the event's thread (chat + RSVP discussion).
+      margin: widget.inThread
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      // Tapping the card opens the event's thread drawer (chat + RSVP discussion).
       // The RSVP chips / leader menu have their own handlers, so they win their
-      // own taps; this catches the rest. See specs/screens/communities.md.
+      // own taps; this catches the rest. In-thread the card IS the drawer header,
+      // so it doesn't re-open itself. See specs/behaviors/thread-drawer.md.
       child: InkWell(
         key: Key('openEventThread_${e.id}'),
-        onTap: () =>
-            context.push('/thread/community_event/${e.id}', extra: null),
+        onTap: widget.inThread
+            ? null
+            : () => showThreadDrawer(
+                context,
+                target: ThreadTarget.communityEvent(
+                  communityId: widget.communityId,
+                  event: e,
+                  isLeader: widget.isLeader,
+                ),
+              ),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

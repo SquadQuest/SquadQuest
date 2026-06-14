@@ -10,6 +10,7 @@ import '../../providers/auth_controller.dart';
 import '../../providers/providers.dart';
 import '../../widgets/community_event_card.dart';
 import '../../widgets/message_attachments.dart';
+import '../../widgets/thread_drawer.dart';
 
 /// The active timeline, per the context selector (specs/behaviors/context-selector.md):
 /// My Friends (ideas/activities), a Squad (heterogeneous activities + messages), or a
@@ -415,7 +416,7 @@ class _ActivityTile extends StatelessWidget {
         ? '$base · ${a.eventRef!.communityIcon ?? '📣'} ${a.eventRef!.communityName ?? 'Community'}'
         : base;
     return ListTile(
-      onTap: () => context.push('/activity/${a.id}', extra: a),
+      onTap: () => showThreadDrawer(context, target: ThreadTarget.activity(a)),
       leading: CircleAvatar(
         child: Text((a.captainName ?? '?').characters.first),
       ),
@@ -439,7 +440,8 @@ class _MessageTile extends StatelessWidget {
     final m = message;
     return ListTile(
       key: Key('message_${m.id}'),
-      onTap: () => context.push('/thread/message/${m.id}', extra: m),
+      onTap: () =>
+          showThreadDrawer(context, target: ThreadTarget.squadMessage(m)),
       leading: CircleAvatar(
         backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
         child: Text((m.senderName ?? '?').characters.first),

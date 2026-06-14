@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:squadquest/models/community.dart';
+import 'package:squadquest/models/message.dart';
+import 'package:squadquest/providers/providers.dart';
+import 'package:squadquest/repositories/message_repository.dart';
 import 'package:squadquest/widgets/community_event_card.dart';
 
 void main() {
@@ -43,36 +45,47 @@ void main() {
     expect(find.byKey(const Key('public_toggle_e1')), findsOneWidget);
   });
 
-  testWidgets('tapping the card opens the event thread', (tester) async {
-    String? pushedRoute;
-    final router = GoRouter(
-      initialLocation: '/',
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (_, _) => const Scaffold(
+  testWidgets('tapping the card opens the event thread drawer', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          messageRepositoryProvider.overrideWithValue(_FakeMessageRepository()),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
             body: CommunityEventCard(
               communityId: 'c1',
               event: CommunityEvent(id: 'e1', title: 'Cherry Blossoms Ride'),
             ),
           ),
         ),
-        GoRoute(
-          path: '/thread/:targetType/:targetId',
-          builder: (_, state) {
-            pushedRoute = state.uri.toString();
-            return const Scaffold(body: Text('thread'));
-          },
-        ),
-      ],
-    );
-    await tester.pumpWidget(
-      ProviderScope(child: MaterialApp.router(routerConfig: router)),
+      ),
     );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('openEventThread_e1')));
     await tester.pumpAndSettle();
-    expect(pushedRoute, '/thread/community_event/e1');
+    // The drawer slides in with the event as its header.
+    expect(find.byKey(const Key('threadDrawer')), findsOneWidget);
   });
+}
+
+/// Empty thread so the drawer's conversation section settles.
+class _FakeMessageRepository implements MessageRepository {
+  @override
+  Future<List<Message>> thread(String targetType, String targetId) async =>
+      const [];
+  @override
+  Future<Message> reply(
+    String targetType,
+    String targetId,
+    String body, {
+    List<MessageAttachment> attachments = const [],
+  }) async => const Message(id: 'm');
+  @override
+  Future<Message> postSquadMessage(
+    String squadId,
+    String body, {
+    List<MessageAttachment> attachments = const [],
+  }) async => const Message(id: 'm');
 }

@@ -13,10 +13,15 @@ class ThreadView extends ConsumerStatefulWidget {
     super.key,
     required this.targetType,
     required this.targetId,
+    this.showAudienceHint = false,
   });
 
-  final String targetType; // 'activity' | 'message'
+  final String targetType; // 'activity' | 'community_event' | 'message'
   final String targetId;
+
+  /// When true, show the private-audience hint above the reply input
+  /// (specs/behaviors/thread-drawer.md: "Only participants in this thread can see replies").
+  final bool showAudienceHint;
 
   @override
   ConsumerState<ThreadView> createState() => _ThreadViewState();
@@ -93,6 +98,29 @@ class _ThreadViewState extends ConsumerState<ThreadView> {
                 ),
         ),
         const SizedBox(height: 8),
+        if (widget.showAudienceHint)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.lock_outline,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Only participants in this thread can see replies',
+                    key: const Key('threadAudienceHint'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         MessageAttachmentField(
           attachments: _attachments,
           enabled: !_busy,
