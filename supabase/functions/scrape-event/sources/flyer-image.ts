@@ -28,7 +28,7 @@ const OUTPUT_SCHEMA = {
     title: {
       type: ["string", "null"],
       description:
-        "The event's name/title, transcribed verbatim exactly as it appears on the flyer. Preserve original capitalization (including all-caps), punctuation, and wording — do not normalize casing, expand abbreviations, or rephrase. Include a subtitle or tour name as part of the title if it reads as one (e.g. 'LOTUS: Eat the Light').",
+        "The event's name/title: the main name plus a subtitle or tour name if one reads as part of it (e.g. 'LOTUS: Eat the Light'). Transcribe verbatim — preserve original capitalization (including all-caps), punctuation, and wording; do not normalize casing, expand abbreviations, or rephrase. Do NOT include edition/version/anniversary qualifiers such as '10 Year Expanded Edition', 'Deluxe Edition', 'Remastered', or '20th Anniversary' — those belong in notes, not the title.",
     },
     start_date_local: {
       type: ["string", "null"],
@@ -53,7 +53,7 @@ const OUTPUT_SCHEMA = {
     notes: {
       type: ["string", "null"],
       description:
-        "A short description of the event drawn from the flyer (tagline, lineup, details). If the flyer has a tagline/slogan/hook, it must be the first line of notes, followed by the remaining details. Null if none.",
+        "A short description of the event drawn from the flyer (tagline, lineup, details), including any edition/version/anniversary qualifier kept out of the title (e.g. '10 Year Expanded Edition'). If the flyer has a tagline/slogan/hook, it must be the first line of notes, followed by the remaining details. Null if none.",
     },
   },
   required: [
@@ -71,7 +71,7 @@ const OUTPUT_SCHEMA = {
 const PROMPT =
   `You are extracting structured event details from an event flyer, poster, or screenshot.
 Read all visible text and return the event's details using the provided schema.
-- Transcribe the title verbatim, preserving the exact wording, capitalization (including all-caps styling), and punctuation shown. Do not normalize, "fix", or rephrase it.
+- The title is the main event name plus any subtitle/tour name only. Transcribe it verbatim, preserving the exact wording, capitalization (including all-caps styling), and punctuation shown — do not normalize, "fix", or rephrase it. Keep edition, version, anniversary, or "remastered/expanded/deluxe" qualifiers OUT of the title and put them in notes instead.
 - Use the year shown on the flyer; if no year is given, assume the next occurrence of that date.
 - Express all times as 24-hour local wall-clock values; do not apply any timezone offset.
 - start_date_local and start_max_local define the window during which attendees should arrive/show up — not the event's full duration. Use the times on the flyer plus judgment about the event type to set a sensible arrival window:
