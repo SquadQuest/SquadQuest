@@ -29,6 +29,7 @@ void main() {
                 id: 'e1',
                 title: 'Cherry Blossoms Ride',
                 time: 'Wed 6:30pm',
+                location: 'Clark Park',
                 communityName: 'Wednesday Night Rides',
                 communityIcon: '🚲',
               ),
@@ -44,6 +45,10 @@ void main() {
       // a brought idea is still friends-scoped
       expect(find.byKey(const Key('composeDestination')), findsOneWidget);
       expect(find.textContaining('all your friends'), findsOneWidget);
+
+      // time + location are pre-filled from the event (fixed by the event).
+      expect(find.widgetWithText(TextField, 'Wed 6:30pm'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Clark Park'), findsOneWidget);
     },
   );
 }
