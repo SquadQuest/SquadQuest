@@ -29,6 +29,18 @@ class _ComposeIdeaScreenState extends ConsumerState<ComposeIdeaScreen> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    // Bring-friends: the brought-along idea's time/place are fixed by the event
+    // (specs/behaviors/bring-friends-bridge.md), so pre-fill them from it.
+    final event = widget.broughtEvent;
+    if (event != null) {
+      if (event.time != null) _time.text = event.time!;
+      if (event.location != null) _location.text = event.location!;
+    }
+  }
+
+  @override
   void dispose() {
     _time.dispose();
     _location.dispose();
