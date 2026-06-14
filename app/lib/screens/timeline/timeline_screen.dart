@@ -10,6 +10,7 @@ import '../../providers/auth_controller.dart';
 import '../../providers/providers.dart';
 import '../../widgets/community_event_card.dart';
 import '../../widgets/message_attachments.dart';
+import '../../widgets/response_controls.dart';
 import '../../widgets/thread_drawer.dart';
 
 /// The active timeline, per the context selector (specs/behaviors/context-selector.md):
@@ -415,18 +416,32 @@ class _ActivityTile extends StatelessWidget {
     final subtitle = a.eventRef != null
         ? '$base · ${a.eventRef!.communityIcon ?? '📣'} ${a.eventRef!.communityName ?? 'Community'}'
         : base;
-    return ListTile(
-      onTap: () => showThreadDrawer(context, target: ThreadTarget.activity(a)),
-      leading: CircleAvatar(
-        child: Text((a.captainName ?? '?').characters.first),
-      ),
-      title: Text(
-        '${a.captainName ?? 'Someone'} · ${a.activityTypeLabel ?? ''}',
-      ),
-      subtitle: Text(subtitle),
-      trailing: a.isConfirmed
-          ? const Icon(Icons.event_available)
-          : Text('${a.inCount} in'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          onTap: () =>
+              showThreadDrawer(context, target: ThreadTarget.activity(a)),
+          leading: CircleAvatar(
+            child: Text((a.captainName ?? '?').characters.first),
+          ),
+          title: Text(
+            '${a.captainName ?? 'Someone'} · ${a.activityTypeLabel ?? ''}',
+          ),
+          subtitle: Text(subtitle),
+          trailing: a.isConfirmed
+              ? const Icon(Icons.event_available)
+              : Text('${a.inCount} in'),
+        ),
+        // Inline response (specs/behaviors/response-system.md): respond without
+        // opening the drawer; collapses to a chip after choosing. Confirmed
+        // activities have no pending response to give.
+        if (!a.isConfirmed)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: ResponseControls(activity: a, dense: true),
+          ),
+      ],
     );
   }
 }
