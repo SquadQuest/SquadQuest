@@ -13,6 +13,11 @@ jobs:
   builds-publish:
     runs-on: ubuntu-latest
 
+    # Only deploy for v1.* releases. Release workflows already run from the
+    # tagged commit, but this documents intent and blocks a stray non-v1 tag
+    # from publishing via the v1 pipeline.
+    if: startsWith(github.event.release.tag_name, 'v1.')
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,7 +27,10 @@ jobs:
           echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
           echo "BUILD_NAME=${SOURCE_TAG#v}" >> $GITHUB_ENV
 
-          BUILD_NUMBER="$(git ls-remote origin | grep -c 'refs/tags/v')"
+          # Count only v0.*/v1.* tags so future v2.* releases don't inflate the
+          # v1 build number. Must include v0.* to stay monotonic with historical
+          # builds (dropping them would regress below the last published build).
+          BUILD_NUMBER="$(git ls-remote origin | grep -cE 'refs/tags/v[01]\.')"
           echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
 
       - name: Write tag version to pubspec.yaml
