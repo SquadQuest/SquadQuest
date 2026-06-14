@@ -79,6 +79,14 @@ class _FormTopicPickerState extends ConsumerState<FormTopicPicker> {
 
   @override
   Widget build(BuildContext context) {
+    // Reflect external updates to the provider (e.g. a topic auto-filled by
+    // event import) in the text field, which is otherwise only seeded once.
+    ref.listen<Topic?>(_valueProvider!, (previous, next) {
+      if (next != null && next.name != _textController.text) {
+        _textController.text = next.name;
+      }
+    });
+
     return TypeAheadField<Topic>(
       controller: _textController,
       focusNode: _focusNode,

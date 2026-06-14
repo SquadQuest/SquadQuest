@@ -30,7 +30,7 @@ interface Event {
   start_time_min?: Date;
   start_time_max?: Date;
   end_time?: Date;
-  topic?: TopicID;
+  topic?: TopicID | { id: TopicID; name: string };
   title?: string;
   visibility?: EventVisibility;
   location_description?: string;
