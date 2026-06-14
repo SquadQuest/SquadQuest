@@ -90,112 +90,120 @@ class _CommunityEventCardState extends ConsumerState<CommunityEventCard> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${e.communityIcon ?? '📣'}  ${e.communityName ?? 'Community'}'
-                    '${e.recurrence != null ? ' · ${e.recurrence}' : ''}',
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                ),
-                if (widget.isLeader)
-                  SizedBox(
-                    height: 28,
-                    child: PopupMenuButton<String>(
-                      key: Key('event_menu_${e.id}'),
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.more_vert, size: 20),
-                      onSelected: (v) {
-                        if (v == 'edit') {
-                          context.push(
-                            '/communities/${widget.communityId}/events/new',
-                            extra: e,
-                          );
-                        } else if (v == 'delete') {
-                          _delete();
-                        }
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Cancel event'),
-                        ),
-                      ],
+      // Tapping the card opens the event's thread (chat + RSVP discussion).
+      // The RSVP chips / leader menu have their own handlers, so they win their
+      // own taps; this catches the rest. See specs/screens/communities.md.
+      child: InkWell(
+        key: Key('openEventThread_${e.id}'),
+        onTap: () =>
+            context.push('/thread/community_event/${e.id}', extra: null),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${e.communityIcon ?? '📣'}  ${e.communityName ?? 'Community'}'
+                      '${e.recurrence != null ? ' · ${e.recurrence}' : ''}',
+                      style: Theme.of(context).textTheme.labelMedium,
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(e.title, style: Theme.of(context).textTheme.titleMedium),
-            if (e.time != null || e.location != null) ...[
-              const SizedBox(height: 4),
-              Text([e.time, e.location].whereType<String>().join(' · ')),
-            ],
-            const SizedBox(height: 10),
-            Text(
-              '${e.goingCount} going'
-              '${facePile != null ? '  ·  $facePile' : ''}',
-              key: Key('going_${e.id}'),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                FilterChip(
-                  key: Key('going_toggle_${e.id}'),
-                  label: const Text('Going'),
-                  selected: e.youGoing,
-                  onSelected: _busy
-                      ? null
-                      : (sel) => _rsvp(
-                          going: sel,
-                          public: sel ? e.youPublic : false,
-                        ),
-                ),
-                FilterChip(
-                  key: Key('public_toggle_${e.id}'),
-                  label: const Text('Show my name'),
-                  selected: e.youPublic,
-                  onSelected: _busy
-                      ? null
-                      : (sel) => _rsvp(going: true, public: sel),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                key: Key('bring_friends_${e.id}'),
-                icon: const Icon(Icons.group_add, size: 18),
-                label: const Text('Bring friends'),
-                // Switch to My Friends + open the composer pre-filled with this event
-                // (bring-friends bridge): posts a friends-scoped idea, never the public event.
-                onPressed: () {
-                  ref.read(activeContextProvider.notifier).toFriends();
-                  context.push(
-                    '/ideas/new',
-                    extra: EventRef(
-                      id: e.id,
-                      title: e.title,
-                      time: e.time,
-                      location: e.location,
-                      communityName: e.communityName,
-                      communityIcon: e.communityIcon,
+                  if (widget.isLeader)
+                    SizedBox(
+                      height: 28,
+                      child: PopupMenuButton<String>(
+                        key: Key('event_menu_${e.id}'),
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(Icons.more_vert, size: 20),
+                        onSelected: (v) {
+                          if (v == 'edit') {
+                            context.push(
+                              '/communities/${widget.communityId}/events/new',
+                              extra: e,
+                            );
+                          } else if (v == 'delete') {
+                            _delete();
+                          }
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(value: 'edit', child: Text('Edit')),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Cancel event'),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                },
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(e.title, style: Theme.of(context).textTheme.titleMedium),
+              if (e.time != null || e.location != null) ...[
+                const SizedBox(height: 4),
+                Text([e.time, e.location].whereType<String>().join(' · ')),
+              ],
+              const SizedBox(height: 10),
+              Text(
+                '${e.goingCount} going'
+                '${facePile != null ? '  ·  $facePile' : ''}',
+                key: Key('going_${e.id}'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  FilterChip(
+                    key: Key('going_toggle_${e.id}'),
+                    label: const Text('Going'),
+                    selected: e.youGoing,
+                    onSelected: _busy
+                        ? null
+                        : (sel) => _rsvp(
+                            going: sel,
+                            public: sel ? e.youPublic : false,
+                          ),
+                  ),
+                  FilterChip(
+                    key: Key('public_toggle_${e.id}'),
+                    label: const Text('Show my name'),
+                    selected: e.youPublic,
+                    onSelected: _busy
+                        ? null
+                        : (sel) => _rsvp(going: true, public: sel),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: Key('bring_friends_${e.id}'),
+                  icon: const Icon(Icons.group_add, size: 18),
+                  label: const Text('Bring friends'),
+                  // Switch to My Friends + open the composer pre-filled with this event
+                  // (bring-friends bridge): posts a friends-scoped idea, never the public event.
+                  onPressed: () {
+                    ref.read(activeContextProvider.notifier).toFriends();
+                    context.push(
+                      '/ideas/new',
+                      extra: EventRef(
+                        id: e.id,
+                        title: e.title,
+                        time: e.time,
+                        location: e.location,
+                        communityName: e.communityName,
+                        communityIcon: e.communityIcon,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

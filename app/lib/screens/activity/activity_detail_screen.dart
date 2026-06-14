@@ -52,6 +52,44 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     }
   }
 
+  // Suggest a new time/location option (when the idea allows suggestions).
+  // Prompts for a label, then posts it via addOption.
+  Future<void> _suggest(String activityId, String kind) async {
+    final controller = TextEditingController();
+    final label = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(kind == 'time' ? 'Suggest a time' : 'Suggest a place'),
+        content: TextField(
+          key: const Key('suggestOptionField'),
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: kind == 'time' ? 'Saturday morning' : 'The trailhead',
+          ),
+          onSubmitted: (v) => Navigator.pop(dialogContext, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Suggest'),
+          ),
+        ],
+      ),
+    );
+    if (label == null || label.isEmpty) return;
+    await _act(
+      () => ref
+          .read(activityRepositoryProvider)
+          .addOption(activityId, kind, label),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final a = _activity;
@@ -132,7 +170,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                   key: const Key('responseCounts'),
                 ),
 
-                if (a.timeOptions.isNotEmpty) ...[
+                // Show When/Where when there are options OR the idea invites
+                // suggestions (so there's somewhere to add the first one).
+                if (a.timeOptions.isNotEmpty ||
+                    (a.allowSuggestions && !a.isConfirmed)) ...[
                   const Divider(height: 32),
                   Text('When', style: Theme.of(context).textTheme.titleMedium),
                   for (final o in a.timeOptions)
@@ -152,9 +193,20 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                             )
                           : null,
                     ),
+                  if (a.allowSuggestions && !a.isConfirmed)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        key: const Key('suggestTime'),
+                        onPressed: _busy ? null : () => _suggest(a.id, 'time'),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Suggest a time'),
+                      ),
+                    ),
                 ],
 
-                if (a.locationOptions.isNotEmpty) ...[
+                if (a.locationOptions.isNotEmpty ||
+                    (a.allowSuggestions && !a.isConfirmed)) ...[
                   const Divider(height: 32),
                   Text('Where', style: Theme.of(context).textTheme.titleMedium),
                   for (final o in a.locationOptions)
@@ -173,6 +225,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                                   .confirm(a.id, locationOptionId: o.id),
                             )
                           : null,
+                    ),
+                  if (a.allowSuggestions && !a.isConfirmed)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        key: const Key('suggestLocation'),
+                        onPressed: _busy
+                            ? null
+                            : () => _suggest(a.id, 'location'),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Suggest a place'),
+                      ),
                     ),
                 ],
 
