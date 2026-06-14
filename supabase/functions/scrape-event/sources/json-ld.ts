@@ -65,6 +65,11 @@ async function parseWallTime(
   }
 }
 
+function isEvent(eventData: Record<string, unknown>): boolean {
+  return typeof eventData["@type"] == "string" &&
+    eventData["@type"].endsWith("Event");
+}
+
 function canScrape(url: URL): boolean {
   // This is a fallback scraper, so we'll try it on any URL
   return true;
@@ -78,26 +83,22 @@ async function scrape(url: URL): Promise<Event> {
   // parse dom
   const html = await response.text();
   const scripts =
-    html.match(/<script type="application\/ld\+json">(.*?)<\/script>/gs) || [];
+    html.match(/<script type="application\/ld\+json"[^>]*>(.*?)<\/script>/gs) || [];
   let eventData = null;
 
   for (const script of scripts) {
     const jsonContent = script.replace(
-      /<script type="application\/ld\+json">/,
+      /<script type="application\/ld\+json"[^>]*>/,
       "",
     ).replace(/<\/script>/, "");
     try {
       const data = JSON.parse(jsonContent);
       // Look for event data in both direct object and array formats
       const eventObject = Array.isArray(data)
-        ? data.find((item) =>
-          item["@type"] === "Event" || item["@type"] === "MusicEvent"
-        )
+        ? data.find(isEvent)
         : data;
       if (
-        eventObject &&
-        (eventObject["@type"] === "Event" ||
-          eventObject["@type"] === "MusicEvent")
+        eventObject && isEvent(eventObject)
       ) {
         eventData = eventObject;
         break;

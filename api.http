@@ -1,3 +1,5 @@
+@baseUrl = http://0.0.0.0:8001/
+
 ###
 
 GET {{baseUrl}}/db-test
@@ -123,7 +125,7 @@ Authorization: Bearer {{token}}
 ### Scrape EventBrite event
 
 GET {{baseUrl}}/scrape-event
-    ?url=https%3A%2F%2Fwww.eventbrite.com%2Fe%2Fyoga-at-trinity-saturdays-tickets-1102467202079
+    ?url=https%3A%2F%2Fwww.eventbrite.com%2Fe%2Ftuesdays-philly-river-flow-at-630pm-tickets-1987573244077
 Authorization: Bearer {{token}}
 
 ### Scrape Resident Advisor event
@@ -141,13 +143,19 @@ Authorization: Bearer {{token}}
 ### Scrape AXS event
 
 GET {{baseUrl}}/scrape-event
-    ?url=https%3A%2F%2Fwww.axs.com%2Fevents%2F636956%2Flimperatrice-tickets
+    ?url=https%3A%2F%2Fwww.axs.com%2Fevents%2F1443972%2Ffetty-wap-tickets
 Authorization: Bearer {{token}}
 
 ### Scrape Songkick event
 
 GET {{baseUrl}}/scrape-event
     ?url=https%3A%2F%2Fwww.songkick.com%2Fconcerts%2F42336070-thievery-corporation-at-franklin-music-hall
+Authorization: Bearer {{token}}
+
+### Scrape Meetup event
+
+GET {{baseUrl}}/scrape-event
+    ?url=https%3A%2F%2Fwww.meetup.com%2Fphilly-on-the-water%2Fevents%2F314971855%2F
 Authorization: Bearer {{token}}
 
 

@@ -121,7 +121,8 @@
             "runtimeArgs": [
                 "run",
                 "--inspect-wait",
-                "--allow-all"
+                "--allow-all",
+                "--unstable-temporal"
             ],
             "attachSimplePort": 9229,
             "outputCapture": "std",
