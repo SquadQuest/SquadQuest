@@ -36,6 +36,11 @@ class RallyPointMap extends ConsumerStatefulWidget {
   final List<Geographic>? initialTrail;
   final Function(List<Geographic>)? onTrailUpload;
 
+  /// When provided, the search field is pre-filled with this query and the
+  /// search is run automatically once the map is ready. Used to seed the
+  /// search from an already-entered location name.
+  final String? initialSearchQuery;
+
   const RallyPointMap({
     super.key,
     this.title = 'Set rally point',
@@ -43,6 +48,7 @@ class RallyPointMap extends ConsumerStatefulWidget {
     this.initialRallyPoint,
     this.initialTrail,
     this.onTrailUpload,
+    this.initialSearchQuery,
   });
 
   @override
@@ -58,6 +64,7 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
   List<Symbol> trailMarkers = [];
   List<Geographic>? trail;
   FocusNode searchFocus = FocusNode();
+  final TextEditingController searchController = TextEditingController();
   List<Symbol> resultSymbols = [];
   String? selectedPlaceName;
   bool isDragging = false;
@@ -74,6 +81,10 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
         ? null
         : LatLng(widget.initialRallyPoint!.lat, widget.initialRallyPoint!.lon);
     trail = widget.initialTrail;
+
+    if (widget.initialSearchQuery != null) {
+      searchController.text = widget.initialSearchQuery!;
+    }
   }
 
   @override
@@ -130,6 +141,7 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
                 ]),
         children: [
           TextField(
+            controller: searchController,
             focusNode: searchFocus,
             textInputAction: TextInputAction.search,
             decoration: const InputDecoration(
@@ -365,6 +377,12 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
     if (trail != null) {
       await _updateTrail(trail);
     }
+
+    // Run the seeded search now that the map (and its visible region) is ready
+    final initialQuery = widget.initialSearchQuery?.trim();
+    if (initialQuery != null && initialQuery.isNotEmpty) {
+      await _onSearch(initialQuery);
+    }
   }
 
   void _clearRallyPoint() async {
@@ -522,6 +540,7 @@ class _RallyPointMapState extends ConsumerState<RallyPointMap>
   void dispose() {
     controller?.onFeatureDrag.remove(_onFeatureDrag);
     controller?.onSymbolTapped.remove(_onSymbolTapped);
+    searchController.dispose();
     super.dispose();
   }
 }

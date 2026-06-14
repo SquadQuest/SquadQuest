@@ -24,6 +24,16 @@ class EventFormWhere extends ConsumerWidget {
 
   Future<void> _showRallyPointPicker(
       BuildContext context, WidgetRef ref) async {
+    final existingRallyPoint = ref.read(locationProvider);
+    final locationName = locationDescriptionController.text.trim();
+
+    // Seed the map search from the location name when no rally point is set yet
+    // but a name has already been entered, so the search runs automatically.
+    final initialSearchQuery =
+        existingRallyPoint == null && locationName.isNotEmpty
+            ? locationName
+            : null;
+
     final result = await showModalBottomSheet<RallyPointMapResult>(
       context: context,
       isScrollControlled: true,
@@ -31,8 +41,9 @@ class EventFormWhere extends ConsumerWidget {
       useSafeArea: true,
       isDismissible: false,
       builder: (BuildContext context) => RallyPointMap(
-        initialRallyPoint: ref.read(locationProvider),
+        initialRallyPoint: existingRallyPoint,
         initialTrail: ref.read(trailProvider),
+        initialSearchQuery: initialSearchQuery,
       ),
     );
 
