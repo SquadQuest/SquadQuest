@@ -138,6 +138,37 @@ Read all visible text and return the event's details using the provided schema.
 - For topic, choose the single best-matching value from the allowed list in the schema. Only pick one if it is clearly a good fit for the event; if none is a quality match, return null rather than forcing a weak fit.
 - If the image is not advertising a specific event, set is_event to false and leave the other fields null.`;
 
+/** Detect the image media type from the actual base64 bytes (magic numbers),
+ * correcting a mislabeled mediaType from the client. Anthropic rejects the
+ * request when the declared media type doesn't match the bytes, so this keeps
+ * the endpoint working for clients that send the wrong type (e.g. a .png
+ * screenshot the picker re-encoded as JPEG). Falls back to the declared type. */
+function detectImageMediaType(base64Image: string, declared: string): string {
+  try {
+    // first 24 base64 chars decode to ~18 bytes — enough for any signature
+    const head = atob(base64Image.slice(0, 24));
+    const b = (i: number) => head.charCodeAt(i);
+    if (b(0) === 0x89 && b(1) === 0x50 && b(2) === 0x4e && b(3) === 0x47) {
+      return "image/png";
+    }
+    if (b(0) === 0xff && b(1) === 0xd8 && b(2) === 0xff) {
+      return "image/jpeg";
+    }
+    if (b(0) === 0x47 && b(1) === 0x49 && b(2) === 0x46) {
+      return "image/gif";
+    }
+    if (
+      b(0) === 0x52 && b(1) === 0x49 && b(2) === 0x46 && b(3) === 0x46 &&
+      b(8) === 0x57 && b(9) === 0x45 && b(10) === 0x42 && b(11) === 0x50
+    ) {
+      return "image/webp";
+    }
+  } catch (_e) {
+    // fall through to the declared type
+  }
+  return declared;
+}
+
 /** Convert a wall-clock "YYYY-MM-DDTHH:mm" string in the given IANA timezone to a UTC Date. */
 function localWallTimeToUtc(
   dateStr: string,
@@ -177,6 +208,9 @@ async function extractFromImage(
     500,
   );
 
+  // Correct a mislabeled media type from the client against the actual bytes.
+  const resolvedMediaType = detectImageMediaType(image, mediaType);
+
   // Offer the most-used topics for auto-categorization (best-effort).
   const { names: topicNames, idByName: topicIdByName } = await getTopTopics(
     TOP_TOPICS_LIMIT,
@@ -201,7 +235,11 @@ async function extractFromImage(
           content: [
             {
               type: "image",
-              source: { type: "base64", media_type: mediaType, data: image },
+              source: {
+                type: "base64",
+                media_type: resolvedMediaType,
+                data: image,
+              },
             },
             { type: "text", text: PROMPT },
           ],
