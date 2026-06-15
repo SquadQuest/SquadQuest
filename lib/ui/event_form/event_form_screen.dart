@@ -436,7 +436,43 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     }
   }
 
-  String _inferImageMediaType(String filename) {
+  /// Detect the image media type from the actual bytes (magic numbers) rather
+  /// than the filename/reported mime type, which can disagree after the picker
+  /// re-encodes (e.g. a .png screenshot resaved as JPEG). Anthropic rejects the
+  /// request if the declared media type doesn't match the bytes.
+  String _detectImageMediaType(List<int> bytes, String filename) {
+    if (bytes.length >= 4 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47) {
+      return 'image/png';
+    }
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xFF &&
+        bytes[1] == 0xD8 &&
+        bytes[2] == 0xFF) {
+      return 'image/jpeg';
+    }
+    if (bytes.length >= 3 &&
+        bytes[0] == 0x47 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46) {
+      return 'image/gif';
+    }
+    if (bytes.length >= 12 &&
+        bytes[0] == 0x52 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x46 &&
+        bytes[8] == 0x57 &&
+        bytes[9] == 0x45 &&
+        bytes[10] == 0x42 &&
+        bytes[11] == 0x50) {
+      return 'image/webp';
+    }
+
+    // Fall back to the file extension if the signature isn't recognized.
     switch (filename.toLowerCase().split('.').last) {
       case 'png':
         return 'image/png';
@@ -474,8 +510,7 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
         method: HttpMethod.post,
         body: {
           'image': base64Encode(bytes),
-          'mediaType':
-              pickedFile.mimeType ?? _inferImageMediaType(pickedFile.name),
+          'mediaType': _detectImageMediaType(bytes, pickedFile.name),
           'timezone': timezone,
         },
       );
