@@ -123,11 +123,12 @@ function buildSchema(topicNames: string[]) {
   };
 }
 
-const PROMPT =
-  `You are extracting structured event details from an event flyer, poster, or screenshot.
+function buildPrompt(today: string): string {
+  return `You are extracting structured event details from an event flyer, poster, or screenshot.
+Today's date is ${today} (in the event's local timezone). Use it to resolve any relative or incomplete dates.
 Read all visible text and return the event's details using the provided schema.
 - The title is the main event name plus any subtitle/tour name only. Transcribe it verbatim, preserving the exact wording, capitalization (including all-caps styling), and punctuation shown — do not normalize, "fix", or rephrase it. Keep edition, version, anniversary, or "remastered/expanded/deluxe" qualifiers OUT of the title and put them in notes instead.
-- Use the year shown on the flyer; if no year is given, assume the next occurrence of that date.
+- Prefer the year printed on the flyer. When no year is shown, choose the year that makes the date the next occurrence on or after today (${today}) — never default to a past year. Resolve relative dates such as "this Saturday" or "tomorrow" against today as well.
 - Express all times as 24-hour local wall-clock values; do not apply any timezone offset.
 - start_date_local and start_max_local define the window during which attendees should arrive/show up — not the event's full duration. Use the times on the flyer plus judgment about the event type to set a sensible arrival window:
   - A show or concert with separate "doors" and "show"/"start" times: doors -> start_date_local, show -> start_max_local.
@@ -137,6 +138,17 @@ Read all visible text and return the event's details using the provided schema.
 - If the event has a tagline, slogan, or one-line hook, make it the first line of notes, followed by the remaining details.
 - For topic, choose the single best-matching value from the allowed list in the schema. Only pick one if it is clearly a good fit for the event; if none is a quality match, return null rather than forcing a weak fit.
 - If the image is not advertising a specific event, set is_event to false and leave the other fields null.`;
+}
+
+/** Today's date ("YYYY-MM-DD") in the given IANA timezone, for resolving
+ * incomplete or relative dates on the flyer. Falls back to UTC. */
+function currentDateInZone(timezone: string): string {
+  try {
+    return Temporal.Now.plainDateISO(timezone).toString();
+  } catch (_e) {
+    return Temporal.Now.plainDateISO("UTC").toString();
+  }
+}
 
 /** Detect the image media type from the actual base64 bytes (magic numbers),
  * correcting a mislabeled mediaType from the client. Anthropic rejects the
@@ -211,6 +223,9 @@ async function extractFromImage(
   // Correct a mislabeled media type from the client against the actual bytes.
   const resolvedMediaType = detectImageMediaType(image, mediaType);
 
+  // Anchor relative/incomplete dates to today in the caller's timezone.
+  const today = currentDateInZone(timezone);
+
   // Offer the most-used topics for auto-categorization (best-effort).
   const { names: topicNames, idByName: topicIdByName } = await getTopTopics(
     TOP_TOPICS_LIMIT,
@@ -241,7 +256,7 @@ async function extractFromImage(
                 data: image,
               },
             },
-            { type: "text", text: PROMPT },
+            { type: "text", text: buildPrompt(today) },
           ],
         },
       ],
