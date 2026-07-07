@@ -52,6 +52,10 @@ resource "google_cloud_run_v2_service" "backend" {
           cpu    = "1"
           memory = "512Mi"
         }
+        # Request-based billing with min=1 warm (2026-07 cost review): no cold
+        # starts for the app, CPU allocated only while requests (incl. open SSE
+        # streams) are in flight.
+        cpu_idle = true
       }
 
       env {
