@@ -8,6 +8,19 @@
 data "google_project" "current" {}
 
 # --- DATABASE_URL ------------------------------------------------------------
+# Shared-pg switchover (2026-07): the database now lives in the multi-tenant
+# jarvus-shared-postgres instance (see infra-ops projects/shared-postgres).
+# The tenant password is provisioned by that root into THIS project's Secret
+# Manager; we read it here to compose the URL. Connection is via the Cloud SQL
+# socket mount (cloudrun.tf), not the VPC private IP.
+locals {
+  shared_pg_connection = "jarvus-shared-postgres:us-east4:shared-pg"
+}
+
+data "google_secret_manager_secret_version" "shared_pg_password" {
+  secret = "shared-pg-squadquest-password"
+}
+
 resource "google_secret_manager_secret" "database_url" {
   secret_id = "database-url"
   replication {
@@ -17,7 +30,7 @@ resource "google_secret_manager_secret" "database_url" {
 
 resource "google_secret_manager_secret_version" "database_url" {
   secret      = google_secret_manager_secret.database_url.id
-  secret_data = "postgres://${google_sql_user.backend.name}:${random_password.db_password.result}@${google_sql_database_instance.backend.private_ip_address}:5432/${google_sql_database.backend.name}"
+  secret_data = "postgres://squadquest_app:${data.google_secret_manager_secret_version.shared_pg_password.secret_data}@/squadquest?host=/cloudsql/${local.shared_pg_connection}"
 }
 
 # --- JWT_SECRET --------------------------------------------------------------
