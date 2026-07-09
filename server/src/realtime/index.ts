@@ -1,5 +1,6 @@
 import fp from 'fastify-plugin'
 import postgres from 'postgres'
+import { connectDb } from '../db/connect'
 
 // Server→client live updates: SSE fanned out via Postgres LISTEN/NOTIFY. A pure
 // enhancement, never load-bearing — see specs/behaviors/realtime.md.
@@ -38,7 +39,7 @@ export default fp(async (fastify) => {
 
   // Dedicated single LISTEN connection (separate from the query pool). On NOTIFY,
   // fan out to the subscribers that may see the event.
-  const listener = postgres(fastify.config.DATABASE_URL, { max: 1 })
+  const listener = connectDb(fastify.config.DATABASE_URL, { max: 1 })
 
   async function fanOut(raw: string) {
     let event: RealtimeEvent
