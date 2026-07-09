@@ -1,10 +1,10 @@
 # =============================================================================
 # Cloud Run — the v2 backend API service
 # =============================================================================
-# Containerized Fastify/Bun, VPC-connected to reach Cloud SQL over private IP,
-# env from Secret Manager, min_instances=1 (warm — friendly to the planned
-# SSE/LISTEN-NOTIFY realtime). Migrations run on container startup (see
-# server/Dockerfile + src/migrate.ts).
+# Containerized Fastify/Bun reaching shared-pg over the Cloud SQL socket
+# mount, env from Secret Manager, min_instances=1 warm + request-based
+# billing. Migrations run on container startup (see server/Dockerfile +
+# src/migrate.ts).
 
 variable "backend_image" {
   description = "Fully-qualified backend container image (AR). CI overrides per-deploy."
@@ -29,14 +29,6 @@ resource "google_cloud_run_v2_service" "backend" {
     # reconnects + refetches regardless (realtime is best-effort) — this just makes
     # the cadence humane. See specs/behaviors/realtime.md + plans/v2-realtime-sse.md.
     timeout = "3600s"
-
-    # Kept during the shared-pg transition so the old private-IP path stays
-    # reachable for rollback; remove (with the connector itself, ~$18/mo) in
-    # the post-cutover cleanup PR alongside cloudsql.tf.
-    vpc_access {
-      connector = google_vpc_access_connector.backend.id
-      egress    = "PRIVATE_RANGES_ONLY"
-    }
 
     # Shared-pg socket mount (see tf/secrets.tf for the URL composition)
     volumes {
