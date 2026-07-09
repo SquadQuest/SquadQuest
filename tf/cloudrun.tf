@@ -30,9 +30,20 @@ resource "google_cloud_run_v2_service" "backend" {
     # the cadence humane. See specs/behaviors/realtime.md + plans/v2-realtime-sse.md.
     timeout = "3600s"
 
+    # Kept during the shared-pg transition so the old private-IP path stays
+    # reachable for rollback; remove (with the connector itself, ~$18/mo) in
+    # the post-cutover cleanup PR alongside cloudsql.tf.
     vpc_access {
       connector = google_vpc_access_connector.backend.id
       egress    = "PRIVATE_RANGES_ONLY"
+    }
+
+    # Shared-pg socket mount (see tf/secrets.tf for the URL composition)
+    volumes {
+      name = "cloudsql"
+      cloud_sql_instance {
+        instances = ["jarvus-shared-postgres:us-east4:shared-pg"]
+      }
     }
 
     scaling {
@@ -52,6 +63,15 @@ resource "google_cloud_run_v2_service" "backend" {
           cpu    = "1"
           memory = "512Mi"
         }
+        # Request-based billing with min=1 warm (2026-07 cost review): no cold
+        # starts for the app, CPU allocated only while requests (incl. open SSE
+        # streams) are in flight.
+        cpu_idle = true
+      }
+
+      volume_mounts {
+        name       = "cloudsql"
+        mount_path = "/cloudsql"
       }
 
       env {
