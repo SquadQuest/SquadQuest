@@ -29,8 +29,12 @@ resource "google_secret_manager_secret" "database_url" {
 }
 
 resource "google_secret_manager_secret_version" "database_url" {
-  secret      = google_secret_manager_secret.database_url.id
-  secret_data = "postgres://squadquest_app:${data.google_secret_manager_secret_version.shared_pg_password.secret_data}@/squadquest?host=/cloudsql/${local.shared_pg_connection}"
+  secret = google_secret_manager_secret.database_url.id
+  # postgres.js requires a parseable authority (WHATWG URL), so a dummy
+  # localhost stands in — the ?host= socket-dir query param overrides it.
+  # (The empty-authority form `@/db?host=` works for libpq/psycopg but threw
+  # ERR_INVALID_URL in Bun/postgres.js at first cutover.)
+  secret_data = "postgres://squadquest_app:${data.google_secret_manager_secret_version.shared_pg_password.secret_data}@localhost/squadquest?host=/cloudsql/${local.shared_pg_connection}"
 }
 
 # --- JWT_SECRET --------------------------------------------------------------
