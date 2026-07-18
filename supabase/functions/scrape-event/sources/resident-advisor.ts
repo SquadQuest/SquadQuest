@@ -69,7 +69,7 @@ async function scrape(url: URL): Promise<Event> {
     rally_point_text: eventData.venue?.location
       ? `POINT(${eventData.venue?.location.longitude} ${eventData.venue?.location.latitude})`
       : undefined,
-    link: `https://ra.co/events/${eventData.contentUrl}`,
+    link: `https://ra.co${eventData.contentUrl}`,
     notes: eventData.content,
     banner_photo: eventData.images.length > 0
       ? eventData.images[0].filename
