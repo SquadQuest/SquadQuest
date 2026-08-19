@@ -1,0 +1,288 @@
+#!/usr/bin/env bash
+# Sweep merged agent worktrees. Enumerates this repo's linked worktrees under
+# any */.claude/worktrees/ path (including nested registrations like
+# apps/web/.claude/worktrees/*), PROVES each one disposable, and for the
+# proven ones: stops any recorded bin/dev session, drops the derived
+# per-worktree database, removes the worktree, deletes the local branch, and
+# finally prunes stale remote-tracking refs. State-based, not event-based:
+# merged-ness is a property git can verify at any later time, so this runs
+# lazily — manually, or nudged at session start. Ported from the open-source
+# continuous-gtfs repo's bin/gc (its PRs #290/#293).
+#
+#   bin/gc            # sweep (applies by default)
+#   bin/gc --dry-run  # print the same verdicts; mutate nothing
+#   bin/gc --nudge    # SessionStart-hook mode: no fetch, no network, no
+#                     # mutation — cached refs + cheap gates only; prints one
+#                     # summary line when candidates exist, NOTHING when none
+#
+# Proof of disposability = ALL mandatory gates + AT LEAST ONE containment
+# proof. Containment is computed after a fresh `git fetch origin` (dry-run
+# fetches too — verdicts must never be read off a stale base ref; --nudge
+# alone skips the fetch):
+#
+#   Gates: not the main worktree; not the worktree gc is invoked from
+#   (fully-resolved path compare); clean working tree (no modifications, no
+#   untracked-unignored files); not locked; not a long-lived branch.
+#
+#   Containment (any one suffices):
+#     ancestry        — HEAD is an ancestor of the base ref
+#     patch-contained — every commit in <base>..HEAD reports `-` from
+#                       `git cherry` (catches PRs rebased remotely pre-merge)
+#     merged PR       — `gh pr list --head <branch> --state merged` hits
+#                       (catches squash merges, where patch-ids break).
+#                       Best-effort: silently unavailable when gh is missing
+#                       or errors. Never consulted for closed-unmerged PRs.
+#
+# Anything unproven is skipped with a one-line reason. Exit 0 either way.
+# Never touches the canonical main-worktree database, stashes (repo-global,
+# not attributable to a worktree), or remote branches (GitHub deletes those
+# on merge).
+#
+# Env overrides: APP_PG_PORT, APP_GC_BASE_REF.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+# The ref merges land on — containment is proven against THIS. Set it to the
+# repo's integration branch: origin/main by default; export (or hard-code)
+# APP_GC_BASE_REF=origin/develop in repos that integrate on develop.
+base_ref="${APP_GC_BASE_REF:-origin/main}"
+
+usage() { echo "usage: bin/gc [--dry-run|--nudge]"; }
+
+mode="apply"
+case "${1:-}" in
+  "") ;;
+  --dry-run) mode="dry" ;;
+  --nudge) mode="nudge" ;;
+  -h|--help) usage; exit 0 ;;
+  *)
+    echo "bin/gc: unknown argument '$1'" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+
+# Fully-resolved physical path (macOS has no realpath pre-Ventura).
+gc_resolve() { (cd "$1" 2>/dev/null && pwd -P) || printf '%s\n' "$1"; }
+
+# Anchor every repo-level git command on the script's own worktree — cwd may
+# be anywhere (the SessionStart hook runs from the project dir; a human may
+# run this from an unrelated directory).
+self_root="$(gc_resolve "$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)")"
+main_root="$(gc_resolve "$(git -C "$self_root" worktree list --porcelain | head -1 | sed 's/^worktree //')")"
+# The worktree gc is invoked FROM can differ from the one it lives in (e.g.
+# running another worktree's bin/gc). Exclude both.
+invoke_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -n "$invoke_root" ]; then
+  invoke_root="$(gc_resolve "$invoke_root")"
+fi
+
+# The one database this tool must never be able to drop.
+canonical_db="$(app_db_name_for_root "$main_root")"
+
+# Verdict lines (stdout). --nudge stays silent per-worktree — it only counts.
+report() { [ "$mode" = "nudge" ] || echo "$*"; }
+
+if [ "$mode" != "nudge" ]; then
+  if ! git -C "$self_root" fetch origin --quiet; then
+    # Stale refs can only UNDER-prove (the base ref moves forward), never
+    # over-prove — safe to continue, but say so.
+    echo "bin/gc: warning: git fetch origin failed — verdicts computed against cached refs" >&2
+  fi
+fi
+
+if ! git -C "$self_root" rev-parse --verify --quiet "$base_ref" >/dev/null; then
+  [ "$mode" = "nudge" ] || echo "bin/gc: ${base_ref} not found — nothing can be proven" >&2
+  exit 0
+fi
+
+# ── Enumerate linked worktrees ──────────────────────────────────────────────
+# Parse `git worktree list --porcelain` records into tab-separated lines
+# (path, branch, locked, prunable) — bash 3.2: no mapfile, no assoc arrays.
+records=""
+rec_wt="" rec_br="" rec_locked=0 rec_prunable=0
+gc_flush_record() {
+  if [ -n "$rec_wt" ]; then
+    records="${records}${rec_wt}"$'\t'"${rec_br}"$'\t'"${rec_locked}"$'\t'"${rec_prunable}"$'\n'
+  fi
+  rec_wt="" rec_br="" rec_locked=0 rec_prunable=0
+}
+while IFS= read -r line; do
+  case "$line" in
+    "worktree "*) gc_flush_record; rec_wt="${line#worktree }" ;;
+    "branch refs/heads/"*) rec_br="${line#branch refs/heads/}" ;;
+    locked*) rec_locked=1 ;;
+    prunable*) rec_prunable=1 ;;
+  esac
+done < <(git -C "$self_root" worktree list --porcelain)
+gc_flush_record
+
+# ── Evaluate + act ──────────────────────────────────────────────────────────
+candidates=0
+nudge_count=0
+removed_any=0
+
+# The record stream rides fd 3, NOT stdin: commands inside the loop
+# (docker exec -i via app_psql, gh) read stdin and would silently slurp the
+# remaining records after the first removal — the rest of the sweep would
+# never happen.
+while IFS=$'\t' read -r -u 3 wt br locked prunable; do
+  [ -n "$wt" ] || continue
+  case "$wt" in
+    */.claude/worktrees/*) ;;
+    *) continue ;; # out of scope (includes the main worktree, structurally)
+  esac
+  candidates=$((candidates + 1))
+  rwt="$(gc_resolve "$wt")"
+  rel="${rwt#"$main_root"/}"
+
+  # Mandatory gates — all must hold before any containment proof is consulted.
+  if [ "$rwt" = "$main_root" ]; then
+    report "skipped ${rel}: main worktree"
+    continue
+  fi
+  if [ "$rwt" = "$self_root" ] || [ "$rwt" = "$invoke_root" ]; then
+    report "skipped ${rel}: current worktree (bin/gc invoked from it)"
+    continue
+  fi
+  if [ "$prunable" = 1 ] || [ ! -d "$rwt" ]; then
+    report "skipped ${rel}: directory missing (see 'git worktree prune')"
+    continue
+  fi
+  if [ "$locked" = 1 ]; then
+    report "skipped ${rel}: locked"
+    continue
+  fi
+  if [ -z "$br" ]; then
+    report "skipped ${rel}: detached HEAD"
+    continue
+  fi
+  # A long-lived branch checked out in an agent worktree is an anomaly, and
+  # the integration branch trivially proves ancestry-contained — without this
+  # gate the sweep would remove the worktree AND `git branch -D` it. Never
+  # evaluate one.
+  case "$br" in
+    main|master|develop)
+      report "skipped ${rel}: long-lived branch '${br}' checked out"
+      continue
+      ;;
+  esac
+  if ! dirty="$(git -C "$rwt" status --porcelain 2>/dev/null)"; then
+    report "skipped ${rel}: git status failed"
+    continue
+  fi
+  if [ -n "$dirty" ]; then
+    report "skipped ${rel}: dirty working tree (uncommitted or untracked files)"
+    continue
+  fi
+
+  # Containment proofs — any one suffices.
+  proof=""
+  if git -C "$rwt" merge-base --is-ancestor HEAD "$base_ref" 2>/dev/null; then
+    proof="ancestry: HEAD contained in ${base_ref}"
+  else
+    cherry="$(git -C "$rwt" cherry "$base_ref" HEAD 2>/dev/null)" || cherry="+ unavailable"
+    # Empty cherry output with failed ancestry proves nothing; require at
+    # least one commit, all reported `-` (patch present in the base ref).
+    if [ -n "$cherry" ] && ! printf '%s\n' "$cherry" | grep -q '^+'; then
+      proof="patch-contained: every ${base_ref}..HEAD commit already in ${base_ref} (git cherry)"
+    elif [ "$mode" != "nudge" ] && command -v gh >/dev/null 2>&1; then
+      # Best-effort gh layer (network) — never consulted in --nudge mode.
+      # `gh pr list --head` matches by branch NAME, so pin the merged PR's
+      # head OID to this worktree's HEAD before trusting it: a reused branch
+      # name carrying fresh commits (old merged PR, new unmerged work) must
+      # never prove anything. Costs a real case — a branch rebased remotely
+      # pre-merge no longer OID-matches its own PR and stays skipped — but
+      # in a deletion tool a false skip is noise, a false proof is data loss.
+      pr_line="$( (cd "$rwt" && gh pr list --head "$br" --state merged --limit 1 \
+        --json number,headRefOid --jq '.[] | "\(.number) \(.headRefOid)"') 2>/dev/null || true)"
+      if [ -n "$pr_line" ] && [ "${pr_line#* }" = "$(git -C "$rwt" rev-parse HEAD)" ]; then
+        proof="PR #${pr_line%% *} merged (head matches)"
+      fi
+    fi
+  fi
+  if [ -z "$proof" ]; then
+    report "skipped ${rel}: no containment proof (branch '${br}' not merged into ${base_ref})"
+    continue
+  fi
+
+  if [ "$mode" = "nudge" ]; then
+    nudge_count=$((nudge_count + 1))
+    continue
+  fi
+  if [ "$mode" = "dry" ]; then
+    echo "would remove ${rel} (${proof})"
+    continue
+  fi
+
+  # ── Apply ────────────────────────────────────────────────────────────────
+  echo "removing ${rel} (${proof})"
+
+  # Stop any recorded bin/dev session for THAT worktree: the session helpers
+  # compute paths from app_root of the current dir, so subshell-cd into it —
+  # the same way bin/dev's own children run.
+  (cd "$rwt" && app_dev_stop) || true
+
+  db="$(app_db_name_for_root "$rwt")"
+  # Structurally never the canonical DB (main worktree excluded above), but
+  # guard anyway — this tool must not be able to drop the canonical database.
+  if [ "$db" != "$canonical_db" ] &&
+    [ "$(docker inspect -f '{{.State.Running}}' "$APP_CONTAINER_NAME" 2>/dev/null || true)" = "true" ]; then
+    exists="$(app_psql -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '${db}'" 2>/dev/null || true)"
+    if [ "$exists" = "1" ]; then
+      app_psql -d postgres -c "
+        SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+        WHERE datname = '${db}' AND pid <> pg_backend_pid()
+      " >/dev/null 2>&1 || true
+      # A client reconnecting between the terminate and the drop (a user
+      # psql/GUI session — the worktree's own bin/dev is already stopped)
+      # makes DROP fail; under set -e an unguarded failure would abort the
+      # whole sweep mid-run, breaking the exit-0-either-way contract. Skip
+      # this worktree instead — the next sweep retries.
+      if ! app_psql -d postgres -c "DROP DATABASE IF EXISTS ${db}" >/dev/null 2>&1; then
+        echo "skipped ${rel}: DROP DATABASE ${db} failed (still in use?) — retry next sweep"
+        continue
+      fi
+      echo "  dropped database ${db}"
+    fi
+  fi
+
+  # `git worktree remove` refusing (dirty/locked race since our check) is a
+  # feature — treat it as a skip, not an error.
+  if err="$(git -C "$self_root" worktree remove "$rwt" 2>&1)"; then
+    echo "  worktree removed"
+  else
+    echo "skipped ${rel}: git worktree remove refused (${err})"
+    continue
+  fi
+
+  # -D, not -d: a remotely-rebased-then-merged branch is not an ancestor of
+  # its own upstream, so plain -d refuses even though the PR merged.
+  if git -C "$self_root" branch -D "$br" >/dev/null 2>&1; then
+    echo "  branch ${br} deleted"
+  else
+    echo "  branch ${br} not deleted (already gone or checked out elsewhere)"
+  fi
+  removed_any=1
+done 3<<<"$records"
+
+if [ "$mode" = "nudge" ]; then
+  # One line when there is something to do; NOTHING when there isn't — this
+  # runs at every session start and must not pollute quiet ones.
+  if [ "$nudge_count" -gt 0 ]; then
+    echo "bin/gc: ${nudge_count} worktree(s) look merged — run bin/gc to sweep"
+  fi
+  exit 0
+fi
+
+if [ "$candidates" -eq 0 ]; then
+  echo "no agent worktrees found (nothing under */.claude/worktrees/)"
+fi
+
+if [ "$removed_any" = 1 ]; then
+  git -C "$self_root" remote prune origin >/dev/null 2>&1 || true
+  echo "pruned stale remote-tracking refs (git remote prune origin)"
+fi
+
+exit 0

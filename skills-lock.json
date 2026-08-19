@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "agent-dev-workflow": {
+      "source": "JarvusInnovations/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/agent-dev-workflow/SKILL.md",
+      "computedHash": "d7645eeaffa5d1732d5177b85727ae15a7020e308cba48256fb1479d10b05110"
+    },
     "dart-add-unit-test": {
       "source": "dart-lang/skills",
       "sourceType": "github",

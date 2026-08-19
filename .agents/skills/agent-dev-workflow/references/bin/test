@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Run the backend test suite against a DEDICATED test database (app_test), never
+# the dev database. Ensures the DB exists + is migrated, then runs the suite.
+#
+# Pair this with a test-runner preload so a bare `bun test` (no bin/) is ALSO
+# safe — see test-isolation.md. That preload is what makes this robust; this
+# script is the ergonomic entry point.
+#
+# Usage: bin/test [args forwarded to the test runner]
+# Env overrides: APP_PG_PORT.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+ensure_postgres
+
+export APP_DATABASE="app_test"     # force the test DB regardless of worktree
+db="$(app_db_name)"
+url="$(app_database_url)"
+
+app_ensure_db "$db"
+app_migrate "$url"
+
+cd "$(app_server_dir)"
+exec env DATABASE_URL="$url" bun test "$@"

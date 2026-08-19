@@ -1,0 +1,373 @@
+#!/usr/bin/env bash
+# FULLSTACK variant: run the dev stack (backend + frontend) as a per-worktree
+# SINGLETON session with on-disk logs and one-dies-all-die supervision. Save as
+# `bin/dev` in a repo where one command should run the whole stack (e.g.
+# Fastify + Vite). Picks a free port for each service so concurrent worktrees
+# don't collide (see bin/_common.sh's port-band claim). Protocol ported from
+# the open-source continuous-gtfs repo's bin/dev (its PR #290) — copy the
+# mechanics verbatim, adapt only the service list.
+#
+#   bin/dev [--restart]
+#       Start the stack — or, if a healthy session is already running for
+#       this worktree, report its endpoints and exit 0 instead of starting a
+#       second one. A session still BOOTING (another bin/dev's pre-flight:
+#       postgres ensure, migrate) is waited on and then attached, never torn
+#       down. Attaching refuses (exit 2) when the running session doesn't
+#       match what was asked for — explicit DATABASE_URL/PORT/VITE_PORT
+#       overrides the session wasn't started with. A stale or half-dead
+#       session (any child gone, recycled pids) is torn down and replaced.
+#       --restart bounces whatever is there.
+#   bin/dev status
+#       Health-checked KEY=VALUE contract on stdout.
+#       Exit: 0 running / 1 stopped / 2 unhealthy / 3 starting.
+#   bin/dev stop
+#       Stop the recorded session (from any terminal).
+#   bin/dev logs [server|web]
+#       Follow the session logs (both interleaved when no service given).
+#
+# Session state lives in .dev/ (gitignore it): state.env records the
+# supervisor + child PIDs and the chosen ports; logs/<service>.log holds each
+# service's full output — fresh per session, kept after exit for
+# post-mortems. If any child exits, the whole stack tears down loudly — never
+# a half-dead session serving proxy errors from still-bound ports.
+#
+# Env overrides: DATABASE_URL, PORT, VITE_PORT, HOST, APP_DATABASE,
+# APP_PG_PORT, APP_DEV_LOG_CAP_BYTES.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+root="$(app_root)"
+
+# KEY=VALUE contract for the recorded session (stdout — human text goes to
+# stderr, same split as bin/setup, so orchestrators can capture just these).
+# Reads from one snapshot ($1) — never the live file, which a dying
+# supervisor's trap can remove between the health check and these reads,
+# yielding STATUS=running with empty values.
+emit_session() {
+  local snap="$1" key
+  for key in DEV_PID DATABASE_URL PORT VITE_PORT; do
+    echo "${key}=$(app_snap_get "$snap" "$key")"
+  done
+  echo "LOG_DIR=$(app_dev_log_dir)"
+}
+
+# ── Subcommands ────────────────────────────────────────────────────────────
+case "${1:-}" in
+  status)
+    snap="$(app_dev_snapshot)"
+    if app_dev_session_healthy "$snap"; then
+      echo "STATUS=running"
+      emit_session "$snap"
+      echo "Dev session healthy (PID $(app_snap_get "$snap" DEV_PID)); logs: $(app_dev_log_dir)/" >&2
+      exit 0
+    fi
+    if app_dev_session_booting "$snap"; then
+      echo "STATUS=starting"
+      echo "DEV_PID=$(app_snap_get "$snap" DEV_PID)"
+      echo "LOG_DIR=$(app_dev_log_dir)"
+      echo "Dev session is starting (PID $(app_snap_get "$snap" DEV_PID)) — re-check shortly, or run 'bin/dev' to wait for it and attach." >&2
+      exit 3
+    fi
+    if [ -n "$snap" ] || [ -f "$root/.dev.pid" ]; then
+      echo "STATUS=unhealthy"
+      echo "Recorded session is not fully up — 'bin/dev' (or --restart) will replace it; 'bin/dev stop' clears it." >&2
+      exit 2
+    fi
+    echo "STATUS=stopped"
+    echo "No dev session running in this worktree." >&2
+    exit 1
+    ;;
+  stop)
+    app_dev_stop
+    exit 0
+    ;;
+  logs)
+    log_dir="$(app_dev_log_dir)"
+    svc="${2:-}"
+    if [ -n "$svc" ]; then
+      if [ ! -f "$log_dir/$svc.log" ]; then
+        echo "bin/dev logs: no log for '$svc' (expected: server, web)" >&2
+        exit 2
+      fi
+      exec tail -n 100 -F "$log_dir/$svc.log"
+    fi
+    if [ ! -d "$log_dir" ]; then
+      echo "bin/dev logs: no session logs yet — start one with bin/dev" >&2
+      exit 2
+    fi
+    exec tail -n 30 -F "$log_dir/server.log" "$log_dir/web.log"
+    ;;
+esac
+
+# ── Args (start mode) ──────────────────────────────────────────────────────
+RESTART=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --restart) RESTART=1; shift ;;
+    *) echo "bin/dev: unknown argument '$1' (subcommands: status, stop, logs)" >&2; exit 2 ;;
+  esac
+done
+
+# Explicit caller overrides, captured BEFORE the pickers fill defaults — the
+# attach path must refuse a session that wasn't started with them, instead of
+# exiting 0 with settings the caller didn't ask for.
+req_DATABASE_URL="${DATABASE_URL:-}"
+req_PORT="${PORT:-}"
+req_VITE_PORT="${VITE_PORT:-}"
+
+# ── Singleton check ────────────────────────────────────────────────────────
+# One session per worktree. A healthy running session (no --restart) is
+# reported and reused — a second terminal or a coding agent should attach to
+# it (read .dev/logs/, hit the recorded ports), not race it. A session still
+# booting is waited on, then attached. Anything less — half-dead stack, stale
+# state, legacy pidfile — is torn down before starting fresh.
+if [ "$RESTART" = 0 ]; then
+  snap="$(app_dev_snapshot)"
+  if app_dev_session_booting "$snap"; then
+    echo "A dev session is already starting here (PID $(app_snap_get "$snap" DEV_PID)) — waiting to attach..." >&2
+    for i in $(seq 1 120); do
+      sleep 1
+      snap="$(app_dev_snapshot)"
+      app_dev_session_booting "$snap" || break
+    done
+    if app_dev_session_booting "$snap"; then
+      echo "bin/dev: session PID $(app_snap_get "$snap" DEV_PID) has been booting for over 2 minutes — check $(app_dev_log_dir)/, or replace it with 'bin/dev --restart'." >&2
+      exit 2
+    fi
+  fi
+  if app_dev_session_healthy "$snap"; then
+    # Never silently attach across an explicit env-override mismatch: a
+    # session on other settings is not the session that was asked for.
+    mismatch=0
+    for key in DATABASE_URL PORT VITE_PORT; do
+      eval "requested=\"\$req_${key}\""
+      recorded="$(app_snap_get "$snap" "$key")"
+      if [ -n "$requested" ] && [ "$requested" != "$recorded" ]; then
+        [ "$mismatch" = 0 ] && echo "bin/dev: a healthy session is already running with different settings" >&2
+        echo "  ${key}: running ${recorded:-<unset>}, requested ${requested}" >&2
+        mismatch=1
+      fi
+    done
+    if [ "$mismatch" = 1 ]; then
+      echo "Replace it with: bin/dev --restart (same env), or unset the overrides to attach." >&2
+      exit 2
+    fi
+    echo "Dev session already running for this worktree (PID $(app_snap_get "$snap" DEV_PID)) — reusing it." >&2
+    echo "Logs: $(app_dev_log_dir)/ · follow with 'bin/dev logs' · bounce with 'bin/dev --restart'" >&2
+    echo "STATUS=running"
+    emit_session "$snap"
+    exit 0
+  fi
+fi
+if [ -n "$(app_dev_snapshot)" ] || [ -f "$root/.dev.pid" ]; then
+  if [ "$RESTART" = 0 ]; then
+    echo "Previous dev session is stale or half-dead — cleaning it up before starting." >&2
+  fi
+  app_dev_stop
+fi
+
+# ── Claim the singleton ────────────────────────────────────────────────────
+# Atomic exclusive create (noclobber) of state.env, BEFORE the slow pre-boot
+# work — otherwise two concurrent bin/devs both pass the checks above during
+# the pre-state window and boot duplicate stacks. PHASE stays "booting" until
+# the services are up and the full state is written; status/attach treat that
+# phase as wait-don't-touch.
+mkdir -p "$(app_dev_state_dir)"
+state_file="$(app_dev_state_file)"
+if ! (set -C; {
+  echo "PHASE=booting"
+  echo "DEV_PID=$$"
+  echo "DEV_PID_LSTART=$(app_pid_lstart $$)"
+} >"$state_file") 2>/dev/null; then
+  echo "bin/dev: lost the singleton race — another bin/dev claimed this worktree just now. Re-run bin/dev to wait for it and attach." >&2
+  exit 2
+fi
+
+# From claim to exit, this session owns cleanup. Installed before the slow
+# pre-boot work so a failed/interrupted boot releases the claim. The INT/TERM
+# traps convert those signals into a normal exit so the EXIT trap actually
+# runs — an untrapped fatal signal would skip it (exactly how 'bin/dev stop'
+# and bin/cleanup would otherwise leave the claim and half-dead stacks
+# behind). Logs are deliberately kept.
+cleanup() {
+  # Ownership check: a slow-dying replaced supervisor must not delete the
+  # record of the session that took over (which would leave the new stack
+  # running untracked — unstoppable by bin/dev stop / bin/cleanup).
+  if [ "$(app_dev_state_get DEV_PID)" = "$$" ]; then
+    rm -f "$state_file"
+  fi
+  # Kill each child's own process group (see `set -m` below) — deliberately
+  # NOT `kill 0`: the caller of 'bin/dev stop'/bin/cleanup shares this
+  # script's group when both were launched from the same non-interactive
+  # shell, and kill 0 would take the caller down mid-cleanup.
+  local p
+  for p in "${server_pid:-}" "${web_pid:-}" "${tail_pid:-}"; do
+    if [ -n "$p" ]; then
+      kill -- -"$p" 2>/dev/null || kill "$p" 2>/dev/null || true
+    fi
+  done
+  return 0
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+if [ -z "${DATABASE_URL:-}" ]; then
+  ensure_postgres
+  # Ensure the database exists even when bin/setup hasn't run in this
+  # worktree — ensure-then-boot makes bin/dev standalone rather than
+  # crashing on a missing database.
+  app_ensure_db "$(app_db_name)"
+  DATABASE_URL="$(app_database_url)"
+fi
+
+PORT="$(app_pick_port)"
+VITE_PORT="$(app_pick_vite_port)"
+
+# If the app does NOT run migrations itself on boot, run them here — the
+# singleton is already claimed (PHASE=booting), so a concurrent bin/dev
+# waits on this instead of racing it:
+# app_migrate "$DATABASE_URL"
+
+log_dir="$(app_dev_log_dir)"
+mkdir -p "$log_dir"
+: >"$log_dir/server.log"
+: >"$log_dir/web.log"
+
+echo "Backend:      http://localhost:${PORT}" >&2
+echo "Frontend:     http://localhost:${VITE_PORT}" >&2
+echo "DATABASE_URL: ${DATABASE_URL}" >&2
+echo "Logs:         ${log_dir}/ (follow from elsewhere: bin/dev logs)" >&2
+
+# Children: `exec` so $! is the real service process (recorded in state.env
+# for app_dev_stop's orphan sweep); output goes to the log files only — the
+# tail below streams the combined view to this terminal, so interactive
+# behavior is unchanged while agents and post-mortems read the files.
+#
+# set -m: each background child becomes its OWN process-group leader, so
+# cleanup/app_dev_stop can `kill -- -pid` a service's whole subtree (bun run →
+# vite) without signalling this script's inherited group, which the caller of
+# 'bin/dev stop' can share. disown (below) drops them from the job table so
+# job-control status lines don't pollute stderr; kill -0 monitoring is
+# pid-based and unaffected.
+set -m
+
+# Backend. HOST defaults to LOOPBACK — widen to 0.0.0.0 only deliberately (LAN /
+# mobile-device testing), and NEVER while a dev-auth bypass is active: an
+# AUTH_DISABLED-style mode that treats every request as admin is only safe
+# because it's loopback-contained. Don't export 0.0.0.0 unconditionally.
+( cd "$(app_server_dir)" && exec env DATABASE_URL="$DATABASE_URL" PORT="$PORT" \
+  HOST="${HOST:-127.0.0.1}" bun run dev >>"$log_dir/server.log" 2>&1 ) &
+server_pid=$!
+
+# Repos with N backend processes per worktree (e.g. gRPC service + HTTP
+# gateway): start each the same way — own picker, own log file, own
+# <NAME>_PID + <NAME>_PID_LSTART in the state write below, and add it to the
+# health-check/stop key lists in _common.sh. Thread the wiring env into
+# dependents (e.g. ORCHESTRATOR_URL="localhost:${GRPC_PORT}").
+
+# Frontend — proxy to the actual backend port (important for non-default
+# worktree ports). Convention: name the var VITE_API_TARGET (the vite config
+# reads it to set server.proxy) rather than a bare API_TARGET. Proxy /auth as
+# well as /api when dev session cookies ride the proxy — a /api-only proxy
+# silently breaks login.
+( cd "$root/<web-subdir>" && exec env VITE_PORT="$VITE_PORT" \
+  VITE_API_TARGET="http://localhost:${PORT}" bun run dev >>"$log_dir/web.log" 2>&1 ) &
+web_pid=$!
+
+# Combined live stream for this terminal (-q: no per-file headers — the
+# per-service files are the labeled view).
+tail -q -n +1 -F "$log_dir/server.log" "$log_dir/web.log" 2>/dev/null &
+tail_pid=$!
+disown -a
+set +m
+
+# Hold PHASE=booting until both ports actually listen — there's a real window
+# where every process is alive but nothing is bound yet (deps loading, the app
+# self-migrating), and "running" must mean attachable (the health check that
+# status/attach run against this file checks the ports). A child dying during
+# the wait aborts the boot loudly instead.
+boot_ready=0
+for i in $(seq 1 120); do
+  boot_ready=1
+  for port in "$PORT" "$VITE_PORT"; do
+    if ! port_in_use "$port"; then
+      boot_ready=0
+      break
+    fi
+  done
+  if [ "$boot_ready" = 1 ]; then
+    break
+  fi
+  for entry in "server:${server_pid}" "web:${web_pid}"; do
+    if ! kill -0 "${entry##*:}" 2>/dev/null; then
+      echo "bin/dev: ${entry%%:*} exited during startup (see ${log_dir}/${entry%%:*}.log)" >&2
+      exit 1
+    fi
+  done
+  sleep 1
+done
+if [ "$boot_ready" != 1 ]; then
+  echo "bin/dev: services did not bind their ports within 2 minutes — tearing down (see ${log_dir}/)" >&2
+  exit 1
+fi
+
+# Full state, atomically replacing the PHASE=booting claim (write-then-mv so
+# a concurrent status/attach never reads a half-written file). Every pid is
+# recorded with its start time — the identity that keeps stale state from
+# ever matching (or killing) a recycled pid.
+{
+  echo "PHASE=running"
+  echo "DEV_PID=$$"
+  echo "DEV_PID_LSTART=$(app_pid_lstart $$)"
+  echo "DATABASE_URL=${DATABASE_URL}"
+  echo "PORT=${PORT}"
+  echo "VITE_PORT=${VITE_PORT}"
+  echo "SERVER_PID=${server_pid}"
+  echo "SERVER_PID_LSTART=$(app_pid_lstart "$server_pid")"
+  echo "WEB_PID=${web_pid}"
+  echo "WEB_PID_LSTART=$(app_pid_lstart "$web_pid")"
+  echo "TAIL_PID=${tail_pid}"
+  echo "TAIL_PID_LSTART=$(app_pid_lstart "$tail_pid")"
+  echo "STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} >"$state_file.tmp"
+mv "$state_file.tmp" "$state_file"
+
+# ── Supervise: one dies → all die, loudly ──────────────────────────────────
+# A plain `wait` here is exactly how half-dead stacks happen: one child
+# crashes and the other keeps serving errors from a bound port. Poll instead
+# (`wait -n` needs bash ≥ 4.3; macOS ships 3.2) and name the corpse.
+#
+# The same loop caps log growth for long-lived sessions (checked every ~60s):
+# past APP_DEV_LOG_CAP_BYTES (default 20 MB ≈ days of local noise) the last
+# half is kept in <service>.log.old and the live file is truncated IN PLACE —
+# safe because the children write with O_APPEND (>>), so their next write
+# lands at the new EOF, and the terminal's tail -F follows truncation. Lines
+# written between the tail-copy and the truncate are dropped; for dev logs
+# that sliver is acceptable.
+log_cap_bytes="${APP_DEV_LOG_CAP_BYTES:-20971520}"
+log_keep_bytes=$((log_cap_bytes / 2))
+tick=0
+while true; do
+  sleep 2
+  for entry in "server:${server_pid}" "web:${web_pid}"; do
+    if ! kill -0 "${entry##*:}" 2>/dev/null; then
+      name="${entry%%:*}"
+      echo "" >&2
+      echo "bin/dev: ${name} exited — tearing down the stack (see ${log_dir}/${name}.log)" >&2
+      exit 1
+    fi
+  done
+  tick=$((tick + 1))
+  if [ $((tick % 30)) -eq 0 ]; then
+    for name in server web; do
+      f="$log_dir/${name}.log"
+      size="$(wc -c <"$f" 2>/dev/null || echo 0)"
+      if [ "$size" -gt "$log_cap_bytes" ]; then
+        tail -c "$log_keep_bytes" "$f" >"${f}.old"
+        : >"$f"
+      fi
+    done
+  fi
+done

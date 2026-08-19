@@ -89,11 +89,15 @@ sq_hash() {
   fi
 }
 
+# The repo's main worktree — `git worktree list` always reports it first.
+# Single source of truth for the DB naming and the port pickers, which each
+# used to reimplement this pipeline.
+sq_main_worktree() {
+  git -C "${1:-$(sq_root)}" worktree list --porcelain | head -1 | sed 's/^worktree //'
+}
+
 is_main_worktree() {
-  local worktree_root main_worktree
-  worktree_root="$(sq_root)"
-  main_worktree="$(git worktree list --porcelain | head -1 | sed 's/^worktree //')"
-  [ "$worktree_root" = "$main_worktree" ]
+  [ "$(sq_root)" = "$(sq_main_worktree)" ]
 }
 
 # The database name for this context:

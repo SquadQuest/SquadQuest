@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# Stop the shared Postgres container — the machine-scoped counterpart to
+# `ensure_postgres`. Every other teardown script in this set is worktree-scoped
+# (bin/cleanup drops one derived DB, bin/dev stop ends one session, bin/gc
+# sweeps merged worktrees); none of them stops a container, deliberately: no
+# single worktree can know whether another still needs it. This script is the
+# one place allowed to make that machine-wide call, and it only does so after
+# PROVING the container is idle.
+#
+#   bin/stop                     # stop the container iff nothing is using it
+#   bin/stop --dry-run           # print the same verdict; mutate nothing
+#   bin/stop --force             # stop it regardless of sessions/connections
+#   bin/stop --force --dry-run   # combinable: preview what --force would do
+#
+# Idleness proof — ALL must hold (mirrors bin/gc's prove-then-act structure):
+#
+#   no live dev session — every worktree of this repo is checked for a
+#                         .dev/state.env recording a live supervisor
+#                         (pid + start time, never bare `kill -0`)
+#   no client backends  — no non-superuser client connected to any database
+#                         in the container, other than this script's own psql
+#
+# Anything unproven is reported with a one-line reason and the container is
+# left running. Exit 0 either way; --dry-run and a refusal are not errors.
+#
+# Data is on a named volume, so stopping is non-destructive — the next
+# `bin/setup` starts the same container with every database intact.
+#
+# RACE, by design: a concurrent `bin/setup` in another session calls
+# ensure_postgres and brings the container straight back. Availability wins
+# over shutdown — this script re-verifies immediately before stopping to keep
+# the window small, but it does not lock other sessions out. If a container
+# keeps coming back, another session is actively working in the repo; that is
+# information, not a failure.
+#
+# Env overrides: APP_PG_PORT.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+usage() { echo "usage: bin/stop [--dry-run] [--force]"; }
+
+# --dry-run and --force are ORTHOGONAL and combinable: --force says "ignore the
+# idleness proof", --dry-run says "don't mutate anything". Parsing them as one
+# mutually-exclusive mode makes `bin/stop --force --dry-run` silently perform a
+# real stop when a preview was asked for — a destructive misread of the flag
+# that reads as the safest possible invocation.
+dry=0
+force=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) dry=1 ;;
+    --force) force=1 ;;
+    -h|--help) usage; exit 0 ;;
+    *)
+      echo "bin/stop: unknown argument '$1'" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+container="$APP_CONTAINER_NAME"
+
+if ! docker inspect "$container" &>/dev/null; then
+  echo "no container named ${container} — nothing to stop"
+  exit 0
+fi
+if [ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null || echo false)" != "true" ]; then
+  echo "${container} already stopped"
+  exit 0
+fi
+
+# ── Proof 1: no live bin/dev session in any worktree of this repo ────────────
+# Worktrees are enumerated from git, not from a directory glob: a worktree
+# registered outside .claude/worktrees/ (a scratch dir, ~/.worktrees/, /tmp)
+# still holds a session, and missing it would strand a running stack.
+live_sessions=""
+while IFS= read -r wt; do
+  [ -n "$wt" ] || continue
+  [ -d "$wt" ] || continue
+  snap="$(cat "${wt}/.dev/state.env" 2>/dev/null || true)"
+  [ -n "$snap" ] || continue
+  # A booting session counts as live too — its ports are not up yet, so a
+  # port/connection check alone would call it idle and pull the DB out from
+  # under a stack that is still coming up.
+  if app_pid_is "$(app_snap_get "$snap" DEV_PID)" \
+                "$(app_snap_get "$snap" DEV_PID_LSTART)"; then
+    live_sessions="${live_sessions}  ${wt} (PHASE=$(app_snap_get "$snap" PHASE), PID $(app_snap_get "$snap" DEV_PID))"$'\n'
+  fi
+done < <(git -C "$SCRIPT_DIR" worktree list --porcelain | sed -n 's/^worktree //p')
+
+# ── Proof 2: no client backends on any database in the container ────────────
+# Excludes this script's own psql (pg_backend_pid) and background workers /
+# autovacuum (backend_type filter). Counts connections to EVERY database, not
+# just this worktree's: another repo checkout or a stray tool may hold one.
+clients="$(app_psql -d postgres -tAc "
+  SELECT coalesce(string_agg(DISTINCT datname || ' <- ' || coalesce(host(client_addr), 'local') || ' (' || usename || ')', '; '), '')
+  FROM pg_stat_activity
+  WHERE backend_type = 'client backend' AND pid <> pg_backend_pid()
+" 2>/dev/null | tr -d '\r' || true)"
+
+blocked=0
+if [ -n "$live_sessions" ]; then
+  echo "in use: live bin/dev session(s):"
+  printf '%s' "$live_sessions"
+  blocked=1
+fi
+if [ -n "$clients" ]; then
+  echo "in use: client connection(s): ${clients}"
+  blocked=1
+fi
+
+if [ "$blocked" -eq 1 ] && [ "$force" -eq 0 ]; then
+  echo "refusing to stop ${container} — run bin/stop --force to override, or stop the sessions first"
+  exit 0
+fi
+if [ "$blocked" -eq 0 ]; then
+  echo "idle: no dev sessions, no client connections"
+fi
+
+if [ "$dry" -eq 1 ]; then
+  echo "would stop ${container}"
+  exit 0
+fi
+
+# Re-verify liveness immediately before acting: between the proof above and
+# here, another session's bin/setup may have started a stack. Cheap, and it
+# shrinks (never closes — see RACE above) the window.
+if [ "$force" -eq 0 ]; then
+  while IFS= read -r wt; do
+    [ -n "$wt" ] || continue
+    [ -d "$wt" ] || continue
+    snap="$(cat "${wt}/.dev/state.env" 2>/dev/null || true)"
+    [ -n "$snap" ] || continue
+    if app_pid_is "$(app_snap_get "$snap" DEV_PID)" \
+                  "$(app_snap_get "$snap" DEV_PID_LSTART)"; then
+      echo "aborted: a dev session started in ${wt} while checking — container left running"
+      exit 0
+    fi
+  done < <(git -C "$SCRIPT_DIR" worktree list --porcelain | sed -n 's/^worktree //p')
+fi
+
+docker stop "$container" >/dev/null
+echo "stopped ${container} (data preserved on volume ${APP_VOLUME_NAME}; bin/setup restarts it)"
