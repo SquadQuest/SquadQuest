@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Run SQL against this context's database, or open an interactive psql shell.
+#
+# Usage:
+#   bin/db "SELECT count(*) FROM users"
+#   echo "SELECT 1" | bin/db
+#   bin/db                       # interactive shell
+#
+# Env overrides: APP_DATABASE, APP_PG_PORT.
+# (Some projects name this script `bin/query` — same thing.)
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+db="$(app_db_name)"
+
+if [ $# -gt 0 ]; then
+  app_psql -d "$db" -c "$1"
+elif [ ! -t 0 ]; then
+  app_psql -d "$db"        # piped stdin
+else
+  docker exec -it "$APP_CONTAINER_NAME" psql -U "$APP_PG_USER" -d "$db"
+fi

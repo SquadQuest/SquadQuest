@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Drop and recreate this context's database, then migrate (+ seed if the project seeds).
+#
+# Env overrides: APP_DATABASE, APP_PG_PORT.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+ensure_postgres
+db="$(app_db_name)"
+app_recreate_db "$db"
+app_migrate "$(app_database_url)"
+# Seeds, if any: app_psql -d "$db" < "$(app_server_dir)/seed.sql" >/dev/null 2>&1
+echo "Database ${db} reset complete" >&2

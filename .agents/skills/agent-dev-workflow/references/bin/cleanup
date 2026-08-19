@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Drop this worktree's database (leaves the shared container running for others).
+# Refuses to drop the canonical main-worktree DB unless forced. Also stops a
+# `bin/dev` session left running in this worktree.
+#
+# Usage:
+#   bin/cleanup            # drop this worktree's derived DB
+#   bin/cleanup --force    # allow dropping the canonical dev DB
+#
+# Env overrides: APP_DATABASE, APP_PG_PORT.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+# Stop any bin/dev session recorded for this worktree first (state.env
+# sessions and legacy .dev.pid ones alike). Single-service setups whose
+# bin/dev just execs in the foreground can omit this block.
+#
+# Abort if anything survived SIGKILL: that process still holds connections to
+# the database we are about to drop, so the DROP would fail anyway ("database
+# is being accessed by other users") — and if it somehow won the race, we'd be
+# pulling storage out from under a live process. app_dev_stop leaves state.env
+# in place on this path, so the survivor stays identifiable.
+if ! app_dev_stop; then
+  echo "Refusing to drop ${db:-the database}: a dev process survived shutdown (see above)." >&2
+  exit 1
+fi
+
+db="$(app_db_name)"
+if [ "$db" = "app" ] && [ "${1:-}" != "--force" ]; then
+  echo "Refusing to drop the canonical dev database. Use bin/reset-db, or --force." >&2
+  exit 1
+fi
+
+app_psql -d postgres -c "
+  SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+  WHERE datname = '${db}' AND pid <> pg_backend_pid()
+" >/dev/null 2>&1 || true
+app_psql -d postgres -c "DROP DATABASE IF EXISTS ${db}" >/dev/null
+echo "Dropped database ${db}" >&2

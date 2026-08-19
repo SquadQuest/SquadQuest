@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Start the backend dev server with an auto-derived DATABASE_URL on a free port.
+#
+# This is the SINGLE-SERVICE variant (backend only) — correct when the frontend
+# runs separately (e.g. a native/mobile app, or you start the web app yourself).
+# For a fullstack repo that should start backend + frontend together and kill both
+# on exit, use the dev-fullstack template instead.
+#
+# Env overrides: DATABASE_URL, PORT, APP_DATABASE, APP_PG_PORT.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+if [ -z "${DATABASE_URL:-}" ]; then
+  ensure_postgres
+  DATABASE_URL="$(app_database_url)"
+fi
+
+PORT="$(app_pick_port)"
+
+echo "Backend:      http://localhost:${PORT}" >&2
+echo "DATABASE_URL: ${DATABASE_URL}" >&2
+
+cd "$(app_server_dir)"
+exec env DATABASE_URL="$DATABASE_URL" PORT="$PORT" bun run dev

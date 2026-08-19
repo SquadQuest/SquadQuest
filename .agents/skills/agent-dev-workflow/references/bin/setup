@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Ensure postgres + this context's database + deps + migrations. One-command
+# onboarding for a fresh checkout or worktree.
+#
+# Usage:
+#   bin/setup                       # empty DB + migrations (+ seed, if project seeds)
+#   bin/setup path/to/snapshot.sql  # load a snapshot first (see snapshots.md)
+#   bin/setup gs://bucket/x.sql     # load a GCS snapshot first (see snapshots.md)
+#
+# Status → stderr; machine-parseable env (KEY=VALUE) → stdout for orchestrators.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
+
+snapshot="${1:-}"
+if [ -n "$snapshot" ] && [[ "$snapshot" != gs://* ]] && [ ! -f "$snapshot" ]; then
+  echo "ERROR: snapshot not found: $snapshot" >&2
+  exit 1
+fi
+
+echo "Installing tool versions (asdf)..." >&2
+(cd "$(app_root)" && asdf install) >&2 || echo "asdf install skipped/failed — continuing" >&2
+
+ensure_postgres
+
+db="$(app_db_name)"
+# A snapshot load wants a clean DB; otherwise just ensure it exists (preserve data).
+if [ -n "$snapshot" ]; then
+  app_recreate_db "$db"
+else
+  app_ensure_db "$db"
+fi
+
+if [ ! -d "$(app_server_dir)/node_modules" ]; then
+  echo "Installing dependencies..." >&2
+  (cd "$(app_server_dir)" && bun install --frozen-lockfile) >&2
+fi
+
+url="$(app_database_url)"
+if [ -n "$snapshot" ]; then
+  echo "Loading snapshot: ${snapshot}..." >&2
+  if [[ "$snapshot" == gs://* ]]; then
+    gcloud storage cat "$snapshot" | app_strip_snapshot | app_psql -d "$db" >/dev/null
+  else
+    app_strip_snapshot < "$snapshot" | app_psql -d "$db" >/dev/null
+  fi
+fi
+
+app_migrate "$url"
+
+# If the project has seeds, run them on a fresh (non-snapshot) DB. See migrations-and-seeds.md.
+# [ -z "$snapshot" ] && app_psql -d "$db" < "$(app_server_dir)/seed.sql" >/dev/null 2>&1
+
+echo "DATABASE_URL=${url}"
+echo "APP_DATABASE=${db}"
+echo "PORT=$(app_pick_port)"
+# Emit EVERY derived port (one per process kind) plus the wiring vars that
+# connect the processes, and the shared aux-service endpoints (SKILL.md
+# "Auxiliary services") — the orchestrator captures this one stdout block:
+#   grpc_port="$(app_pick_grpc_port)"
+#   echo "GRPC_PORT=${grpc_port}"
+#   echo "ORCHESTRATOR_URL=http://localhost:${grpc_port}"
+#   echo "VALIDATOR_URL=${VALIDATOR_URL:-http://localhost:9010}"
+# Apps that read discrete DB_* vars instead of DATABASE_URL: also emit both forms.
+#   app_db_env
