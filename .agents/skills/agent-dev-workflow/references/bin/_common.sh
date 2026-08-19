@@ -117,9 +117,30 @@ app_strip_snapshot() {
 
 # ── Shared Postgres container ────────────────────────────────────────────────
 ensure_postgres() {
-  local container="$APP_CONTAINER_NAME" port
+  local container="$APP_CONTAINER_NAME" port bind actual
   port="$(app_pg_port)"
+  bind="${APP_PG_BIND:-127.0.0.1}"
   if docker inspect "$container" &>/dev/null; then
+    # BIND DRIFT (see gotchas.md): a container is reused by name and NEVER
+    # re-created, so its published address is frozen at creation time. Change
+    # the bind here and every existing container keeps the old one silently —
+    # which is how a box ends up with Postgres on 0.0.0.0 long after the
+    # default moved to loopback. Docker reports an empty HostIp as all
+    # interfaces; normalise before comparing.
+    # A container may publish on SEVERAL addresses, so emit one per line and
+    # collapse to a space-separated list — concatenating them yields nonsense
+    # like "127.0.0.1100.116.60.123". An empty HostIp means all interfaces.
+    actual="$(docker inspect \
+      -f '{{range $p, $b := .HostConfig.PortBindings}}{{range $b}}{{if .HostIp}}{{.HostIp}}{{else}}0.0.0.0{{end}}{{"\n"}}{{end}}{{end}}' \
+      "$container" 2>/dev/null | grep -v '^$' | sort -u | tr '\n' ' ' | sed 's/ *$//')"
+    [ -n "$actual" ] || actual="0.0.0.0"
+    if [ "$actual" != "$bind" ]; then
+      echo "WARNING: ${container} publishes on ${actual}:${port}, not ${bind}:${port}." >&2
+      echo "         It was created before the current bind setting and docker cannot" >&2
+      echo "         re-publish a running container. To fix (data is on volume" >&2
+      echo "         ${APP_VOLUME_NAME} and survives):" >&2
+      echo "           docker rm -f ${container} && bin/setup" >&2
+    fi
     if [ "$(docker inspect -f '{{.State.Running}}' "$container")" != "true" ]; then
       echo "Starting existing postgres container..." >&2
       docker start "$container" >/dev/null
@@ -128,7 +149,7 @@ ensure_postgres() {
     echo "Creating postgres container on port ${port}..." >&2
     docker run -d \
       --name "$container" \
-      -p "${APP_PG_BIND:-127.0.0.1}:${port}:5432" \
+      -p "${bind}:${port}:5432" \
       -e POSTGRES_USER="$APP_PG_USER" \
       -e POSTGRES_PASSWORD="$APP_PG_PASSWORD" \
       -e POSTGRES_DB=app \

@@ -115,6 +115,47 @@ share one Postgres. Don't `docker run` unconditionally — you'll get a name cla
 or orphaned data. If you ever change Postgres image/version, you must `docker rm`
 the old container (and possibly the volume) once, deliberately.
 
+## A container's published address is frozen at creation — changing the bind silently does nothing
+
+`ensure_postgres` reuses a container by name and only ever `docker start`s it
+(that reuse is the whole point — it is what lets many worktrees share one
+Postgres). Docker cannot re-publish an existing container, so **the `-p` address
+is fixed at creation time**. Change `APP_PG_BIND` — or adopt the loopback
+default after the fact — and every container created earlier keeps its old
+publish, forever, with no error and no diff to notice.
+
+This is how a machine ends up serving Postgres on `0.0.0.0` months after the
+code moved to `127.0.0.1`. Seen in the wild: a container created in March still
+published on all interfaces in August, on a box with a public IP, while its
+repo's `_common.sh` had said `${APP_PG_BIND:-127.0.0.1}` the entire time. Every
+code review of that file would pass.
+
+The template now detects the drift and says what to do (normalising docker's
+empty `HostIp`, which means all-interfaces):
+
+```bash
+# one address per line — a container can publish on SEVERAL, and concatenating
+# them yields nonsense like "127.0.0.1100.116.60.123"; empty HostIp = all ifaces
+actual="$(docker inspect \
+  -f '{{range $p, $b := .HostConfig.PortBindings}}{{range $b}}{{if .HostIp}}{{.HostIp}}{{else}}0.0.0.0{{end}}{{"\n"}}{{end}}{{end}}' \
+  "$container" | grep -v '^$' | sort -u | tr '\n' ' ' | sed 's/ *$//')"
+[ -n "$actual" ] || actual="0.0.0.0"
+[ "$actual" = "$bind" ] || echo "WARNING: ${container} publishes on ${actual}, not ${bind}" >&2
+```
+
+It warns rather than auto-recreating: recreating a container is the caller's
+call, not a side effect of `bin/setup`. The fix is one deliberate command, and
+the data is on a named volume so it survives:
+
+```bash
+docker rm -f <container> && bin/setup
+```
+
+The same freeze applies to any other creation-time setting — image/major
+version, volume mount, env. Container reuse (below) is the general case; the
+bind is the one where the silent failure is a *security* regression rather than
+a broken container you would notice immediately.
+
 ## md5 binary differs across platforms
 
 Linux/coreutils has `md5sum`; BSD/macOS has `md5 -q`. The `app_hash` helper
