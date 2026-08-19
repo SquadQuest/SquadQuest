@@ -81,6 +81,10 @@ know which parts you copy verbatim and which you adapt.
 **Project-specific** (the knobs you set):
 
 - the prefix, PG user/password/image, container/volume names
+- the **publish address** (`APP_PG_BIND`, default `127.0.0.1`) — keep it on
+  loopback unless a container genuinely must be reachable off-box. Note this is
+  frozen at container creation: changing it later does nothing until the
+  container is re-created, so `ensure_postgres` warns on the drift (see gotchas)
 - the **base port band** — the default PG port plus one worktree range **per
   process kind** (backend HTTP, gRPC, frontend, …). This is the project's claim on
   the machine: worktree isolation keeps a project's *own* copies apart, but the
@@ -165,6 +169,13 @@ after proving it idle: no live `bin/dev` session in **any** worktree of the repo
 still count), and no client backends connected to any database in it. Unproven →
 one-line reason, container left running, exit 0. Same prove-then-act shape as
 `bin/gc`; `--dry-run` and `--force` are combinable.
+
+One portability note: the session proof needs the fullstack `dev`'s
+`.dev/state.env` machinery. In single-service repos those helpers don't exist,
+so the proof is **skipped** and the verdict line says so rather than claiming
+"no dev sessions" for a check that never ran. Containment survives, because a
+running single-service dev server holds a database connection and is caught by
+the connection proof.
 
 Two things it deliberately does **not** do. It never removes the container or
 volume — stopping is non-destructive and `bin/setup` restarts it with every

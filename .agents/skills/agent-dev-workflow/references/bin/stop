@@ -16,7 +16,10 @@
 #
 #   no live dev session — every worktree of this repo is checked for a
 #                         .dev/state.env recording a live supervisor
-#                         (pid + start time, never bare `kill -0`)
+#                         (pid + start time, never bare `kill -0`). SKIPPED in
+#                         single-service repos with no session machine; the
+#                         verdict line says so, and a running dev server is
+#                         still caught by the connection proof below.
 #   no client backends  — no non-superuser client connected to any database
 #                         in the container, other than this script's own psql
 #
@@ -76,8 +79,19 @@ fi
 # Worktrees are enumerated from git, not from a directory glob: a worktree
 # registered outside .claude/worktrees/ (a scratch dir, ~/.worktrees/, /tmp)
 # still holds a session, and missing it would strand a running stack.
+# Repos on the single-service `dev` have no .dev/state.env session machine and
+# therefore no app_pid_is / app_snap_get. Skip this proof there instead of
+# dying on a missing function — containment is not lost, because a running
+# single-service dev server still holds a database connection and is caught by
+# proof 2 below. The verdict line says the check was SKIPPED rather than
+# claiming "no dev sessions" for a check that never ran.
 live_sessions=""
-while IFS= read -r wt; do
+if command -v app_pid_is >/dev/null 2>&1; then
+  session_proof="ok"
+else
+  session_proof="skipped — no dev-session state machine in this repo"
+fi
+while [ "$session_proof" = "ok" ] && IFS= read -r wt; do
   [ -n "$wt" ] || continue
   [ -d "$wt" ] || continue
   snap="$(cat "${wt}/.dev/state.env" 2>/dev/null || true)"
@@ -117,7 +131,11 @@ if [ "$blocked" -eq 1 ] && [ "$force" -eq 0 ]; then
   exit 0
 fi
 if [ "$blocked" -eq 0 ]; then
-  echo "idle: no dev sessions, no client connections"
+  if [ "$session_proof" = "ok" ]; then
+    echo "idle: no dev sessions, no client connections"
+  else
+    echo "idle: no client connections; session check ${session_proof}"
+  fi
 fi
 
 if [ "$dry" -eq 1 ]; then
@@ -128,7 +146,7 @@ fi
 # Re-verify liveness immediately before acting: between the proof above and
 # here, another session's bin/setup may have started a stack. Cheap, and it
 # shrinks (never closes — see RACE above) the window.
-if [ "$force" -eq 0 ]; then
+if [ "$force" -eq 0 ] && [ "$session_proof" = "ok" ]; then
   while IFS= read -r wt; do
     [ -n "$wt" ] || continue
     [ -d "$wt" ] || continue
