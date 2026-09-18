@@ -100,9 +100,13 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
         if (note != null) 'note': note,
       });
 
-      final instanceMember = response.data['status'] == null
+      // A 204 (RSVP removed) leaves the functions client with "" in place of a
+      // map, so don't subscript the response blindly.
+      final data = response.data;
+      final instanceMember = data is! Map<String, dynamic> ||
+              data['status'] == null
           ? null
-          : (await hydrate([response.data])).first;
+          : (await hydrate([data])).first;
 
       // update loaded rsvps with created/updated one
       if (state.hasValue && state.value != null) {
@@ -144,7 +148,14 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
       final response = await supabase.functions.invoke('invite',
           body: {'instance_id': instanceId, 'users': userIds});
 
-      return hydrate(response.data.cast<Map<String, dynamic>>());
+      // A 204 (nobody new to invite) leaves the functions client with "" in
+      // place of a list, so don't assume a List came back.
+      final data = response.data;
+      if (data is! List) {
+        return [];
+      }
+
+      return hydrate(data.cast<Map<String, dynamic>>());
     } on FunctionException catch (error) {
       throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
     }

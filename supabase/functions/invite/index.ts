@@ -151,12 +151,15 @@ serve(async (request) => {
     }
   }
 
-  // return new invitations
+  // Return new invitations. Always send a JSON array with a 200, even when
+  // empty: a 204 with an empty body makes the Dart functions client hand the
+  // app `""` instead of a list, which blew up as "Class 'String' has no
+  // instance method 'cast'" whenever every selected user was already invited.
   return new Response(
-    insertedInvitations!.length ? JSON.stringify(insertedInvitations) : null,
+    JSON.stringify(insertedInvitations ?? []),
     {
       headers: { "Content-Type": "application/json" },
-      status: insertedInvitations!.length ? 200 : 204,
+      status: 200,
     },
   );
 });
