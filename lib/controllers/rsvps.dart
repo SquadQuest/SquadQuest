@@ -51,9 +51,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
         .from('instance_members')
         .stream(primaryKey: ['id'])
         .eq('member', supabase.auth.currentUser!.id)
-        .listen((data) async {
-          state = AsyncValue.data(await hydrate(data));
-        });
+        .listen(_onData, onError: _onStreamError);
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
@@ -61,6 +59,24 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     });
 
     return future;
+  }
+
+  void _onData(List<Map<String, dynamic>> data) async {
+    try {
+      state = AsyncValue.data(await hydrate(data));
+    } catch (error, stackTrace) {
+      _onStreamError(error, stackTrace);
+    }
+  }
+
+  void _onStreamError(Object error, StackTrace stackTrace) {
+    logger.e('Failed to load RSVPs', error: error, stackTrace: stackTrace);
+
+    // settle build()'s future so the UI can show an error instead of spinning
+    // forever, but never replace data we already have
+    if (!state.hasValue) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   Future<List<InstanceMember>> hydrate(List<Map<String, dynamic>> data) async {
@@ -151,7 +167,7 @@ class InstanceRsvpsController
         .from('instance_members')
         .stream(primaryKey: ['id'])
         .eq('instance', instanceId)
-        .listen(_onData);
+        .listen(_onData, onError: _onStreamError);
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
@@ -162,7 +178,22 @@ class InstanceRsvpsController
   }
 
   void _onData(List<Map<String, dynamic>> data) async {
-    final rsvpsController = ref.read(rsvpsProvider.notifier);
-    state = AsyncValue.data(await rsvpsController.hydrate(data));
+    try {
+      final rsvpsController = ref.read(rsvpsProvider.notifier);
+      state = AsyncValue.data(await rsvpsController.hydrate(data));
+    } catch (error, stackTrace) {
+      _onStreamError(error, stackTrace);
+    }
+  }
+
+  void _onStreamError(Object error, StackTrace stackTrace) {
+    logger.e('Failed to load event RSVPs',
+        error: error, stackTrace: stackTrace);
+
+    // settle build()'s future so the UI can show an error instead of spinning
+    // forever, but never replace data we already have
+    if (!state.hasValue) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 }

@@ -49,7 +49,18 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
     // subscribe to changes
     final subscription = supabase
         .from('instances')
-        .stream(primaryKey: ['id']).listen((data) async {
+        .stream(primaryKey: ['id']).listen(_onData, onError: _onStreamError);
+
+    // cancel subscription when provider is disposed
+    ref.onDispose(() {
+      subscription.cancel();
+    });
+
+    return future;
+  }
+
+  void _onData(List<Map<String, dynamic>> data) async {
+    try {
       // convert to model instances
       final instances = await hydrate(data);
 
@@ -66,14 +77,19 @@ class InstancesController extends AsyncNotifier<List<Instance>> {
           ref.invalidate(instanceProvider);
         }
       }
-    });
+    } catch (error, stackTrace) {
+      _onStreamError(error, stackTrace);
+    }
+  }
 
-    // cancel subscription when provider is disposed
-    ref.onDispose(() {
-      subscription.cancel();
-    });
+  void _onStreamError(Object error, StackTrace stackTrace) {
+    logger.e('Failed to load events', error: error, stackTrace: stackTrace);
 
-    return future;
+    // settle build()'s future so the UI can show an error instead of spinning
+    // forever, but never replace data we already have
+    if (!state.hasValue) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   Future<List<Instance>> fetch() async {
