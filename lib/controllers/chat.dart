@@ -62,7 +62,7 @@ class ChatController
         .stream(primaryKey: ['id'])
         .eq('instance', instanceId)
         .order('created_at', ascending: false)
-        .listen(_onData);
+        .listen(_onData, onError: _onStreamError);
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
@@ -86,8 +86,18 @@ class ChatController
     try {
       state = AsyncValue.data(await hydrate(data));
     } catch (error, stackTrace) {
-      logger.e('Failed to hydrate chat messages',
-          error: error, stackTrace: stackTrace);
+      _onStreamError(error, stackTrace);
+    }
+  }
+
+  void _onStreamError(Object error, StackTrace stackTrace) {
+    logger.e('Failed to hydrate chat messages',
+        error: error, stackTrace: stackTrace);
+
+    // settle build()'s future so the UI can show an error instead of spinning
+    // forever, but never replace data we already have
+    if (!state.hasValue) {
+      state = AsyncValue.error(error, stackTrace);
     }
   }
 
@@ -195,7 +205,7 @@ class LatestChatController
         .eq('instance', instanceId)
         .order('created_at', ascending: false)
         .limit(1)
-        .listen(_onData);
+        .listen(_onData, onError: _onStreamError);
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
@@ -223,8 +233,18 @@ class LatestChatController
     try {
       state = AsyncValue.data(await hydrate(data.first));
     } catch (error, stackTrace) {
-      logger.e('Failed to hydrate chat message',
-          error: error, stackTrace: stackTrace);
+      _onStreamError(error, stackTrace);
+    }
+  }
+
+  void _onStreamError(Object error, StackTrace stackTrace) {
+    logger.e('Failed to hydrate chat message',
+        error: error, stackTrace: stackTrace);
+
+    // settle build()'s future so the UI can show an error instead of spinning
+    // forever, but never replace data we already have
+    if (!state.hasValue) {
+      state = AsyncValue.error(error, stackTrace);
     }
   }
 }

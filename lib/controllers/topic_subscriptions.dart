@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:squadquest/logger.dart';
 import 'package:squadquest/services/supabase.dart';
 import 'package:squadquest/models/topic.dart';
 
@@ -19,10 +20,7 @@ class TopicSubscriptionsController extends AsyncNotifier<List<TopicID>> {
         .from('topic_members')
         .stream(primaryKey: ['topic', 'member'])
         .eq('member', supabase.auth.currentUser!.id)
-        .listen((data) async {
-          state = AsyncValue.data(
-              data.map((row) => row['topic'] as TopicID).toList());
-        });
+        .listen(_onData, onError: _onStreamError);
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
@@ -30,5 +28,25 @@ class TopicSubscriptionsController extends AsyncNotifier<List<TopicID>> {
     });
 
     return future;
+  }
+
+  void _onData(List<Map<String, dynamic>> data) async {
+    try {
+      state = AsyncValue.data(
+          data.map((row) => row['topic'] as TopicID).toList());
+    } catch (error, stackTrace) {
+      _onStreamError(error, stackTrace);
+    }
+  }
+
+  void _onStreamError(Object error, StackTrace stackTrace) {
+    logger.e('Failed to load topic subscriptions',
+        error: error, stackTrace: stackTrace);
+
+    // settle build()'s future so the UI can show an error instead of spinning
+    // forever, but never replace data we already have
+    if (!state.hasValue) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 }

@@ -215,9 +215,35 @@ class MockInstanceRsvpsController extends InstanceRsvpsController {
 
 // Mock controller for RSVPs
 class MockRsvpsController extends RsvpsController {
+  /// Number of times [invite] has been called, so tests can assert that a
+  /// double tap doesn't send a second request.
+  int inviteCallCount = 0;
+
+  /// When set, [invite] waits on this before returning, letting tests hold a
+  /// request in flight and inspect the UI while it's pending.
+  Completer<void>? inviteGate;
+
   @override
   Future<List<InstanceMember>> build() async {
     return [];
+  }
+
+  @override
+  Future<List<InstanceMember>> invite(
+      InstanceID instanceId, List<UserID> userIds) async {
+    inviteCallCount++;
+
+    if (inviteGate != null) {
+      await inviteGate!.future;
+    }
+
+    return userIds
+        .map((userId) => InstanceMember(
+              instance: mockEvent,
+              memberId: userId,
+              status: InstanceMemberStatus.invited,
+            ))
+        .toList();
   }
 
   @override

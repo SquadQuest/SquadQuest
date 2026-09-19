@@ -32,7 +32,11 @@ class TopicsCacheService extends Notifier<TopicsCache> {
           continue;
         }
 
-        final TopicID topicId = item[field.idKey];
+        final TopicID? topicId = item[field.idKey];
+        if (topicId == null) {
+          continue;
+        }
+
         if (!state.containsKey(topicId)) {
           missingIds.add(topicId);
         }

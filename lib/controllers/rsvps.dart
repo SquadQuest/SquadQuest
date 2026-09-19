@@ -51,9 +51,7 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
         .from('instance_members')
         .stream(primaryKey: ['id'])
         .eq('member', supabase.auth.currentUser!.id)
-        .listen((data) async {
-          state = AsyncValue.data(await hydrate(data));
-        });
+        .listen(_onData, onError: _onStreamError);
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
@@ -61,6 +59,24 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
     });
 
     return future;
+  }
+
+  void _onData(List<Map<String, dynamic>> data) async {
+    try {
+      state = AsyncValue.data(await hydrate(data));
+    } catch (error, stackTrace) {
+      _onStreamError(error, stackTrace);
+    }
+  }
+
+  void _onStreamError(Object error, StackTrace stackTrace) {
+    logger.e('Failed to load RSVPs', error: error, stackTrace: stackTrace);
+
+    // settle build()'s future so the UI can show an error instead of spinning
+    // forever, but never replace data we already have
+    if (!state.hasValue) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   Future<List<InstanceMember>> hydrate(List<Map<String, dynamic>> data) async {
@@ -84,9 +100,13 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
         if (note != null) 'note': note,
       });
 
-      final instanceMember = response.data['status'] == null
+      // A 204 (RSVP removed) leaves the functions client with "" in place of a
+      // map, so don't subscript the response blindly.
+      final data = response.data;
+      final instanceMember = data is! Map<String, dynamic> ||
+              data['status'] == null
           ? null
-          : (await hydrate([response.data])).first;
+          : (await hydrate([data])).first;
 
       // update loaded rsvps with created/updated one
       if (state.hasValue && state.value != null) {
@@ -128,7 +148,14 @@ class RsvpsController extends AsyncNotifier<List<InstanceMember>> {
       final response = await supabase.functions.invoke('invite',
           body: {'instance_id': instanceId, 'users': userIds});
 
-      return hydrate(response.data.cast<Map<String, dynamic>>());
+      // A 204 (nobody new to invite) leaves the functions client with "" in
+      // place of a list, so don't assume a List came back.
+      final data = response.data;
+      if (data is! List) {
+        return [];
+      }
+
+      return hydrate(data.cast<Map<String, dynamic>>());
     } on FunctionException catch (error) {
       throw error.details.toString().replaceAll(RegExp(r'^[a-z\-]+: '), '');
     }
@@ -151,7 +178,7 @@ class InstanceRsvpsController
         .from('instance_members')
         .stream(primaryKey: ['id'])
         .eq('instance', instanceId)
-        .listen(_onData);
+        .listen(_onData, onError: _onStreamError);
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
@@ -162,7 +189,22 @@ class InstanceRsvpsController
   }
 
   void _onData(List<Map<String, dynamic>> data) async {
-    final rsvpsController = ref.read(rsvpsProvider.notifier);
-    state = AsyncValue.data(await rsvpsController.hydrate(data));
+    try {
+      final rsvpsController = ref.read(rsvpsProvider.notifier);
+      state = AsyncValue.data(await rsvpsController.hydrate(data));
+    } catch (error, stackTrace) {
+      _onStreamError(error, stackTrace);
+    }
+  }
+
+  void _onStreamError(Object error, StackTrace stackTrace) {
+    logger.e('Failed to load event RSVPs',
+        error: error, stackTrace: stackTrace);
+
+    // settle build()'s future so the UI can show an error instead of spinning
+    // forever, but never replace data we already have
+    if (!state.hasValue) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 }

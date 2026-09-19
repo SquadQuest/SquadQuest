@@ -19,9 +19,7 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
         .from('friends')
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
-        .listen((data) async {
-          state = AsyncValue.data(await hydrate(data));
-        });
+        .listen(_onData, onError: _onStreamError);
 
     // cancel subscription when provider is disposed
     ref.onDispose(() {
@@ -29,6 +27,24 @@ class FriendsController extends AsyncNotifier<List<Friend>> {
     });
 
     return future;
+  }
+
+  void _onData(List<Map<String, dynamic>> data) async {
+    try {
+      state = AsyncValue.data(await hydrate(data));
+    } catch (error, stackTrace) {
+      _onStreamError(error, stackTrace);
+    }
+  }
+
+  void _onStreamError(Object error, StackTrace stackTrace) {
+    logger.e('Failed to load friends', error: error, stackTrace: stackTrace);
+
+    // settle build()'s future so the UI can show an error instead of spinning
+    // forever, but never replace data we already have
+    if (!state.hasValue) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   Future<List<Friend>> fetch() async {

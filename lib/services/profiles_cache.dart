@@ -87,7 +87,11 @@ class ProfilesCacheService extends Notifier<ProfilesCache> {
           item[field.idKey] = item[field.idKey]['id'];
         }
 
-        final UserID userId = item[field.idKey];
+        final UserID? userId = item[field.idKey];
+        if (userId == null) {
+          continue;
+        }
+
         if (!state.containsKey(userId)) {
           missingIds.add(userId);
         }

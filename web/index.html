@@ -154,20 +154,25 @@
   <script>
     // load FCM service worker and proxy notification events
     if ("serviceWorker" in navigator) {
-      const serviceWorkerVersion = {{ flutter_service_worker_version }
-    } || 1;
+      // prettier-ignore
+      // NOTE: the flutter_service_worker_version value below is a build-time
+      // template token. Keep it on one line with no spaces inside its double
+      // braces -- `flutter build web` matches that exact spelling, and if it
+      // doesn't match, the raw text ships and breaks this whole script with a
+      // SyntaxError (which silently disables FCM push on web).
+      const serviceWorkerVersion = {{flutter_service_worker_version}} || 1;
 
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register(`./firebase-messaging-sw.js?v=${serviceWorkerVersion}`);
-    });
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register(`./firebase-messaging-sw.js?v=${serviceWorkerVersion}`);
+      });
 
-    // relay notification clicks from service worker to Flutter app
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      // relay message where Flutter app can catch it
-      if (event.data.messageType == 'notification-opened' && window.onWebNotificationOpened) {
-        window.onWebNotificationOpened(event.data);
-      }
-    });
+      // relay notification clicks from service worker to Flutter app
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        // relay message where Flutter app can catch it
+        if (event.data.messageType == 'notification-opened' && window.onWebNotificationOpened) {
+          window.onWebNotificationOpened(event.data);
+        }
+      });
     }
   </script>
   <script src="flutter_bootstrap.js"></script>
