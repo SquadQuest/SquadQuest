@@ -2,3 +2,5 @@ deno 2.1.9
 flutter 3.38.5-stable
 ruby 4.0.0
 opentofu 1.11.5
+bun 1.4.2
+nodejs 22.22.3

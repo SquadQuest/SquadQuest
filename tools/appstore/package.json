@@ -1,0 +1,20 @@
+{
+  "name": "@squadquest/appstore-cli",
+  "private": true,
+  "type": "module",
+  "description": "Source for the appstore AXI CLI bundled into .claude/skills/appstore",
+  "scripts": {
+    "build": "bun scripts/build-cli.ts && bun scripts/build-skill.ts",
+    "build:cli": "bun scripts/build-cli.ts",
+    "build:skill": "bun scripts/build-skill.ts",
+    "check": "bun scripts/build-cli.ts --check && bun scripts/build-skill.ts --check",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@toon-format/toon": "0.8.0",
+    "@types/node": "24.3.0",
+    "axi-sdk-js": "0.1.12",
+    "esbuild": "0.25.10",
+    "typescript": "5.9.3"
+  }
+}
