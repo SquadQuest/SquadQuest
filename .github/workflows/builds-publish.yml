@@ -373,9 +373,9 @@ jobs:
           API_ISSUER_ID: ${{ vars.APPSTORE_ISSUER_ID }}
         run: |
           # xcodebuild rather than `flutter build ipa`, because only xcodebuild
-          # accepts -allowProvisioningUpdates -- which is what lets Xcode
-          # resolve a profile for Runner *and* the embedded ImageNotification
-          # extension without a profile secret per target.
+          # accepts -allowProvisioningUpdates, which lets the archive resolve
+          # signing for Runner and the embedded ImageNotification extension.
+          # The App Store profiles are applied later, at export.
           xcodebuild archive \
             -workspace ios/Runner.xcworkspace \
             -scheme Runner \
@@ -387,19 +387,38 @@ jobs:
             -authenticationKeyID "${API_KEY_ID}" \
             -authenticationKeyIssuerID "${API_ISSUER_ID}"
 
+      # Export signs manually against these, one per bundle id. They are
+      # created once out of band (the CI key is App Manager and can read
+      # profiles but not mint them) and downloaded fresh each build, so a
+      # regenerated profile needs no change here.
+      - name: Download provisioning profile for the app
+        uses: apple-actions/download-provisioning-profiles@v6
+        with:
+          bundle-id: app.squadquest
+          profile-type: IOS_APP_STORE
+          issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+
+      - name: Download provisioning profile for the notification extension
+        uses: apple-actions/download-provisioning-profiles@v6
+        with:
+          bundle-id: app.squadquest.ImageNotification
+          profile-type: IOS_APP_STORE
+          issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+
       - name: Export IPA
-        env:
-          API_KEY_ID: ${{ vars.APPSTORE_API_KEY_ID }}
-          API_ISSUER_ID: ${{ vars.APPSTORE_ISSUER_ID }}
         run: |
+          # No -allowProvisioningUpdates: ExportOptions.plist pins a profile
+          # per bundle id and both are already installed, so there is nothing
+          # to resolve. Passing it would send xcodebuild back to cloud signing,
+          # which is what failed before.
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
             -exportOptionsPlist ios/ExportOptions.plist \
-            -exportPath "$RUNNER_TEMP/ipa" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${API_KEY_ID}.p8" \
-            -authenticationKeyID "${API_KEY_ID}" \
-            -authenticationKeyIssuerID "${API_ISSUER_ID}"
+            -exportPath "$RUNNER_TEMP/ipa"
 
           # exportArchive names the .ipa after the product, so glob it rather
           # than guessing.

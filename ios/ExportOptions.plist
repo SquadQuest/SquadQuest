@@ -9,15 +9,29 @@
 	<string>64TVJXTLTT</string>
 
 	<!--
-	  Automatic signing, not manual: Runner embeds the ImageNotification
-	  extension, so a manual export would need a named profile per bundle id
-	  (app.squadquest AND app.squadquest.ImageNotification) stored as secrets
-	  and kept in sync here. The archive/export steps instead pass
-	  -allowProvisioningUpdates with an App Store Connect API key, which
-	  resolves a profile for every target with nothing pinned in the repo.
+	  Manual signing with an explicit profile per bundle id. Automatic signing
+	  was tried first and fails here: with no App Store profiles on the account
+	  (Xcode Cloud managed signing internally and never created any), export
+	  falls back to cloud signing to mint them, which needs an Admin-role API
+	  key. The CI key is deliberately only App Manager, so the profiles are
+	  created once out of band and downloaded per build instead.
+
+	  These names are referenced by name, not UUID, so regenerating a profile
+	  -- after adding a device, or when it expires -- keeps this file valid.
 	-->
 	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>manual</string>
+
+	<key>signingCertificate</key>
+	<string>Apple Distribution</string>
+
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>app.squadquest</key>
+		<string>SquadQuest App Store</string>
+		<key>app.squadquest.ImageNotification</key>
+		<string>SquadQuest ImageNotification App Store</string>
+	</dict>
 
 	<key>uploadSymbols</key>
 	<true/>
