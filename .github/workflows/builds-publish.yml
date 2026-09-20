@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing v1.* tag to build, e.g. v1.46.0'
+        description: 'Version to stamp the build as, e.g. v1.46.0 (code built is the ref you run from)'
         required: true
         type: string
       upload_to_testflight:
@@ -253,11 +253,11 @@ jobs:
       )
 
     steps:
+      # Checks out the triggering ref: the tag on a release, and whatever
+      # branch/tag the manual run was started from otherwise. Deliberately not
+      # the `tag` input -- that is a version label only, and checking it out
+      # would build a commit predating this workflow and its ExportOptions.
       - uses: actions/checkout@v7
-        with:
-          # On a release this is already the tagged commit; on a manual run it
-          # is whatever tag was asked for.
-          ref: ${{ inputs.tag || github.ref }}
 
       - name: Place tag in environment
         env:
@@ -265,6 +265,12 @@ jobs:
         run: |
           if [[ "${SOURCE_TAG}" != v1.* ]]; then
             echo "Refusing to build '${SOURCE_TAG}': this pipeline is v1-only." >&2
+            exit 1
+          fi
+
+          if [ ! -f ios/ExportOptions.plist ]; then
+            echo "ios/ExportOptions.plist missing from $(git rev-parse --short HEAD)." >&2
+            echo "Run this from a ref that has it, such as the v1 branch." >&2
             exit 1
           fi
 
