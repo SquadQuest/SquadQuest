@@ -438,7 +438,10 @@ jobs:
           api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
           release-notes: ${{ env.RELEASE_NEWS }}
-          uses-non-exempt-encryption: 'false'
+          # No uses-non-exempt-encryption here: ios/Runner/Info.plist already
+          # declares ITSAppUsesNonExemptEncryption, so Apple rejects a second
+          # attempt to set it with "You cannot update when the value is already
+          # set" -- failing the step after the build has uploaded fine.
 
       - name: Clean up keychain and API key
         if: always()
