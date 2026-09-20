@@ -215,3 +215,167 @@ jobs:
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           raw-data: /tmp/discord-message.json
+
+  # iOS runs as its own macOS job rather than inside builds-publish above, so a
+  # signing failure can't take down the web/Android deploy that already works.
+  #
+  # Inert until the repo variable IOS_PUBLISH_ENABLED is set to 'true'. Also
+  # needs, beyond what the Android job uses:
+  #   vars.APPSTORE_ISSUER_ID            App Store Connect issuer ID
+  #   vars.APPSTORE_API_KEY_ID           App Store Connect API key ID
+  #   secrets.APPSTORE_API_PRIVATE_KEY   contents of AuthKey_<id>.p8
+  #   secrets.APPLE_CERTIFICATE_BASE64   Apple Distribution cert as base64 .p12
+  #   secrets.APPLE_CERTIFICATE_PASSWORD password for that .p12
+  #   secrets.IOS_GOOGLE_SERVICES_BASE64 base64 GoogleService-Info.plist
+  ios-publish:
+    runs-on: macos-latest
+
+    if: startsWith(github.event.release.tag_name, 'v1.') && vars.IOS_PUBLISH_ENABLED == 'true'
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Place tag in environment
+        run: |
+          SOURCE_TAG="${GITHUB_REF:10}"
+          echo "BUILD_NAME=${SOURCE_TAG#v}" >> $GITHUB_ENV
+
+          # Counted exactly as the Android job counts it, so one release lands
+          # on both stores with the same build number.
+          BUILD_NUMBER="$(git ls-remote origin | grep -cE 'refs/tags/v[01]\.')"
+          echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
+
+      - name: Write tag version to pubspec.yaml
+        run: |
+          sed -i '' "s/^version:.*/version: ${BUILD_NAME}+${BUILD_NUMBER}/" pubspec.yaml
+
+      - name: Parse release notes
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          # TestFlight's "What to Test" allows 4000 characters, so this needs
+          # none of the 500-char trimming the Play Store step demands.
+          RELEASE_NEWS=$(printf '%s' "${RELEASE_BODY}" \
+            | awk '/^## What.s New/{f=1;next} /^## /{f=0} f')
+
+          echo 'RELEASE_NEWS<<END_OF_RELEASE_MARKDOWN' >> $GITHUB_ENV
+          echo "${RELEASE_NEWS}" >> $GITHUB_ENV
+          echo 'END_OF_RELEASE_MARKDOWN' >> $GITHUB_ENV
+
+      - name: Set up Flutter Version Management CLI
+        uses: flutter-actions/setup-fvm@v1.0
+
+      - name: Install Flutter SDK
+        run: fvm install
+
+      - name: Activate Flutter SDK
+        run: fvm use --skip-pub-get
+
+      - name: Precache iOS artifacts
+        run: fvm flutter precache --ios
+
+      - name: Get depedencies
+        run: fvm flutter pub get
+
+      - name: Write secret files
+        run: |
+          echo "${{ secrets.FLUTTER_ENV_BASE64 }}" | base64 -d > ./.env
+
+          # The iOS plist, NOT the android/app/google-services.json that
+          # GOOGLE_SERVICES_BASE64 holds for the job above -- different file,
+          # so it needs its own secret.
+          echo "${{ secrets.IOS_GOOGLE_SERVICES_BASE64 }}" | base64 -d > ./ios/Runner/GoogleService-Info.plist
+
+      - name: Install CocoaPods dependencies
+        run: cd ios && pod install
+
+      - name: Install Apple distribution certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          # Import our own certificate instead of letting
+          # -allowProvisioningUpdates mint one: Apple caps distribution
+          # certificates at 3 per account and CI would churn through them.
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 12)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          echo "$CERTIFICATE_BASE64" | base64 -d > "$CERTIFICATE_PATH"
+          security import "$CERTIFICATE_PATH" -P "$CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+      - name: Write App Store Connect API key
+        env:
+          API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          API_KEY_ID: ${{ vars.APPSTORE_API_KEY_ID }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/private_keys"
+          echo "$API_PRIVATE_KEY" > "$RUNNER_TEMP/private_keys/AuthKey_${API_KEY_ID}.p8"
+
+      - name: Configure Flutter build settings
+        # Writes Generated.xcconfig (build mode + dart-defines) for the
+        # xcodebuild steps below to pick up.
+        run: fvm flutter build ios --release --config-only --dart-define=PRODUCTION_LOGGING=true
+
+      - name: Archive
+        env:
+          API_KEY_ID: ${{ vars.APPSTORE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ vars.APPSTORE_ISSUER_ID }}
+        run: |
+          # xcodebuild rather than `flutter build ipa`, because only xcodebuild
+          # accepts -allowProvisioningUpdates -- which is what lets Xcode
+          # resolve a profile for Runner *and* the embedded ImageNotification
+          # extension without a profile secret per target.
+          xcodebuild archive \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${API_KEY_ID}.p8" \
+            -authenticationKeyID "${API_KEY_ID}" \
+            -authenticationKeyIssuerID "${API_ISSUER_ID}"
+
+      - name: Export IPA
+        env:
+          API_KEY_ID: ${{ vars.APPSTORE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ vars.APPSTORE_ISSUER_ID }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/ipa" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${API_KEY_ID}.p8" \
+            -authenticationKeyID "${API_KEY_ID}" \
+            -authenticationKeyIssuerID "${API_ISSUER_ID}"
+
+          # exportArchive names the .ipa after the product, so glob it rather
+          # than guessing.
+          IPA_PATH="$(ls "$RUNNER_TEMP"/ipa/*.ipa | head -1)"
+          echo "Exported ${IPA_PATH}"
+          echo "IPA_PATH=${IPA_PATH}" >> $GITHUB_ENV
+
+      - name: Upload to TestFlight
+        uses: apple-actions/upload-testflight-build@v5
+        with:
+          app-path: ${{ env.IPA_PATH }}
+          issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          release-notes: ${{ env.RELEASE_NEWS }}
+          uses-non-exempt-encryption: 'false'
+
+      - name: Clean up keychain and API key
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
+          rm -rf "$RUNNER_TEMP/private_keys"
