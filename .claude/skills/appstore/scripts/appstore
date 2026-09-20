@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Shim so the bundled CLI can be invoked as `scripts/appstore <command>`.
+exec node "$(dirname "$0")/appstore.mjs" "$@"
