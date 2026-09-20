@@ -4,6 +4,21 @@ on:
   release:
     types: [ published ]
 
+  # Manual trigger for exercising the iOS job on its own against an existing
+  # tag. Only ios-publish honours this -- builds-publish is pinned to the
+  # release event so a manual run can never redeploy the web/Play Store.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing v1.* tag to build, e.g. v1.46.0'
+        required: true
+        type: string
+      upload_to_testflight:
+        description: 'Upload to TestFlight (off: archive and export only)'
+        required: false
+        default: false
+        type: boolean
+
 permissions:
   id-token: write
   pages: write
@@ -15,8 +30,9 @@ jobs:
 
     # Only deploy for v1.* releases. Release workflows already run from the
     # tagged commit, but this documents intent and blocks a stray non-v1 tag
-    # from publishing via the v1 pipeline.
-    if: startsWith(github.event.release.tag_name, 'v1.')
+    # from publishing via the v1 pipeline. The event check keeps a manual
+    # workflow_dispatch (meant for iOS alone) from republishing web/Android.
+    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v1.')
 
     steps:
       - uses: actions/checkout@v4
@@ -230,14 +246,29 @@ jobs:
   ios-publish:
     runs-on: macos-latest
 
-    if: startsWith(github.event.release.tag_name, 'v1.') && vars.IOS_PUBLISH_ENABLED == 'true'
+    if: >-
+      vars.IOS_PUBLISH_ENABLED == 'true' && (
+        github.event_name == 'workflow_dispatch'
+        || startsWith(github.event.release.tag_name, 'v1.')
+      )
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          # On a release this is already the tagged commit; on a manual run it
+          # is whatever tag was asked for.
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Place tag in environment
+        env:
+          SOURCE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
         run: |
-          SOURCE_TAG="${GITHUB_REF:10}"
+          if [[ "${SOURCE_TAG}" != v1.* ]]; then
+            echo "Refusing to build '${SOURCE_TAG}': this pipeline is v1-only." >&2
+            exit 1
+          fi
+
+          echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
           echo "BUILD_NAME=${SOURCE_TAG#v}" >> $GITHUB_ENV
 
           # Counted exactly as the Android job counts it, so one release lands
@@ -251,8 +282,14 @@ jobs:
 
       - name: Parse release notes
         env:
-          RELEASE_BODY: ${{ github.event.release.body }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          # Read the body off the release rather than the event payload, so a
+          # manual run against an older tag still gets its notes. A tag with no
+          # release (or none yet) just yields empty notes.
+          RELEASE_BODY="$(gh release view "${SOURCE_TAG}" \
+            --repo "${GITHUB_REPOSITORY}" --json body --jq .body || echo '')"
+
           # TestFlight's "What to Test" allows 4000 characters, so this needs
           # none of the 500-char trimming the Play Store step demands.
           RELEASE_NEWS=$(printf '%s' "${RELEASE_BODY}" \
@@ -365,6 +402,10 @@ jobs:
           echo "IPA_PATH=${IPA_PATH}" >> $GITHUB_ENV
 
       - name: Upload to TestFlight
+        # A manual run defaults to archive-and-export only: it proves the
+        # signing path without burning the build number that the real release
+        # for this tag will need (TestFlight rejects duplicates).
+        if: github.event_name == 'release' || inputs.upload_to_testflight
         uses: apple-actions/upload-testflight-build@v5
         with:
           app-path: ${{ env.IPA_PATH }}
