@@ -59,6 +59,26 @@ final supabaseProvider = FutureProvider<Supabase>((ref) async {
 
   log('Successfully initialized Supabase with ${keyToUse == supabaseAnonKey ? 'new' : 'legacy'} key');
 
+  // A session restored from storage after the app has sat unused carries an
+  // expired access token. PostgREST reads the token per request so it recovers
+  // once a refresh lands, but the realtime client captures whatever token it
+  // holds when a channel subscribes -- so without this, the first channels come
+  // up with a dead JWT and the server rejects them ("Token has expired N
+  // seconds ago"). Refresh before anything subscribes.
+  final restored = supabase.client.auth.currentSession;
+  if (restored != null && restored.isExpired) {
+    log('Restored session token is expired, refreshing before subscribing');
+    try {
+      await supabase.client.auth.refreshSession();
+      log('Refreshed session');
+    } catch (error, stackTrace) {
+      // A refresh token that's been revoked or has aged out can't be recovered
+      // here; let the app start signed-out rather than blocking on it.
+      logger.e('Failed to refresh restored session',
+          error: error, stackTrace: stackTrace);
+    }
+  }
+
   // Set up auth state change listener for Sentry integration
   supabase.client.auth.onAuthStateChange.listen((data) {
     log('Supabase authStateChange: ${data.event}');
