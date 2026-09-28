@@ -40,11 +40,21 @@ class TopicSubscriptionsController extends AsyncNotifier<List<TopicID>> {
   }
 
   void _onStreamError(Object error, StackTrace stackTrace) {
+    // Realtime is an enhancement, never load-bearing: `.stream()` fetches the
+    // initial rows over PostgREST regardless, so a channel that won't subscribe
+    // -- an expired token, a dropped socket -- must not stop the screen
+    // rendering. Log it and let the data that is still coming settle the state.
+    if (error is RealtimeSubscribeException) {
+      logger.w('Realtime channel unavailable, continuing without live updates: '
+          '${error.details}');
+      return;
+    }
+
     logger.e('Failed to load topic subscriptions',
         error: error, stackTrace: stackTrace);
 
-    // settle build()'s future so the UI can show an error instead of spinning
-    // forever, but never replace data we already have
+    // A real data failure, though: settle build()'s future so the UI can show
+    // an error instead of spinning forever, but never replace data we have.
     if (!state.hasValue) {
       state = AsyncValue.error(error, stackTrace);
     }
