@@ -145,13 +145,13 @@ class Instance {
           : DateTime.parse(map['end_time']).toLocal(),
       topic: topicModel,
       topicId: topicModel == null ? map['topic'] as TopicID? : topicModel.id,
-      title: map['title'] as String,
+      title: map['title'] as String? ?? '',
       visibility: map['visibility'] == null
           ? InstanceVisibility.friends
           : InstanceVisibility.values.firstWhere(
               (e) => e.name == map['visibility'],
             ),
-      locationDescription: map['location_description'] as String,
+      locationDescription: map['location_description'] as String? ?? '',
       rallyPoint: map['rally_point_text'] == null
           ? null
           : Geographic(

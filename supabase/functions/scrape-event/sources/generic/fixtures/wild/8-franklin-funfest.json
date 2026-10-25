@@ -1,0 +1,30 @@
+{
+  "url": "https://fi.edu/en/events-calendar/20261113/2026-funfest-night-museum",
+  "captured_at": "2026-10-25T18:24:37.484Z",
+  "timezone": "America/New_York",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": {
+      "extracted": {
+        "is_event": true,
+        "title": "2026 FunFest: A Night at the Museum",
+        "start_date_local": "2026-11-13T16:30",
+        "start_max_local": "2026-11-13T19:00",
+        "end_date_local": "2026-11-13T20:00",
+        "location_description": "The Franklin Institute",
+        "notes": "Calling all curious kiddos, playful parents, and thrill-seeking families, FunFest: A Night at the Museum is your golden ticket to an after-hours adventure where the museum turns into your playground!\n\nExplore mind-blowing exhibits, gobble up delicious treats, and dive into fantastically fun activities that spark the imagination. Grown-ups can unwind with a cocktail in hand while the kids engage in play zones thoughtfully designed exclusively for FunFest—or take part themselves!\n\nFunFest is a fundraiser and \"friend-raiser\" supporting The Franklin Institute's education programs and discounted/free tickets for students and teachers.\n\n## Good to Know\n\n- Children 2 and under are free; children 3+ require a ticket.\n- Food throughout the museum, including kid-friendly bites, dinner stations, and an open bar with specialty cocktails for adults.\n- Complimentary self-parking at the Franklin Institute garage (271 N. 21st Street) for tickets taken after 4:30pm.\n- Coat check and stroller-friendly; dress casually with comfortable shoes.\n- Tickets available at the door at the registration desk.",
+        "topic": null
+      }
+    }
+  },
+  "expected": {
+    "title": "2026 FunFest: A Night at the Museum",
+    "start_time_min": "2026-11-13T21:30:00.000Z",
+    "start_time_max": "2026-11-13T21:45:00.000Z",
+    "end_time": "2026-11-14T01:00:00.000Z",
+    "location_description": "The Franklin Institute",
+    "banner_photo": "https://fi.edu/sites/default/files/styles/hero_image/public/2026-04/26_FunFest_Invite_WebHeader_v02.jpg?itok=4FsyMPk4",
+    "notes": "Calling all curious kiddos, playful parents, and thrill-seeking families, FunFest: A Night at the Museum is your golden ticket to an after-hours adventure where the museum turns into your playground!\n\nExplore mind-blowing exhibits, gobble up delicious treats, and dive into fantastically fun activities that spark the imagination. Grown-ups can unwind with a cocktail in hand while the kids engage in play zones thoughtfully designed exclusively for FunFest—or take part themselves!\n\nFunFest is a fundraiser and \"friend-raiser\" supporting The Franklin Institute's education programs and discounted/free tickets for students and teachers.\n\n## Good to Know\n\n- Children 2 and under are free; children 3+ require a ticket.\n- Food throughout the museum, including kid-friendly bites, dinner stations, and an open bar with specialty cocktails for adults.\n- Complimentary self-parking at the Franklin Institute garage (271 N. 21st Street) for tickets taken after 4:30pm.\n- Coat check and stroller-friendly; dress casually with comfortable shoes.\n- Tickets available at the door at the registration desk."
+  }
+}

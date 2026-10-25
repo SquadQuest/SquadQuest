@@ -4,6 +4,16 @@ import {
   serve,
 } from "../_shared/http.ts";
 import { Event } from "../_shared/squadquest.ts";
+
+/** Fill fields the app's event model requires as strings, so an import
+ * missing them opens the form with blanks to fill instead of failing */
+function forClient(event: Event): Event {
+  return {
+    ...event,
+    title: event.title ?? "",
+    location_description: event.location_description ?? "",
+  };
+}
 import scrapers from "./sources/index.ts";
 import flyerImage from "./sources/flyer-image.ts";
 
@@ -18,7 +28,7 @@ serve(async (request: Request) => {
     const event = await flyerImage.extractFromImage(image, mediaType, timezone);
 
     return new Response(
-      JSON.stringify(event),
+      JSON.stringify(forClient(event)),
       {
         headers: { "Content-Type": "application/json" },
         status: 200,
@@ -47,7 +57,7 @@ serve(async (request: Request) => {
         console.log(`Trying scraper: ${url}`);
         const event = await scraper.scrape(url, { timezone });
         return new Response(
-          JSON.stringify(event),
+          JSON.stringify(forClient(event)),
           {
             headers: { "Content-Type": "application/json" },
             status: 200,

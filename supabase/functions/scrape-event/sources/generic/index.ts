@@ -115,38 +115,47 @@ export async function extractFromHtml(
     ...structured,
     extractMeta(doc!, pageUrl),
   ]);
-  // page titles often carry site names and taglines that event names don't
+  // page titles often carry site names and taglines that event names don't,
+  // and meta descriptions are often truncated or run lines together
   const titleFromMeta = !structured.some((source) => source?.title);
+  const notesFromMeta = !structured.some((source) => source?.description);
 
-  // timezone for wall times: the source's own, then the venue's, then the device's
-  let timezone = candidate.timezone;
-  if (!timezone && candidate.lat != null && candidate.lon != null) {
-    timezone = (await lookupTimezone(candidate.lat, candidate.lon)) ??
-      undefined;
-  }
-  if (!timezone && isValidTimezone(options.timezone)) {
-    timezone = options.timezone;
-  }
-  if (!timezone) {
-    console.log("No timezone found for event, assuming UTC");
-    timezone = "UTC";
-  }
+  // timezone for wall times: the source's own, then the venue's, then the
+  // device's. Resolved only when needed, since it may cost a geonames lookup
+  let timezone: string | undefined;
+  const getTimezone = async (): Promise<string> => {
+    if (timezone) return timezone;
+    timezone = candidate.timezone;
+    if (!timezone && candidate.lat != null && candidate.lon != null) {
+      timezone = (await lookupTimezone(candidate.lat, candidate.lon)) ??
+        undefined;
+    }
+    if (!timezone && isValidTimezone(options.timezone)) {
+      timezone = options.timezone;
+    }
+    if (!timezone) {
+      console.log("No timezone found for event, assuming UTC");
+      timezone = "UTC";
+    }
+    return timezone;
+  };
 
   candidate.title = stripSiteName(candidate.title, siteName(doc!));
 
   let start = parseTimeValue(candidate.start);
   let startMax: ParsedTime | undefined;
   let end = parseTimeValue(candidate.end);
-  const today = currentDateInZone(timezone, now);
+  let today = "";
 
-  // read the page text when metadata is missing the start time or title
+  // read the page text when metadata is missing the start time, title, or venue
   const text = pageText(doc!);
   let llmResult: LlmResult | undefined;
   if (
     llm && text.length >= MIN_TEXT_LENGTH &&
-    (!hasTime(start) || !candidate.title)
+    (!hasTime(start) || !candidate.title || !candidate.location)
   ) {
     try {
+      today = currentDateInZone(await getTimezone(), now);
       llmResult = await llm(text, llmHints(candidate), today);
     } catch (e) {
       console.error("LLM page extraction failed:", e);
@@ -181,12 +190,16 @@ export async function extractFromHtml(
     "This page loads its details with JavaScript or a login, which import can't read. Try entering the event manually",
   );
 
+  const wallTimeZone =
+    [start, startMax, end].some((parsed) => parsed && "local" in parsed)
+      ? await getTimezone()
+      : "UTC";
   const toDate = (parsed: ParsedTime | undefined): Date | undefined =>
     !parsed
       ? undefined
       : "instant" in parsed
       ? parsed.instant
-      : wallTimeToUtc(parsed.local, timezone!);
+      : wallTimeToUtc(parsed.local, wallTimeZone);
 
   // a date with no time anywhere on the page lands at midday, so the day is
   // right and the person importing it adjusts the time
@@ -213,7 +226,8 @@ export async function extractFromHtml(
       ? `POINT(${candidate.lon} ${candidate.lat})`
       : undefined,
     link: pageUrl.toString(),
-    notes: candidate.description ?? extracted?.notes ?? undefined,
+    notes: (notesFromMeta && extracted?.is_event && extracted.notes) ||
+      candidate.description || extracted?.notes || undefined,
     banner_photo: candidate.image,
     topic: llmResult?.topic,
     visibility: EventVisibility.public,
