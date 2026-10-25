@@ -400,11 +400,14 @@ class _EventEditScreenState extends ConsumerState<EventEditScreen> {
     });
 
     try {
+      // lets the importer resolve event times the page gives without an offset
+      final timezone = await FlutterTimezone.getLocalTimezone();
+
       final supabase = ref.read(supabaseClientProvider);
       final response = await supabase.functions.invoke(
         'scrape-event',
         method: HttpMethod.get,
-        queryParameters: {'url': url.toString()},
+        queryParameters: {'url': url.toString(), 'timezone': timezone},
       );
 
       final instance = Instance.fromMap(response.data);

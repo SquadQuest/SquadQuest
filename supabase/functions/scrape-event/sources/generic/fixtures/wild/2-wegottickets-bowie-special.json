@@ -1,0 +1,26 @@
+{
+  "url": "https://wegottickets.com/event/688941",
+  "captured_at": "2026-10-25T17:52:34.863Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "David Bowie Special at How Does It Feel To Be Loved?",
+    "start": "2026-11-14T21:00:00+00:00",
+    "end": null,
+    "location": "Signature Brew Haggerston, Railway Arches, 340 Acton Mews, London E8 4EA",
+    "has_image": true
+  },
+  "notes": "WeGotTickets (UK). @type MusicEvent. location.address is a pipe-delimited STRING 'Railway Arches|340 Acton Mews|London|E8 4EA|' and postalCode sits directly on the Place. No endDate. No image in the JSON-LD; only og:image has one.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "David Bowie Special at How Does It Feel To Be Loved? at Signature Brew Haggerston",
+    "start_time_min": "2026-11-14T21:00:00.000Z",
+    "start_time_max": "2026-11-14T21:15:00.000Z",
+    "location_description": "London Signature Brew Haggerston, Railway Arches, 340 Acton Mews, London, E8 4EA",
+    "banner_photo": "https://static.wegottickets.com/images/events/6965015135857_event.jpeg",
+    "notes": "Our annual David Bowie special. We'll be playing loads of Bowie favourites alongside our usual mix of indie pop and soul.\n\nWe play:\n\nBelle & Sebastian * Dusty Springfield * The Magnetic Fields * Love * Orange Juice * The Ronettes * Ramones * The Supremes * Aztec Camera * Beach Boys * Buzzcocks * The Cure * The Temptations * Velvet Underground * Felt * The Shangri-Las * R.E.M. * Allo Darlin' * Otis Redding * The Field Mice * Dexys Midnight Runners * Camera Obscura * The Four Tops * The Go-Betweens * Pixies * Tammi Terrell * Jens Lekman * Jonathan Richman * Le Tigre * Pat Powdrill * The Sea Urchins * Sleater-Kinney * Os Mutantes * Neutral Milk Hotel * The Left Banke * The Associates * Martha Reeves & The Vandellas * Thee Oh Sees * Teenage Fanclub * The Pastels * Shop Assistants\n\nReviews of How Does It Feel To Be Loved?:\n\n\"This hugely popular night knows there are few better ways to enter the new year than with a soundtrack of classic sixties soul and the most danceworthy janglepop and shimmering indie tunes.\" - Time Out\n“A speakeasy for anyone who suspects that their life is one big Smiths song' - Big Issue\n'Absolutely the best night in the whole of the world!” - The Guardian\n“Much-loved indie pop institution” - The Quietus\n“Legendary indie club” - NME"
+  }
+}

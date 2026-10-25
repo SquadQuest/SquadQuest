@@ -1,127 +1,13 @@
 import { assert } from "../../_shared/http.ts";
 import { Event, EventVisibility } from "../../_shared/squadquest.ts";
-import { getServiceRoleSupabaseClient } from "../../_shared/supabase.ts";
-
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-opus-4-8";
-
-/** How many of the most-used topics to offer the model to choose from. */
-const TOP_TOPICS_LIMIT = 25;
-
-/** Fields we ask the model to extract from a flyer image. Times are returned as
- * wall-clock local strings ("YYYY-MM-DDTHH:mm") since flyers rarely carry a
- * timezone or coordinates — the caller's timezone resolves them to UTC. */
-interface ExtractedFlyer {
-  is_event: boolean;
-  title: string | null;
-  start_date_local: string | null;
-  start_max_local: string | null;
-  end_date_local: string | null;
-  location_description: string | null;
-  notes: string | null;
-  topic: string | null;
-}
-
-/** Fetch the names of the most-used topics, ranked by how many events use each.
- * Best-effort: returns an empty result on any failure so extraction still works. */
-async function getTopTopics(
-  limit: number,
-): Promise<{ names: string[]; idByName: Map<string, string> }> {
-  const idByName = new Map<string, string>();
-  try {
-    const supabase = getServiceRoleSupabaseClient();
-    const { data, error } = await supabase
-      .from("topics")
-      .select("id, name, instances(count)");
-
-    if (error || !data) return { names: [], idByName };
-
-    const ranked = data
-      .filter((t: { name: string | null }) => !!t.name)
-      .map((t: { id: string; name: string; instances: { count: number }[] }) => ({
-        id: t.id,
-        name: t.name,
-        count: t.instances?.[0]?.count ?? 0,
-      }))
-      .filter((t) => t.count > 0)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, limit);
-
-    for (const t of ranked) idByName.set(t.name, t.id);
-    return { names: ranked.map((t) => t.name), idByName };
-  } catch (e) {
-    console.error("Failed to load topics for flyer extraction:", e);
-    return { names: [], idByName };
-  }
-}
-
-function buildSchema(topicNames: string[]) {
-  const properties: Record<string, unknown> = {
-    is_event: {
-      type: "boolean",
-      description:
-        "True only if the image is a flyer/poster/screenshot advertising a specific event.",
-    },
-    title: {
-      type: ["string", "null"],
-      description:
-        "The event's name/title: the main name plus a subtitle or tour name if one reads as part of it (e.g. 'LOTUS: Eat the Light'). Transcribe verbatim — preserve original capitalization (including all-caps), punctuation, and wording; do not normalize casing, expand abbreviations, or rephrase. Do NOT include edition/version/anniversary qualifiers such as '10 Year Expanded Edition', 'Deluxe Edition', 'Remastered', or '20th Anniversary' — those belong in notes, not the title.",
-    },
-    start_date_local: {
-      type: ["string", "null"],
-      description:
-        "The EARLIEST time attendees should arrive, as local wall-clock time in 'YYYY-MM-DDTHH:mm' format (24-hour). For a show with separate doors and show times, this is the doors time. Otherwise it is the start time shown. Null if no date/time is shown.",
-    },
-    start_max_local: {
-      type: ["string", "null"],
-      description:
-        "The LATEST time attendees should reasonably arrive, in 'YYYY-MM-DDTHH:mm' format. Together with start_date_local this defines the arrival window — when people should show up, not the event's full duration. For a show with doors/show times, use the show/start time. For a drop-in event (open house, party, 'gates at X'), use judgment to set a sensible later bound. Leave null for a fixed call time (dinner, ceremony, scheduled meetup) where everyone should arrive at one time.",
-    },
-    end_date_local: {
-      type: ["string", "null"],
-      description:
-        "Event end as local wall-clock time in 'YYYY-MM-DDTHH:mm' format. Null if not shown.",
-    },
-    location_description: {
-      type: ["string", "null"],
-      description:
-        "Venue name and/or address as written on the flyer. Null if not shown.",
-    },
-    notes: {
-      type: ["string", "null"],
-      description:
-        "A short description of the event drawn from the flyer (tagline, lineup, details), including any edition/version/anniversary qualifier kept out of the title (e.g. '10 Year Expanded Edition'). If the flyer has a tagline/slogan/hook, it must be the first line of notes, followed by the remaining details. Null if none.",
-    },
-  };
-
-  const required = [
-    "is_event",
-    "title",
-    "start_date_local",
-    "start_max_local",
-    "end_date_local",
-    "location_description",
-    "notes",
-    "topic",
-  ];
-
-  // Offer the most-used topics as a closed set; null means "no good match".
-  // enum alone constrains the value (the structured-output validator rejects
-  // enum combined with a "type" array), and null in the list keeps it optional.
-  properties.topic = {
-    enum: [...topicNames, null],
-    description: topicNames.length
-      ? "The single best-matching category for this event, chosen ONLY from the allowed values. Pick a value only when it is a clear, quality match for what the flyer describes; otherwise return null. Do not force a weak match."
-      : "Always null (no categories are available).",
-  };
-
-  return {
-    type: "object",
-    properties,
-    required,
-    additionalProperties: false,
-  };
-}
+import {
+  buildSchema,
+  getTopTopics,
+  requestExtraction,
+  resolveTopic,
+  TOP_TOPICS_LIMIT,
+} from "./lib/llm-extract.ts";
+import { currentDateInZone, localWallTimeToUtc } from "./lib/time.ts";
 
 function buildPrompt(today: string): string {
   return `You are extracting structured event details from an event flyer, poster, or screenshot.
@@ -138,16 +24,6 @@ Read all visible text and return the event's details using the provided schema.
 - If the event has a tagline, slogan, or one-line hook, make it the first line of notes, followed by the remaining details.
 - For topic, choose the single best-matching value from the allowed list in the schema. Only pick one if it is clearly a good fit for the event; if none is a quality match, return null rather than forcing a weak fit.
 - If the image is not advertising a specific event, set is_event to false and leave the other fields null.`;
-}
-
-/** Today's date ("YYYY-MM-DD") in the given IANA timezone, for resolving
- * incomplete or relative dates on the flyer. Falls back to UTC. */
-function currentDateInZone(timezone: string): string {
-  try {
-    return Temporal.Now.plainDateISO(timezone).toString();
-  } catch (_e) {
-    return Temporal.Now.plainDateISO("UTC").toString();
-  }
 }
 
 /** Detect the image media type from the actual base64 bytes (magic numbers),
@@ -181,45 +57,12 @@ function detectImageMediaType(base64Image: string, declared: string): string {
   return declared;
 }
 
-/** Convert a wall-clock "YYYY-MM-DDTHH:mm" string in the given IANA timezone to a UTC Date. */
-function localWallTimeToUtc(
-  dateStr: string,
-  timezone: string,
-): Date | undefined {
-  if (!dateStr.includes("T")) return undefined;
-
-  const [datePart, timePart] = dateStr.split("T");
-  const [year, month, day] = datePart.split("-").map(Number);
-  const [hour, minute] = timePart.split(":").map(Number);
-
-  if ([year, month, day, hour, minute].some((n) => Number.isNaN(n))) {
-    return undefined;
-  }
-
-  try {
-    const instant = new Temporal.PlainDateTime(year, month, day, hour, minute)
-      .toZonedDateTime(timezone)
-      .toInstant();
-    return new Date(Number(instant.epochMilliseconds));
-  } catch (e) {
-    console.error("Failed to parse flyer date:", e);
-    return undefined;
-  }
-}
-
 /** Extract an Event from a base64-encoded flyer image using an Anthropic vision model. */
 async function extractFromImage(
   image: string,
   mediaType: string,
   timezone: string,
 ): Promise<Event> {
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  assert(
-    !!apiKey,
-    "Cannot extract event from image, required ANTHROPIC_API_KEY missing from environment",
-    500,
-  );
-
   // Correct a mislabeled media type from the client against the actual bytes.
   const resolvedMediaType = detectImageMediaType(image, mediaType);
 
@@ -231,54 +74,24 @@ async function extractFromImage(
     TOP_TOPICS_LIMIT,
   );
 
-  const response = await fetch(ANTHROPIC_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey!,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 2000,
-      output_config: {
-        format: { type: "json_schema", schema: buildSchema(topicNames) },
-      },
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: resolvedMediaType,
-                data: image,
-              },
-            },
-            { type: "text", text: buildPrompt(today) },
-          ],
+  const extracted = await requestExtraction(
+    [
+      {
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: resolvedMediaType,
+          data: image,
         },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(
-      `Anthropic request failed (${response.status}): ${detail}`,
-    );
-  }
-
-  const result = await response.json();
-
-  // structured output guarantees the first content block is text with valid JSON
-  const textBlock = result.content?.find((b: { type: string }) =>
-    b.type === "text"
+      },
+      { type: "text", text: buildPrompt(today) },
+    ],
+    buildSchema(
+      topicNames,
+      "flyer",
+      "True only if the image is a flyer/poster/screenshot advertising a specific event.",
+    ),
   );
-  assert(!!textBlock, "Model returned no extractable content");
-
-  const extracted = JSON.parse(textBlock.text) as ExtractedFlyer;
 
   assert(
     extracted.is_event,
@@ -301,23 +114,17 @@ async function extractFromImage(
     ? localWallTimeToUtc(extracted.end_date_local, timezone)
     : undefined;
 
-  // Resolve the model's chosen topic name back to a {id, name} object so the
-  // client form can pre-select it. Ignore anything not in the offered set.
-  const topicId = extracted.topic ? topicIdByName.get(extracted.topic) : undefined;
-  const topic = topicId
-    ? { id: topicId, name: extracted.topic! }
-    : undefined;
-
   return {
     title: extracted.title ?? undefined,
     start_time_min: startTime,
-    start_time_max: startTimeMax && startTimeMax.getTime() > startTime!.getTime()
-      ? startTimeMax
-      : new Date(startTime!.getTime() + 15 * 60 * 1000),
+    start_time_max:
+      startTimeMax && startTimeMax.getTime() > startTime!.getTime()
+        ? startTimeMax
+        : new Date(startTime!.getTime() + 15 * 60 * 1000),
     end_time: endTime,
     location_description: extracted.location_description ?? undefined,
     notes: extracted.notes ?? undefined,
-    topic,
+    topic: resolveTopic(extracted.topic, topicIdByName),
     visibility: EventVisibility.public,
   };
 }

@@ -1,0 +1,27 @@
+{
+  "url": "https://events.humanitix.com/yec-2026",
+  "captured_at": "2026-10-25T17:52:48.872Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "YEC 2026",
+    "start": "2026-11-22T17:00:00-06:00",
+    "end": "2026-11-23T21:00:00-06:00",
+    "location": "Laborde Earles Coliseum, 5600 Coliseum Blvd, Alexandria, LA 71303",
+    "has_image": true
+  },
+  "notes": "Humanitix. Offset has no colon ('-0600'). PostalAddress.streetAddress holds the whole address ('5600 Coliseum Blvd, Alexandria, LA 71303, USA'). Two-day event.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "YEC 2026",
+    "start_time_min": "2026-11-22T23:00:00.000Z",
+    "start_time_max": "2026-11-22T23:15:00.000Z",
+    "end_time": "2026-11-24T03:00:00.000Z",
+    "location_description": "Laborde Earles Coliseum, 5600 Coliseum Blvd, Alexandria, LA 71303, USA",
+    "banner_photo": "https://images.humanitix.com/i/LQqgX9XRUyyg2tJVlLnG@seo-500.jpg",
+    "notes": "The Youth Evangelism Celebration (YEC) is an evangelistic and equipping event designed to lead young people to Christ and challenge believers."
+  }
+}

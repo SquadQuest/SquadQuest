@@ -1,0 +1,29 @@
+{
+  "url": "https://www.930.com/e/amble/",
+  "captured_at": "2026-10-25T17:52:49.391Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Amble",
+    "start": "2026-11-11T19:00 America/New_York (doors; =2026-11-12T00:00:00Z)",
+    "end": "2026-11-11T22:00 America/New_York (per ICS)",
+    "location": "9:30 Club, 815 V Street N.W., Washington, DC 20001",
+    "has_image": true
+  },
+  "notes": "9:30 Club (WordPress). No Event JSON-LD: the Yoast @graph describes the /blog/ page, and <title> is 'Blog - 9:30 Club'. Duplicate og:title tags ('Blog - 9:30 Club' then 'Amble'). Relative ICS link /wp-json/events/event-data.ics?event_id=433824 (DTSTART:20261112T000000Z). The Google link is www.google.com/calendar/event?action=TEMPLATE&dates=20261112T000000Z/... The visible date is 'Wed, November 11 Doors: 7 PM', with no year.",
+  "replay": {
+    "calendars": {
+      "https://www.930.com/wp-json/events/event-data.ics?event_id=433824": "BEGIN:VCALENDAR\nVERSION:2.0\nMETHOD:PUBLISH\nPRODID:-//ticketmaster//Amble//EN\nBEGIN:VEVENT\nUID:433824  Amble\nDTSTAMP:20261025T173250Z\nDTSTART:20261112T000000Z\nDTEND:20261112T030000Z\nSUMMARY:Amble\nLOCATION: 9:30 Club\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "Amble",
+    "start_time_min": "2026-11-12T00:00:00.000Z",
+    "start_time_max": "2026-11-12T00:15:00.000Z",
+    "end_time": "2026-11-12T03:00:00.000Z",
+    "location_description": "9:30 Club",
+    "banner_photo": "https://www.930.com/wp-content/uploads/cache/2026/05/AtlantisAlumniArtist_WebPressPhoto_AMBLE-650x0-cropped.jpg",
+    "notes": "Amble"
+  }
+}

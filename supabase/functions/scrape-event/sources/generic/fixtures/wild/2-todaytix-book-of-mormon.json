@@ -1,0 +1,37 @@
+{
+  "url": "https://www.todaytix.com/nyc/shows/127-the-book-of-mormon",
+  "captured_at": "2026-10-25T17:52:35.146Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "The Book of Mormon (Broadway)",
+    "start": "2011-02-24 (date-only; run start, not a performance)",
+    "end": "2027-05-30",
+    "location": "Eugene O'Neill Theatre, 230 West 49th Street, New York, NY",
+    "has_image": true
+  },
+  "notes": "TRAP: TheaterEvent for a long-running show. startDate '2011-02-24' is date-only (the opening date), endDate '2027-05-30'. It includes an eventSchedule (Schedule, repeatFrequency P1W, byDay...). No single performance time. Script tags have data-next-head after type. Also FAQPage etc.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": {
+      "extracted": {
+        "is_event": true,
+        "title": "The Book of Mormon",
+        "start_date_local": "2026-10-25T19:00",
+        "start_max_local": null,
+        "end_date_local": null,
+        "location_description": "Eugene O'Neill Theatre, 230 West 49th Street (between Broadway and 8th Avenue), New York, NY, USA, 10019",
+        "notes": "The nine-time Tony-winning musical from the creators of South Park and the Oscar-winning composer of Frozen, about two mismatched missionaries.\n\nWinner of 9 Tony Awards including Best Musical! Two idealistic young missionaries are sent on a wild, irreverent adventure to Uganda. Direction and choreography by Casey Nicholaw.\n\nOriginal cast members Rory O'Malley (Tony nominee) and Nikki M. James (Tony winner) return from October 27 to January 17 only.\n\n## Know before you go\n\n- Run time: 2hr 30min, incl. 15min intermission\n- Ages 13+. Children under 4 will not be admitted.\n- Tickets start at $72.",
+        "topic": null
+      }
+    }
+  },
+  "expected": {
+    "title": "The Book of Mormon on Broadway, Eugene O'Neill Theatre",
+    "start_time_min": "2026-10-25T23:00:00.000Z",
+    "start_time_max": "2026-10-25T23:15:00.000Z",
+    "location_description": "Eugene O'Neill Theatre, 230 West 49th Street (between Broadway and 8th Avenue), New York, NY",
+    "banner_photo": "https://images.ctfassets.net/6pezt69ih962/7o4x461My2x5izhJSNe6kN/ce674fa83ae1abd29ce6cf7addb7f411/BOM_15_TTPA_480x720_Comp2138F.jpg",
+    "notes": "Say hello to the Tony Award-winning Best Musical by the creators of South Park and Avenue Q. The story of two Mormon missionaries who get more than they bargained for when sent to convert an African village has spread the good word on Broadway for more than a decade."
+  }
+}

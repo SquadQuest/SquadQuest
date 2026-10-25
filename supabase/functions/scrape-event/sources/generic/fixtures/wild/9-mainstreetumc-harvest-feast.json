@@ -1,0 +1,38 @@
+{
+  "url": "https://mainstreetumc.org/events/harvest-feast-nov-6/",
+  "captured_at": "2026-10-25T17:53:03.371Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Harvest Feast - Nov. 6",
+    "start": "2022-11-06T17:30 America/New_York",
+    "end": "2022-11-06T19:30",
+    "location": "Main Street UMC, Kernersville, NC (Fellowship Hall)",
+    "has_image": true
+  },
+  "notes": "Church WordPress site. Yoast @graph with no Event. og tags, including og:image. The date is only in visible text 'November 6, 2022 5:30 pm – 7:30 pm' (PAST). The title contains 'Nov. 6' with no year.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": {
+      "extracted": {
+        "is_event": true,
+        "title": "Harvest Feast",
+        "start_date_local": "2022-11-06T17:30",
+        "start_max_local": null,
+        "end_date_local": "2022-11-06T19:30",
+        "location_description": "Fellowship Hall, Main Street UMC, Kernersville, NC",
+        "notes": "BETTER TOGETHER!\n\nThe Member Care Committee is sponsoring a \"Harvest Feast\" for food and fellowship. This will be a true covered-dish dinner—bring your most delicious entrees, sides, and desserts to share and gather together as a church family.",
+        "topic": null
+      }
+    }
+  },
+  "expected": {
+    "title": "Harvest Feast",
+    "start_time_min": "2022-11-06T22:30:00.000Z",
+    "start_time_max": "2022-11-06T22:45:00.000Z",
+    "end_time": "2022-11-07T00:30:00.000Z",
+    "location_description": "Fellowship Hall, Main Street UMC, Kernersville, NC",
+    "banner_photo": "https://mainstreetumc.org/wp-content/uploads/2022/09/Harvest-Potluck.jpg",
+    "notes": "We had such a good time at the churchwide picnic in August—let’s get together again for food and fellowship! The Member Care Committee is sponsoring a “Harvest Feast” at 5:30pm on November 6 in the Fellowship Hall. This will be a true covered-dish dinner so bring your most delicious entrees, sides, and desserts to share…"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "url": "https://www.sofarsounds.com/cities/london",
+  "captured_at": "2026-10-25T17:53:19.046Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": null,
+    "start": null,
+    "end": null,
+    "location": null,
+    "has_image": false
+  },
+  "notes": "EXPECTED FAILURE: Vite SPA, a 1.1 KB shell (<div id=\"__app\"></div>), no meta. Every sofarsounds.com path returns the same shell.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "error": "This page loads its details with JavaScript or a login, which import can't read. Try entering the event manually"
+  }
+}

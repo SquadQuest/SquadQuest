@@ -1,0 +1,30 @@
+{
+  "url": "https://events.cornell.edu/event/2026-cornell-atkinson-graduate-research-symposium",
+  "captured_at": "2026-10-25T17:52:48.149Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "2026 Cornell Atkinson Graduate Research Symposium",
+    "start": "2026-10-29T13:00:00-04:00",
+    "end": "2026-10-29T17:00:00-04:00",
+    "location": "Atkinson Hall, 350 Tower Road, Ithaca, NY",
+    "has_image": true
+  },
+  "notes": "Localist. location.address is a STRING ('350 Tower Road'). geo is present but WRONG (43.01,-71.51 is New Hampshire, not Ithaca). Has a <event>.ics link and a calendar.google.com/calendar/event?action=TEMPLATE link (the /event variant, not /render) with UTC dates. og:type=event.",
+  "replay": {
+    "calendars": {
+      "https://events.cornell.edu/event/2026-cornell-atkinson-graduate-research-symposium.ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:icalendar-ruby\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:2026 Cornell Atkinson Graduate Research Symposium\r\nX-WR-TIMEZONE:Eastern Time (US & Canada)\r\nBEGIN:VEVENT\r\nDTSTAMP:20261025T174324Z\r\nUID:tag:localist.com\\,2008:EventInstance_53976707298504\r\nDTSTART:20261029T170000Z\r\nDTEND:20261029T210000Z\r\nDESCRIPTION:The Cornell Atkinson Center for Sustainability will host a symp\r\n osium to showcase research supported by Graduate Research Grants. 2027 app\r\n lications are due Nov. 17\\, 2026.\\n\\nProspective applicants are encouraged\r\n  to attend:\\n\\nThursday\\, October 29\\, 2026\\, 1-5 p.m.\\n121 Atkinson Hall\\\r\n nHighlighting research by Cornell Ph.D. students which aligns with our fou\r\n r priority areas.\r\nGEO:43.010896;-71.507436\r\nLOCATION:Atkinson Hall\\, 121\r\nSUMMARY:2026 Cornell Atkinson Graduate Research Symposium\r\nURL;VALUE=URI:https://events.cornell.edu/event/2026-cornell-atkinson-gradua\r\n te-research-symposium\r\nCATEGORIES:Symposium\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+    },
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "2026 Cornell Atkinson Graduate Research Symposium",
+    "start_time_min": "2026-10-29T17:00:00.000Z",
+    "start_time_max": "2026-10-29T17:15:00.000Z",
+    "end_time": "2026-10-29T21:00:00.000Z",
+    "location_description": "Atkinson Hall, 350 Tower Road",
+    "rally_point_text": "POINT(-71.507436 43.010896)",
+    "banner_photo": "https://localist-images.azureedge.net/photos/53976714665432/huge/2731acd341c26774a2c6ed0aa029f31570c274f8.jpg",
+    "notes": "The Cornell Atkinson Center for Sustainability will host a symposium to showcase research supported by Graduate Research Grants. 2027 applications are due Nov. 17, 2026.\n\nProspective applicants are encouraged to attend:\n\nThursday, October 29, 2026, 1-5 p.m.\n121 Atkinson Hall\nHighlighting research by Cornell Ph.D. students which aligns with our four priority areas."
+  }
+}

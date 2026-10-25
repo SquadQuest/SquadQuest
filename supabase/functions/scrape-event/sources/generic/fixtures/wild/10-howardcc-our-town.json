@@ -1,0 +1,37 @@
+{
+  "url": "https://howardcc.edu/discover/arts-culture/horowitz-visual-and-performing-arts-center/hcc-theatre/our-town.php",
+  "captured_at": "2026-10-25T17:53:10.710Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Our Town",
+    "start": "2026-11-19T19:30 America/New_York (first performance)",
+    "end": "2026-11-22 (last performance 2:30 PM)",
+    "location": "The Rouse Company Foundation Studio Theatre, Horowitz Center, Howard Community College, Columbia, MD",
+    "has_image": false
+  },
+  "notes": "Howard Community College (TerminalFour). No metadata at all (only lastmodified/author/generator metas). <title> is generic 'HCC Theatre | HowardCC'. Text has 'Performance Dates: Thursday, November 19, 2026 - Sunday, November 22, 2026' plus a performance calendar (7:30 PM x3, 2:30 PM Sun). Venue: The Rouse Company Foundation Studio Theatre.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": {
+      "extracted": {
+        "is_event": true,
+        "title": "Our Town",
+        "start_date_local": "2026-11-19T19:30",
+        "start_max_local": null,
+        "end_date_local": "2026-11-22T14:30",
+        "location_description": "The Rouse Company Foundation Studio Theatre, Horowitz Visual and Performing Arts Center, Howard Community College",
+        "notes": "Step into Grovers Corners and follow George and Emily as they grow up and fall in love. Through the town's life we discover just how fleeting—and precious—each moment can be. Simple, moving, and deeply human, Our Town will stay with you long after the final moment.\n\nby Thornton Wilder. Directed by Bill Gillett. Recommended for all.\n\n## Performance Calendar\n\n- Thursday, November 19, 2026 — 7:30 PM\n- Friday, November 20, 2026 — 7:30 PM\n- Saturday, November 21, 2026 — 7:30 PM\n- Sunday, November 22, 2026 — 2:30 PM\n\nSeating is general admission; patrons are recommended to arrive 30–40 minutes prior to showtime.\n\n## Ticket Prices\n\n- General Admission: $15\n- Seniors 60+, HCC Employees with ID, Military with ID, Students: $10",
+        "topic": null
+      }
+    }
+  },
+  "expected": {
+    "title": "Our Town",
+    "start_time_min": "2026-11-20T00:30:00.000Z",
+    "start_time_max": "2026-11-20T00:45:00.000Z",
+    "end_time": "2026-11-22T19:30:00.000Z",
+    "location_description": "The Rouse Company Foundation Studio Theatre, Horowitz Visual and Performing Arts Center, Howard Community College",
+    "notes": "Step into Grovers Corners and follow George and Emily as they grow up and fall in love. Through the town's life we discover just how fleeting—and precious—each moment can be. Simple, moving, and deeply human, Our Town will stay with you long after the final moment.\n\nby Thornton Wilder. Directed by Bill Gillett. Recommended for all.\n\n## Performance Calendar\n\n- Thursday, November 19, 2026 — 7:30 PM\n- Friday, November 20, 2026 — 7:30 PM\n- Saturday, November 21, 2026 — 7:30 PM\n- Sunday, November 22, 2026 — 2:30 PM\n\nSeating is general admission; patrons are recommended to arrive 30–40 minutes prior to showtime.\n\n## Ticket Prices\n\n- General Admission: $15\n- Seniors 60+, HCC Employees with ID, Military with ID, Students: $10"
+  }
+}

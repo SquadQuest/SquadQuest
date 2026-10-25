@@ -1,0 +1,21 @@
+{
+  "url": "https://www.skiddle.com/whats-on/Harrow/Boxpark-Wembley/Country-Club---Indoor-Country-Music-Festival---London/42619137/",
+  "captured_at": "2026-10-25T17:53:19.026Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": null,
+    "start": null,
+    "end": null,
+    "location": null,
+    "has_image": false
+  },
+  "notes": "EXPECTED FAILURE: HTTP 202 with an AWS WAF JS challenge (window.awsWafCookieDomainList / gokuProps) and an empty <title>.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "blocked": true
+  }
+}

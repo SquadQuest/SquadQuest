@@ -1,0 +1,27 @@
+{
+  "url": "https://business.amherstarea.com/events/details/the-art-of-jerry-pinkney-10-31-2026-25057",
+  "captured_at": "2026-10-25T17:52:49.296Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "The Art of Jerry Pinkney",
+    "start": "2026-10-31T10:00 EDT (markup 2026-10-31T14:00:00Z)",
+    "end": "2026-10-31T16:00 EDT",
+    "location": "The Eric Carle Museum of Picture Book Art, 125 W. Bay Road, Amherst, MA",
+    "has_image": false
+  },
+  "notes": "GrowthZone/ChamberMaster chamber-of-commerce community calendar. Microdata Event (itemprop startDate content='2026-10-31T14:00:00Z', in UTC). The visible text says 10:00 AM - 4:00 PM EDT, and also '6/20/26 - 1/7/27' (exhibition run). It also has a Yoast @graph with no Event. og:image is the chamber logo. Place name is a single text blob.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "The Art of Jerry Pinkney",
+    "start_time_min": "2026-10-31T14:00:00.000Z",
+    "start_time_max": "2026-10-31T14:15:00.000Z",
+    "end_time": "2026-10-31T20:00:00.000Z",
+    "location_description": "The Eric Carle Museum of Picture Book Art",
+    "banner_photo": "https://chambermaster.blob.core.windows.net/images/chambers/1230/ChamberImages/logo/200x200/Chamber-Logo-NEW.png",
+    "notes": "This exhibition showcases the profound influence of music in Jerry Pinkney’s life and work. Jerry Pinkney’s work centers on finding voice and building agency, particularly for young people. His art highlights the vital role that spirit, music, and sound play in this pursuit. Pinkney is not only celebrated - 10/31/20..."
+  }
+}

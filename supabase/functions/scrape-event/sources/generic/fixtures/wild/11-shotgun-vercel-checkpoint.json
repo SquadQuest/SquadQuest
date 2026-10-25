@@ -1,0 +1,21 @@
+{
+  "url": "https://shotgun.live/en/cities/paris",
+  "captured_at": "2026-10-25T17:53:19.027Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": null,
+    "start": null,
+    "end": null,
+    "location": null,
+    "has_image": false
+  },
+  "notes": "EXPECTED FAILURE: HTTP 429 'Vercel Security Checkpoint' page. The same response came from metmuseum.org/events.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "blocked": true
+  }
+}

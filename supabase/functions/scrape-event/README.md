@@ -76,22 +76,28 @@ Development Tips:
    - Sources tab for client state
 2. Test selectors in Console before coding
 
-### 4. Structured Data Parsing
+### 4. Generic Fallback (`sources/generic/`)
 
-Fallback approach using standard formats like JSON-LD.
+Runs on any URL no site-specific scraper handled. It fetches the page once and merges what it finds, field by field, from these sources, most trusted first:
 
-Example:
+1. **JSON-LD** (`json-ld.ts`) — every `application/ld+json` block, including `@graph` wrappers, nested nodes, `@id` references, array `@type`s, and Event subtypes. Slightly broken JSON is repaired where possible.
+2. **Microdata** (`microdata.ts`) — `itemscope itemtype="https://schema.org/Event"` (and subtypes).
+3. **Calendar files and links** (`calendar.ts`) — `.ics` downloads (including The Events Calendar's `?ical=1`) and "add to Google/Outlook/Yahoo calendar" links. Links for several different events, as on listing pages, are ignored.
+4. **Meta tags** (`meta.ts`) — OpenGraph, Twitter cards, `<title>`, and `event:start_time`-style properties.
 
-```typescript
-const scripts = html.match(
-  /<script type="application\/ld\+json">(.*?)<\/script>/gs
-);
-const eventData = JSON.parse(scripts[0]);
+If the merged result still has no start time (or only a date) or no title, and `ANTHROPIC_API_KEY` is set, `llm.ts` sends the page's visible text to Claude with what was found as hints, and fills only the missing fields (plus a topic).
+
+Times without an offset are resolved in the source's own timezone (iCal TZID, Google `ctz`), then the venue's (geonames lookup from coordinates), then the importing device's (`timezone` query parameter), then UTC. A date with no time anywhere is placed at midday so the day is right.
+
+Tests run offline against HTML fixtures:
+
+```bash
+deno test --allow-all --unstable-temporal supabase/functions/scrape-event
 ```
 
 Validation:
 
-- Use [Google's Structured Data Testing Tool](https://search.google.com/test/rich-results)
+- Use [Google's Rich Results Test](https://search.google.com/test/rich-results)
 - Check [Schema.org Event](https://schema.org/Event) documentation
 
 ## Development Workflow

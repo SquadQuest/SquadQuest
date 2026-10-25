@@ -1,0 +1,29 @@
+{
+  "url": "https://dothebay.com/events/2026/11/15/the-mountain-goats-night-one-openers-tickets",
+  "captured_at": "2026-10-25T17:52:49.123Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "The Mountain Goats - Night One: Openers",
+    "start": "2026-11-15T20:00-08:00",
+    "end": null,
+    "location": "The Fillmore, 1805 Geary Boulevard, San Francisco, CA 94115",
+    "has_image": true
+  },
+  "notes": "DoStuff network city calendar (DoTheBay, Do512 etc.). Microdata only. <meta itemprop=\"startDate\" content=\"2026-11-15T20:00-0800\"> has no seconds and a no-colon offset. Place/PostalAddress values are in <meta content=...>. og:image is present.",
+  "replay": {
+    "calendars": {},
+    "timezones": {
+      "37.7840042,-122.4331332": "America/Los_Angeles"
+    },
+    "llm": null
+  },
+  "expected": {
+    "title": "The Mountain Goats - Night One: Openers",
+    "start_time_min": "2026-11-16T04:00:00.000Z",
+    "start_time_max": "2026-11-16T04:15:00.000Z",
+    "location_description": "The Fillmore, 1805 Geary Boulevard, San Francisco, CA",
+    "rally_point_text": "POINT(-122.4331332 37.7840042)",
+    "banner_photo": "https://assets0.dostuffmedia.com/uploads/aws_asset/aws_asset/32617625/4b39e39a-27b7-4e2d-a586-be03df79f265.png",
+    "notes": "Win Tickets to The Mountain Goats - Night One: Openers at The Fillmore, November 15, 2026 on DoTheBay #DoTheBay"
+  }
+}

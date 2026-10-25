@@ -35,6 +35,8 @@ serve(async (request: Request) => {
   );
 
   const url = new URL(rawUrl);
+  const timezone = new URL(request.url).searchParams.get("timezone") ??
+    undefined;
 
   // Try each scraper in order until one succeeds
   let lastError: Error | null = null;
@@ -43,7 +45,7 @@ serve(async (request: Request) => {
     if (scraper.canScrape(url)) {
       try {
         console.log(`Trying scraper: ${url}`);
-        const event = await scraper.scrape(url);
+        const event = await scraper.scrape(url, { timezone });
         return new Response(
           JSON.stringify(event),
           {

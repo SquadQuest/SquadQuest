@@ -1,0 +1,36 @@
+{
+  "url": "https://my.wlu.edu/lenfest-center/almost-maine",
+  "captured_at": "2026-10-25T17:53:06.219Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Almost, Maine",
+    "start": "2026-11-11T19:30 America/New_York (first of 4 performances)",
+    "end": "2026-11-14 (last performance 2 p.m.)",
+    "location": "Johnson Theatre, Lenfest Center for the Arts, Washington and Lee University, Lexington, VA",
+    "has_image": true
+  },
+  "notes": "Washington and Lee. No JSON-LD, OG, or microdata, and meta description is empty. Text: 'Wednesday-Friday, November 11, 12, 13, 2026 at 7:30 p.m. Saturday, November 14, 2026 at 2 p.m.' (compact multi-date text). The image src is relative ('images/lenfest/...').",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": {
+      "extracted": {
+        "is_event": true,
+        "title": "\"Almost Maine\"",
+        "start_date_local": "2026-11-11T19:30",
+        "start_max_local": null,
+        "end_date_local": null,
+        "location_description": "Johnson Theatre, Lenfest Hall/Lenfest Center, 100 Glasgow Street, Washington and Lee University, Lexington, Virginia 24450",
+        "notes": "The W&L Department of Theater, Dance and Film Studies Presents a romantic comedy by John Cariani set in the remote town of Almost, Maine, where the town's residents meet and fall in and out of love in unexpected and hilarious ways.\n\n## Showtimes\n\n- Wednesday–Friday, November 11, 12, 13, 2026 at 7:30 p.m.\n- Saturday, November 14, 2026 at 2 p.m.\n\n## Tickets\n\nTickets are required. General Public $18; Senior $16; W&L Faculty/Staff $14; W&L Student/Student $8. Taxes and processing fees included in ticket pricing.\n\nPresented by arrangement with Concord Theatricals on behalf of Dramatists Play Service.",
+        "topic": null
+      }
+    }
+  },
+  "expected": {
+    "title": "\"Almost Maine\"",
+    "start_time_min": "2026-11-12T00:30:00.000Z",
+    "start_time_max": "2026-11-12T00:45:00.000Z",
+    "location_description": "Johnson Theatre, Lenfest Hall/Lenfest Center, 100 Glasgow Street, Washington and Lee University, Lexington, Virginia 24450",
+    "notes": "The W&L Department of Theater, Dance and Film Studies Presents a romantic comedy by John Cariani set in the remote town of Almost, Maine, where the town's residents meet and fall in and out of love in unexpected and hilarious ways.\n\n## Showtimes\n\n- Wednesday–Friday, November 11, 12, 13, 2026 at 7:30 p.m.\n- Saturday, November 14, 2026 at 2 p.m.\n\n## Tickets\n\nTickets are required. General Public $18; Senior $16; W&L Faculty/Staff $14; W&L Student/Student $8. Taxes and processing fees included in ticket pricing.\n\nPresented by arrangement with Concord Theatricals on behalf of Dramatists Play Service."
+  }
+}

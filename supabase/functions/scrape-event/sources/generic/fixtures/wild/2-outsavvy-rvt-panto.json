@@ -1,0 +1,30 @@
+{
+  "url": "https://www.outsavvy.com/event/37887/pulled-the-2026-rvt-panto",
+  "captured_at": "2026-10-25T17:52:40.685Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Pulled - The 2026 RVT Panto",
+    "start": "2026-11-24T19:00:00+00:00 (first of 34 performances)",
+    "end": "2026-11-25T00:00:00+00:00",
+    "location": "Royal Vauxhall Tavern, 372 Kennington Ln, London SE11 5HY",
+    "has_image": true
+  },
+  "notes": "OutSavvy. A JSON array of 34 TheaterEvent objects, one per performance (multiple dates), each with geo. The first performance is 2026-11-24. Many endDates are midnight 00:00:00 of the next day. The scraper must choose (or summarise) the first upcoming one.",
+  "replay": {
+    "calendars": {},
+    "timezones": {
+      "51.48634,-0.121779": "Europe/London"
+    },
+    "llm": null
+  },
+  "expected": {
+    "title": "Pulled - The 2026 RVT Panto",
+    "start_time_min": "2026-11-24T19:00:00.000Z",
+    "start_time_max": "2026-11-24T19:15:00.000Z",
+    "end_time": "2026-11-25T00:00:00.000Z",
+    "location_description": "Royal Vauxhall Tavern",
+    "rally_point_text": "POINT(-0.121779 51.48634)",
+    "banner_photo": "https://cdn.outsavvy.com/events/4b6bbab2-0a39-452c-8238-d61f0d86e018.jpg",
+    "notes": "‘Arthur, grab your sword, you’ve…'PULLEDIt's The 2026 RVT Panto…Oh yes it is.  Hello Tiddlywinks, we are thrilled to announce this year's Royal Vauxhall Tavern panto will be our take on the legend of King Arthur…you will get our hero Arthur to cheer, Merlin, Guinevere, Camelot, a sensational villain to boo and hiss at... and of course pulling the sword from the stone. Pulled is a tale of magic, mischief and mayhem brought to you by the award-winning team of writers Tim Benzie and Paul Joseph with director Tim McArthur, plus our musical Director Annemarie Lewis Thomas and the rest of the creative crew responsible for previous hits such as Growled, Tossed, Wolfed, Cracked, Slipped and more.  2026 cast confirmed…Patrick Eamon Cook is Arthur Hannah Elizabeth Clark is GwenAda Campe* is Merlin  Jo Wickham is MordreganaRobert McNeilly is Ma MimKatherine Leyva is Villager Number One*Ada won the UK Panto Award as Best Supporting Performer for her role in last year’s RVT panto.  Packed with more jokes per minute than any other panto, our own unique take on a fine selection of big hit songs, with a dazzling cast, The RVT panto is one of the highlights of the year at London’s most iconic LGBTQ+ cabaret and performance space and in recent years the panto has become more successful than ever, with more shows selling out, don't miss out.  PLEASE READ, IMPORTANT INFORMATION RE TICKETS AND SEATINGTHIS IS A MIXED SEATED/STANDING EVENT… WE WILL DO OUR BEST TO SEAT AS MANY PEOPLE AS POSSIBLE. There are a limited number of guaranteed seated tickets at £25 or general admission tickets at £23 both plus booking fee.If you buy regular tickets, seats are allocated on a first come first serve basis on the night. If you buy guaranteed seating tickets please email dave@vauxhalltavern.com and advise if you need to sit with other GS ticket holders, so we can allocate a table. Times on tickets are when doors open.Please make sure you book the correct show. No refunds. THERE WILL BE SOME TICKETS ON THE DOOR, PLEASE ARRIVE EARLYIf you have access requirements, or questions please email dave@vauxhalltavern.comDesign by Chris Jepson"
+  }
+}

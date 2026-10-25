@@ -1,0 +1,21 @@
+{
+  "url": "https://app.ckord.com/performances/0eabb393-7058-4fcb-8eae-c8206e5bfbce",
+  "captured_at": "2026-10-25T17:53:19.028Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": null,
+    "start": null,
+    "end": null,
+    "location": null,
+    "has_image": false
+  },
+  "notes": "EXPECTED FAILURE: JS-only SPA. HTTP 200 with an 8 KB shell whose generic site-wide OG tags ('Live Music | Live Shows App ... | Ckord') are the same for every URL. A naive OG fallback would return the site title as the event title.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "error": "This page loads its details with JavaScript or a login, which import can't read. Try entering the event manually"
+  }
+}

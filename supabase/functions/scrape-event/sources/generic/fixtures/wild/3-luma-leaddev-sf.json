@@ -1,0 +1,30 @@
+{
+  "url": "https://luma.com/elfrjrc8",
+  "captured_at": "2026-10-25T17:52:41.228Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "LeadDev SF Meetup — July 2026",
+    "start": "2026-07-16T18:00:00.000-07:00",
+    "end": "2026-07-16T21:00:00.000-07:00",
+    "location": "LaunchDarkly, 1999 Harrison St Suite 1100, Oakland, CA",
+    "has_image": true
+  },
+  "notes": "Luma (Next.js). Script tag is <script data-cfasync=\"false\" type=\"application/ld+json\" data-next-head=\"\"> (attribute before type). startDate has milliseconds '.000-07:00'. Image is an array, and geo is present. streetAddress is just 'LaunchDarkly' (a venue name, not an address). Past event (July 2026).",
+  "replay": {
+    "calendars": {},
+    "timezones": {
+      "37.8078667,-122.2648428": "America/Los_Angeles"
+    },
+    "llm": null
+  },
+  "expected": {
+    "title": "LeadDev SF Meetup — July 2026",
+    "start_time_min": "2026-07-17T01:00:00.000Z",
+    "start_time_max": "2026-07-17T01:15:00.000Z",
+    "end_time": "2026-07-17T04:00:00.000Z",
+    "location_description": "LaunchDarkly",
+    "rally_point_text": "POINT(-122.2648428 37.8078667)",
+    "banner_photo": "https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=1,anim=false,background=white,quality=75,width=1920,height=1920/uploads/6n/cb637792-1b2e-40ed-8daa-2fa3d8d6d90d.png",
+    "notes": "LeadDev SF is back — and we're bringing the energy into 2026. 🎉\nJoin us for an evening of lightning talks, good food, and great conversation with a room full of engineers and engineering leaders who are navigating the same rapidly shifting landscape you are.\nDate: Thursday, 16 July 2026\nTime: 6 – 9 pm\nLocation: LaunchDarkly, 1999 Harrison St Suite 1100, Oakland, CA 94612\nSpeakers to be announced soon!\nSchedule:\n6:00 pm – Arrival, networking and refreshments\n\n6:20 pm – Welcome from hosts, Goodness Daramola & Kashyap Tumkur\n\n6:30 pm – Glo Maldonado, Founder & CTO \n\n6:50 pm – Break\n\n7:00 pm – Scarlett Attensil, Developer Educator at LaunchDarkly\n\n7:25 pm – Closing remarks\n\n7:30 pm – Networking\n\n8:30 pm – Close\nSpaces are limited – RSVP to save your spot.\nQuestions? Reach us at sanfrancisco-meetups@leaddev.community. Please take a moment to review our Code of Conduct.\n\nGetting There\nFor those driving or using public transit, here is some additional information:\nParking Garage: We have paid for the parking garage to remain open for this event, however, guests will be responsible for parking garage ratesStandard parking cost is $5.00 every 30 minutes, or a $30 maximum daily rate.\nStreet Parking: There is plenty of street parking available at 5:30pm. Street parking is free after 6:00 PM.\nPublic Transit: The BART station is just one block away.\nCheck-in\nAll guests will need to check in at the security desk upon arrival, and they will be sent up to the 11th floor."
+  }
+}

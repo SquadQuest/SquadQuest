@@ -1,0 +1,27 @@
+{
+  "url": "https://chipublib.bibliocommons.com/v2/events/6a1a0a334dc267647dab13f3",
+  "captured_at": "2026-10-25T17:52:33.591Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Public Speaking Practice With the WAO Toastmasters Club",
+    "start": "2026-11-14T10:30 (America/Chicago, no offset in markup)",
+    "end": "2026-11-14T12:30",
+    "location": "Wrightwood-Ashburn branch, 8530 S. Kedzie Avenue, Chicago, IL 60652",
+    "has_image": true
+  },
+  "notes": "BiblioCommons (Chicago Public Library). Event inside @graph; script tag is <script data-react-helmet=\"true\" type=\"application/ld+json\"> (attribute before type). startDate '2026-11-14T10:30' has NO seconds and NO offset (America/Chicago implied). location @type is 'Library' (Place subtype) with PostalAddress, no geo; image is an ImageObject. JSON-LD name has a leading space.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "Public Speaking Practice With the WAO Toastmasters Club",
+    "start_time_min": "2026-11-14T15:30:00.000Z",
+    "start_time_max": "2026-11-14T15:45:00.000Z",
+    "end_time": "2026-11-14T17:30:00.000Z",
+    "location_description": "Wrightwood-Ashburn, 8530 S. Kedzie Avenue, Chicago, IL",
+    "banner_photo": "https://chipublib.bibliocommons.com/events/uploads/images/full/880db73cbe7c05029d63c7e00e8336b2/Workshops.png",
+    "notes": "Join us in person as we prepare to improve your public speaking skills, build your leadership skills, maximize your potential and more with thenbsp;Wrightwood-Ashburn Overcomers (WAO) Toastmasters Club, in partnership with the Wrightwood-Ashburn Branch.\\nAccessibilityNeed sign language interpretation or other accessibility assistance for this event? Please call (312) 747-8184 or email access@chipublib.org to request accommodations. Requests must be made at least 14 business days before the event.\\n"
+  }
+}

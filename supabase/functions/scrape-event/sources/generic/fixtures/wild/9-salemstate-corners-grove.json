@@ -1,0 +1,37 @@
+{
+  "url": "https://www.salemstate.edu/calendar/corners-grove-kaela-mei-shing-garvin-nov-20-2026",
+  "captured_at": "2026-10-25T17:52:57.706Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Corners Grove by Kaela Mei-Shing Garvin",
+    "start": "2026-11-20T19:30 America/New_York",
+    "end": "2026-12-06 (run end)",
+    "location": "Sophia Gordon Center for Creative and Performing Arts, 356 Lafayette Street, Salem, MA",
+    "has_image": false
+  },
+  "notes": "Drupal 10. No JSON-LD, no microdata, no OG. It has a non-standard <meta name=\"eventdate\" content=\"Friday, November 20, 2026 7:30pm\"> and meta description. Visible text: 'multiday event from Nov 20, 2026 - Dec 6, 2026' and the garbled '7:30 pm - 2:00 pm', plus a PERFORMANCES list (Nov 20, 21, 22, Dec 4, 5, 6).",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": {
+      "extracted": {
+        "is_event": true,
+        "title": "Corners Grove",
+        "start_date_local": "2026-11-20T19:30",
+        "start_max_local": null,
+        "end_date_local": "2026-12-06T14:00",
+        "location_description": "Sophia Gordon Center for Creative and Performing Arts, 356 Lafayette Street",
+        "notes": "A nod to Our Town, this new play shifts Thornton Wilder's masterpiece into the twenty-first century, to a small town about forty miles south of San Francisco. George, Emily and their friends are determined to live their lives on their own terms and to shed versions of themselves they've outgrown, whether that be their high school sweetheart or their gender identity. Life has only spun forward, and the only way for the residents of Corners Grove to keep up is to embrace the unknown and commit to their own truths.\n\nWritten and directed by Kaela Mei-Shing Garvin.\n\n## Performances\n\n- November 20 and 21, 7:30 pm\n- November 22, 2 pm\n- December 4 and 5, 7:30 pm\n- December 6, 2 pm\n\nFriday, December 4 is SALEM NIGHT. Free admission for Salem residents. This event takes place in our mainstage theater, no advance reservation required.\n\n## Tickets\n\n$15 general / $10 seniors / free for all students with student ID and under 18.\n\nAdmission is free for Salem State students, faculty and staff. Valid university ID must be presented at the box office to claim your ticket.",
+        "topic": null
+      }
+    }
+  },
+  "expected": {
+    "title": "Corners Grove",
+    "start_time_min": "2026-11-21T00:30:00.000Z",
+    "start_time_max": "2026-11-21T00:45:00.000Z",
+    "end_time": "2026-12-06T19:00:00.000Z",
+    "location_description": "Sophia Gordon Center for Creative and Performing Arts, 356 Lafayette Street",
+    "notes": "A nod to Our Town, this new play shifts Thornton Wilder’s masterpiece into the twenty-first century, to a small town about forty miles south of San Francisco. George, Emily and their friends are determined to live their lives on their own terms and to shed versions of themselves they’ve outgrown, whether that be their high school sweetheart or their gender identity. Life has only spun forward, and the only way for the residents of Corners Grove to keep up is to embrace the unknown and commit to their own truths.Written and directed by Kaela Mei-Shing Garvin."
+  }
+}

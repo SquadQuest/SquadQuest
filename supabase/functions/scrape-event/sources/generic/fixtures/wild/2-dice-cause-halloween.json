@@ -1,0 +1,30 @@
+{
+  "url": "https://dice.fm/event/nv6y59-the-cause-x-2026-halloween-festival-31st-oct-the-cause-at-60-dock-road-london-tickets",
+  "captured_at": "2026-10-25T17:52:34.027Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "The Cause x 2026: Halloween Festival",
+    "start": "2026-10-31T12:00:00+00:00",
+    "end": "2026-11-01T06:00:00+00:00",
+    "location": "The Cause at 60 Dock Road, Newham, London E16 1YZ",
+    "has_image": true
+  },
+  "notes": "DICE. @type MusicEvent (subtype). Image is an array of 3 crops. Place with PostalAddress and geo. Fetched via a short /event/<id> URL that redirected to the slug URL. 4 ld+json scripts (WebSite and Organization are the others).",
+  "replay": {
+    "calendars": {},
+    "timezones": {
+      "51.50476,0.01714": "Europe/London"
+    },
+    "llm": null
+  },
+  "expected": {
+    "title": "The Cause x 2026: Halloween Festival",
+    "start_time_min": "2026-10-31T12:00:00.000Z",
+    "start_time_max": "2026-10-31T12:15:00.000Z",
+    "end_time": "2026-11-01T06:00:00.000Z",
+    "location_description": "The Cause at 60 Dock Road",
+    "rally_point_text": "POINT(0.01714 51.50476)",
+    "banner_photo": "https://dice-media.imgix.net/attachments/2026-09-04/0ecc5061-3838-4e2a-9da0-2a074b07cfbb.jpg?rect=0%2C400%2C2000%2C1200",
+    "notes": "Another one of full venue, festival scale, flagship shows making the most of every inch of The Cause."
+  }
+}

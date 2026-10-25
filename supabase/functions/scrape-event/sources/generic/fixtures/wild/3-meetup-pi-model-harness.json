@@ -1,0 +1,27 @@
+{
+  "url": "https://www.meetup.com/deep-learning-rtp/events/316369173/",
+  "captured_at": "2026-10-25T17:52:43.275Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Using Pi to roll your own model harness",
+    "start": "2026-10-28T12:00:00-04:00",
+    "end": "2026-10-28T13:30:00-04:00",
+    "location": "The Frontier RTP, 800 Park Offices Dr, Durham, NC",
+    "has_image": true
+  },
+  "notes": "Meetup.com. 4 ld+json scripts with type= then data-next-head=\"\". Event image is an array of 3 sizes. og:url uses a different (short-code) event URL. The <title> embeds the date 'Wed, Oct 28, 2026, 12:00 PM'.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "Using Pi to roll your own model harness",
+    "start_time_min": "2026-10-28T16:00:00.000Z",
+    "start_time_max": "2026-10-28T16:15:00.000Z",
+    "end_time": "2026-10-28T17:30:00.000Z",
+    "location_description": "The Frontier RTP, 800 Park Offices Dr, Durham, NC",
+    "banner_photo": "https://secure-content.meetupstatic.com/images/classic-events/536610927/676x676.jpg",
+    "notes": "Paul and Zane were interested in talking about [Pi](https://pi.dev/) and their experience with harnessing these LLMs.\n\nInformal, all levels welcome. Sugges"
+  }
+}

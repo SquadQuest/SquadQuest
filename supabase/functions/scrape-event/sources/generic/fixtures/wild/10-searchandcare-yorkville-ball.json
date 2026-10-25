@@ -1,0 +1,36 @@
+{
+  "url": "https://www.searchandcare.org/event/yorkvilleball/",
+  "captured_at": "2026-10-25T17:53:16.716Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Yorkville Ball 2026",
+    "start": "2026-11-07T20:00 America/New_York",
+    "end": null,
+    "location": "The Union Club, Park Avenue at E 69th Street, New York, NY",
+    "has_image": false
+  },
+  "notes": "Nonprofit WordPress site, no SEO plugin. No JSON-LD, no OG, no microdata. Text: 'Saturday | November 7, 2026 8:00 pm The Union Club Park Avenue at E69th Street' (pipe separator). Has a 'Save Event to Calendar' block.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": {
+      "extracted": {
+        "is_event": true,
+        "title": "Yorkville Ball 2026",
+        "start_date_local": "2026-11-07T20:00",
+        "start_max_local": null,
+        "end_date_local": null,
+        "location_description": "The Union Club, Park Avenue at E69th Street",
+        "notes": "This is going to be big!\n\nHosted by Search and Care. Tickets now on sale!",
+        "topic": null
+      }
+    }
+  },
+  "expected": {
+    "title": "Yorkville Ball 2026",
+    "start_time_min": "2026-11-08T01:00:00.000Z",
+    "start_time_max": "2026-11-08T01:15:00.000Z",
+    "location_description": "The Union Club, Park Avenue at E69th Street",
+    "notes": "This is going to be big!\n\nHosted by Search and Care. Tickets now on sale!"
+  }
+}

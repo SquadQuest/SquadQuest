@@ -1,0 +1,35 @@
+{
+  "url": "https://lam.unisg.ch/en/event/lucerne-transport-museum-visit-to-the-planetarium",
+  "captured_at": "2026-10-25T17:52:55.564Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "LaMa Autumn Event 2026",
+    "start": "2026-11-12 (date only)",
+    "end": null,
+    "location": "Lucerne Transport Museum (Verkehrshaus), Lucerne, Switzerland",
+    "has_image": false
+  },
+  "notes": "University of St. Gallen executive school (WordPress + AIOSEO). The aioseo @graph has WebPage/Organization only, with no Event. og:title and og:type=article, no og:image. The date appears only in visible text, '12 November 2026', with no time. The URL slug does not match the title.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": {
+      "extracted": {
+        "is_event": true,
+        "title": "LaMa Autumn Event 2026",
+        "start_date_local": "2026-11-12T00:00",
+        "start_max_local": null,
+        "end_date_local": null,
+        "location_description": "Lucerne Transport Museum",
+        "notes": null,
+        "topic": null
+      }
+    }
+  },
+  "expected": {
+    "title": "LaMa Autumn Event 2026",
+    "start_time_min": "2026-11-12T17:00:00.000Z",
+    "start_time_max": "2026-11-12T17:15:00.000Z",
+    "location_description": "Lucerne Transport Museum"
+  }
+}

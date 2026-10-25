@@ -1,0 +1,27 @@
+{
+  "url": "https://universityseminars.columbia.edu/event/autumn-term-ends-3/",
+  "captured_at": "2026-10-25T17:52:33.735Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Autumn Term Ends",
+    "start": "2026-12-23 (all-day; markup 2026-12-23T00:00:00-05:00)",
+    "end": "2026-12-23T23:59:59-05:00",
+    "location": "Columbia University",
+    "has_image": false
+  },
+  "notes": "TRAP: TEC single-event page. The page's own event is in a top-level JSON array script. A SECOND ld+json script has an @graph of 3 different Events (Schoff Memorial Lectures, Nov 9/16/23), probably a sidebar/related widget. A scraper that prefers @graph, or takes the first Event in the graph, picks the wrong event. The own event is all-day: 00:00:00 to 23:59:59. Its PostalAddress is empty.",
+  "replay": {
+    "calendars": {
+      "https://universityseminars.columbia.edu/events/?ical=1": ""
+    },
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "Autumn Term Ends",
+    "start_time_min": "2026-12-23T05:00:00.000Z",
+    "start_time_max": "2026-12-23T05:15:00.000Z",
+    "end_time": "2026-12-24T04:59:59.000Z",
+    "location_description": "Columbia University"
+  }
+}

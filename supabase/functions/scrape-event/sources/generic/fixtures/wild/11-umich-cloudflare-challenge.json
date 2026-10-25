@@ -1,0 +1,21 @@
+{
+  "url": "https://events.umich.edu/week/2026-11-04",
+  "captured_at": "2026-10-25T17:53:19.017Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": null,
+    "start": null,
+    "end": null,
+    "location": null,
+    "has_image": false
+  },
+  "notes": "EXPECTED FAILURE: HTTP 403 Cloudflare managed challenge ('Just a moment...', challenges.cloudflare.com). This is a listing URL, but event detail pages on the domain sit behind the same challenge.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "blocked": true
+  }
+}

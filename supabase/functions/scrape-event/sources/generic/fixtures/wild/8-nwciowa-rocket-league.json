@@ -1,0 +1,28 @@
+{
+  "url": "https://www.nwciowa.edu/calendar/events/27227/rocket-league-vs-arkansas",
+  "captured_at": "2026-10-25T17:52:49.548Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Rocket League vs Arkansas",
+    "start": "2026-10-28T20:00 America/Chicago",
+    "end": "2026-10-28T22:00",
+    "location": "Orange City, IA",
+    "has_image": false
+  },
+  "notes": "Northwestern College (SiteKeepr CMS). No JSON-LD and no microdata. Has a <url>.ics link, and the ICS uses Windows TZID 'Central Standard Time'. og:description carries the date text 'Wednesday, Oct 28, 2026 8:00 - 10:00 PM'.",
+  "replay": {
+    "calendars": {
+      "https://www.nwciowa.edu/calendar/events/27227/rocket-league-vs-arkansas.ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//SiteKeepr//NONSGML Calendar//EN\r\nMETHOD:PUBLISH\r\nBEGIN:VTIMEZONE\r\nTZID:Central Standard Time\r\nBEGIN:STANDARD\r\nDTSTART:16011104T020000\r\nRRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11\r\nTZOFFSETFROM:-0500\r\nTZOFFSETTO:-0600\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:16010311T020000\r\nRRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3\r\nTZOFFSETFROM:-0600\r\nTZOFFSETTO:-0500\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\nBEGIN:VEVENT\r\nDTSTART;TZID=\"Central Standard Time\":20261028T200000\r\nDTEND;TZID=\"Central Standard Time\":20261028T220000\r\nUID:20261025T175249Z-27227\r\nDTSTAMP:20261025T175249Z\r\nSUMMARY:Rocket League vs Arkansas\r\nDESCRIPTION:View on Northwestern College's website: http://www.nwciowa.edu/calendar/events/27227/rocket-league-vs-arkansas\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+    },
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "Rocket League vs Arkansas",
+    "start_time_min": "2026-10-29T01:00:00.000Z",
+    "start_time_max": "2026-10-29T01:15:00.000Z",
+    "end_time": "2026-10-29T03:00:00.000Z",
+    "rally_point_text": "POINT(-96.058238 43.000053)",
+    "notes": "View on Northwestern College's website: http://www.nwciowa.edu/calendar/events/27227/rocket-league-vs-arkansas"
+  }
+}

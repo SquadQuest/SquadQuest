@@ -1,0 +1,26 @@
+{
+  "url": "https://www.mpi.org/chapters/kansas-city/education-events/event/2026/08/19/default-calendar/august-monthly-meetup---palm-tree-club",
+  "captured_at": "2026-10-25T17:52:50.058Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "August Monthly Meetup | Palm Tree Club",
+    "start": "2026-08-19T17:00 America/Chicago (NOT 17:00Z)",
+    "end": "2026-08-19T19:00 America/Chicago",
+    "location": "Palm Tree Club, 14 E 14th Street, Kansas City, MO 64106",
+    "has_image": false
+  },
+  "notes": "TRAP: Sitefinity. JSON-LD exists but has the wrong timezone: startDate '2026-08-19T17:00:00Z' when the page says 5:00 PM - 7:00 PM local (Kansas City, CDT), so it is local time mislabelled as UTC. Has a relative .ics link (/Sitefinity/Public/Services/ICalanderService/file.ics/?id=...) and 'Add to: Outlook | ICal | Google Calendar'. Past event.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "August Monthly Meetup | Palm Tree Club",
+    "start_time_min": "2026-08-19T17:00:00.000Z",
+    "start_time_max": "2026-08-19T17:15:00.000Z",
+    "end_time": "2026-08-19T19:00:00.000Z",
+    "location_description": "Palm Tree Club, 14 E 14th Street, Kansas City, MO",
+    "notes": "Join us for our monthly meetup, open to ALL members & non-members without prior registration. Come hang from 5-7pm at a new location around the city! Date: Wednesday, August 19Time: 5:00 - 7:00 pmLocation: Palm Tree Club14 E 14th StreetKansas City, MO 64106"
+  }
+}

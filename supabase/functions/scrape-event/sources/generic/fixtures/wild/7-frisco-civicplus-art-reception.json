@@ -1,0 +1,26 @@
+{
+  "url": "https://www.friscotexas.gov/Calendar.aspx?EID=7817",
+  "captured_at": "2026-10-25T17:52:49.014Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Art in the Atrium 26 Public Reception",
+    "start": "2026-11-02T19:00:00 (America/Chicago)",
+    "end": "2026-11-02T20:00",
+    "location": "6101 Frisco Square Blvd., Frisco, TX 75034",
+    "has_image": false
+  },
+  "notes": "CivicPlus municipal calendar (used by many US city sites). Microdata only: itemtype=http://schema.org/Event. startDate is the TEXT of a hidden div ('2026-11-02T19:00:00', no offset), with no endDate itemprop; the visible text says 7:00 PM - 8:00 PM. Place name is the placeholder 'Event Location'. og:description is '&amp;nbsp;' and og:image is a generic module icon.",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "title": "Art in the Atrium 26 Public Reception",
+    "start_time_min": "2026-11-03T00:00:00.000Z",
+    "start_time_max": "2026-11-03T00:15:00.000Z",
+    "location_description": "6101 Frisco Square Blvd., TX",
+    "banner_photo": "https://www.friscotexas.gov/Images/SocialMedia/IconModuleCalendar.png",
+    "notes": "Join us for the public reception on November 2 from 7 to 8 p.m. Meet the artists featured in this show and enjoy light refreshments!"
+  }
+}

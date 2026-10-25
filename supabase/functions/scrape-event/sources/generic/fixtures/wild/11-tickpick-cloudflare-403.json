@@ -1,0 +1,21 @@
+{
+  "url": "https://www.tickpick.com/buy-six60-tickets-exit-in-11-15-26-8pm/8152360/",
+  "captured_at": "2026-10-25T17:53:19.021Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": null,
+    "start": null,
+    "end": null,
+    "location": null,
+    "has_image": false
+  },
+  "notes": "EXPECTED FAILURE: HTTP 403 Cloudflare 'Just a moment...' challenge. Note that the URL itself encodes the date and time (11-15-26-8pm).",
+  "replay": {
+    "calendars": {},
+    "timezones": {},
+    "llm": null
+  },
+  "expected": {
+    "blocked": true
+  }
+}

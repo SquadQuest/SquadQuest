@@ -1,0 +1,30 @@
+{
+  "url": "https://www.northaven.org/events/kids-night-out-5",
+  "captured_at": "2026-10-25T17:52:48.262Z",
+  "timezone": "America/New_York",
+  "page_shows": {
+    "title": "Kid's Night Out!",
+    "start": "2026-11-06T18:00:00-06:00",
+    "end": "2026-11-06T21:00:00-06:00",
+    "location": "Northaven Church, 11211 Preston Road, Dallas, TX 75230",
+    "has_image": true
+  },
+  "notes": "Squarespace event. JSON-LD Event name has the site name appended ('Kid's Night Out! — Northaven Church'). Offset has no colon ('-0600'). location.address is a single string with \\n newlines. There is no geo in JSON-LD, only og:latitude/og:longitude meta tags. Has a www.google.com/calendar/event?action=TEMPLATE link (not calendar.google.com) and an ?format=ical link.",
+  "replay": {
+    "calendars": {},
+    "timezones": {
+      "32.901301,-96.8046231": "America/Chicago"
+    },
+    "llm": null
+  },
+  "expected": {
+    "title": "Kid's Night Out!",
+    "start_time_min": "2026-11-07T00:00:00.000Z",
+    "start_time_max": "2026-11-07T00:15:00.000Z",
+    "end_time": "2026-11-07T03:00:00.000Z",
+    "location_description": "Northaven Church, 11211 Preston Road, Dallas, TX, 75230, United States",
+    "rally_point_text": "POINT(-96.8046231 32.901301)",
+    "banner_photo": "http://static1.squarespace.com/static/64cd1ebf3ad2e30a4fef71f9/64de751ff6b08974ff363d11/6ac13d5aec88a320470a52fe/1791049129372/Screen+Shot+2026-09-06+at+2.12.38+PM.png?format=1500w",
+    "notes": "6:00 - 9:00 p.m. at Northaven UMC! Crafts, games, activities, and a movie! Includes dinner and snacks. $10/child with a cap of $30/family!    Click here to register!"
+  }
+}
