@@ -24,7 +24,7 @@ import '../models/want.dart';
 import 'auth_controller.dart';
 
 /// Dependency-injection providers. Repositories expose abstract types so tests
-/// and storybook can override them with fakes (see mobile-flutter patterns.md).
+/// and storybook can override them with fakes (see jarvus-flutter patterns.md).
 
 final tokenStoreProvider = Provider<TokenStore>((ref) => TokenStore());
 

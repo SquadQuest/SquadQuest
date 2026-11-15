@@ -1,6 +1,6 @@
 # Shared functions for <PROJECT> development scripts. Source this; don't run it.
 #
-# This is the invariant core of the agent-dev-workflow pattern. A single shared
+# This is the invariant core of the jarvus-dev-flow pattern. A single shared
 # Postgres container hosts a SEPARATE DATABASE per context (main checkout, each
 # agent worktree, the test runner), and each context binds a free port — so many
 # worktrees run at once without clobbering each other.

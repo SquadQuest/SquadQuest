@@ -1,5 +1,5 @@
 ---
-name: agent-dev-workflow
+name: jarvus-dev-flow
 description: Set up an agent-friendly local dev workflow — a bin/ task-runner (inspired by GitHub's scripts-to-rule-them-all) over a shared Postgres container that gives every git worktree its own isolated database and ports, plus a dedicated test database so tests never clobber dev data. Use this whenever a project needs worktree-isolated local development, when setting up for AI agent orchestrators (Conductor and similar) that spin up a worktree per session and register setup/run/cleanup commands, when multiple copies of a backend must run concurrently on one machine, when replacing a docker-compose-for-local-postgres setup, when deciding whether auxiliary dev services (a validator container, a local OIDC IdP) replicate per worktree or run shared, when merged agent worktrees pile up and need sweeping, when idle per-project Postgres containers or leftover dev servers accumulate on a machine and need auditing or shutting down, or when tests keep wiping local dev/demo data. Triggers on "bin/ scripts", "worktree isolation", "per-worktree database/port", "scripts to rule them all", "agent dev environment", "setup/run/cleanup scripts", "shared auxiliary services", "sweep merged worktrees", "stop/shut down the dev database container", "too many docker postgres instances", or tests clobbering the dev database.
 ---
 
@@ -276,10 +276,10 @@ up as client backends even though its worktrees are unreachable from here.
 | `references/orchestrator-integration.md` | wiring Conductor/orchestrator setup/run/cleanup; the stdout/stderr contract |
 | `references/snapshots.md` | only if the project has a production DB to snapshot (skip for greenfield) |
 
-## Where this meets `ci-quality-gates`
+## Where this meets `jarvus-ci`
 
-This skill and **`ci-quality-gates`** are complementary and meet at exactly one
-seam: the **`test` script**. `ci-quality-gates` owns the script contract
+This skill and **`jarvus-ci`** are complementary and meet at exactly one
+seam: the **`test` script**. `jarvus-ci` owns the script contract
 (`lint`/`format`/`format:check`/`typecheck`/`test`) and the CI workflow that runs
 `bun run test` against an **ephemeral service-container Postgres** with an explicit
 `DATABASE_URL`. This skill owns what that same `test` script connects to **locally**:
@@ -301,7 +301,7 @@ when Postgres is unreachable instead of failing the run. See
   (`migrations-and-seeds.md`). A bloated `bin/` stops being portable.
 - These are dev-only. **CI keeps its own explicit `DATABASE_URL`** against an
   ephemeral DB (a GitHub Actions service-container Postgres, owned by
-  **`ci-quality-gates`**); the test preload's `??=` defers to it. Verify CI stays
+  **`jarvus-ci`**); the test preload's `??=` defers to it. Verify CI stays
   green; you shouldn't need to touch the CI workflow.
 - Don't drop the canonical dev DB casually — `bin/cleanup` guards it behind
   `--force`; `bin/reset-db` is the intended "start the main DB over" path.

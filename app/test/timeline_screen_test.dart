@@ -6,7 +6,7 @@ import 'package:squadquest/providers/providers.dart';
 import 'package:squadquest/repositories/timeline_repository.dart';
 import 'package:squadquest/screens/timeline/timeline_screen.dart';
 
-/// Fake repository injected via provider override (mobile-flutter patterns.md) —
+/// Fake repository injected via provider override (jarvus-flutter patterns.md) —
 /// lets the screen render real state without a live server.
 class FakeTimelineRepository implements TimelineRepository {
   FakeTimelineRepository(this._page);

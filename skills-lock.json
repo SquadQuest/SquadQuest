@@ -1,71 +1,71 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
-    "agent-dev-workflow": {
-      "source": "JarvusInnovations/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/agent-dev-workflow/SKILL.md",
-      "computedHash": "2d73ba20e7cfd362cf3fc8e90bd9dc49e208f7333617069b3fad134485de8b17"
-    },
     "dart-add-unit-test": {
       "source": "dart-lang/skills",
       "sourceType": "github",
       "skillPath": "skills/dart-add-unit-test/SKILL.md",
-      "computedHash": "326a2b6cb57bcb4f40203e063a1060e9549a8cea0ece1a5c9a0d39a2f2b85bc8"
+      "computedHash": "b63c4a27e687546a87d3481f70b4fd4b49949da48e7c28522cb081c32eaa8ff0"
     },
     "dart-fix-runtime-errors": {
       "source": "dart-lang/skills",
       "sourceType": "github",
       "skillPath": "skills/dart-fix-runtime-errors/SKILL.md",
-      "computedHash": "7b13cb0df76693d8c798432a1f86325b093a35e9687f231a012763fcad54fb2c"
+      "computedHash": "af09db2bf2d066537020a45bb5211fb3aa9359106197d9ad1e17831fbc6f2a71"
     },
     "dart-run-static-analysis": {
       "source": "dart-lang/skills",
       "sourceType": "github",
       "skillPath": "skills/dart-run-static-analysis/SKILL.md",
-      "computedHash": "e64ea092e216ecdc9b4a8b49b06d0b9a0b49f680c1116ada1d247b2de3fa6fe1"
+      "computedHash": "fa93216b2e985fe86cffbc7f9734361205cbe6c7c8d46b21a87beea19bea2066"
     },
     "flutter-add-integration-test": {
       "source": "flutter/skills",
       "sourceType": "github",
       "skillPath": "skills/flutter-add-integration-test/SKILL.md",
-      "computedHash": "9ead37fef54371fed6ad07a9ba3de7a908135a0867b05baf74c28b7095343999"
+      "computedHash": "ce8c06d4673db956810ffc2380e4c9305e068021eab72c0f3506dacdf0fa4027"
     },
     "flutter-add-widget-test": {
       "source": "flutter/skills",
       "sourceType": "github",
       "skillPath": "skills/flutter-add-widget-test/SKILL.md",
-      "computedHash": "c4f263c59cfe331ef42dba2aa81e25142aa4f7284518907c6b847e04502676b0"
+      "computedHash": "5cfab5fd20d6b84e28e9b9cc278ac0c3fb2c89a7e850f2b900749b14cb367bbf"
     },
     "flutter-apply-architecture-best-practices": {
       "source": "flutter/skills",
       "sourceType": "github",
       "skillPath": "skills/flutter-apply-architecture-best-practices/SKILL.md",
-      "computedHash": "2b1b63214d6b153c50aacd4bbcb76ce91dece449de9e06f477f8aad3163d667f"
+      "computedHash": "a41b999109cc3c2dc79ddbc05b5fd5f39ed08d5c6c17dab728a6b926d3a504de"
     },
     "flutter-implement-json-serialization": {
       "source": "flutter/skills",
       "sourceType": "github",
       "skillPath": "skills/flutter-implement-json-serialization/SKILL.md",
-      "computedHash": "0eed26f25308d78c6a9036ec936db93342f064d64f2cbac5e0e8648ba6b9db3f"
+      "computedHash": "48727033cb05de551ef14264112e36e8aec015b3cf955fa2115cfdac6094fe69"
     },
     "flutter-setup-declarative-routing": {
       "source": "flutter/skills",
       "sourceType": "github",
       "skillPath": "skills/flutter-setup-declarative-routing/SKILL.md",
-      "computedHash": "2341440c8bce0f176663695eaa71f9f7d7c967772a1dcd0d833c9778504b227e"
+      "computedHash": "566264ee0f746a8b4d571a0dec69d3d3f09c246591a3393d1fb67783661465bf"
     },
-    "mobile-flutter": {
+    "jarvus-dev-flow": {
       "source": "JarvusInnovations/agent-skills",
       "sourceType": "github",
-      "skillPath": "skills/mobile-flutter/SKILL.md",
-      "computedHash": "a09dc96c806c6281e08592fdc4c199c5ac26c9f7d1e62de6cf25fd11ac597269"
+      "skillPath": "skills/jarvus-dev-flow/SKILL.md",
+      "computedHash": "e8e00d670150b007647374a9f46e23aa017d8d8eca78ec65ab52abf9eb6b34eb"
+    },
+    "jarvus-flutter": {
+      "source": "JarvusInnovations/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/jarvus-flutter/SKILL.md",
+      "computedHash": "348c66f9160038cfafe777eeffe835a6fda167386471bf7ec5dd985e70e57d49"
     },
     "specops": {
       "source": "JarvusInnovations/specops",
       "sourceType": "github",
       "skillPath": "skills/specops/SKILL.md",
-      "computedHash": "ad9b58394fb5e89312aa943160a564865897abd4c7cbda20309e613b6de45c2b"
+      "computedHash": "5be5434f88142d1546464ae727007f20d65099f260535dcf254da5b61ae6f4af"
     }
   }
 }
