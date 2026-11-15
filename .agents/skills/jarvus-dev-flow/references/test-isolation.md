@@ -90,7 +90,7 @@ suites self-skip (`describe.skipIf(...)`) and only pure suites gate merges. The
 preload as written breaks that CI — it unconditionally connects and migrates,
 and there's nothing to connect to. Two legitimate postures; pick one on purpose:
 
-- **Add a service container** (the `ci-quality-gates` default) — DB coverage on
+- **Add a service container** (the `jarvus-ci` default) — DB coverage on
   every PR; the preload works unchanged.
 - **Skip when unreachable** — the preload probes Postgres with a
   short-timeout connect; on failure it sets a flag the live-DB suites check
@@ -216,10 +216,10 @@ process state leaks across suites**:
   yank another's rows mid-test. If you ever need parallelism, give each worker its
   own DB (a per-worker suffix on `app_test`) — don't loosen the reset.
 
-## Stay hermetic (the `ci-quality-gates` line)
+## Stay hermetic (the `jarvus-ci` line)
 
 Everything above needs only Postgres — no secrets, no outbound calls — so these
-suites run in the pre-merge gate (**`ci-quality-gates`**) and on fork PRs. The moment
+suites run in the pre-merge gate (**`jarvus-ci`**) and on fork PRs. The moment
 a test needs real credentials or a third-party endpoint it's a different, later gate;
 don't drag secrets into this set. Stub external providers at the app boundary.
 

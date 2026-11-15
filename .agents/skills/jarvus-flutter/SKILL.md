@@ -1,5 +1,5 @@
 ---
-name: mobile-flutter
+name: jarvus-flutter
 description: Mobile app development using Flutter + Riverpod + go_router. Use when creating Flutter apps, adding screens, managing state with Riverpod, implementing routing, building offline-first features, or setting up storybook component development. Also use when the user mentions Flutter, Dart, mobile apps, or cross-platform development.
 ---
 
@@ -38,6 +38,27 @@ asdf set rust latest  # needed by some native deps
 
 This creates a `.tool-versions` file in the project root. Never use the official Flutter installer, mise, or other version managers.
 
+## MCP Setup
+
+If `.mcp.json` doesn't exist in the project root, create it with this content:
+
+```json
+{
+  "mcpServers": {
+    "dart": {
+      "type": "stdio",
+      "command": "dart",
+      "args": [
+        "mcp-server"
+      ],
+      "env": {}
+    }
+  }
+}
+```
+
+This wires up `dart mcp-server` so the agent can drive the app, inspect widgets, capture screenshots, and analyze files. See [mcp-driving-and-screenshots.md](references/mcp-driving-and-screenshots.md) for usage.
+
 ## Reference Files
 
 | File | When to Use |
@@ -48,6 +69,7 @@ This creates a `.tool-versions` file in the project root. Never use the official
 | [storybook.md](references/storybook.md) | Setting up storybook, adding stories, mock data |
 | [gotchas.md](references/gotchas.md) | Common mistakes and platform-specific issues |
 | [mcp-driving-and-screenshots.md](references/mcp-driving-and-screenshots.md) | Launching, driving (tap/type), debugging, and screenshotting a running app via the Dart MCP — and delivering screenshots to the user |
+| [mcp.json](references/mcp.json) | Sample `.mcp.json` for the project root — copy here if it doesn't exist |
 
 ## Companion Skills
 
@@ -194,3 +216,29 @@ context.go('/login');               // replace stack
 - **macOS entitlements**: Network requests need `com.apple.security.network.client`, keychain needs `keychain-access-groups` — both in `macos/Runner/DebugProfile.entitlements` and `Release.entitlements`
 - **macOS signing**: Set development team in Xcode (Runner target → Signing & Capabilities → Team → All configurations)
 - **Commit generated code separately**: After any command that generates/changes code, commit those changes with the exact command in the message BEFORE making manual edits
+
+## CI & Code Quality
+
+Wire analyze, format, and tests into CI from the start. The cross-cutting CI harness — asdf
+provisioning + caching, path-filtered workflows, the `setup-asdf` composite — lives in the
+**`jarvus-ci`** skill; reuse it here. The *tools* differ from the TS/Python stacks:
+Dart ships its own analyzer and formatter, so there's no oxc/ruff here.
+
+**The gate (Dart-native):**
+
+| Gate | Command |
+|---|---|
+| Lint / analyze | `flutter analyze lib/ test/` |
+| Format check | `dart format --output=none --set-exit-if-changed lib/ test/` |
+| Test | `flutter test` |
+
+`flutter analyze` reads `analysis_options.yaml` — start from `package:flutter_lints` (and add
+`riverpod_lint` only if it doesn't clash with `drift_dev`'s analyzer version; see
+[gotchas.md](references/gotchas.md)). The companion `dart-run-static-analysis` skill (see
+**Companion Skills** above) drives `dart analyze` + `dart fix --apply` locally — the same gate,
+just in the dev loop.
+
+**Provisioning.** Flutter is pinned in `.tool-versions` (plus ruby/cocoapods for iOS), so the
+`setup-asdf` composite from `jarvus-ci` provisions CI exactly as for the other stacks.
+Commit `pubspec.lock` and use `flutter pub get` (it respects the lock). The credential-free,
+path-filtered, IDE-over-pre-commit principles all carry over — only the tool commands change.
