@@ -23,6 +23,8 @@ Status: pilot on the v1 production stack. Purely additive.
 | function tests | `supabase/functions/guest-rsvp/handler.test.ts` |
 | columns `guests.claimed_by`, `guests.claimed_at`, the claim functions and the `profiles` trigger (see [Guests who become members](#guests-who-become-members)) | `supabase/tables/instance_guests_claim.sql` |
 | claim test | `supabase/tests/guests_claim.sql` |
+| column `instance_guests.note`, the note-aware `guest_rsvp_open_join()` and `guest_claim_for_user()` (see [Guest notes](#guest-notes)) | `supabase/tables/instance_rsvp_notes.sql` |
+| note test | `supabase/tests/guests_note.sql` |
 
 Nothing existing changes, apart from one new trigger on `profiles` (see
 [Guests who become members](#guests-who-become-members)). No existing table,
@@ -45,12 +47,14 @@ a push notification.
 - **`instance_guests`**: primary key `(instance, guest)`; `status` is one of
   `invited | yes | maybe | no` (default `invited`); `updated_at` maintained by
   the shared `set_updated_timestamp()` trigger. Deleting an event or a guest
-  deletes the rows.
+  deletes the rows. `note` is the guest's optional note for that event:
+  null, or 1–200 characters of plain text (see [Guest notes](#guest-notes)).
 - **`instance_open_links`**: `token` (primary key, same format as guest
   tokens), `instance`, `created_by`, `created_at`, `closed_at`, `max_guests`
   (default 300), `guests_created`. At most one link per event is open at a
   time; a closed link stays closed (making a new one issues a new token).
-- **`guest_rsvp_open_join(token, name, phone, status)`**: executable by
+- **`guest_rsvp_open_join(token, name, phone, status, note, set_note)`**
+  (`note` defaults to null, `set_note` to false; see [Guest notes](#guest-notes)): executable by
   `service_role` only. Locks the link row, checks it is open, the event is
   `live` and `guests_created < max_guests`, then finds the host's guest with
   that phone (deduplicated on `(host, phone)`) or creates one, attaches them
@@ -88,6 +92,7 @@ a push notification.
 | `banner` | `banner_photo` | URL or null |
 | `event_status` | `status` | `live` or `canceled` (drafts are never returned) |
 | `rsvp` | `instance_guests.status` | `invited`, `yes`, `maybe`, `no`; `null` on an open link and for a claimed guest |
+| `note` | `instance_guests.note` | the guest's own note for this event, or `null`. `null` wherever `rsvp` is (open-link `GET`, claimed guest). On an open-link `POST`: the note that request set, or `null` if it sent none (see [Guest notes](#guest-notes)) |
 
 Events are sorted by `start`. Only events created by the guest's host are
 returned.
@@ -97,9 +102,9 @@ returned.
 | Request | 200 body |
 | --- | --- |
 | `GET ?t=<guest token>` | `{guest:{name}, host:{first_name}, events:[Event…], claimed}`. `claimed` is true once the guest has become a member: every `rsvp` is then `null`, and the page should tell them to answer in the app |
-| `POST {t, instance, status}` (`status` = `yes`/`maybe`/`no`) | same as `GET ?t`, read back after the write |
+| `POST {t, instance, status, note?}` (`status` = `yes`/`maybe`/`no`) | same as `GET ?t`, read back after the write |
 | `GET ?o=<open token>` | `{guest:null, host:{first_name}, events:[Event]}` (one event, `rsvp: null`) |
-| `POST {o, phone, name, status}` | `{created, token, guest:null, host:{first_name}, events:[Event]}`: the one event with `rsvp` = the answer just set. `created` is true and `token` is the new guest's own token (for `?t=` from then on) only when this request created the guest; otherwise `created: false, token: null`. Never the stored name or other events. |
+| `POST {o, phone, name, status, note?}` | `{created, token, guest:null, host:{first_name}, events:[Event]}`: the one event with `rsvp` = the answer just set and `note` = the note just set (or null). `created` is true and `token` is the new guest's own token (for `?t=` from then on) only when this request created the guest; otherwise `created: false, token: null`. Never the stored name or other events. |
 
 `OPTIONS` answers 204.
 
@@ -109,7 +114,7 @@ Always `{"error": "<code>"}`, nothing else:
 
 | HTTP | code | when |
 | --- | --- | --- |
-| 400 | `bad_request` | neither or both of `t`/`o`; body not a JSON object; `status` not yes/maybe/no; open-link `name` empty or over 80 chars after trimming; open-link `phone` missing or not a phone number (see below) |
+| 400 | `bad_request` | neither or both of `t`/`o`; body not a JSON object; `status` not yes/maybe/no; open-link `name` empty or over 80 chars after trimming; open-link `phone` missing or not a phone number (see below); `note` neither a string nor null, or over 200 characters after cleaning (see [Guest notes](#guest-notes)) |
 | 404 | `not_found` | unknown or malformed token; event the guest is not on; canceled or draft event; another host's event; closed open link; open link at its cap; open link on a canceled event |
 | 405 | `method_not_allowed` | any other method |
 | 409 | `claimed` | `POST {t,…}` for a claimed guest; `POST {o,…}` whose phone is the host's claimed guest. Nothing is written |
@@ -214,7 +219,10 @@ For the user's verified phone, every unclaimed `guests` row with that phone,
    too: in the `rsvp` function, a member clearing an RSVP the host created
    sets it back to `invited` instead of deleting it, so a member on a private
    event does not lose access by changing their mind.
-   **An existing member row for the event always wins** and is never changed.
+   The guest's note for the event goes to `instance_members.note` (see
+   [Guest notes](#guest-notes)).
+   **An existing member row for the event always wins** and is never changed,
+   note included.
    No push notification is sent (nothing fires on `instance_members` inserts;
    v1 notifies from the functions).
 2. **Friend request.** If no `friends` row exists between the host and the
@@ -324,6 +332,101 @@ pulling, or every guest link answers 500 in between.
    Once the columns are gone, claimed guests are ordinary guests again and
    their links accept answers.
 
+## Guest notes
+
+A guest can leave a short note with their answer ("bringing a friend",
+"running late"). Hosts see it next to the answer (`guests list` in the CLI).
+
+### Rules
+
+`note` is optional in both `POST` bodies:
+
+| `note` in the body | effect |
+| --- | --- |
+| absent | the stored note is left as it is, so a one-tap status change never wipes it |
+| `null`, `""`, or only whitespace / control characters | the note is cleared |
+| a string | cleaned, then stored |
+| a string over 200 characters after cleaning | `400 bad_request`, nothing written |
+| anything else (number, boolean, array, object) | `400 bad_request`, nothing written |
+
+Cleaning, in the function: lone UTF-16 surrogates become U+FFFD; control
+characters are removed (C0 except newline, DEL, C1; so `\r\n` becomes `\n`);
+then the string is trimmed. Length is counted in characters (code points),
+the same way as `char_length()` in the database. Newlines are kept; nothing
+is collapsed or escaped. It is plain text: clients must render it as text,
+never as HTML.
+
+Storage: `instance_guests.note`, nullable, check `char_length(note) between 1
+and 200`. `guest_rsvp_open_join()` trims it again, stores an empty one as
+null and raises `bad_request` over 200.
+
+Who sees it:
+
+- the guest, on their own link (`GET ?t`, `POST {t,…}`);
+- the host, through the existing select grant and RLS policy on
+  `instance_guests` ("Hosts can read guests on their own events"); no other
+  member, and not `anon`. Hosts can also write it through the same update
+  grant they already had on `instance_guests`; the CLI does not;
+- an open-link caller sees **only the note their own request set**, never a
+  stored one: the caller has proved only that they know a phone number, the
+  same reason they never get the stored name or token. A status-only open-link
+  post from a known phone keeps the stored note but answers `note: null`;
+- a claimed guest's link shows `note: null`, like `rsvp`.
+
+On a claim, the guest's note for each event is copied to
+`instance_members.note` (free text, no constraint there) when the claim
+creates the member row. An existing member row wins whole, its note
+included.
+
+### Deploy
+
+Backward compatible in both directions: the `guest-rsvp` function from
+before this change keeps working against the new SQL (its 4-argument RPC call
+resolves to the new function with `note` and `set_note` defaulted, and it
+never reads the column). The new function needs the new SQL (it selects
+`instance_guests.note` and passes `p_note` / `p_set_note`). So apply the SQL
+**before** pulling, as for the claim.
+
+Run on the production host, from the v1 checkout's `supabase/` directory,
+after this branch is merged to `v1`. Needs the guest RSVP objects and the
+claim objects above already applied.
+
+1. Back up: `docker compose exec -T db pg_dump -U postgres -Fc postgres > ~/pre-guest-note-$(date +%F).dump`
+2. Apply from the fetched branch, in one transaction:
+
+   ```bash
+   git fetch origin
+   git show origin/v1:supabase/tables/instance_rsvp_notes.sql \
+     | docker compose exec -T db psql -v ON_ERROR_STOP=1 --no-password --no-psqlrc \
+         -U postgres --single-transaction
+   docker compose exec -T db psql -U postgres -c "NOTIFY pgrst, 'reload schema'"
+   ```
+
+3. `git pull` on `v1`. The new `guest-rsvp` is live from the next request.
+4. Smoke test: open a test guest's link, answer with a note, change the
+   answer without one, and check `guests list` shows the note both times.
+
+### Rollback
+
+1. Revert the merge on `v1` and `git pull`: the old function ignores notes and
+   works against the new SQL. Stored notes stay in the column.
+2. Optionally remove the SQL too (deletes every stored note; copies already
+   made into `instance_members.note` stay). This restores the two functions
+   from the commit before notes (`3081e84`) in one transaction:
+
+   ```bash
+   { echo "drop function public.guest_rsvp_open_join(text, text, text, text, text, boolean);"
+     git show 3081e84:supabase/tables/instance_open_links.sql \
+       | sed -n '/^CREATE FUNCTION public.guest_rsvp_open_join/,$p'
+     git show 3081e84:supabase/tables/instance_guests_claim.sql \
+       | sed -n '/^CREATE FUNCTION public.guest_claim_for_user/,/^\$\$ LANGUAGE/p' \
+       | sed '1s/^CREATE FUNCTION/CREATE OR REPLACE FUNCTION/'
+     echo "alter table public.instance_guests drop column note;"
+   } | docker compose exec -T db psql -v ON_ERROR_STOP=1 --no-password --no-psqlrc \
+         -U postgres --single-transaction
+   docker compose exec -T db psql -U postgres -c "NOTIFY pgrst, 'reload schema'"
+   ```
+
 ## How SQL and functions reach production on v1
 
 There is no migration tool and no deploy workflow on `v1`
@@ -384,9 +487,9 @@ Each step stands alone; stop at the one that is enough.
    the flyer flow is the problem.
 3. Export what guests answered, if it is wanted:
    `docker compose exec -T db psql -U postgres -c "\copy (select g.name, g.phone, ig.instance, ig.status, ig.updated_at from guests g join instance_guests ig on ig.guest = g.id) to stdout csv header" > ~/guest-rsvp-answers.csv`
-4. Drop the new objects in one transaction. If the claim objects from
-   [Guests who become members](#guests-who-become-members) are deployed, run
-   their rollback first.
+4. Drop the new objects in one transaction. If the objects from
+   [Guest notes](#guest-notes) are deployed, run their rollback first, then
+   the one from [Guests who become members](#guests-who-become-members).
 
    ```bash
    docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres --single-transaction -c "
@@ -417,6 +520,8 @@ Each step stands alone; stop at the one that is enough.
   `guests_claim: all checks passed`. It needs GoTrue's tables
   (`auth.sessions`, `auth.mfa_amr_claims`), which the auth container creates
   when the local stack starts.
+- **Notes**: same way, `< tests/guests_note.sql`; prints
+  `guests_note: all checks passed`. Needs GoTrue's tables like the claim test.
 
 ## Known risks
 
@@ -435,7 +540,8 @@ Each step stands alone; stop at the one that is enough.
 - **No phone verification.** There is no SMS, no code and no check that the
   person owns the number they type. Anyone with the flyer can answer as any
   phone number, including changing the answer of someone already on the list
-  for that event. They never get that person's link, name or other events.
+  for that event, and setting or clearing their note for it. They never get
+  that person's link, name, note or other events.
   Accepted for a pilot: the host sees the whole list with `guests list` and
   can remove anyone.
 - **Timing**: the 404 cases take slightly different paths; response bodies
