@@ -98,15 +98,20 @@ function storeFor(w: World): GuestStore {
       if (!link || link.closed_at || link.instance.status !== "live" || link.guests_created >= link.max_guests) {
         return { error: "not_found" };
       }
-      if (phone && w.guests.some((g) => g.host === link.instance.created_by && g.phone === phone)) {
-        return { error: "conflict" };
+      const host = link.instance.created_by;
+      let guest = w.guests.find((g) => g.host === host && g.phone === phone);
+      let created = false;
+      if (!guest) {
+        const id = `00000000-0000-4000-8000-${String(w.guests.length).padStart(12, "0")}`;
+        guest = { id, name, host, token: String(w.guests.length).padStart(64, "d"), phone };
+        w.guests.push(guest);
+        link.guests_created++;
+        created = true;
       }
-      const id = `00000000-0000-4000-8000-${String(w.guests.length).padStart(12, "0")}`;
-      const token = String(w.guests.length).padStart(64, "d");
-      w.guests.push({ id, name, host: link.instance.created_by, token, phone });
-      w.rows.push({ guest: id, instance: link.instance, status });
-      link.guests_created++;
-      return { token };
+      const row = w.rows.find((r) => r.guest === guest!.id && r.instance.id === link.instance.id);
+      if (row) row.status = status;
+      else w.rows.push({ guest: guest.id, instance: link.instance, status });
+      return { token: created ? guest.token : null };
     },
   };
 }
@@ -235,34 +240,62 @@ Deno.test("GET ?o returns the one event with no guest and no answer", async () =
   assertEquals(r.body.events[0].rsvp, null);
 });
 
-Deno.test("POST ?o creates a guest, records the answer and returns their own token", async () => {
+Deno.test("POST ?o creates a guest by phone, records the answer and returns their own token", async () => {
   const w = world();
-  const r = await call(w, post({ o: OPEN, name: "  Pat Example ", phone: "+15555550199", status: "maybe" }));
+  const r = await call(w, post({ o: OPEN, name: "  Pat ", phone: "(215) 555-0199", status: "maybe" }));
   assertEquals(r.status, 200);
+  assertEquals(r.body.created, true);
   assert(typeof r.body.token === "string" && r.body.token.length === 64, "token returned");
-  assertEquals(r.body.guest, { name: "Pat Example" });
+  assertEquals(r.body.guest, null, "no guest name in the open flow");
   assertEquals(r.body.events.map((e: { id: string; rsvp: string }) => [e.id, e.rsvp]), [[E_LIVE, "maybe"]]);
+  const stored = w.guests.find((g) => g.token === r.body.token)!;
+  assertEquals([stored.name, stored.phone], ["Pat", "+12155550199"], "name trimmed, phone normalized");
 
   // the token works in the normal flow
   const again = await call(w, post({ t: r.body.token, instance: E_LIVE, status: "no" }));
   assertEquals(again.body.events[0].rsvp, "no");
 });
 
-Deno.test("POST ?o with no phone, and with an empty phone, is accepted", async () => {
+Deno.test("POST ?o with a phone already on the list reuses the guest and returns no token, name or other events", async () => {
   const w = world();
-  assertEquals((await call(w, post({ o: OPEN, name: "Lee Example", status: "yes" }))).status, 200);
-  assertEquals((await call(w, post({ o: OPEN, name: "Kim Example", phone: "", status: "yes" }))).status, 200);
+  // Sam was added by the host and is on five events
+  const r = await call(w, post({ o: OPEN, name: "Somebody", phone: "+1 555 555 0100", status: "no" }));
+  assertEquals(r.status, 200);
+  assertEquals(r.body.created, false);
+  assertEquals(r.body.token, null, "no token for an existing guest");
+  assertEquals(r.body.guest, null, "stored name never returned");
+  assertEquals(r.body.events.length, 1, "only this event");
+  assertEquals([r.body.events[0].id, r.body.events[0].rsvp], [E_LIVE, "no"]);
+  assert(!JSON.stringify(r.body).includes("Sam Example"), "stored name absent");
+  assert(!JSON.stringify(r.body).includes(TOKEN), "stored token absent");
+  assertEquals(w.guests.length, 1, "no duplicate guest");
+  assertEquals(w.guests[0].name, "Sam Example", "stored name kept");
+  assertEquals(w.rows.find((x) => x.instance.id === E_LIVE)!.status, "no", "answer updated");
 });
 
-Deno.test("POST ?o validates name, phone and status before touching the store", async () => {
+Deno.test("phone normalization: E.164 and US 10/11-digit accepted, everything else refused", async () => {
+  const { normalizePhone } = await import("./handler.ts");
+  assertEquals(normalizePhone("+15555550100"), "+15555550100");
+  assertEquals(normalizePhone("+44 20 7946 0958"), "+442079460958");
+  assertEquals(normalizePhone("215-555-0100"), "+12155550100");
+  assertEquals(normalizePhone("(215) 555.0100"), "+12155550100");
+  assertEquals(normalizePhone("1 215 555 0100"), "+12155550100");
+  for (const bad of ["", "555-0100", "0215550100", "2151550100", "12345678", "22155550100", "+0123", "215555010x", "+1".padEnd(40, "5"), 2155550100, null]) {
+    assertEquals(normalizePhone(bad), null, String(bad));
+  }
+});
+
+Deno.test("POST ?o requires a valid phone and a name, checked before touching the store", async () => {
   const w = world();
   for (const body of [
-    { o: OPEN, status: "yes" },
-    { o: OPEN, name: "   ", status: "yes" },
-    { o: OPEN, name: "x".repeat(81), status: "yes" },
-    { o: OPEN, name: "Lee", phone: "2155550100", status: "yes" },
-    { o: OPEN, name: "Lee", phone: 5555550100, status: "yes" },
-    { o: OPEN, name: "Lee", status: "invited" },
+    { o: OPEN, name: "Lee", status: "yes" },
+    { o: OPEN, name: "Lee", phone: "", status: "yes" },
+    { o: OPEN, name: "Lee", phone: "555-0100", status: "yes" },
+    { o: OPEN, name: "Lee", phone: 2155550100, status: "yes" },
+    { o: OPEN, phone: "2155550100", status: "yes" },
+    { o: OPEN, name: "   ", phone: "2155550100", status: "yes" },
+    { o: OPEN, name: "x".repeat(81), phone: "2155550100", status: "yes" },
+    { o: OPEN, name: "Lee", phone: "2155550100", status: "invited" },
   ]) {
     const r = await call(w, post(body));
     assertEquals([r.status, r.body], [400, { error: "bad_request" }], JSON.stringify(body));
@@ -280,7 +313,7 @@ Deno.test("closed, full, canceled and unknown open links all give the same 404",
   for (const setup of setups) {
     const w = world();
     setup(w);
-    for (const req of [get(`o=${OPEN}`), post({ o: OPEN, name: "Lee Example", status: "yes" })]) {
+    for (const req of [get(`o=${OPEN}`), post({ o: OPEN, name: "Lee", phone: "2155550198", status: "yes" })]) {
       const r = await call(w, req);
       assertEquals([r.status, r.body], [404, { error: "not_found" }], `${req.method} ${setup}`);
     }
@@ -288,16 +321,10 @@ Deno.test("closed, full, canceled and unknown open links all give the same 404",
   }
 });
 
-Deno.test("the cap is enforced: the 301st join is refused", async () => {
+Deno.test("the cap is enforced: the 301st new guest is refused", async () => {
   const w = world();
   w.links[0].guests_created = 299;
-  assertEquals((await call(w, post({ o: OPEN, name: "Last Example", status: "yes" }))).status, 200);
-  const r = await call(w, post({ o: OPEN, name: "Late Example", status: "yes" }));
+  assertEquals((await call(w, post({ o: OPEN, name: "Last", phone: "2155550197", status: "yes" }))).status, 200);
+  const r = await call(w, post({ o: OPEN, name: "Late", phone: "2155550196", status: "yes" }));
   assertEquals([r.status, r.body], [404, { error: "not_found" }]);
-});
-
-Deno.test("a phone already on the host's list is a 409 that returns no token", async () => {
-  const w = world();
-  const r = await call(w, post({ o: OPEN, name: "Sam Again", phone: "+15555550100", status: "yes" }));
-  assertEquals([r.status, r.body], [409, { error: "conflict" }]);
 });

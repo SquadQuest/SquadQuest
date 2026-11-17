@@ -1,7 +1,7 @@
 -- Open-call links: one link per event that anyone can use to answer without
 -- an account and without a per-guest link, e.g. from a QR code on a printed
--- flyer. Answering through one creates a `guests` row for the event's host
--- and hands back that guest's own token. See docs/guest-rsvp.md.
+-- flyer. Answering through one, by phone, creates (or reuses) a `guests` row
+-- for the event's host. See docs/guest-rsvp.md.
 create table
   public.instance_open_links (
     -- same generator and format as guests.token (64 hex chars, 244 bits)
@@ -44,14 +44,19 @@ delete on public.instance_open_links to authenticated;
 grant insert (instance),
 update (closed_at) on public.instance_open_links to authenticated;
 
--- Join an event through its open link, atomically: lock the link, check it
--- is open, the event is live and the cap is not reached, then create the
--- guest, attach them with their answer and count them. Returns the new
--- guest's token.
+-- Answer an event through its open link, by phone, atomically: lock the
+-- link, check it is open, the event is live and the cap is not reached,
+-- then find the host's guest with that phone or create one, attach them to
+-- the event if needed and set the answer.
+--
+-- Returns the guest's token ONLY when this call created the guest, and NULL
+-- when an existing guest was reused: handing an existing guest's token to
+-- whoever typed their phone number would let anyone take over that person's
+-- answers. A reused guest's name is kept (it is only filled in if empty).
+-- The cap counts guests created through the link.
 --
 -- Errors are raised with fixed messages the guest-rsvp function maps to
--- responses: 'not_found' (unknown, closed, full, or event not live),
--- 'conflict' (that phone is already on this host's guest list), and
+-- responses: 'not_found' (unknown, closed, full, or event not live) and
 -- 'bad_request'. Only the service role may call it.
 CREATE FUNCTION public.guest_rsvp_open_join (
   p_token text,
@@ -61,11 +66,12 @@ CREATE FUNCTION public.guest_rsvp_open_join (
 ) RETURNS text AS $$
 DECLARE
   link record;
-  new_guest record;
+  found_guest record;
+  created boolean := false;
 BEGIN
   IF p_status IS NULL OR p_status NOT IN ('yes', 'maybe', 'no')
     OR p_name IS NULL OR char_length(btrim(p_name)) NOT BETWEEN 1 AND 80
-    OR (p_phone IS NOT NULL AND p_phone !~ '^\+[1-9][0-9]{6,14}$') THEN
+    OR p_phone IS NULL OR p_phone !~ '^\+[1-9][0-9]{6,14}$' THEN
     RAISE EXCEPTION 'bad_request';
   END IF;
 
@@ -85,22 +91,41 @@ BEGIN
     RAISE EXCEPTION 'not_found';
   END IF;
 
-  BEGIN
-    INSERT INTO public.guests (host, name, phone)
-    VALUES (link.host, btrim(p_name), p_phone)
-    RETURNING id, token INTO new_guest;
-  EXCEPTION WHEN unique_violation THEN
-    RAISE EXCEPTION 'conflict';
-  END;
+  -- the (host, phone) unique index makes this lookup-then-insert safe:
+  -- a concurrent insert of the same phone fails and is retried as a reuse
+  SELECT id, token, name INTO found_guest
+  FROM public.guests
+  WHERE host = link.host AND phone = p_phone
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    BEGIN
+      INSERT INTO public.guests (host, name, phone)
+      VALUES (link.host, btrim(p_name), p_phone)
+      RETURNING id, token, name INTO found_guest;
+      created := true;
+    EXCEPTION WHEN unique_violation THEN
+      SELECT id, token, name INTO found_guest
+      FROM public.guests
+      WHERE host = link.host AND phone = p_phone
+      FOR UPDATE;
+    END;
+  ELSIF btrim(found_guest.name) = '' THEN
+    UPDATE public.guests SET name = btrim(p_name) WHERE id = found_guest.id;
+  END IF;
 
   INSERT INTO public.instance_guests (instance, guest, status)
-  VALUES (link.instance, new_guest.id, p_status);
+  VALUES (link.instance, found_guest.id, p_status)
+  ON CONFLICT (instance, guest) DO UPDATE SET status = excluded.status;
 
-  UPDATE public.instance_open_links
-  SET guests_created = guests_created + 1
-  WHERE token = link.token;
+  IF created THEN
+    UPDATE public.instance_open_links
+    SET guests_created = guests_created + 1
+    WHERE token = link.token;
+    RETURN found_guest.token;
+  END IF;
 
-  RETURN new_guest.token;
+  RETURN NULL;
 END;
 $$ LANGUAGE plpgsql SET search_path = public, pg_temp;
 

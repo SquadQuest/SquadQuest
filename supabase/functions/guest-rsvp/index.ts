@@ -1,6 +1,7 @@
 // guest-rsvp: lets a guest without a SquadQuest account see and answer the
 // events an organizer added them to, through a private link (?t=<token>), or
-// join one event through its open link (?o=<token>), e.g. from a flyer.
+// answer one event by phone through its open link (?o=<token>), e.g. from a
+// QR code on a flyer.
 //
 // No user login: the caller is identified only by the token. Runs everything
 // as the service role, which is why every query below is scoped by the
@@ -90,12 +91,13 @@ const store: GuestStore = {
     });
     if (error) {
       // the database function raises one of these fixed messages
-      if (["not_found", "conflict", "bad_request"].includes(error.message)) {
-        return { error: error.message as "not_found" | "conflict" | "bad_request" };
+      if (error.message === "not_found" || error.message === "bad_request") {
+        return { error: error.message };
       }
       throw new Error(`guest_rsvp_open_join failed: ${error.message}`);
     }
-    return { token: data as string };
+    // null when an existing guest was reused
+    return { token: (data as string | null) ?? null };
   },
 };
 

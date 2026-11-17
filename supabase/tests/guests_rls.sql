@@ -244,16 +244,36 @@ begin
   assert (select ig.status from public.instance_guests ig join public.guests g on g.id = ig.guest where g.token = t) = 'maybe', 'answer recorded';
   assert (select guests_created from public.instance_open_links) = 1, 'join counted';
 
+  -- same phone again: the guest is reused, no token is handed out, the
+  -- answer changes, the stored name is kept and nothing more is counted
+  t := public.guest_rsvp_open_join(link, 'Someone Else', '+15555550199', 'no');
+  assert t is null, 'reused guest gets no token';
+  assert (select count(*) from public.guests where phone = '+15555550199') = 1, 'no duplicate guest';
+  assert (select name from public.guests where phone = '+15555550199') = 'Pat Example', 'stored name kept';
+  assert (select ig.status from public.instance_guests ig join public.guests g on g.id = ig.guest
+          where g.phone = '+15555550199') = 'no', 'answer updated';
+  assert (select guests_created from public.instance_open_links) = 1, 'reuse not counted';
+
+  -- a guest the host added by phone, scanning e3's link, is attached to e3,
+  -- keeps their name and gets no token
+  t := public.guest_rsvp_open_join(link, 'Sam', '+15555550100', 'yes');
+  assert t is null, 'host-added guest gets no token';
+  assert (select count(*) from public.guests where phone = '+15555550100') = 1, 'no duplicate of a host-added guest';
+  assert (select name from public.guests where phone = '+15555550100') = 'Sam Example', 'host-added name kept';
+  assert (select status from public.instance_guests where guest = '00000000-0000-4000-8000-0000000000b1'
+          and instance = '00000000-0000-4000-8000-0000000000e3') = 'yes', 'answer set on the open event';
+
+  -- phone is required
   begin
-    perform public.guest_rsvp_open_join(link, 'Pat Again', '+15555550199', 'yes');
-    raise exception 'FAIL: duplicate phone joined';
+    perform public.guest_rsvp_open_join(link, 'Lee Example', null, 'yes');
+    raise exception 'FAIL: joined without a phone';
   exception when raise_exception then
     get stacked diagnostics msg = message_text;
-    assert msg = 'conflict', 'duplicate phone is conflict, got ' || msg;
+    assert msg = 'bad_request', 'missing phone is bad_request, got ' || msg;
   end;
 
   begin
-    perform public.guest_rsvp_open_join(link, '', null, 'yes');
+    perform public.guest_rsvp_open_join(link, '', '+15555550198', 'yes');
     raise exception 'FAIL: empty name joined';
   exception when raise_exception then
     get stacked diagnostics msg = message_text;
@@ -261,7 +281,7 @@ begin
   end;
 
   begin
-    perform public.guest_rsvp_open_join('nope', 'Lee Example', null, 'yes');
+    perform public.guest_rsvp_open_join('nope', 'Lee Example', '+15555550198', 'yes');
     raise exception 'FAIL: unknown link joined';
   exception when raise_exception then
     get stacked diagnostics msg = message_text;
@@ -271,7 +291,7 @@ begin
   -- cap reached
   update public.instance_open_links set max_guests = 1;
   begin
-    perform public.guest_rsvp_open_join(link, 'Lee Example', null, 'yes');
+    perform public.guest_rsvp_open_join(link, 'Lee Example', '+15555550198', 'yes');
     raise exception 'FAIL: joined past the cap';
   exception when raise_exception then
     get stacked diagnostics msg = message_text;
@@ -282,7 +302,7 @@ begin
   -- canceled event
   update public.instances set status = 'canceled' where id = '00000000-0000-4000-8000-0000000000e3';
   begin
-    perform public.guest_rsvp_open_join(link, 'Lee Example', null, 'yes');
+    perform public.guest_rsvp_open_join(link, 'Lee Example', '+15555550198', 'yes');
     raise exception 'FAIL: joined a canceled event';
   exception when raise_exception then
     get stacked diagnostics msg = message_text;
@@ -293,7 +313,7 @@ begin
   -- closed link
   update public.instance_open_links set closed_at = now();
   begin
-    perform public.guest_rsvp_open_join(link, 'Lee Example', null, 'yes');
+    perform public.guest_rsvp_open_join(link, 'Lee Example', '+15555550198', 'yes');
     raise exception 'FAIL: joined a closed link';
   exception when raise_exception then
     get stacked diagnostics msg = message_text;

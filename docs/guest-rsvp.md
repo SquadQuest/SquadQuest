@@ -5,7 +5,8 @@ SquadQuest. The organizer adds each guest by name (and optionally phone) to
 one or more of their events, sends each guest a private link, and the guest
 answers yes / maybe / no on a plain web page without signing in. An organizer
 can also make one **open link** per event, e.g. for a QR code on a printed
-flyer, so anyone can add themselves.
+flyer: anyone who scans it answers with their phone number and first name in
+one screen.
 
 Status: pilot on the v1 production stack. Purely additive.
 
@@ -46,10 +47,13 @@ a push notification.
   time; a closed link stays closed (making a new one issues a new token).
 - **`guest_rsvp_open_join(token, name, phone, status)`**: executable by
   `service_role` only. Locks the link row, checks it is open, the event is
-  `live` and `guests_created < max_guests`, creates the guest for the event's
-  host, attaches them with the answer, counts them, and returns the new
-  guest's token. Raises `not_found`, `conflict` (phone already on that host's
-  list) or `bad_request`.
+  `live` and `guests_created < max_guests`, then finds the host's guest with
+  that phone (deduplicated on `(host, phone)`) or creates one, attaches them
+  to the event if needed and sets the answer. A reused guest's name is kept
+  (filled in only if empty). Returns the guest's token **only when this call
+  created the guest**, otherwise NULL, so typing someone's phone number never
+  yields their link. Only created guests count toward the cap. Raises
+  `not_found` or `bad_request`.
 
 ### Row level security
 
@@ -90,7 +94,7 @@ returned.
 | `GET ?t=<guest token>` | `{guest:{name}, host:{first_name}, events:[Event…]}` |
 | `POST {t, instance, status}` (`status` = `yes`/`maybe`/`no`) | same as `GET ?t`, read back after the write |
 | `GET ?o=<open token>` | `{guest:null, host:{first_name}, events:[Event]}` (one event, `rsvp: null`) |
-| `POST {o, name, phone?, status}` | `{token, guest:{name}, host:{first_name}, events:[Event]}`: `token` is the new guest's own token, for `?t=` from then on |
+| `POST {o, phone, name, status}` | `{created, token, guest:null, host:{first_name}, events:[Event]}`: the one event with `rsvp` = the answer just set. `created` is true and `token` is the new guest's own token (for `?t=` from then on) only when this request created the guest; otherwise `created: false, token: null`. Never the stored name or other events. |
 
 `OPTIONS` answers 204.
 
@@ -100,12 +104,16 @@ Always `{"error": "<code>"}`, nothing else:
 
 | HTTP | code | when |
 | --- | --- | --- |
-| 400 | `bad_request` | neither or both of `t`/`o`; body not a JSON object; `status` not yes/maybe/no; open-link `name` empty or over 80 chars after trimming; `phone` not E.164 |
+| 400 | `bad_request` | neither or both of `t`/`o`; body not a JSON object; `status` not yes/maybe/no; open-link `name` empty or over 80 chars after trimming; open-link `phone` missing or not a phone number (see below) |
 | 404 | `not_found` | unknown or malformed token; event the guest is not on; canceled or draft event; another host's event; closed open link; open link at its cap; open link on a canceled event |
 | 405 | `method_not_allowed` | any other method |
-| 409 | `conflict` | open-link join with a phone already on that host's guest list (no token is returned) |
 | 413 | `too_large` | body over 2048 bytes |
 | 500 | `server_error` | anything unexpected (logged, never echoed) |
+
+Open-link `phone` is normalized by the function: E.164 (`+` then 7–15 digits)
+is kept; a US number typed as 10 digits, or 11 starting with `1`, with any
+spaces, dots, dashes or parentheses, becomes `+1XXXXXXXXXX`; anything else is
+`bad_request`.
 
 Every 404 case is the same response, so a caller cannot tell an unknown token
 from an event it is not on.
@@ -208,11 +216,16 @@ Each step stands alone; stop at the one that is enough.
 - **Tokens in URLs reach logs.** `GET ?t=` puts the token in gateway and
   analytics logs. The microsite sets `referrer` to `no-referrer` so it does
   not leak to image hosts.
-- **Open links are open.** Anyone with the flyer can add any name. The cap
-  (300 per link by default) bounds the damage; closing the link stops it.
-  There is no per-IP rate limit.
-- **`conflict` reveals that a phone is on the host's list** to whoever types
-  it into an open-link form. It does not reveal the guest's link or name.
+- **Open links are open.** Anyone with the flyer can add any name and number.
+  The cap (300 new guests per link by default) bounds the damage; closing the
+  link stops it. There is no per-IP rate limit. A full link answers 404 for
+  everyone, including people already on the list.
+- **No phone verification.** There is no SMS, no code and no check that the
+  person owns the number they type. Anyone with the flyer can answer as any
+  phone number, including changing the answer of someone already on the list
+  for that event. They never get that person's link, name or other events.
+  Accepted for a pilot: the host sees the whole list with `guests list` and
+  can remove anyone.
 - **Timing**: the 404 cases take slightly different paths; response bodies
   are identical but response times are not constant.
 - **Global JWT setting**: see above. If `FUNCTIONS_VERIFY_JWT` is `true` and

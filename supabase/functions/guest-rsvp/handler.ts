@@ -36,9 +36,10 @@ export interface OpenLinkRow {
   guests_created: number;
 }
 
+/** `token` is the guest's token only when this call created the guest. */
 export type OpenJoinResult =
-  | { token: string }
-  | { error: "not_found" | "conflict" | "bad_request" };
+  | { token: string | null }
+  | { error: "not_found" | "bad_request" };
 
 /** The data the function needs. index.ts implements it with the service role. */
 export interface GuestStore {
@@ -48,11 +49,14 @@ export interface GuestStore {
   /** Returns false when no row matched. */
   setStatus(guest: string, instance: string, status: AnswerStatus): Promise<boolean>;
   openLinkByToken(token: string): Promise<OpenLinkRow | null>;
-  /** Atomic create-guest-and-answer; enforces closed/live/cap itself too. */
+  /**
+   * Atomic find-or-create-guest-by-phone and answer; enforces closed, live
+   * and cap itself too.
+   */
   openJoin(
     token: string,
     name: string,
-    phone: string | null,
+    phone: string,
     status: AnswerStatus,
   ): Promise<OpenJoinResult>;
 }
@@ -77,16 +81,25 @@ export interface Payload {
   events: EventPayload[];
 }
 
+/** The open-link POST answer. No guest name, and only the one event. */
+export interface OpenPayload extends Payload {
+  /** true when this request created the guest */
+  created: boolean;
+  /** the new guest's own token, only when `created`; otherwise null */
+  token: string | null;
+}
+
 export const LIMITS = {
   /** Longest accepted value for `t` or `o` before it is even looked up. */
   token: 128,
   body: 2048,
   name: 80,
+  phoneInput: 32,
 };
 
 const TOKEN_RE = /^[0-9a-f]{64}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const PHONE_RE = /^\+[1-9][0-9]{6,14}$/;
+const E164_RE = /^\+[1-9][0-9]{6,14}$/;
 const ANSWERS: AnswerStatus[] = ["yes", "maybe", "no"];
 
 export const CORS_HEADERS: Record<string, string> = {
@@ -100,7 +113,6 @@ const ERROR_STATUS = {
   bad_request: 400,
   not_found: 404,
   method_not_allowed: 405,
-  conflict: 409,
   too_large: 413,
   server_error: 500,
 } as const;
@@ -154,6 +166,21 @@ function token(value: unknown): string {
     refuse("not_found");
   }
   return value;
+}
+
+/**
+ * Accept E.164 as is, or a US number typed as 10 digits (or 11 starting
+ * with 1) with any spaces, dots, dashes or parentheses. Anything else is
+ * refused rather than guessed at.
+ */
+export function normalizePhone(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > LIMITS.phoneInput) return null;
+  const trimmed = value.trim();
+  const digits = trimmed.replace(/[\s().-]/g, "");
+  if (trimmed.startsWith("+")) return E164_RE.test(digits) ? digits : null;
+  if (/^[2-9][0-9]{2}[2-9][0-9]{6}$/.test(digits)) return `+1${digits}`;
+  if (/^1[2-9][0-9]{2}[2-9][0-9]{6}$/.test(digits)) return `+${digits}`;
+  return null;
 }
 
 function answer(value: unknown): AnswerStatus {
@@ -258,19 +285,24 @@ async function handlePost(store: GuestStore, request: Request): Promise<Response
   if (typeof rawName !== "string") refuse("bad_request");
   const name = rawName.trim();
   if (name.length < 1 || name.length > LIMITS.name) refuse("bad_request");
-  let phone: string | null = null;
-  if (body.phone !== undefined && body.phone !== null && body.phone !== "") {
-    if (typeof body.phone !== "string" || !PHONE_RE.test(body.phone)) refuse("bad_request");
-    phone = body.phone;
-  }
+  const phone = normalizePhone(body.phone);
+  if (phone === null) refuse("bad_request");
 
-  await openLink(store, o);
+  const link = await openLink(store, o);
   const joined = await store.openJoin(o, name, phone, status);
   if ("error" in joined) refuse(joined.error);
 
-  const guest = await store.guestByToken(joined.token);
-  if (!guest) refuse("server_error");
-  return respond(200, { token: joined.token, ...(await guestPayload(store, guest)) });
+  // Only this event and the answer just set. Never the guest's stored name
+  // or their other events, and a token only for a guest created right now:
+  // the caller proved nothing but knowledge of a phone number.
+  const payload: OpenPayload = {
+    created: joined.token !== null,
+    token: joined.token,
+    guest: null,
+    host: { first_name: await store.hostFirstName(link.instance.created_by) },
+    events: [toEvent(link.instance, status)],
+  };
+  return respond(200, payload);
 }
 
 export function createHandler(store: GuestStore, log: (e: unknown) => void = console.error) {
