@@ -28,6 +28,9 @@ add constraint instance_guests_note_length check (
 -- never wipes it), true sets it to p_note, where NULL or blank clears it.
 -- Otherwise unchanged from tables/instance_open_links.sql, including who may
 -- call it: service_role only.
+--
+-- Replaced by an 8-argument version that also takes plus-ones:
+-- tables/instance_rsvp_plus.sql.
 DROP FUNCTION public.guest_rsvp_open_join (text, text, text, text);
 
 CREATE FUNCTION public.guest_rsvp_open_join (
@@ -128,6 +131,9 @@ EXECUTE ON FUNCTION public.guest_rsvp_open_join (text, text, text, text, text, b
 -- wins whole, note included. Otherwise unchanged from
 -- tables/instance_guests_claim.sql. CREATE OR REPLACE keeps the owner,
 -- SECURITY DEFINER and the grants (service_role only).
+--
+-- Replaced by a version that also folds plus-ones into the note:
+-- tables/instance_rsvp_plus.sql.
 CREATE OR REPLACE FUNCTION public.guest_claim_for_user (p_user uuid) RETURNS integer AS $$
 DECLARE
   v_phone text;

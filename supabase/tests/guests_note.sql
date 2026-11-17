@@ -155,13 +155,16 @@ end $$;
 -- ── who may call the join and read notes ──
 do $$
 begin
-  assert has_function_privilege('service_role', 'public.guest_rsvp_open_join(text, text, text, text, text, boolean)', 'execute'),
+  assert has_function_privilege('service_role', 'public.guest_rsvp_open_join(text, text, text, text, text, boolean, integer, boolean)', 'execute'),
     'service_role may join';
-  assert not has_function_privilege('anon', 'public.guest_rsvp_open_join(text, text, text, text, text, boolean)', 'execute'),
+  assert not has_function_privilege('anon', 'public.guest_rsvp_open_join(text, text, text, text, text, boolean, integer, boolean)', 'execute'),
     'anon may not join';
-  assert not has_function_privilege('authenticated', 'public.guest_rsvp_open_join(text, text, text, text, text, boolean)', 'execute'),
+  assert not has_function_privilege('authenticated', 'public.guest_rsvp_open_join(text, text, text, text, text, boolean, integer, boolean)', 'execute'),
     'authenticated may not join';
   assert to_regprocedure('public.guest_rsvp_open_join(text, text, text, text)') is null, 'no 4-argument overload left';
+  -- tables/instance_rsvp_plus.sql replaces the 6-argument join with an
+  -- 8-argument one; the note arguments are unchanged
+  assert to_regprocedure('public.guest_rsvp_open_join(text, text, text, text, text, boolean)') is null, 'no 6-argument overload left';
   assert not has_column_privilege('anon', 'public.instance_guests', 'note', 'select'), 'anon cannot read notes';
 end $$;
 
