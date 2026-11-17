@@ -25,6 +25,8 @@ Status: pilot on the v1 production stack. Purely additive.
 | claim test | `supabase/tests/guests_claim.sql` |
 | column `instance_guests.note`, the note-aware `guest_rsvp_open_join()` and `guest_claim_for_user()` (see [Guest notes](#guest-notes)) | `supabase/tables/instance_rsvp_notes.sql` |
 | note test | `supabase/tests/guests_note.sql` |
+| columns `instance_guests.plus` and `guests.open_link`, the plus-aware `guest_rsvp_open_join()` and `guest_claim_for_user()`, the functions `guest_rsvp_answer()` and `guest_open_link_plus()` (see [Plus-ones](#plus-ones)) | `supabase/tables/instance_rsvp_plus.sql` |
+| plus-ones test | `supabase/tests/guests_plus.sql` |
 
 Nothing existing changes, apart from one new trigger on `profiles` (see
 [Guests who become members](#guests-who-become-members)). No existing table,
@@ -49,20 +51,29 @@ a push notification.
   the shared `set_updated_timestamp()` trigger. Deleting an event or a guest
   deletes the rows. `note` is the guest's optional note for that event:
   null, or 1–200 characters of plain text (see [Guest notes](#guest-notes)).
+  `plus` is how many extra people the guest is bringing: 0–9, default 0
+  (see [Plus-ones](#plus-ones)).
 - **`instance_open_links`**: `token` (primary key, same format as guest
   tokens), `instance`, `created_by`, `created_at`, `closed_at`, `max_guests`
   (default 300), `guests_created`. At most one link per event is open at a
   time; a closed link stays closed (making a new one issues a new token).
-- **`guest_rsvp_open_join(token, name, phone, status, note, set_note)`**
-  (`note` defaults to null, `set_note` to false; see [Guest notes](#guest-notes)): executable by
+- **`guest_rsvp_open_join(token, name, phone, status, note, set_note, plus, set_plus)`**
+  (`note` and `plus` default to null, `set_note` and `set_plus` to false; see
+  [Guest notes](#guest-notes) and [Plus-ones](#plus-ones)): executable by
   `service_role` only. Locks the link row, checks it is open, the event is
-  `live` and `guests_created < max_guests`, then finds the host's guest with
+  `live` and the link is not full (see [The open link's cap](#the-open-links-cap)), then finds the host's guest with
   that phone (deduplicated on `(host, phone)`) or creates one, attaches them
   to the event if needed and sets the answer. A reused guest's name is kept
   (filled in only if empty). Returns the guest's token **only when this call
   created the guest**, otherwise NULL, so typing someone's phone number never
-  yields their link. Only created guests count toward the cap. Raises
-  `not_found` or `bad_request`.
+  yields their link. A created guest has `guests.open_link` set to the
+  link's token. Raises `not_found` or `bad_request`.
+- **`guest_rsvp_answer(guest, instance, status, note, set_note, plus, set_plus)`**:
+  executable by `service_role` only. A guest's answer through their own
+  link; returns false when the guest is not on the event or when raising
+  their plus-ones would take the link that created them over its cap.
+- **`guest_open_link_plus(token)`**: executable by `service_role` only. The
+  plus-ones a link holds (see [The open link's cap](#the-open-links-cap)).
 
 ### Row level security
 
@@ -93,6 +104,7 @@ a push notification.
 | `event_status` | `status` | `live` or `canceled` (drafts are never returned) |
 | `rsvp` | `instance_guests.status` | `invited`, `yes`, `maybe`, `no`; `null` on an open link and for a claimed guest |
 | `note` | `instance_guests.note` | the guest's own note for this event, or `null`. `null` wherever `rsvp` is (open-link `GET`, claimed guest). On an open-link `POST`: the note that request set, or `null` if it sent none (see [Guest notes](#guest-notes)) |
+| `plus` | `instance_guests.plus` | integer 0–9: extra people coming with the guest, not counting them; `0` when unset. `0` on an open-link `GET` and for a claimed guest. On an open-link `POST`: the `plus` that request sent, or `0` if it sent none. Stored whatever `rsvp` is: count it only when `rsvp` is `yes` or `maybe` (see [Plus-ones](#plus-ones)) |
 
 Events are sorted by `start`. Only events created by the guest's host are
 returned.
@@ -102,9 +114,9 @@ returned.
 | Request | 200 body |
 | --- | --- |
 | `GET ?t=<guest token>` | `{guest:{name}, host:{first_name}, events:[Event…], claimed}`. `claimed` is true once the guest has become a member: every `rsvp` is then `null`, and the page should tell them to answer in the app |
-| `POST {t, instance, status, note?}` (`status` = `yes`/`maybe`/`no`) | same as `GET ?t`, read back after the write |
+| `POST {t, instance, status, note?, plus?}` (`status` = `yes`/`maybe`/`no`) | same as `GET ?t`, read back after the write |
 | `GET ?o=<open token>` | `{guest:null, host:{first_name}, events:[Event]}` (one event, `rsvp: null`) |
-| `POST {o, phone, name, status, note?}` | `{created, token, guest:null, host:{first_name}, events:[Event]}`: the one event with `rsvp` = the answer just set and `note` = the note just set (or null). `created` is true and `token` is the new guest's own token (for `?t=` from then on) only when this request created the guest; otherwise `created: false, token: null`. Never the stored name or other events. |
+| `POST {o, phone, name, status, note?, plus?}` | `{created, token, guest:null, host:{first_name}, events:[Event]}`: the one event with `rsvp` = the answer just set, `note` = the note just set (or null) and `plus` = the plus just set (or 0). `created` is true and `token` is the new guest's own token (for `?t=` from then on) only when this request created the guest; otherwise `created: false, token: null`. Never the stored name or other events. |
 
 `OPTIONS` answers 204.
 
@@ -114,8 +126,8 @@ Always `{"error": "<code>"}`, nothing else:
 
 | HTTP | code | when |
 | --- | --- | --- |
-| 400 | `bad_request` | neither or both of `t`/`o`; body not a JSON object; `status` not yes/maybe/no; open-link `name` empty or over 80 chars after trimming; open-link `phone` missing or not a phone number (see below); `note` neither a string nor null, or over 200 characters after cleaning (see [Guest notes](#guest-notes)) |
-| 404 | `not_found` | unknown or malformed token; event the guest is not on; canceled or draft event; another host's event; closed open link; open link at its cap; open link on a canceled event |
+| 400 | `bad_request` | neither or both of `t`/`o`; body not a JSON object; `status` not yes/maybe/no; open-link `name` empty or over 80 chars after trimming; open-link `phone` missing or not a phone number (see below); `note` neither a string nor null, or over 200 characters after cleaning (see [Guest notes](#guest-notes)); `plus` not null and not a JSON integer from 0 to 9 (a fraction, a numeric string, a negative, over 9) |
+| 404 | `not_found` | unknown or malformed token; event the guest is not on; canceled or draft event; another host's event; closed open link; open link at its cap, or an answer that would take it over (plus-ones included, see [The open link's cap](#the-open-links-cap)), through the open link or the guest's own link; open link on a canceled event |
 | 405 | `method_not_allowed` | any other method |
 | 409 | `claimed` | `POST {t,…}` for a claimed guest; `POST {o,…}` whose phone is the host's claimed guest. Nothing is written |
 | 413 | `too_large` | body over 2048 bytes |
@@ -220,7 +232,8 @@ For the user's verified phone, every unclaimed `guests` row with that phone,
    sets it back to `invited` instead of deleting it, so a member on a private
    event does not lose access by changing their mind.
    The guest's note for the event goes to `instance_members.note` (see
-   [Guest notes](#guest-notes)).
+   [Guest notes](#guest-notes)), with their plus-ones folded in (see
+   [Plus-ones](#plus-ones)).
    **An existing member row for the event always wins** and is never changed,
    note included.
    No push notification is sent (nothing fires on `instance_members` inserts;
@@ -427,6 +440,139 @@ claim objects above already applied.
    docker compose exec -T db psql -U postgres -c "NOTIFY pgrst, 'reload schema'"
    ```
 
+## Plus-ones
+
+A guest can say how many extra people are coming with them. Hosts see it
+next to the answer, with a headcount per event (`guests list` in the CLI).
+
+### Rules
+
+`plus` is optional in both `POST` bodies:
+
+| `plus` in the body | effect |
+| --- | --- |
+| absent | the stored value is left as it is, so a one-tap status change never resets it |
+| `null` or `0` | set to 0 |
+| a JSON integer 1–9 | stored |
+| anything else: a fraction, a numeric string (`"2"`), a negative, over 9, a boolean, an array, an object | `400 bad_request`, nothing written |
+
+Storage: `instance_guests.plus smallint not null default 0`, check `plus
+between 0 and 9`. The value is kept when the answer changes, including to
+`no`: it is not zeroed. Readers decide, and every reader here counts it only
+for `yes` and `maybe`: the cap, the claim and the CLI headcount.
+
+Who sees it: the same as the note. The guest on their own link; the host
+through their existing grants and policy on `instance_guests`; an open-link
+caller sees **only the `plus` their own request sent** (or 0), never a stored
+one; a claimed guest's link and an open-link `GET` show 0.
+
+### The open link's cap
+
+Before this change `max_guests` counted only the guests a link **created**
+(`guests_created`): a phone already on the host's list did not count, and a
+link with `guests_created >= max_guests` answered 404 to everyone.
+
+Now a link holds `guests_created` plus the plus-ones of the guests it
+created, on its own event, while their answer is `yes` or `maybe`
+(`guest_open_link_plus(token)`). A guest records the link that created them in
+`guests.open_link`, set by `guest_rsvp_open_join()` and never writable by
+hosts.
+
+- The link is **full** when `guests_created + plus-ones held >= max_guests`.
+  A full link answers 404 to everyone, `GET ?o=` included, as before.
+- An open-link `POST` that would take the link **over** `max_guests` is the
+  same 404 and writes nothing (no guest is created). That covers a new guest
+  whose `1 + plus` does not fit, and an existing link guest raising `plus` or
+  switching a `no` with plus-ones to `yes`.
+- A link guest's own link (`POST {t,…}`, through `guest_rsvp_answer()`)
+  answers the same 404 when the change would raise the plus-ones held past
+  `max_guests`, whether or not the link is still open; lowering is always
+  allowed. Without this, joining with `plus: 0` and raising it afterwards
+  would bypass the cap.
+- Plus-ones of guests the link did not create (a host-added guest answering
+  through the flyer, or a guest another link created) do not count, the same
+  way those guests themselves never counted.
+- Guests created through a link before this change have no `open_link`, so
+  their plus-ones never count. All of them had 0 plus-ones when it was
+  applied.
+
+All of this runs under the link row lock, so concurrent answers cannot
+overshoot.
+
+### Claim
+
+`instance_members` has no plus-ones field and none is added. When a claim
+creates the member row and the guest answered `yes` or `maybe` with `plus >
+0`, the member note is the guest's note followed by ` (+N)`, or `+N` when
+there is no note (`Bringing chips (+2)`, `+1`). `instance_members.note` has
+no length limit, and a guest note is at most 200 characters, so this never
+truncates. Plus-ones on an `invited` or `no` answer are not copied: in the
+app they would read as people coming. An existing member row still wins
+whole.
+
+### Deploy
+
+Backward compatible in both directions: the `guest-rsvp` function from
+before this change keeps working against the new SQL (its 6-argument RPC call
+resolves to the new 8-argument join with `plus` and `set_plus` defaulted,
+which leave the stored value alone; it updates answers with a plain `UPDATE`
+that never touches `plus`; it never reads `plus` or `open_link`). It does not
+enforce the plus-ones part of the cap. The new function needs the new SQL (it
+selects `plus` and calls `guest_rsvp_answer` and `guest_open_link_plus`), so
+apply the SQL **before** pulling.
+
+Run on the production host, from the v1 checkout's `supabase/` directory,
+after this branch is merged to `v1`. Needs the guest RSVP, claim and note
+objects above already applied: this file comes **after**
+`instance_rsvp_notes.sql` and **before** `git pull`.
+
+1. Back up: `docker compose exec -T db pg_dump -U postgres -Fc postgres > ~/pre-guest-plus-$(date +%F).dump`
+2. Apply from the fetched branch, in one transaction:
+
+   ```bash
+   git fetch origin
+   git show origin/v1:supabase/tables/instance_rsvp_plus.sql \
+     | docker compose exec -T db psql -v ON_ERROR_STOP=1 --no-password --no-psqlrc \
+         -U postgres --single-transaction
+   docker compose exec -T db psql -U postgres -c "NOTIFY pgrst, 'reload schema'"
+   ```
+
+3. `git pull` on `v1`. The new `guest-rsvp` is live from the next request.
+4. Smoke test: open a test guest's link, answer yes with `plus: 2`, change the
+   answer without `plus`, and check `guests list` shows `+2` and the
+   headcount both times.
+
+### Rollback
+
+1. Revert the merge on `v1` and `git pull`: the old function ignores
+   plus-ones and works against the new SQL. Stored plus-ones stay in the
+   column; the cap counts only created guests again, as far as the old
+   function checks it (the join itself still counts plus-ones until step 2).
+2. Optionally remove the SQL too (deletes every stored plus-one and which link
+   created each guest; notes folded into `instance_members.note` stay). This
+   restores the two functions from the commit before plus-ones (`13174a4`)
+   in one transaction:
+
+   ```bash
+   { echo "drop function public.guest_rsvp_answer(uuid, uuid, text, text, boolean, integer, boolean);"
+     echo "drop function public.guest_rsvp_open_join(text, text, text, text, text, boolean, integer, boolean);"
+     echo "drop function public.guest_open_link_plus(text);"
+     git show 13174a4:supabase/tables/instance_rsvp_notes.sql \
+       | sed -n '/^CREATE FUNCTION public.guest_rsvp_open_join/,/^-- 3\. A claim/p' | sed '$d'
+     git show 13174a4:supabase/tables/instance_rsvp_notes.sql \
+       | sed -n '/^CREATE OR REPLACE FUNCTION public.guest_claim_for_user/,$p'
+     echo "alter table public.guests drop column open_link;"
+     echo "alter table public.instance_guests drop column plus;"
+   } | docker compose exec -T db psql -v ON_ERROR_STOP=1 --no-password --no-psqlrc \
+         -U postgres --single-transaction
+   docker compose exec -T db psql -U postgres -c "NOTIFY pgrst, 'reload schema'"
+   ```
+
+   Run step 1 first: the new function calls the dropped functions. The
+   index and foreign key on `open_link` go with the column. Checked on a
+   local database: the 6-argument join and its grants come back, and the
+   claim no longer mentions plus-ones.
+
 ## How SQL and functions reach production on v1
 
 There is no migration tool and no deploy workflow on `v1`
@@ -488,8 +634,9 @@ Each step stands alone; stop at the one that is enough.
 3. Export what guests answered, if it is wanted:
    `docker compose exec -T db psql -U postgres -c "\copy (select g.name, g.phone, ig.instance, ig.status, ig.updated_at from guests g join instance_guests ig on ig.guest = g.id) to stdout csv header" > ~/guest-rsvp-answers.csv`
 4. Drop the new objects in one transaction. If the objects from
-   [Guest notes](#guest-notes) are deployed, run their rollback first, then
-   the one from [Guests who become members](#guests-who-become-members).
+   [Plus-ones](#plus-ones) are deployed, run their rollback first, then the
+   one from [Guest notes](#guest-notes), then the one from
+   [Guests who become members](#guests-who-become-members).
 
    ```bash
    docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres --single-transaction -c "
@@ -522,6 +669,8 @@ Each step stands alone; stop at the one that is enough.
   when the local stack starts.
 - **Notes**: same way, `< tests/guests_note.sql`; prints
   `guests_note: all checks passed`. Needs GoTrue's tables like the claim test.
+- **Plus-ones**: same way, `< tests/guests_plus.sql`; prints
+  `guests_plus: all checks passed`. Needs GoTrue's tables like the claim test.
 
 ## Known risks
 
@@ -534,14 +683,15 @@ Each step stands alone; stop at the one that is enough.
   analytics logs. The microsite sets `referrer` to `no-referrer` so it does
   not leak to image hosts.
 - **Open links are open.** Anyone with the flyer can add any name and number.
-  The cap (300 new guests per link by default) bounds the damage; closing the
+  The cap (300 people per link by default: new guests plus their plus-ones,
+  see [The open link's cap](#the-open-links-cap)) bounds the damage; closing the
   link stops it. There is no per-IP rate limit. A full link answers 404 for
   everyone, including people already on the list.
 - **No phone verification.** There is no SMS, no code and no check that the
   person owns the number they type. Anyone with the flyer can answer as any
   phone number, including changing the answer of someone already on the list
-  for that event, and setting or clearing their note for it. They never get
-  that person's link, name, note or other events.
+  for that event, and setting or clearing their note and plus-ones for it.
+  They never get that person's link, name, note, plus-ones or other events.
   Accepted for a pilot: the host sees the whole list with `guests list` and
   can remove anyone.
 - **Timing**: the 404 cases take slightly different paths; response bodies
