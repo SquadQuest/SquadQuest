@@ -53,8 +53,17 @@ function instance(id: string, start: string, extra: Partial<InstanceRow> = {}): 
 }
 
 interface World {
-  guests: Array<{ id: string; name: string; host: string; token: string; phone: string | null; claimed?: boolean }>;
-  rows: Array<{ guest: string; instance: InstanceRow; status: GuestStatus; note?: string | null }>;
+  guests: Array<{
+    id: string;
+    name: string;
+    host: string;
+    token: string;
+    phone: string | null;
+    claimed?: boolean;
+    /** the open link that created the guest */
+    open_link?: string;
+  }>;
+  rows: Array<{ guest: string; instance: InstanceRow; status: GuestStatus; note?: string | null; plus?: number }>;
   links: Array<OpenLinkRow & { token: string }>;
   writes: number;
 }
@@ -71,9 +80,22 @@ function world(): World {
       { guest: GUEST, instance: instance(E_DRAFT, "2026-12-04T00:00:00+00:00", { status: "draft" }), status: "invited" },
       { guest: GUEST, instance: instance(E_FOREIGN, "2026-12-05T00:00:00+00:00", { created_by: OTHER_HOST }), status: "invited" },
     ],
-    links: [{ token: OPEN, instance: live, closed_at: null, max_guests: 300, guests_created: 0 }],
+    // plus_held is computed from rows by the store below, like the database
+    links: [{ token: OPEN, instance: live, closed_at: null, max_guests: 300, guests_created: 0, plus_held: 0 }],
     writes: 0,
   };
+}
+
+// what the database counts against an open link's cap (instance_rsvp_plus.sql)
+const counted = (status: GuestStatus | undefined, plus: number | undefined) =>
+  status === "yes" || status === "maybe" ? plus ?? 0 : 0;
+
+function plusHeld(w: World, link: World["links"][number]): number {
+  return w.rows
+    .filter((r) =>
+      r.instance.id === link.instance.id && w.guests.find((g) => g.id === r.guest)?.open_link === link.token
+    )
+    .reduce((sum, r) => sum + counted(r.status, r.plus), 0);
 }
 
 function storeFor(w: World): GuestStore {
@@ -84,39 +106,60 @@ function storeFor(w: World): GuestStore {
     },
     hostFirstName: async (h) => (h === HOST ? "Host" : null),
     guestEvents: async (g) =>
-      w.rows.filter((r) => r.guest === g).map((r) => ({ instance: r.instance, status: r.status, note: r.note ?? null })),
-    setAnswer: async (g, i, s: AnswerStatus, note) => {
+      w.rows.filter((r) => r.guest === g).map((r) => ({
+        instance: r.instance,
+        status: r.status,
+        note: r.note ?? null,
+        plus: r.plus ?? 0,
+      })),
+    setAnswer: async (g, i, s: AnswerStatus, note, plus) => {
       w.writes++;
       const row = w.rows.find((r) => r.guest === g && r.instance.id === i);
       if (!row) return false;
+      const newPlus = plus ?? row.plus ?? 0;
+      const guest = w.guests.find((x) => x.id === g)!;
+      const link = w.links.find((l) => l.token === guest.open_link && l.instance.id === i);
+      if (link) {
+        const delta = counted(s, newPlus) - counted(row.status, row.plus);
+        if (delta > 0 && link.guests_created + plusHeld(w, link) + delta > link.max_guests) return false;
+      }
       row.status = s;
       if (note !== undefined) row.note = note;
+      row.plus = newPlus;
       return true;
     },
     phoneClaimed: async (h, p) => w.guests.some((g) => g.host === h && g.phone === p && g.claimed === true),
-    openLinkByToken: async (t) => w.links.find((l) => l.token === t) ?? null,
-    openJoin: async (t, name, phone, status, note) => {
+    openLinkByToken: async (t) => {
+      const link = w.links.find((l) => l.token === t);
+      return link ? { ...link, plus_held: plusHeld(w, link) } : null;
+    },
+    openJoin: async (t, name, phone, status, note, plus) => {
       w.writes++;
       const link = w.links.find((l) => l.token === t);
-      if (!link || link.closed_at || link.instance.status !== "live" || link.guests_created >= link.max_guests) {
-        return { error: "not_found" };
-      }
+      if (!link || link.closed_at || link.instance.status !== "live") return { error: "not_found" };
+      const used = link.guests_created + plusHeld(w, link);
+      if (used >= link.max_guests) return { error: "not_found" };
       const host = link.instance.created_by;
-      let guest = w.guests.find((g) => g.host === host && g.phone === phone);
-      let created = false;
+      const existing = w.guests.find((g) => g.host === host && g.phone === phone);
+      const row = existing && w.rows.find((r) => r.guest === existing.id && r.instance.id === link.instance.id);
+      const newPlus = plus ?? row?.plus ?? 0;
+      const linkGuest = !existing || existing.open_link === link.token;
+      const delta = linkGuest ? counted(status, newPlus) - counted(row?.status, row?.plus) : 0;
+      // over the cap: refused before anything is written, as the database rolls back
+      if (used + (existing ? 0 : 1) + delta > link.max_guests) return { error: "not_found" };
+      let guest = existing;
       if (!guest) {
         const id = `00000000-0000-4000-8000-${String(w.guests.length).padStart(12, "0")}`;
-        guest = { id, name, host, token: String(w.guests.length).padStart(64, "d"), phone };
+        guest = { id, name, host, token: String(w.guests.length).padStart(64, "d"), phone, open_link: link.token };
         w.guests.push(guest);
         link.guests_created++;
-        created = true;
       }
-      const row = w.rows.find((r) => r.guest === guest!.id && r.instance.id === link.instance.id);
       if (row) {
         row.status = status;
         if (note !== undefined) row.note = note;
-      } else w.rows.push({ guest: guest.id, instance: link.instance, status, note: note ?? null });
-      return { token: created ? guest.token : null };
+        row.plus = newPlus;
+      } else w.rows.push({ guest: guest.id, instance: link.instance, status, note: note ?? null, plus: newPlus });
+      return { token: existing ? null : guest.token };
     },
   };
 }
@@ -159,6 +202,7 @@ Deno.test("GET ?t returns the guest, host and only their live/canceled events fr
     event_status: "live",
     rsvp: "yes",
     note: null,
+    plus: 0,
   }, "event field set");
   assertEquals(r.body.events[2].event_status, "canceled");
 });
@@ -481,4 +525,118 @@ Deno.test("GET ?o has note null, and a claimed guest's link shows every note as 
   const refused = await call(w, post({ t: TOKEN, instance: E_LIVE, status: "yes", note: "x" }));
   assertEquals([refused.status, refused.body], [409, { error: "claimed" }], "claimed guest cannot set a note");
   assertEquals(w.writes, 0);
+});
+
+// ── plus-ones ───────────────────────────────────────────────────────
+
+const plusOf = (body: { events: Array<{ id: string; plus: number }> }, id: string) =>
+  body.events.find((e) => e.id === id)!.plus;
+
+Deno.test("POST ?t sets plus-ones with the answer and every Event carries plus", async () => {
+  const w = world();
+  const r = await call(w, post({ t: TOKEN, instance: E_LATER, status: "yes", plus: 2 }));
+  assertEquals(r.status, 200);
+  assertEquals(plusOf(r.body, E_LATER), 2);
+  assertEquals(plusOf(r.body, E_LIVE), 0, "unset is 0");
+  for (const e of r.body.events) assert(typeof e.plus === "number", "every Event carries plus");
+  assertEquals(plusOf((await call(w, get(`t=${TOKEN}`))).body, E_LATER), 2, "GET reads it back");
+  assertEquals(w.writes, 1);
+  await call(w, post({ t: TOKEN, instance: E_LATER, status: "yes", plus: 2 }));
+  assertEquals(w.writes, 1, "same status and plus: no write");
+});
+
+Deno.test("POST ?t without plus keeps it, also when the answer changes to no; 0 and null set zero", async () => {
+  const w = world();
+  w.rows.find((r) => r.instance.id === E_LIVE)!.plus = 3;
+  const keep = await call(w, post({ t: TOKEN, instance: E_LIVE, status: "no" }));
+  const e = keep.body.events.find((x: { id: string }) => x.id === E_LIVE);
+  assertEquals([e.rsvp, e.plus], ["no", 3], "stored value kept on a status change");
+  for (const zero of [0, null]) {
+    w.rows.find((r) => r.instance.id === E_LIVE)!.plus = 3;
+    const r = await call(w, post({ t: TOKEN, instance: E_LIVE, status: "no", plus: zero }));
+    assertEquals([r.status, plusOf(r.body, E_LIVE)], [200, 0], JSON.stringify(zero));
+  }
+});
+
+Deno.test("plus: integers 0-9 only; omitted is undefined and null is 0", async () => {
+  const { parsePlus } = await import("./handler.ts");
+  assertEquals(parsePlus({}), undefined);
+  assertEquals(parsePlus({ plus: null }), 0);
+  assertEquals(parsePlus({ plus: 0 }), 0);
+  assertEquals(parsePlus({ plus: 9 }), 9);
+});
+
+Deno.test("POST with plus not an integer 0-9 is 400 and writes nothing", async () => {
+  const w = world();
+  for (const plus of [10, -1, 1.5, "2", "", true, [1], { n: 1 }, 1e3]) {
+    for (const body of [
+      { t: TOKEN, instance: E_LIVE, status: "no", plus },
+      { o: OPEN, name: "Pat", phone: "2155550199", status: "yes", plus },
+    ]) {
+      const r = await call(w, post(body));
+      assertEquals([r.status, r.body], [400, { error: "bad_request" }], JSON.stringify(body));
+    }
+  }
+  assertEquals(w.writes, 0);
+  assertEquals(w.guests.length, 1, "no guest created");
+});
+
+Deno.test("POST ?o with plus creates the guest with it and echoes it; their own link shows it", async () => {
+  const w = world();
+  const r = await call(w, post({ o: OPEN, name: "Pat", phone: "2155550199", status: "yes", plus: 2 }));
+  assertEquals([r.status, r.body.created], [200, true]);
+  assertEquals(r.body.events.map((e: { rsvp: string; plus: number }) => [e.rsvp, e.plus]), [["yes", 2]]);
+  assertEquals(plusOf((await call(w, get(`t=${r.body.token}`))).body, E_LIVE), 2);
+});
+
+Deno.test("an open-link POST echoes only the plus it sent, never the stored one", async () => {
+  const w = world();
+  // Sam was added by the host and brings three
+  w.rows.find((r) => r.instance.id === E_LIVE)!.plus = 3;
+  const r = await call(w, post({ o: OPEN, name: "Somebody", phone: "+15555550100", status: "maybe" }));
+  assertEquals([r.status, r.body.events[0].plus], [200, 0], "stored plus not echoed");
+  assertEquals(w.rows.find((x) => x.instance.id === E_LIVE)!.plus, 3, "but kept");
+  const set = await call(w, post({ o: OPEN, name: "Somebody", phone: "+15555550100", status: "maybe", plus: 1 }));
+  assertEquals(set.body.events[0].plus, 1, "the value this request set");
+});
+
+Deno.test("GET ?o and a claimed guest's link show plus 0", async () => {
+  const w = world();
+  w.rows.find((r) => r.instance.id === E_LIVE)!.plus = 3;
+  assertEquals((await call(w, get(`o=${OPEN}`))).body.events[0].plus, 0, "open link GET");
+  w.guests[0].claimed = true;
+  const r = await call(w, get(`t=${TOKEN}`));
+  assertEquals(r.body.events.map((e: { plus: number }) => e.plus), [0, 0, 0], "claimed: every plus 0");
+  const refused = await call(w, post({ t: TOKEN, instance: E_LIVE, status: "yes", plus: 1 }));
+  assertEquals([refused.status, refused.body], [409, { error: "claimed" }]);
+  assertEquals(w.writes, 0);
+});
+
+Deno.test("the cap counts the plus-ones of guests the link created; over it is the full-link 404", async () => {
+  const w = world();
+  w.links[0].max_guests = 5;
+  // Pat: 1 + 2 = 3
+  const pat = await call(w, post({ o: OPEN, name: "Pat", phone: "2155550199", status: "yes", plus: 2 }));
+  assertEquals(pat.status, 200);
+  // Lee bringing two would make 3 + 1 + 2 = 6: refused, no guest created
+  const lee = await call(w, post({ o: OPEN, name: "Lee", phone: "2155550198", status: "yes", plus: 2 }));
+  assertEquals([lee.status, lee.body], [404, { error: "not_found" }]);
+  assertEquals(w.guests.length, 2, "no guest created");
+  assertEquals(w.links[0].guests_created, 1);
+  // Sam (added by the host) brings nine through the link: not the link's guest, not counted
+  assertEquals((await call(w, post({ o: OPEN, name: "Sam", phone: "+15555550100", status: "yes", plus: 9 }))).status, 200);
+  // Lee bringing one: 3 + 1 + 1 = 5, exactly full
+  assertEquals((await call(w, post({ o: OPEN, name: "Lee", phone: "2155550198", status: "yes", plus: 1 }))).status, 200);
+  // full: the link refuses everyone, GET included, like a full link before
+  for (const req of [get(`o=${OPEN}`), post({ o: OPEN, name: "Pat", phone: "2155550199", status: "maybe" })]) {
+    const r = await call(w, req);
+    assertEquals([r.status, r.body], [404, { error: "not_found" }], req.method);
+  }
+  // Pat's own link: lowering is fine, raising past the cap is the same 404
+  const down = await call(w, post({ t: pat.body.token, instance: E_LIVE, status: "yes", plus: 1 }));
+  assertEquals([down.status, plusOf(down.body, E_LIVE)], [200, 1]);
+  const up = await call(w, post({ t: pat.body.token, instance: E_LIVE, status: "yes", plus: 3 }));
+  assertEquals([up.status, up.body], [404, { error: "not_found" }]);
+  assertEquals(plusOf((await call(w, get(`t=${pat.body.token}`))).body, E_LIVE), 1, "refused raise wrote nothing");
+  assertEquals((await call(w, post({ t: pat.body.token, instance: E_LIVE, status: "yes", plus: 2 }))).status, 200);
 });
