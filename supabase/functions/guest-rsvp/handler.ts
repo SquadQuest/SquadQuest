@@ -27,6 +27,8 @@ export interface GuestRow {
   id: string;
   name: string;
   host: string;
+  /** true once the guest signed up and their answers moved to the app */
+  claimed: boolean;
 }
 
 export interface OpenLinkRow {
@@ -48,6 +50,8 @@ export interface GuestStore {
   guestEvents(guest: string): Promise<Array<{ instance: InstanceRow; status: GuestStatus }>>;
   /** Returns false when no row matched. */
   setStatus(guest: string, instance: string, status: AnswerStatus): Promise<boolean>;
+  /** Whether this host's guest with this phone has been claimed by a member. */
+  phoneClaimed(host: string, phone: string): Promise<boolean>;
   openLinkByToken(token: string): Promise<OpenLinkRow | null>;
   /**
    * Atomic find-or-create-guest-by-phone and answer; enforces closed, live
@@ -79,6 +83,12 @@ export interface Payload {
   guest: { name: string } | null;
   host: { first_name: string | null };
   events: EventPayload[];
+  /**
+   * Guest links only: true when the guest has become a SquadQuest member.
+   * Their answers then live in the app, so every `rsvp` is null and POST
+   * answers 409 `claimed`.
+   */
+  claimed?: boolean;
 }
 
 /** The open-link POST answer. No guest name, and only the one event. */
@@ -113,6 +123,7 @@ const ERROR_STATUS = {
   bad_request: 400,
   not_found: 404,
   method_not_allowed: 405,
+  claimed: 409,
   too_large: 413,
   server_error: 500,
 } as const;
@@ -195,12 +206,14 @@ async function guestPayload(store: GuestStore, guest: GuestRow): Promise<Payload
   const events = rows
     // only the host's own events, and never a draft
     .filter((r) => r.instance.created_by === guest.host && r.instance.status !== "draft")
-    .map((r) => toEvent(r.instance, r.status))
+    // a claimed guest's answers are member RSVPs now; never show a stale one
+    .map((r) => toEvent(r.instance, guest.claimed ? null : r.status))
     .sort(byStart);
   return {
     guest: { name: guest.name },
     host: { first_name: await store.hostFirstName(guest.host) },
     events,
+    claimed: guest.claimed,
   };
 }
 
@@ -262,6 +275,8 @@ async function handlePost(store: GuestStore, request: Request): Promise<Response
   if (hasT) {
     const guest = await store.guestByToken(token(body.t));
     if (!guest) refuse("not_found");
+    // the member answers in the app; a bearer link must not change a real RSVP
+    if (guest.claimed) refuse("claimed");
     const instance = body.instance;
     if (typeof instance !== "string" || !UUID_RE.test(instance)) refuse("not_found");
 
@@ -289,6 +304,10 @@ async function handlePost(store: GuestStore, request: Request): Promise<Response
   if (phone === null) refuse("bad_request");
 
   const link = await openLink(store, o);
+  // A phone whose guest became a member answers in the app. Refused rather
+  // than recorded: the caller proved only knowledge of the number, which may
+  // not be theirs, and a guest-side answer would diverge from the member's.
+  if (await store.phoneClaimed(link.instance.created_by, phone)) refuse("claimed");
   const joined = await store.openJoin(o, name, phone, status);
   if ("error" in joined) refuse(joined.error);
 

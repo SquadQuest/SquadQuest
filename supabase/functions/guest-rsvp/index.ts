@@ -26,11 +26,12 @@ const store: GuestStore = {
   async guestByToken(token) {
     const { data } = await supabase
       .from("guests")
-      .select("id,name,host")
+      .select("id,name,host,claimed_at")
       .eq("token", token)
       .maybeSingle()
       .throwOnError();
-    return data;
+    if (!data) return null;
+    return { id: data.id, name: data.name, host: data.host, claimed: data.claimed_at !== null };
   },
 
   async hostFirstName(host) {
@@ -64,6 +65,17 @@ const store: GuestStore = {
       .select("status")
       .throwOnError();
     return (data ?? []).length === 1;
+  },
+
+  async phoneClaimed(host, phone) {
+    const { data } = await supabase
+      .from("guests")
+      .select("claimed_at")
+      .eq("host", host)
+      .eq("phone", phone)
+      .maybeSingle()
+      .throwOnError();
+    return data != null && data.claimed_at !== null;
   },
 
   async openLinkByToken(token) {
