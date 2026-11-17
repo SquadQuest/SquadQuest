@@ -47,19 +47,21 @@ const store: GuestStore = {
   async guestEvents(guest) {
     const { data } = await supabase
       .from("instance_guests")
-      .select(`status, instance(${INSTANCE_COLUMNS})`)
+      .select(`status, note, instance(${INSTANCE_COLUMNS})`)
       .eq("guest", guest)
       .throwOnError();
     return (data ?? []).map((row) => ({
       instance: row.instance as unknown as InstanceRow,
       status: row.status as GuestStatus,
+      note: (row.note as string | null) ?? null,
     }));
   },
 
-  async setStatus(guest, instance, status: AnswerStatus) {
+  async setAnswer(guest, instance, status: AnswerStatus, note) {
     const { data } = await supabase
       .from("instance_guests")
-      .update({ status })
+      // no `note` key at all when the note is to be left as it is
+      .update(note === undefined ? { status } : { status, note })
       .eq("guest", guest)
       .eq("instance", instance)
       .select("status")
@@ -94,12 +96,15 @@ const store: GuestStore = {
     };
   },
 
-  async openJoin(token, name, phone, status): Promise<OpenJoinResult> {
+  async openJoin(token, name, phone, status, note): Promise<OpenJoinResult> {
+    // tables/instance_rsvp_notes.sql: p_set_note false leaves a stored note
     const { data, error } = await supabase.rpc("guest_rsvp_open_join", {
       p_token: token,
       p_name: name,
       p_phone: phone,
       p_status: status,
+      p_note: note ?? null,
+      p_set_note: note !== undefined,
     });
     if (error) {
       // the database function raises one of these fixed messages

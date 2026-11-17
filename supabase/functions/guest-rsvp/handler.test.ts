@@ -54,7 +54,7 @@ function instance(id: string, start: string, extra: Partial<InstanceRow> = {}): 
 
 interface World {
   guests: Array<{ id: string; name: string; host: string; token: string; phone: string | null; claimed?: boolean }>;
-  rows: Array<{ guest: string; instance: InstanceRow; status: GuestStatus }>;
+  rows: Array<{ guest: string; instance: InstanceRow; status: GuestStatus; note?: string | null }>;
   links: Array<OpenLinkRow & { token: string }>;
   writes: number;
 }
@@ -83,17 +83,19 @@ function storeFor(w: World): GuestStore {
       return g ? { id: g.id, name: g.name, host: g.host, claimed: g.claimed === true } : null;
     },
     hostFirstName: async (h) => (h === HOST ? "Host" : null),
-    guestEvents: async (g) => w.rows.filter((r) => r.guest === g).map((r) => ({ instance: r.instance, status: r.status })),
-    setStatus: async (g, i, s: AnswerStatus) => {
+    guestEvents: async (g) =>
+      w.rows.filter((r) => r.guest === g).map((r) => ({ instance: r.instance, status: r.status, note: r.note ?? null })),
+    setAnswer: async (g, i, s: AnswerStatus, note) => {
       w.writes++;
       const row = w.rows.find((r) => r.guest === g && r.instance.id === i);
       if (!row) return false;
       row.status = s;
+      if (note !== undefined) row.note = note;
       return true;
     },
     phoneClaimed: async (h, p) => w.guests.some((g) => g.host === h && g.phone === p && g.claimed === true),
     openLinkByToken: async (t) => w.links.find((l) => l.token === t) ?? null,
-    openJoin: async (t, name, phone, status) => {
+    openJoin: async (t, name, phone, status, note) => {
       w.writes++;
       const link = w.links.find((l) => l.token === t);
       if (!link || link.closed_at || link.instance.status !== "live" || link.guests_created >= link.max_guests) {
@@ -110,8 +112,10 @@ function storeFor(w: World): GuestStore {
         created = true;
       }
       const row = w.rows.find((r) => r.guest === guest!.id && r.instance.id === link.instance.id);
-      if (row) row.status = status;
-      else w.rows.push({ guest: guest.id, instance: link.instance, status });
+      if (row) {
+        row.status = status;
+        if (note !== undefined) row.note = note;
+      } else w.rows.push({ guest: guest.id, instance: link.instance, status, note: note ?? null });
       return { token: created ? guest.token : null };
     },
   };
@@ -154,6 +158,7 @@ Deno.test("GET ?t returns the guest, host and only their live/canceled events fr
     banner: null,
     event_status: "live",
     rsvp: "yes",
+    note: null,
   }, "event field set");
   assertEquals(r.body.events[2].event_status, "canceled");
 });
@@ -363,4 +368,117 @@ Deno.test("an open-link answer with a claimed guest's phone is refused with 409 
   // another phone on the same link still works
   const ok = await call(w, post({ o: OPEN, name: "Pat", phone: "+15555550199", status: "yes" }));
   assertEquals(ok.status, 200);
+});
+
+// ── guest notes ─────────────────────────────────────────────────────
+
+const noteOf = (body: { events: Array<{ id: string; note: string | null }> }, id: string) =>
+  body.events.find((e) => e.id === id)!.note;
+
+Deno.test("POST ?t sets a note with the answer, trimmed, and returns it on every Event", async () => {
+  const w = world();
+  const r = await call(w, post({ t: TOKEN, instance: E_LATER, status: "yes", note: "  Bringing a friend\n" }));
+  assertEquals(r.status, 200);
+  assertEquals(noteOf(r.body, E_LATER), "Bringing a friend");
+  assertEquals(noteOf(r.body, E_LIVE), null, "other events have no note");
+  for (const e of r.body.events) assert("note" in e, "every Event carries note");
+  const g = await call(w, get(`t=${TOKEN}`));
+  assertEquals(noteOf(g.body, E_LATER), "Bringing a friend", "GET reads it back");
+});
+
+Deno.test("POST ?t with the same status and a new note writes once; the same note again writes nothing", async () => {
+  const w = world();
+  const r = await call(w, post({ t: TOKEN, instance: E_LIVE, status: "yes", note: "Running late" }));
+  assertEquals([r.status, noteOf(r.body, E_LIVE)], [200, "Running late"]);
+  assertEquals(w.writes, 1);
+  await call(w, post({ t: TOKEN, instance: E_LIVE, status: "yes", note: "Running late " }));
+  assertEquals(w.writes, 1, "unchanged note and status: no write");
+});
+
+Deno.test("POST ?t without a note key changes the status and keeps the stored note", async () => {
+  const w = world();
+  w.rows.find((r) => r.instance.id === E_LIVE)!.note = "Can bring chairs";
+  const r = await call(w, post({ t: TOKEN, instance: E_LIVE, status: "maybe" }));
+  assertEquals(r.status, 200);
+  const e = r.body.events.find((x: { id: string }) => x.id === E_LIVE);
+  assertEquals([e.rsvp, e.note], ["maybe", "Can bring chairs"]);
+});
+
+Deno.test("POST ?t clears the note with null, an empty string or only whitespace/controls", async () => {
+  for (const cleared of [null, "", "   ", "\u0007\t "]) {
+    const w = world();
+    w.rows.find((r) => r.instance.id === E_LIVE)!.note = "Can bring chairs";
+    const r = await call(w, post({ t: TOKEN, instance: E_LIVE, status: "yes", note: cleared }));
+    assertEquals([r.status, noteOf(r.body, E_LIVE)], [200, null], JSON.stringify(cleared));
+    assertEquals(w.writes, 1, "cleared without changing the status");
+  }
+});
+
+Deno.test("notes: control characters except newline are stripped; 200 characters after trimming is the limit", async () => {
+  const { parseNote } = await import("./handler.ts");
+  assertEquals(parseNote({}), undefined, "omitted");
+  assertEquals(parseNote({ note: null }), null);
+  assertEquals(parseNote({ note: "a\u0000b\rc\u001bd\u007f\u0085e\nf" }), "abcde\nf");
+  assertEquals(parseNote({ note: "line one\r\nline two" }), "line one\nline two");
+  assertEquals(parseNote({ note: " " + "x".repeat(200) + "  " }), "x".repeat(200), "200 after trim is fine");
+  assertEquals(parseNote({ note: "\u{1F389}".repeat(200) }), "\u{1F389}".repeat(200), "counted in characters, not UTF-16 units");
+  assertEquals(parseNote({ note: "<b>hi</b>" }), "<b>hi</b>", "stored as plain text, not sanitized as HTML");
+});
+
+Deno.test("POST with a note over 200 characters or of the wrong type is 400 and writes nothing", async () => {
+  const w = world();
+  for (const note of ["x".repeat(201), "\u{1F389}".repeat(201), 5, true, ["a"], { text: "a" }]) {
+    for (const body of [
+      { t: TOKEN, instance: E_LIVE, status: "no", note },
+      { o: OPEN, name: "Pat", phone: "2155550199", status: "yes", note },
+    ]) {
+      const r = await call(w, post(body));
+      assertEquals([r.status, r.body], [400, { error: "bad_request" }], JSON.stringify(body).slice(0, 80));
+    }
+  }
+  assertEquals(w.writes, 0);
+  assertEquals(w.guests.length, 1, "no guest created");
+});
+
+Deno.test("POST ?o with a note creates the guest with it and echoes it on the one event", async () => {
+  const w = world();
+  const r = await call(w, post({ o: OPEN, name: "Pat", phone: "2155550199", status: "yes", note: " Bringing a friend " }));
+  assertEquals(r.status, 200);
+  assertEquals(r.body.created, true);
+  assertEquals(r.body.events.map((e: { rsvp: string; note: string }) => [e.rsvp, e.note]), [["yes", "Bringing a friend"]]);
+  const g = await call(w, get(`t=${r.body.token}`));
+  assertEquals(noteOf(g.body, E_LIVE), "Bringing a friend", "their own link shows it");
+});
+
+Deno.test("a second open-link POST from the same phone: no note keeps it, a note changes it, null clears it", async () => {
+  const w = world();
+  const first = await call(w, post({ o: OPEN, name: "Pat", phone: "2155550199", status: "yes", note: "Bringing a friend" }));
+  const token = first.body.token;
+
+  const keep = await call(w, post({ o: OPEN, name: "Pat", phone: "215 555 0199", status: "maybe" }));
+  assertEquals([keep.status, keep.body.created], [200, false]);
+  assertEquals(keep.body.events[0].note, null, "the stored note is never echoed to an open-link caller");
+  assertEquals(noteOf((await call(w, get(`t=${token}`))).body, E_LIVE), "Bringing a friend", "but it is kept");
+
+  const change = await call(w, post({ o: OPEN, name: "Pat", phone: "2155550199", status: "maybe", note: "Running late" }));
+  assertEquals(change.body.events[0].note, "Running late");
+  assertEquals(noteOf((await call(w, get(`t=${token}`))).body, E_LIVE), "Running late");
+
+  const clear = await call(w, post({ o: OPEN, name: "Pat", phone: "2155550199", status: "no", note: null }));
+  assertEquals(clear.body.events[0].note, null);
+  assertEquals(noteOf((await call(w, get(`t=${token}`))).body, E_LIVE), null);
+  assertEquals(w.guests.length, 2, "one new guest only");
+});
+
+Deno.test("GET ?o has note null, and a claimed guest's link shows every note as null", async () => {
+  const w = world();
+  w.rows.find((r) => r.instance.id === E_LIVE)!.note = "Can bring chairs";
+  const open = await call(w, get(`o=${OPEN}`));
+  assertEquals(open.body.events[0].note, null, "open link GET");
+  w.guests[0].claimed = true;
+  const r = await call(w, get(`t=${TOKEN}`));
+  assertEquals(r.body.events.map((e: { note: string | null }) => e.note), [null, null, null], "claimed: no notes");
+  const refused = await call(w, post({ t: TOKEN, instance: E_LIVE, status: "yes", note: "x" }));
+  assertEquals([refused.status, refused.body], [409, { error: "claimed" }], "claimed guest cannot set a note");
+  assertEquals(w.writes, 0);
 });
