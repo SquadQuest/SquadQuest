@@ -47,24 +47,33 @@ const store: GuestStore = {
   async guestEvents(guest) {
     const { data } = await supabase
       .from("instance_guests")
-      .select(`status, instance(${INSTANCE_COLUMNS})`)
+      .select(`status, note, plus, instance(${INSTANCE_COLUMNS})`)
       .eq("guest", guest)
       .throwOnError();
     return (data ?? []).map((row) => ({
       instance: row.instance as unknown as InstanceRow,
       status: row.status as GuestStatus,
+      note: (row.note as string | null) ?? null,
+      plus: (row.plus as number | null) ?? 0,
     }));
   },
 
-  async setStatus(guest, instance, status: AnswerStatus) {
+  async setAnswer(guest, instance, status: AnswerStatus, note, plus) {
+    // tables/instance_rsvp_plus.sql: false when the guest is not on the
+    // event, or when raising plus-ones would take the open link that
+    // created the guest over its cap
     const { data } = await supabase
-      .from("instance_guests")
-      .update({ status })
-      .eq("guest", guest)
-      .eq("instance", instance)
-      .select("status")
+      .rpc("guest_rsvp_answer", {
+        p_guest: guest,
+        p_instance: instance,
+        p_status: status,
+        p_note: note ?? null,
+        p_set_note: note !== undefined,
+        p_plus: plus ?? null,
+        p_set_plus: plus !== undefined,
+      })
       .throwOnError();
-    return (data ?? []).length === 1;
+    return data === true;
   },
 
   async phoneClaimed(host, phone) {
@@ -86,20 +95,30 @@ const store: GuestStore = {
       .maybeSingle()
       .throwOnError();
     if (!data) return null;
+    const { data: plusHeld } = await supabase
+      .rpc("guest_open_link_plus", { p_token: token })
+      .throwOnError();
     return {
       instance: data.instance as unknown as InstanceRow,
       closed_at: data.closed_at,
       max_guests: data.max_guests,
       guests_created: data.guests_created,
+      plus_held: (plusHeld as number | null) ?? 0,
     };
   },
 
-  async openJoin(token, name, phone, status): Promise<OpenJoinResult> {
+  async openJoin(token, name, phone, status, note, plus): Promise<OpenJoinResult> {
+    // tables/instance_rsvp_plus.sql: p_set_note / p_set_plus false leave the
+    // stored note / plus-ones as they are
     const { data, error } = await supabase.rpc("guest_rsvp_open_join", {
       p_token: token,
       p_name: name,
       p_phone: phone,
       p_status: status,
+      p_note: note ?? null,
+      p_set_note: note !== undefined,
+      p_plus: plus ?? null,
+      p_set_plus: plus !== undefined,
     });
     if (error) {
       // the database function raises one of these fixed messages

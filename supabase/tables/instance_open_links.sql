@@ -58,6 +58,9 @@ update (closed_at) on public.instance_open_links to authenticated;
 -- Errors are raised with fixed messages the guest-rsvp function maps to
 -- responses: 'not_found' (unknown, closed, full, or event not live) and
 -- 'bad_request'. Only the service role may call it.
+--
+-- Replaced by a 6-argument version that also takes the guest's note:
+-- tables/instance_rsvp_notes.sql.
 CREATE FUNCTION public.guest_rsvp_open_join (
   p_token text,
   p_name text,

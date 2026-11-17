@@ -9,6 +9,10 @@
 
 export type GuestStatus = "invited" | "yes" | "maybe" | "no";
 export type AnswerStatus = "yes" | "maybe" | "no";
+/** A cleaned guest note: a string to set, null to clear, undefined to leave as is. */
+export type Note = string | null | undefined;
+/** Plus-ones: 0-9 to set (0 clears), undefined to leave as is. */
+export type Plus = number | undefined;
 
 export interface InstanceRow {
   id: string;
@@ -36,6 +40,12 @@ export interface OpenLinkRow {
   closed_at: string | null;
   max_guests: number;
   guests_created: number;
+  /**
+   * Plus-ones the link holds: those of guests it created, on its event,
+   * answering yes or maybe. The link is full when guests_created plus this
+   * reaches max_guests.
+   */
+  plus_held: number;
 }
 
 /** `token` is the guest's token only when this call created the guest. */
@@ -47,21 +57,31 @@ export type OpenJoinResult =
 export interface GuestStore {
   guestByToken(token: string): Promise<GuestRow | null>;
   hostFirstName(host: string): Promise<string | null>;
-  guestEvents(guest: string): Promise<Array<{ instance: InstanceRow; status: GuestStatus }>>;
-  /** Returns false when no row matched. */
-  setStatus(guest: string, instance: string, status: AnswerStatus): Promise<boolean>;
+  guestEvents(
+    guest: string,
+  ): Promise<Array<{ instance: InstanceRow; status: GuestStatus; note: string | null; plus: number }>>;
+  /**
+   * Sets the answer, and the note and plus-ones too unless undefined (then
+   * the stored value is left as it is). Returns false when no row matched,
+   * or when the guest was created by the event's open link and the change
+   * would take that link over its cap (nothing is written then).
+   */
+  setAnswer(guest: string, instance: string, status: AnswerStatus, note: Note, plus: Plus): Promise<boolean>;
   /** Whether this host's guest with this phone has been claimed by a member. */
   phoneClaimed(host: string, phone: string): Promise<boolean>;
   openLinkByToken(token: string): Promise<OpenLinkRow | null>;
   /**
    * Atomic find-or-create-guest-by-phone and answer; enforces closed, live
-   * and cap itself too.
+   * and cap (plus-ones included) itself too. `note` or `plus` undefined
+   * leaves the stored value as it is.
    */
   openJoin(
     token: string,
     name: string,
     phone: string,
     status: AnswerStatus,
+    note: Note,
+    plus: Plus,
   ): Promise<OpenJoinResult>;
 }
 
@@ -77,6 +97,13 @@ export interface EventPayload {
   banner: string | null;
   event_status: "live" | "canceled";
   rsvp: GuestStatus | null;
+  /** the guest's own note for this event; null whenever `rsvp` is */
+  note: string | null;
+  /**
+   * how many extra people the guest is bringing (0-9); 0 whenever `rsvp`
+   * is null. Stored whatever the answer: count it only for yes and maybe.
+   */
+  plus: number;
 }
 
 export interface Payload {
@@ -105,12 +132,19 @@ export const LIMITS = {
   body: 2048,
   name: 80,
   phoneInput: 32,
+  /** guest note, in characters (code points) after cleaning */
+  note: 200,
+  /** most plus-ones one guest may bring */
+  plus: 9,
 };
 
 const TOKEN_RE = /^[0-9a-f]{64}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const E164_RE = /^\+[1-9][0-9]{6,14}$/;
 const ANSWERS: AnswerStatus[] = ["yes", "maybe", "no"];
+// C0 controls except newline, DEL, and C1 controls
+// deno-lint-ignore no-control-regex
+const CONTROL_RE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F]/g;
 
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -152,7 +186,12 @@ function refuse(code: ErrorCode): never {
   throw new Refusal(code);
 }
 
-function toEvent(instance: InstanceRow, rsvp: GuestStatus | null): EventPayload {
+function toEvent(
+  instance: InstanceRow,
+  rsvp: GuestStatus | null,
+  note: string | null,
+  plus: number,
+): EventPayload {
   return {
     id: instance.id,
     title: instance.title,
@@ -164,6 +203,8 @@ function toEvent(instance: InstanceRow, rsvp: GuestStatus | null): EventPayload 
     banner: instance.banner_photo,
     event_status: instance.status === "canceled" ? "canceled" : "live",
     rsvp,
+    note,
+    plus,
   };
 }
 
@@ -194,6 +235,41 @@ export function normalizePhone(value: unknown): string | null {
   return null;
 }
 
+/**
+ * The optional `note` of a POST body. Omitted: undefined (leave the stored
+ * note alone). null, or a string that is empty once control characters
+ * (all but newline) are removed and it is trimmed: null (clear). Otherwise
+ * the cleaned string, at most LIMITS.note characters. Anything else is
+ * refused. Plain text: clients render it as text only.
+ */
+export function parseNote(body: Record<string, unknown>): Note {
+  if (!("note" in body)) return undefined;
+  const value = body.note;
+  if (value === null) return null;
+  if (typeof value !== "string") refuse("bad_request");
+  // lone surrogates cannot be stored as UTF-8
+  const cleaned = value.toWellFormed().replace(CONTROL_RE, "").trim();
+  if (cleaned === "") return null;
+  if ([...cleaned].length > LIMITS.note) refuse("bad_request");
+  return cleaned;
+}
+
+/**
+ * The optional `plus` of a POST body: how many extra people come with the
+ * guest. Omitted: undefined (leave the stored value alone). null: 0. An
+ * integer 0 to LIMITS.plus as a JSON number. Anything else (a fraction, a
+ * numeric string, a negative, over the limit) is refused.
+ */
+export function parsePlus(body: Record<string, unknown>): Plus {
+  if (!("plus" in body)) return undefined;
+  const value = body.plus;
+  if (value === null) return 0;
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > LIMITS.plus) {
+    refuse("bad_request");
+  }
+  return value;
+}
+
 function answer(value: unknown): AnswerStatus {
   if (typeof value !== "string" || !ANSWERS.includes(value as AnswerStatus)) {
     refuse("bad_request");
@@ -207,7 +283,9 @@ async function guestPayload(store: GuestStore, guest: GuestRow): Promise<Payload
     // only the host's own events, and never a draft
     .filter((r) => r.instance.created_by === guest.host && r.instance.status !== "draft")
     // a claimed guest's answers are member RSVPs now; never show a stale one
-    .map((r) => toEvent(r.instance, guest.claimed ? null : r.status))
+    .map((r) =>
+      guest.claimed ? toEvent(r.instance, null, null, 0) : toEvent(r.instance, r.status, r.note, r.plus)
+    )
     .sort(byStart);
   return {
     guest: { name: guest.name },
@@ -223,7 +301,8 @@ async function openLink(store: GuestStore, value: unknown): Promise<OpenLinkRow>
     !link ||
     link.closed_at !== null ||
     link.instance.status !== "live" ||
-    link.guests_created >= link.max_guests
+    // full: guests created plus the plus-ones they bring
+    link.guests_created + link.plus_held >= link.max_guests
   ) {
     refuse("not_found");
   }
@@ -245,7 +324,7 @@ async function handleGet(store: GuestStore, url: URL): Promise<Response> {
   const payload: Payload = {
     guest: null,
     host: { first_name: await store.hostFirstName(link.instance.created_by) },
-    events: [toEvent(link.instance, null)],
+    events: [toEvent(link.instance, null, null, 0)],
   };
   return respond(200, payload);
 }
@@ -271,6 +350,8 @@ async function handlePost(store: GuestStore, request: Request): Promise<Response
   const hasO = "o" in body;
   if (hasT === hasO) refuse("bad_request");
   const status = answer(body.status);
+  const note = parseNote(body);
+  const plus = parsePlus(body);
 
   if (hasT) {
     const guest = await store.guestByToken(token(body.t));
@@ -287,7 +368,20 @@ async function handlePost(store: GuestStore, request: Request): Promise<Response
         r.instance.status === "live",
     );
     if (!current) refuse("not_found");
-    if (current.status !== status && !(await store.setStatus(guest.id, instance, status))) {
+    // a status-only answer (no `note` or `plus` key) never touches the
+    // stored note or plus-ones
+    const noteChanged = note !== undefined && note !== current.note;
+    const plusChanged = plus !== undefined && plus !== current.plus;
+    if (
+      (current.status !== status || noteChanged || plusChanged) &&
+      !(await store.setAnswer(
+        guest.id,
+        instance,
+        status,
+        noteChanged ? note : undefined,
+        plusChanged ? plus : undefined,
+      ))
+    ) {
       refuse("not_found");
     }
     // read back what was stored rather than echoing the request
@@ -308,18 +402,20 @@ async function handlePost(store: GuestStore, request: Request): Promise<Response
   // than recorded: the caller proved only knowledge of the number, which may
   // not be theirs, and a guest-side answer would diverge from the member's.
   if (await store.phoneClaimed(link.instance.created_by, phone)) refuse("claimed");
-  const joined = await store.openJoin(o, name, phone, status);
+  const joined = await store.openJoin(o, name, phone, status, note, plus);
   if ("error" in joined) refuse(joined.error);
 
-  // Only this event and the answer just set. Never the guest's stored name
-  // or their other events, and a token only for a guest created right now:
-  // the caller proved nothing but knowledge of a phone number.
+  // Only this event and the answer just set. Never the guest's stored name,
+  // stored note or plus-ones or other events, and a token only for a guest
+  // created right now: the caller proved nothing but knowledge of a phone
+  // number. So `note` and `plus` are what this request set, or null and 0
+  // when it sent none.
   const payload: OpenPayload = {
     created: joined.token !== null,
     token: joined.token,
     guest: null,
     host: { first_name: await store.hostFirstName(link.instance.created_by) },
-    events: [toEvent(link.instance, status)],
+    events: [toEvent(link.instance, status, note ?? null, plus ?? 0)],
   };
   return respond(200, payload);
 }
