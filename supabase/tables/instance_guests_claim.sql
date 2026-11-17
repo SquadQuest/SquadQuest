@@ -67,6 +67,9 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp;
 --      creates those requests itself, and a row inserted here first would
 --      make its batch upsert fail.
 --   3. the guest row gets claimed_by / claimed_at.
+--
+-- Replaced by a version that also copies the guest's note:
+-- tables/instance_rsvp_notes.sql.
 CREATE FUNCTION public.guest_claim_for_user (p_user uuid) RETURNS integer AS $$
 DECLARE
   v_phone text;
