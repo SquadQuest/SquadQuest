@@ -53,7 +53,7 @@ function instance(id: string, start: string, extra: Partial<InstanceRow> = {}): 
 }
 
 interface World {
-  guests: Array<{ id: string; name: string; host: string; token: string; phone: string | null }>;
+  guests: Array<{ id: string; name: string; host: string; token: string; phone: string | null; claimed?: boolean }>;
   rows: Array<{ guest: string; instance: InstanceRow; status: GuestStatus }>;
   links: Array<OpenLinkRow & { token: string }>;
   writes: number;
@@ -80,7 +80,7 @@ function storeFor(w: World): GuestStore {
   return {
     guestByToken: async (t) => {
       const g = w.guests.find((g) => g.token === t);
-      return g ? { id: g.id, name: g.name, host: g.host } : null;
+      return g ? { id: g.id, name: g.name, host: g.host, claimed: g.claimed === true } : null;
     },
     hostFirstName: async (h) => (h === HOST ? "Host" : null),
     guestEvents: async (g) => w.rows.filter((r) => r.guest === g).map((r) => ({ instance: r.instance, status: r.status })),
@@ -91,6 +91,7 @@ function storeFor(w: World): GuestStore {
       row.status = s;
       return true;
     },
+    phoneClaimed: async (h, p) => w.guests.some((g) => g.host === h && g.phone === p && g.claimed === true),
     openLinkByToken: async (t) => w.links.find((l) => l.token === t) ?? null,
     openJoin: async (t, name, phone, status) => {
       w.writes++;
@@ -327,4 +328,39 @@ Deno.test("the cap is enforced: the 301st new guest is refused", async () => {
   assertEquals((await call(w, post({ o: OPEN, name: "Last", phone: "2155550197", status: "yes" }))).status, 200);
   const r = await call(w, post({ o: OPEN, name: "Late", phone: "2155550196", status: "yes" }));
   assertEquals([r.status, r.body], [404, { error: "not_found" }]);
+});
+
+Deno.test("a claimed guest's link still shows their events, with no answers, and flags claimed", async () => {
+  const w = world();
+  const before = await call(w, get(`t=${TOKEN}`));
+  assertEquals(before.body.claimed, false);
+  w.guests[0].claimed = true;
+  const r = await call(w, get(`t=${TOKEN}`));
+  assertEquals(r.status, 200);
+  assertEquals(r.body.claimed, true);
+  assertEquals(r.body.guest, { name: "Sam Example" });
+  assertEquals(r.body.events.map((e: { id: string }) => e.id), [E_LIVE, E_LATER, E_CANCELED]);
+  assertEquals(r.body.events.map((e: { rsvp: string | null }) => e.rsvp), [null, null, null], "no stale answers");
+});
+
+Deno.test("a claimed guest's link refuses answers with 409 claimed and writes nothing", async () => {
+  const w = world();
+  w.guests[0].claimed = true;
+  const r = await call(w, post({ t: TOKEN, instance: E_LIVE, status: "no" }));
+  assertEquals(r.status, 409);
+  assertEquals(r.body, { error: "claimed" });
+  assertEquals(w.writes, 0);
+  assertEquals(w.rows.find((x) => x.instance.id === E_LIVE)!.status, "yes", "answer unchanged");
+});
+
+Deno.test("an open-link answer with a claimed guest's phone is refused with 409 and writes nothing", async () => {
+  const w = world();
+  w.guests[0].claimed = true;
+  const r = await call(w, post({ o: OPEN, name: "Somebody", phone: "+15555550100", status: "no" }));
+  assertEquals(r.status, 409);
+  assertEquals(r.body, { error: "claimed" });
+  assertEquals(w.writes, 0);
+  // another phone on the same link still works
+  const ok = await call(w, post({ o: OPEN, name: "Pat", phone: "+15555550199", status: "yes" }));
+  assertEquals(ok.status, 200);
 });
