@@ -1,0 +1,294 @@
+// Request handling for the guest-rsvp function, kept free of Deno and
+// Supabase imports so it can be tested against an in-memory store
+// (handler.test.ts). index.ts wires it to the service-role client.
+//
+// Contract: docs/guest-rsvp.md § Contract. Every error is one of a fixed set
+// of `{ "error": "<code>" }` bodies, and an unknown token, a closed or full
+// open link, an event the guest is not on, and a canceled or draft event all
+// answer the same 404, so a caller cannot probe which of those it hit.
+
+export type GuestStatus = "invited" | "yes" | "maybe" | "no";
+export type AnswerStatus = "yes" | "maybe" | "no";
+
+export interface InstanceRow {
+  id: string;
+  title: string | null;
+  start_time_min: string | null;
+  start_time_max: string | null;
+  end_time: string | null;
+  location_description: string | null;
+  notes: string | null;
+  banner_photo: string | null;
+  status: "draft" | "live" | "canceled";
+  created_by: string;
+}
+
+export interface GuestRow {
+  id: string;
+  name: string;
+  host: string;
+}
+
+export interface OpenLinkRow {
+  instance: InstanceRow;
+  closed_at: string | null;
+  max_guests: number;
+  guests_created: number;
+}
+
+export type OpenJoinResult =
+  | { token: string }
+  | { error: "not_found" | "conflict" | "bad_request" };
+
+/** The data the function needs. index.ts implements it with the service role. */
+export interface GuestStore {
+  guestByToken(token: string): Promise<GuestRow | null>;
+  hostFirstName(host: string): Promise<string | null>;
+  guestEvents(guest: string): Promise<Array<{ instance: InstanceRow; status: GuestStatus }>>;
+  /** Returns false when no row matched. */
+  setStatus(guest: string, instance: string, status: AnswerStatus): Promise<boolean>;
+  openLinkByToken(token: string): Promise<OpenLinkRow | null>;
+  /** Atomic create-guest-and-answer; enforces closed/live/cap itself too. */
+  openJoin(
+    token: string,
+    name: string,
+    phone: string | null,
+    status: AnswerStatus,
+  ): Promise<OpenJoinResult>;
+}
+
+/** One event as the microsite sees it. */
+export interface EventPayload {
+  id: string;
+  title: string | null;
+  start: string | null;
+  start_max: string | null;
+  end: string | null;
+  location: string | null;
+  notes: string | null;
+  banner: string | null;
+  event_status: "live" | "canceled";
+  rsvp: GuestStatus | null;
+}
+
+export interface Payload {
+  guest: { name: string } | null;
+  host: { first_name: string | null };
+  events: EventPayload[];
+}
+
+export const LIMITS = {
+  /** Longest accepted value for `t` or `o` before it is even looked up. */
+  token: 128,
+  body: 2048,
+  name: 80,
+};
+
+const TOKEN_RE = /^[0-9a-f]{64}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const PHONE_RE = /^\+[1-9][0-9]{6,14}$/;
+const ANSWERS: AnswerStatus[] = ["yes", "maybe", "no"];
+
+export const CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Max-Age": "86400",
+};
+
+const ERROR_STATUS = {
+  bad_request: 400,
+  not_found: 404,
+  method_not_allowed: 405,
+  conflict: 409,
+  too_large: 413,
+  server_error: 500,
+} as const;
+
+type ErrorCode = keyof typeof ERROR_STATUS;
+
+class Refusal extends Error {
+  constructor(readonly code: ErrorCode) {
+    super(code);
+  }
+}
+
+function respond(status: number, body: unknown): Response {
+  return new Response(body === null ? null : JSON.stringify(body), {
+    status,
+    headers: {
+      ...CORS_HEADERS,
+      "Content-Type": "application/json",
+      // personal data behind a bearer link: never cache it anywhere
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+function refuse(code: ErrorCode): never {
+  throw new Refusal(code);
+}
+
+function toEvent(instance: InstanceRow, rsvp: GuestStatus | null): EventPayload {
+  return {
+    id: instance.id,
+    title: instance.title,
+    start: instance.start_time_min,
+    start_max: instance.start_time_max,
+    end: instance.end_time,
+    location: instance.location_description,
+    notes: instance.notes,
+    banner: instance.banner_photo,
+    event_status: instance.status === "canceled" ? "canceled" : "live",
+    rsvp,
+  };
+}
+
+function byStart(a: EventPayload, b: EventPayload): number {
+  return (a.start ?? "").localeCompare(b.start ?? "");
+}
+
+/** A token is either well-formed or treated exactly like an unknown one. */
+function token(value: unknown): string {
+  if (typeof value !== "string" || value.length > LIMITS.token || !TOKEN_RE.test(value)) {
+    refuse("not_found");
+  }
+  return value;
+}
+
+function answer(value: unknown): AnswerStatus {
+  if (typeof value !== "string" || !ANSWERS.includes(value as AnswerStatus)) {
+    refuse("bad_request");
+  }
+  return value as AnswerStatus;
+}
+
+async function guestPayload(store: GuestStore, guest: GuestRow): Promise<Payload> {
+  const rows = await store.guestEvents(guest.id);
+  const events = rows
+    // only the host's own events, and never a draft
+    .filter((r) => r.instance.created_by === guest.host && r.instance.status !== "draft")
+    .map((r) => toEvent(r.instance, r.status))
+    .sort(byStart);
+  return {
+    guest: { name: guest.name },
+    host: { first_name: await store.hostFirstName(guest.host) },
+    events,
+  };
+}
+
+async function openLink(store: GuestStore, value: unknown): Promise<OpenLinkRow> {
+  const link = await store.openLinkByToken(token(value));
+  if (
+    !link ||
+    link.closed_at !== null ||
+    link.instance.status !== "live" ||
+    link.guests_created >= link.max_guests
+  ) {
+    refuse("not_found");
+  }
+  return link;
+}
+
+async function handleGet(store: GuestStore, url: URL): Promise<Response> {
+  const t = url.searchParams.get("t");
+  const o = url.searchParams.get("o");
+  if ((t === null) === (o === null)) refuse("bad_request");
+
+  if (t !== null) {
+    const guest = await store.guestByToken(token(t));
+    if (!guest) refuse("not_found");
+    return respond(200, await guestPayload(store, guest));
+  }
+
+  const link = await openLink(store, o);
+  const payload: Payload = {
+    guest: null,
+    host: { first_name: await store.hostFirstName(link.instance.created_by) },
+    events: [toEvent(link.instance, null)],
+  };
+  return respond(200, payload);
+}
+
+async function readBody(request: Request): Promise<Record<string, unknown>> {
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (declared > LIMITS.body) refuse("too_large");
+  const text = await request.text();
+  if (text.length > LIMITS.body) refuse("too_large");
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    refuse("bad_request");
+  }
+  if (typeof body !== "object" || body === null || Array.isArray(body)) refuse("bad_request");
+  return body as Record<string, unknown>;
+}
+
+async function handlePost(store: GuestStore, request: Request): Promise<Response> {
+  const body = await readBody(request);
+  const hasT = "t" in body;
+  const hasO = "o" in body;
+  if (hasT === hasO) refuse("bad_request");
+  const status = answer(body.status);
+
+  if (hasT) {
+    const guest = await store.guestByToken(token(body.t));
+    if (!guest) refuse("not_found");
+    const instance = body.instance;
+    if (typeof instance !== "string" || !UUID_RE.test(instance)) refuse("not_found");
+
+    const current = (await store.guestEvents(guest.id)).find(
+      (r) =>
+        r.instance.id === instance &&
+        r.instance.created_by === guest.host &&
+        r.instance.status === "live",
+    );
+    if (!current) refuse("not_found");
+    if (current.status !== status && !(await store.setStatus(guest.id, instance, status))) {
+      refuse("not_found");
+    }
+    // read back what was stored rather than echoing the request
+    return respond(200, await guestPayload(store, guest));
+  }
+
+  // open link: validate everything before the store is touched
+  const o = token(body.o);
+  const rawName = body.name;
+  if (typeof rawName !== "string") refuse("bad_request");
+  const name = rawName.trim();
+  if (name.length < 1 || name.length > LIMITS.name) refuse("bad_request");
+  let phone: string | null = null;
+  if (body.phone !== undefined && body.phone !== null && body.phone !== "") {
+    if (typeof body.phone !== "string" || !PHONE_RE.test(body.phone)) refuse("bad_request");
+    phone = body.phone;
+  }
+
+  await openLink(store, o);
+  const joined = await store.openJoin(o, name, phone, status);
+  if ("error" in joined) refuse(joined.error);
+
+  const guest = await store.guestByToken(joined.token);
+  if (!guest) refuse("server_error");
+  return respond(200, { token: joined.token, ...(await guestPayload(store, guest)) });
+}
+
+export function createHandler(store: GuestStore, log: (e: unknown) => void = console.error) {
+  return async (request: Request): Promise<Response> => {
+    try {
+      if (request.method === "OPTIONS") return respond(204, null);
+      // the gateway may forward the full /guest-rsvp path; only the query matters
+      const url = new URL(request.url);
+      if (request.method === "GET") return await handleGet(store, url);
+      if (request.method === "POST") return await handlePost(store, request);
+      refuse("method_not_allowed");
+    } catch (error) {
+      if (error instanceof Refusal) {
+        return respond(ERROR_STATUS[error.code], { error: error.code });
+      }
+      // never echo internals to an unauthenticated caller
+      log(error);
+      return respond(500, { error: "server_error" });
+    }
+  };
+}
