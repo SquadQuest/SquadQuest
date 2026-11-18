@@ -104,6 +104,11 @@ jobs:
 
       - name: Set up Flutter Version Management CLI
         uses: flutter-actions/setup-fvm@v1.0
+        with:
+          # Pinned: the action's "latest" lookup still asks the old
+          # leoafarias/fvm repo, which now redirects, and fails with
+          # "Failed to fetch latest FVM version".
+          version: '4.3.2'
 
       - name: Install Flutter SDK
         run: fvm install
@@ -307,6 +312,11 @@ jobs:
 
       - name: Set up Flutter Version Management CLI
         uses: flutter-actions/setup-fvm@v1.0
+        with:
+          # Pinned: the action's "latest" lookup still asks the old
+          # leoafarias/fvm repo, which now redirects, and fails with
+          # "Failed to fetch latest FVM version".
+          version: '4.3.2'
 
       - name: Install Flutter SDK
         run: fvm install
