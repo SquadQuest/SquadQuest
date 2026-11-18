@@ -18,6 +18,11 @@ on:
         required: false
         default: false
         type: boolean
+      allow_missing_entitlements:
+        description: 'Finish the run even if the signed app lacks push/universal-link entitlements (never uploads)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   id-token: write
@@ -429,11 +434,52 @@ jobs:
           echo "Exported ${IPA_PATH}"
           echo "IPA_PATH=${IPA_PATH}" >> $GITHUB_ENV
 
+      - name: Check signed entitlements
+        env:
+          ALLOW_MISSING: ${{ inputs.allow_missing_entitlements }}
+        run: |
+          # Read back what export actually signed, rather than trusting
+          # Runner.entitlements: a build can export and upload cleanly and
+          # still ship without push or universal links (as happened from
+          # 1.46.1). Printed before checking, so a failing run still shows
+          # what was signed.
+          CHECK_DIR="$RUNNER_TEMP/ipa-check"
+          rm -rf "$CHECK_DIR"
+          unzip -q "$IPA_PATH" -d "$CHECK_DIR"
+          APP="$CHECK_DIR/Payload/Runner.app"
+
+          for BUNDLE in "$APP" "$APP"/PlugIns/*.appex; do
+            echo "== $(basename "$BUNDLE")"
+            echo "Profile: $(security cms -D -i "$BUNDLE/embedded.mobileprovision" \
+              | plutil -extract Name raw -o - - || echo '(unreadable)')"
+            codesign -d --entitlements - --xml "$BUNDLE" | plutil -p - || true
+          done
+
+          # PlistBuddy rather than plutil -extract: these keys contain dots,
+          # which plutil would read as a key path.
+          codesign -d --entitlements - --xml "$APP" > "$CHECK_DIR/app.entitlements"
+          ENT() { /usr/libexec/PlistBuddy -c "Print :$1" "$CHECK_DIR/app.entitlements" 2>/dev/null; }
+          if [ "$(ENT aps-environment)" = production ] &&
+             ENT com.apple.developer.associated-domains | grep -qx '[[:space:]]*applinks:squadquest\.app'; then
+            echo "ENTITLEMENTS_OK=true" >> $GITHUB_ENV
+          elif [ "$ALLOW_MISSING" = true ]; then
+            # Lets an operator see the state of the current pipeline without
+            # failing the job. ENTITLEMENTS_OK stays unset, so the upload
+            # below is still skipped.
+            echo "::warning::Runner.app is missing aps-environment=production or applinks:squadquest.app; not uploading."
+          else
+            echo "::error::Runner.app is missing aps-environment=production or applinks:squadquest.app in its signed entitlements, so push and universal links would not work. Not uploading."
+            exit 1
+          fi
+
       - name: Upload to TestFlight
         # A manual run defaults to archive-and-export only: it proves the
         # signing path without burning the build number that the real release
-        # for this tag will need (TestFlight rejects duplicates).
-        if: github.event_name == 'release' || inputs.upload_to_testflight
+        # for this tag will need (TestFlight rejects duplicates). Never uploads
+        # a build that failed the entitlements check above.
+        if: >-
+          (github.event_name == 'release' || inputs.upload_to_testflight)
+          && env.ENTITLEMENTS_OK == 'true'
         uses: apple-actions/upload-testflight-build@v5
         with:
           app-path: ${{ env.IPA_PATH }}
