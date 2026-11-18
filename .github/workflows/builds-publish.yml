@@ -372,33 +372,10 @@ jobs:
         # xcodebuild steps below to pick up.
         run: fvm flutter build ios --release --config-only --dart-define=PRODUCTION_LOGGING=true
 
-      - name: Archive
-        run: |
-          # Archive unsigned, then let the export step sign. Signing here meant
-          # -allowProvisioningUpdates, and with the project on automatic
-          # signing that minted a fresh "Apple Development: Created via API"
-          # certificate on every run -- Apple caps those, so CI would have
-          # eventually locked itself out.
-          #
-          # Nothing is lost: -exportArchive re-signs the app and its embedded
-          # extension from ExportOptions.plist, which pins a profile per bundle
-          # id, so the signature that ships is decided there either way.
-          #
-          # Still xcodebuild rather than `flutter build ipa`, because that
-          # wrapper always signs.
-          xcodebuild archive \
-            -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO
-
-      # Export signs manually against these, one per bundle id. They are
-      # created once out of band (the CI key is App Manager and can read
-      # profiles but not mint them) and downloaded fresh each build, so a
-      # regenerated profile needs no change here.
+      # Archive and export both sign manually against these, one per bundle
+      # id. They are created once out of band (the CI key is App Manager and
+      # can read profiles but not mint them) and downloaded fresh each build,
+      # so a regenerated profile needs no change here.
       - name: Download provisioning profile for the app
         uses: apple-actions/download-provisioning-profiles@v6
         with:
@@ -416,6 +393,41 @@ jobs:
           issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
           api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+
+      - name: Archive
+        run: |
+          # Sign the archive manually with the imported distribution
+          # certificate and the two profiles downloaded above. It has to be
+          # signed: Runner.entitlements (push, associated domains) only gets
+          # into the binary when the archive is, and -exportArchive re-signs
+          # with whatever entitlements the archived app already carries. The
+          # unsigned archive used from 1.46.1 exported fine, but universal
+          # links stopped opening the app -- consistent with these missing.
+          #
+          # Still no -allowProvisioningUpdates: that is what minted a fresh
+          # "Apple Development: Created via API" certificate on every run.
+          # Manual signing resolves nothing online, so it needs none.
+          #
+          # These settings apply to every target, Pods included, so none may
+          # name a profile -- frameworks reject one. The profile names go in as
+          # two variables that only the Runner and ImageNotification Release
+          # configs read (PROVISIONING_PROFILE_SPECIFIER in project.pbxproj);
+          # unset, as on a developer's machine, those stay empty and the
+          # project's automatic signing is untouched.
+          #
+          # Still xcodebuild rather than `flutter build ipa`, because that
+          # wrapper can't pass build settings like the ones below.
+          xcodebuild archive \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM=64TVJXTLTT \
+            RUNNER_PROFILE_SPECIFIER="SquadQuest App Store" \
+            IMAGE_NOTIFICATION_PROFILE_SPECIFIER="SquadQuest ImageNotification App Store"
 
       - name: Export IPA
         run: |
