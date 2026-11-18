@@ -18,6 +18,11 @@ on:
         required: false
         default: false
         type: boolean
+      allow_missing_entitlements:
+        description: 'Finish the run even if the signed app lacks push/universal-link entitlements (never uploads)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   id-token: write
@@ -377,33 +382,10 @@ jobs:
         # xcodebuild steps below to pick up.
         run: fvm flutter build ios --release --config-only --dart-define=PRODUCTION_LOGGING=true
 
-      - name: Archive
-        run: |
-          # Archive unsigned, then let the export step sign. Signing here meant
-          # -allowProvisioningUpdates, and with the project on automatic
-          # signing that minted a fresh "Apple Development: Created via API"
-          # certificate on every run -- Apple caps those, so CI would have
-          # eventually locked itself out.
-          #
-          # Nothing is lost: -exportArchive re-signs the app and its embedded
-          # extension from ExportOptions.plist, which pins a profile per bundle
-          # id, so the signature that ships is decided there either way.
-          #
-          # Still xcodebuild rather than `flutter build ipa`, because that
-          # wrapper always signs.
-          xcodebuild archive \
-            -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO
-
-      # Export signs manually against these, one per bundle id. They are
-      # created once out of band (the CI key is App Manager and can read
-      # profiles but not mint them) and downloaded fresh each build, so a
-      # regenerated profile needs no change here.
+      # Archive and export both sign manually against these, one per bundle
+      # id. They are created once out of band (the CI key is App Manager and
+      # can read profiles but not mint them) and downloaded fresh each build,
+      # so a regenerated profile needs no change here.
       - name: Download provisioning profile for the app
         uses: apple-actions/download-provisioning-profiles@v6
         with:
@@ -422,6 +404,41 @@ jobs:
           api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 
+      - name: Archive
+        run: |
+          # Sign the archive manually with the imported distribution
+          # certificate and the two profiles downloaded above. It has to be
+          # signed: Runner.entitlements (push, associated domains) only gets
+          # into the binary when the archive is, and -exportArchive re-signs
+          # with whatever entitlements the archived app already carries. The
+          # unsigned archive used from 1.46.1 exported fine, but universal
+          # links stopped opening the app -- consistent with these missing.
+          #
+          # Still no -allowProvisioningUpdates: that is what minted a fresh
+          # "Apple Development: Created via API" certificate on every run.
+          # Manual signing resolves nothing online, so it needs none.
+          #
+          # These settings apply to every target, Pods included, so none may
+          # name a profile -- frameworks reject one. The profile names go in as
+          # two variables that only the Runner and ImageNotification Release
+          # configs read (PROVISIONING_PROFILE_SPECIFIER in project.pbxproj);
+          # unset, as on a developer's machine, those stay empty and the
+          # project's automatic signing is untouched.
+          #
+          # Still xcodebuild rather than `flutter build ipa`, because that
+          # wrapper can't pass build settings like the ones below.
+          xcodebuild archive \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM=64TVJXTLTT \
+            RUNNER_PROFILE_SPECIFIER="SquadQuest App Store" \
+            IMAGE_NOTIFICATION_PROFILE_SPECIFIER="SquadQuest ImageNotification App Store"
+
       - name: Export IPA
         run: |
           # No -allowProvisioningUpdates: ExportOptions.plist pins a profile
@@ -439,11 +456,52 @@ jobs:
           echo "Exported ${IPA_PATH}"
           echo "IPA_PATH=${IPA_PATH}" >> $GITHUB_ENV
 
+      - name: Check signed entitlements
+        env:
+          ALLOW_MISSING: ${{ inputs.allow_missing_entitlements }}
+        run: |
+          # Read back what export actually signed, rather than trusting
+          # Runner.entitlements: a build can export and upload cleanly and
+          # still ship without push or universal links (as happened from
+          # 1.46.1). Printed before checking, so a failing run still shows
+          # what was signed.
+          CHECK_DIR="$RUNNER_TEMP/ipa-check"
+          rm -rf "$CHECK_DIR"
+          unzip -q "$IPA_PATH" -d "$CHECK_DIR"
+          APP="$CHECK_DIR/Payload/Runner.app"
+
+          for BUNDLE in "$APP" "$APP"/PlugIns/*.appex; do
+            echo "== $(basename "$BUNDLE")"
+            echo "Profile: $(security cms -D -i "$BUNDLE/embedded.mobileprovision" \
+              | plutil -extract Name raw -o - - || echo '(unreadable)')"
+            codesign -d --entitlements - --xml "$BUNDLE" | plutil -p - || true
+          done
+
+          # PlistBuddy rather than plutil -extract: these keys contain dots,
+          # which plutil would read as a key path.
+          codesign -d --entitlements - --xml "$APP" > "$CHECK_DIR/app.entitlements"
+          ENT() { /usr/libexec/PlistBuddy -c "Print :$1" "$CHECK_DIR/app.entitlements" 2>/dev/null; }
+          if [ "$(ENT aps-environment)" = production ] &&
+             ENT com.apple.developer.associated-domains | grep -qx '[[:space:]]*applinks:squadquest\.app'; then
+            echo "ENTITLEMENTS_OK=true" >> $GITHUB_ENV
+          elif [ "$ALLOW_MISSING" = true ]; then
+            # Lets an operator see the state of the current pipeline without
+            # failing the job. ENTITLEMENTS_OK stays unset, so the upload
+            # below is still skipped.
+            echo "::warning::Runner.app is missing aps-environment=production or applinks:squadquest.app; not uploading."
+          else
+            echo "::error::Runner.app is missing aps-environment=production or applinks:squadquest.app in its signed entitlements, so push and universal links would not work. Not uploading."
+            exit 1
+          fi
+
       - name: Upload to TestFlight
         # A manual run defaults to archive-and-export only: it proves the
         # signing path without burning the build number that the real release
-        # for this tag will need (TestFlight rejects duplicates).
-        if: github.event_name == 'release' || inputs.upload_to_testflight
+        # for this tag will need (TestFlight rejects duplicates). Never uploads
+        # a build that failed the entitlements check above.
+        if: >-
+          (github.event_name == 'release' || inputs.upload_to_testflight)
+          && env.ENTITLEMENTS_OK == 'true'
         uses: apple-actions/upload-testflight-build@v5
         with:
           app-path: ${{ env.IPA_PATH }}
